@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Template — BrainRot Games</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #050510;
+      color: #e4e4ef;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    #ui-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .score {
+      color: #00f0ff;
+    }
+
+    .game-state {
+      color: #5a5a7a;
+    }
+
+    #start-screen,
+    #game-over-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 5, 16, 0.95);
+      z-index: 20;
+    }
+
+    #start-screen h1,
+    #game-over-screen h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    #start-screen p,
+    #game-over-screen p {
+      color: #5a5a7a;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid #00f0ff40;
+      color: #00f0ff;
+      padding: 12px 32px;
+      font-size: 14px;
+      font-family: inherit;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      border-color: #00f0ff;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <!-- UI Overlay -->
+  <div id="ui-overlay">
+    <span class="score">SCORE: <span id="score">0</span></span>
+    <span class="game-state" id="game-state">READY</span>
+  </div>
+
+  <!-- Start Screen -->
+  <div id="start-screen">
+    <h1>GAME NAME</h1>
+    <p>Press SPACE or click to start</p>
+    <button class="btn" onclick="startGame()">START</button>
+  </div>
+
+  <!-- Game Over Screen (hidden by default) -->
+  <div id="game-over-screen" style="display:none;">
+    <h1>GAME OVER</h1>
+    <p>Final Score: <span id="final-score">0</span></p>
+    <button class="btn" onclick="startGame()">PLAY AGAIN</button>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="game"></canvas>
+
+  <script>
+    // ═══ SETUP ═══
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    let animationId = null;
+    let score = 0;
+    let gameRunning = false;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // ═══ GAME STATE ═══
+    function startGame() {
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('game-over-screen').style.display = 'none';
+      score = 0;
+      gameRunning = true;
+      updateScore(0);
+      document.getElementById('game-state').textContent = 'PLAYING';
+      // Initialize your game state here
+      gameLoop();
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      if (animationId) cancelAnimationFrame(animationId);
+      document.getElementById('game-state').textContent = 'GAME OVER';
+      document.getElementById('final-score').textContent = score;
+      document.getElementById('game-over-screen').style.display = 'flex';
+    }
+
+    function updateScore(newScore) {
+      score = newScore;
+      document.getElementById('score').textContent = score;
+    }
+
+    // ═══ INPUT ═══
+    const keys = {};
+    document.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      if (e.key === ' ' && !gameRunning) {
+        startGame();
+      }
+    });
+    document.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+    });
+
+    // ═══ GAME LOOP ═══
+    let lastTime = 0;
+    function gameLoop(timestamp = 0) {
+      if (!gameRunning) return;
+      const deltaTime = timestamp - lastTime;
+      lastTime = timestamp;
+
+      update(deltaTime);
+      render();
+
+      animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function update(dt) {
+      // Update game logic here
+    }
+
+    function render() {
+      ctx.fillStyle = '#050510';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Render your game here
+      ctx.fillStyle = '#5a5a7a';
+      ctx.font = '16px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Replace this with your game rendering', canvas.width / 2, canvas.height / 2);
+    }
+  </script>
+</body>
+</html>

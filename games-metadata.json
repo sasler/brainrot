@@ -1,0 +1,36 @@
+{
+  "games": [
+    {
+      "id": "snake",
+      "name": "Snake",
+      "description": "Navigate the serpent through a digital grid. Consume pixels to grow, but one wrong move means total annihilation.",
+      "icon": "🐍",
+      "accentColor": "#00ff88",
+      "versions": []
+    },
+    {
+      "id": "minesweeper",
+      "name": "Minesweeper",
+      "description": "Every click is a calculated gamble. Use logic to uncover safe tiles while avoiding hidden explosives.",
+      "icon": "💣",
+      "accentColor": "#ff3366",
+      "versions": []
+    },
+    {
+      "id": "tetris",
+      "name": "Tetris",
+      "description": "Falling tetrominoes demand split-second decisions. Stack them perfectly or watch entropy consume the board.",
+      "icon": "🧱",
+      "accentColor": "#00ccff",
+      "versions": []
+    },
+    {
+      "id": "reversi",
+      "name": "Reversi",
+      "description": "A war of strategic placement. Flip your opponent's pieces and dominate the 8×8 battlefield.",
+      "icon": "⚫",
+      "accentColor": "#aa66ff",
+      "versions": []
+    }
+  ]
+}
