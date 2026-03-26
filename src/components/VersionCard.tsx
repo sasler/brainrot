@@ -45,17 +45,11 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
       </div>
 
       {/* Stats grid */}
-      <div className="mb-6 grid grid-cols-3 gap-4">
+      <div className="mb-6 grid grid-cols-2 gap-4">
         <div>
           <div className="font-mono text-xs text-muted">DATE</div>
           <div className="mt-1 font-mono text-sm text-foreground/80">
             {version.date}
-          </div>
-        </div>
-        <div>
-          <div className="font-mono text-xs text-muted">TOKENS</div>
-          <div className="mt-1 font-mono text-sm text-foreground/80">
-            {version.tokens.toLocaleString()}
           </div>
         </div>
         <div>

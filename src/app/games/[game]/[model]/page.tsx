@@ -75,12 +75,6 @@ export default async function PlayPage({ params }: PlayPageProps) {
         <div className="hidden items-center gap-4 font-mono text-[10px] text-muted sm:flex">
           <span className="text-foreground/60">{version.date}</span>
           <span>
-            <span className="text-neon-cyan">
-              {version.tokens.toLocaleString()}
-            </span>{" "}
-            tokens
-          </span>
-          <span>
             <span className="text-neon-amber">
               {version.linesOfCode.toLocaleString()}
             </span>{" "}

@@ -11,7 +11,6 @@
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 709,
           "path": "/games/snake/sonnet-4-6/index.html"
         },
@@ -19,7 +18,6 @@
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 1303,
           "path": "/games/snake/gpt-5-4/index.html"
         },
@@ -27,8 +25,7 @@
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "tokens": 0,
-          "linesOfCode": 1093,
+          "linesOfCode": 1106,
           "path": "/games/snake/gpt-5-4-mini/index.html"
         }
       ]
@@ -44,7 +41,6 @@
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 646,
           "path": "/games/minesweeper/sonnet-4-6/index.html"
         },
@@ -52,7 +48,6 @@
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 1696,
           "path": "/games/minesweeper/gpt-5-4/index.html"
         },
@@ -60,7 +55,6 @@
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 921,
           "path": "/games/minesweeper/gpt-5-4-mini/index.html"
         }
@@ -77,7 +71,6 @@
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 799,
           "path": "/games/tetris/sonnet-4-6/index.html"
         },
@@ -85,7 +78,6 @@
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 1939,
           "path": "/games/tetris/gpt-5-4/index.html"
         },
@@ -93,7 +85,6 @@
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 1072,
           "path": "/games/tetris/gpt-5-4-mini/index.html"
         }
@@ -110,7 +101,6 @@
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 919,
           "path": "/games/reversi/sonnet-4-6/index.html"
         },
@@ -118,7 +108,6 @@
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 1259,
           "path": "/games/reversi/gpt-5-4/index.html"
         },
@@ -126,7 +115,6 @@
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "tokens": 0,
           "linesOfCode": 1143,
           "path": "/games/reversi/gpt-5-4-mini/index.html"
         }

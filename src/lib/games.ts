@@ -4,7 +4,6 @@ export interface GameVersion {
   model: string;
   modelId: string;
   date: string;
-  tokens: number;
   linesOfCode: number;
   path: string;
 }

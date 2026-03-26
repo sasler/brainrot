@@ -1013,18 +1013,24 @@
         requestAnimationFrame(loop);
       }
 
+      function focusGame() {
+        canvas.focus({ preventScroll: true });
+        document.body.focus?.({ preventScroll: true });
+        document.documentElement.focus?.({ preventScroll: true });
+      }
+
       function tryStart(initialDirection = null) {
         if (state === "playing") return;
-        canvas.focus({ preventScroll: true });
+        focusGame();
         resetGame(false, initialDirection);
       }
 
       function activateGame(initialDirection = null) {
-        canvas.focus({ preventScroll: true });
+        focusGame();
         tryStart(initialDirection);
       }
 
-      window.addEventListener("keydown", (e) => {
+      document.addEventListener("keydown", (e) => {
         const dir = dirs[e.key];
         if (dir) {
           e.preventDefault();
@@ -1050,9 +1056,16 @@
         }
       }, { passive: false });
 
+      document.body.tabIndex = -1;
+      document.documentElement.tabIndex = -1;
+      document.addEventListener("pointerdown", focusGame, true);
+      document.addEventListener("mousedown", focusGame, true);
+      document.addEventListener("touchstart", focusGame, true);
+
       let touchStart = null;
       canvas.addEventListener("pointerdown", (e) => {
         touchStart = { x: e.clientX, y: e.clientY, time: performance.now() };
+        focusGame();
         activateGame();
       });
 
