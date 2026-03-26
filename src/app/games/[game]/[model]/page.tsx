@@ -38,16 +38,16 @@ export default async function PlayPage({ params }: PlayPageProps) {
   if (!game || !version) notFound();
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
-      {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
-        <div className="flex items-center gap-4">
+    <div className="fixed inset-0 top-16 flex flex-col bg-background">
+      {/* Compact top bar */}
+      <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface/80 px-4 py-2">
+        <div className="flex items-center gap-3">
           <Link
             href={`/games/${game.id}`}
-            className="flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
+            className="flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
           >
             <svg
-              className="h-4 w-4"
+              className="h-3.5 w-3.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -61,21 +61,19 @@ export default async function PlayPage({ params }: PlayPageProps) {
             </svg>
             Back
           </Link>
-          <div className="h-4 w-px bg-border" />
-          <span className="text-lg" role="img" aria-label={game.name}>
+          <div className="h-3 w-px bg-border" />
+          <span className="text-sm" role="img" aria-label={game.name}>
             {game.icon}
           </span>
-          <span className="font-display text-sm font-semibold tracking-wide text-foreground">
+          <span className="font-display text-xs font-semibold tracking-wide text-foreground">
             {game.name}
           </span>
-          <span className="rounded-full border border-border bg-card px-3 py-0.5 font-mono text-xs text-muted">
+          <span className="rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[10px] text-muted">
             {version.model}
           </span>
         </div>
-        <div className="flex items-center gap-6 font-mono text-xs text-muted">
-          <span>
-            <span className="text-foreground/60">{version.date}</span>
-          </span>
+        <div className="hidden items-center gap-4 font-mono text-[10px] text-muted sm:flex">
+          <span className="text-foreground/60">{version.date}</span>
           <span>
             <span className="text-neon-cyan">
               {version.tokens.toLocaleString()}
@@ -83,7 +81,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
             tokens
           </span>
           <span>
-            <span className="text-neon-pink">
+            <span className="text-neon-amber">
               {version.linesOfCode.toLocaleString()}
             </span>{" "}
             lines
@@ -91,13 +89,13 @@ export default async function PlayPage({ params }: PlayPageProps) {
         </div>
       </div>
 
-      {/* Game iframe */}
-      <div className="relative flex-1 bg-black">
+      {/* Game iframe — takes all remaining space */}
+      <div className="relative min-h-0 flex-1 bg-black">
         <iframe
           src={version.path}
           sandbox="allow-scripts"
           title={`${game.name} by ${version.model}`}
-          className="h-full w-full border-0"
+          className="absolute inset-0 h-full w-full border-0"
         />
       </div>
     </div>

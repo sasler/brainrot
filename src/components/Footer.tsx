@@ -6,7 +6,7 @@ export default function Footer() {
           <span className="font-display font-semibold tracking-wider text-foreground/70">
             BRAINROT
           </span>
-          <span className="font-display font-semibold tracking-wider text-neon-pink/70">
+          <span className="font-display font-semibold tracking-wider text-neon-amber/70">
             GAMES
           </span>
           <span className="mx-2 text-border">|</span>

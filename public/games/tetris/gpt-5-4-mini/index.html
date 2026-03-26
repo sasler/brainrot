@@ -306,7 +306,7 @@
       let lockAccumulator = 0;
       let softDropCells = 0;
       let cameraShake = 0;
-      let board = [];
+      let board = createBoard();
       let current = null;
       let holdPiece = null;
       let holdUsed = false;
@@ -639,13 +639,14 @@
       }
 
       function drawRoundedRect(x, y, w, h, r, fill, stroke, glow = 0) {
+        const rr = Math.max(0, Math.min(r, w / 2, h / 2));
         ctx.save();
         ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.arcTo(x + w, y, x + w, y + h, r);
-        ctx.arcTo(x + w, y + h, x, y + h, r);
-        ctx.arcTo(x, y + h, x, y, r);
-        ctx.arcTo(x, y, x + w, y, r);
+        ctx.moveTo(x + rr, y);
+        ctx.arcTo(x + w, y, x + w, y + h, rr);
+        ctx.arcTo(x + w, y + h, x, y + h, rr);
+        ctx.arcTo(x, y + h, x, y, rr);
+        ctx.arcTo(x, y, x + w, y, rr);
         ctx.closePath();
         if (glow > 0) {
           ctx.shadowColor = glow;
@@ -867,11 +868,11 @@
       }
 
       function computeLayout() {
-        width = canvas.width;
-        height = canvas.height;
+        width = canvas.width / dpr;
+        height = canvas.height / dpr;
         const boardFit = Math.min(height * 0.80 / ROWS, width * 0.42 / COLS);
-        const cell = clamp(Math.floor(boardFit), 18, 38);
-        const mini = clamp(Math.floor(cell * 0.68), 12, 24);
+        const cell = clamp(Math.floor(boardFit), 10, 38);
+        const mini = clamp(Math.floor(cell * 0.68), 8, 24);
         const boardPxW = COLS * cell;
         const boardPxH = ROWS * cell;
         const totalWide = boardPxW + mini * 6 + 28 * 3;
@@ -928,7 +929,7 @@
       function render() {
         frame += 1;
         const layout = computeLayout();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, width, height);
 
         const bg = ctx.createLinearGradient(0, 0, 0, height);
@@ -941,7 +942,7 @@
         for (const star of stars) {
           const x = star.x * width;
           const y = star.y * height;
-          const tw = 0.45 + 0.55 * Math.sin(frame * 0.02 * star.s + star.p);
+          const tw = Math.max(0.05, 0.45 + 0.55 * Math.sin(frame * 0.02 * star.s + star.p));
           ctx.fillStyle = `rgba(180, 220, 255, ${0.16 * tw})`;
           ctx.beginPath();
           ctx.arc(x, y, star.r * tw, 0, Math.PI * 2);

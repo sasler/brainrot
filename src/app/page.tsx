@@ -10,7 +10,7 @@ export default function Home() {
       <HeroSection />
 
       {/* ═══ THE ARENA ═══ */}
-      <section id="arena" className="relative px-6 py-24">
+      <section id="arena" className="relative px-6 pt-8 pb-24">
         <div className="mx-auto max-w-6xl">
           {/* Section header */}
           <div className="mb-16 flex flex-col items-center">
@@ -65,7 +65,7 @@ export default function Home() {
                 title: "Pick an AI Version",
                 description:
                   "Each game has been implemented by different AI models. See the stats.",
-                color: "var(--neon-pink)",
+                color: "var(--neon-amber)",
               },
               {
                 step: "03",

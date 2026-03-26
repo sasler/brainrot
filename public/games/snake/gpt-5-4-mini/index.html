@@ -155,6 +155,7 @@
       background:
         radial-gradient(circle at center, rgba(8, 12, 24, 0.14), rgba(5, 5, 16, 0.92));
       transition: opacity 240ms ease, transform 240ms ease;
+      pointer-events: none;
     }
 
     .overlay.hidden {
@@ -177,6 +178,7 @@
         0 0 50px rgba(0, 255, 136, 0.08);
       backdrop-filter: blur(14px);
       text-align: center;
+      pointer-events: auto;
     }
 
     .panel h1 {
@@ -317,7 +319,7 @@
   </style>
 </head>
 <body>
-  <canvas id="game"></canvas>
+  <canvas id="game" tabindex="0"></canvas>
 
   <div class="hud">
     <div class="brand">
@@ -347,7 +349,7 @@
       </p>
       <div class="instructions">
         <div class="instruction"><b>Move:</b> Arrow keys or WASD</div>
-        <div class="instruction"><b>Start:</b> Press Space, Enter, or tap</div>
+        <div class="instruction"><b>Start:</b> Press Space, Enter, or click the game area</div>
         <div class="instruction"><b>Goal:</b> Eat food, survive longer, score higher</div>
         <div class="instruction"><b>Bonus:</b> Swipe on touch devices to steer</div>
       </div>
@@ -355,7 +357,7 @@
         <button class="btn" id="startBtn">Start Game</button>
         <button class="btn ghost" id="practiceBtn">Practice Run</button>
       </div>
-      <div class="footer-hint">Grid movement • Smooth neon motion • 60 FPS canvas</div>
+      <div class="footer-hint">Click the dark grid or press Start to begin</div>
     </div>
   </div>
 
@@ -1013,22 +1015,28 @@
 
       function tryStart(initialDirection = null) {
         if (state === "playing") return;
+        canvas.focus({ preventScroll: true });
         resetGame(false, initialDirection);
       }
 
-      document.addEventListener("keydown", (e) => {
+      function activateGame(initialDirection = null) {
+        canvas.focus({ preventScroll: true });
+        tryStart(initialDirection);
+      }
+
+      window.addEventListener("keydown", (e) => {
         const dir = dirs[e.key];
         if (dir) {
           e.preventDefault();
           setQueuedDirection(dir);
-          if (state !== "playing") tryStart(dir);
+          if (state !== "playing") activateGame(dir);
           return;
         }
 
         if (e.key === " " || e.key === "Enter") {
           e.preventDefault();
           if (state === "playing") return;
-          tryStart();
+          activateGame();
         }
 
         if (e.key === "r" || e.key === "R") {
@@ -1045,7 +1053,7 @@
       let touchStart = null;
       canvas.addEventListener("pointerdown", (e) => {
         touchStart = { x: e.clientX, y: e.clientY, time: performance.now() };
-        if (state !== "playing") tryStart();
+        activateGame();
       });
 
       canvas.addEventListener("pointerup", (e) => {
@@ -1060,10 +1068,8 @@
             ? (dx > 0 ? dirs.ArrowRight : dirs.ArrowLeft)
             : (dy > 0 ? dirs.ArrowDown : dirs.ArrowUp);
           setQueuedDirection(swipeDir);
-          if (state !== "playing") tryStart(swipeDir);
-        } else if (state !== "playing") {
-          tryStart();
-        }
+          if (state !== "playing") activateGame(swipeDir);
+        } else if (state !== "playing") activateGame();
         touchStart = null;
       });
 
@@ -1071,8 +1077,8 @@
         touchStart = null;
       });
 
-      startBtn.addEventListener("click", () => tryStart());
-      practiceBtn.addEventListener("click", () => tryStart());
+      startBtn.addEventListener("click", () => activateGame());
+      practiceBtn.addEventListener("click", () => activateGame());
       restartBtn.addEventListener("click", () => resetGame(false));
       backBtn.addEventListener("click", () => resetToTitle());
 
@@ -1084,3 +1090,4 @@
   </script>
 </body>
 </html>
+

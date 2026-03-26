@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isHome = pathname === "/";
+  const isPlayPage = /^\/games\/[^/]+\/[^/]+$/.test(pathname);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -15,26 +15,25 @@ export default function Navbar() {
           <span className="font-display text-xl font-bold tracking-wider text-foreground transition-colors group-hover:text-neon-cyan">
             BRAINROT
           </span>
-          <span className="font-display text-xl font-bold tracking-wider text-neon-pink">
+          <span className="font-display text-xl font-bold tracking-wider text-neon-amber">
             GAMES
           </span>
         </Link>
 
         {/* Links */}
         <div className="flex items-center gap-8">
-          {isHome ? (
-            <a
-              href="#arena"
-              className="text-sm font-medium tracking-wide text-muted transition-colors hover:text-foreground"
-            >
-              Arena
-            </a>
-          ) : (
+          <Link
+            href="/#arena"
+            className="text-sm font-medium tracking-wide text-muted transition-colors hover:text-foreground"
+          >
+            Arena
+          </Link>
+          {isPlayPage && (
             <Link
-              href="/"
+              href={pathname.replace(/\/[^/]+$/, "")}
               className="text-sm font-medium tracking-wide text-muted transition-colors hover:text-foreground"
             >
-              Home
+              ← Back to Game
             </Link>
           )}
           <a

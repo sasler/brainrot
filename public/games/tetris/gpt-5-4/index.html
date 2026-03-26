@@ -86,6 +86,8 @@
       flex-direction: column;
       padding: clamp(12px, 2vw, 22px);
       gap: clamp(10px, 1.8vw, 18px);
+      transform-origin: top left;
+      will-change: transform;
     }
 
     .topbar {
@@ -623,6 +625,93 @@
 
       .sidebar.right > .card:last-child {
         grid-column: span 3;
+      }
+    }
+
+    @media (max-height: 820px) and (min-width: 861px) {
+      .app {
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .topbar {
+        padding: 10px 14px;
+      }
+
+      .brand-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+      }
+
+      .title {
+        font-size: clamp(18px, 2.4vw, 28px);
+      }
+
+      .subtitle,
+      .pill,
+      .footer-chip,
+      .card-title,
+      .stat-label,
+      .control-label,
+      .event-sub {
+        letter-spacing: 0.18em;
+      }
+
+      .main-grid {
+        gap: 10px;
+        grid-template-columns: minmax(168px, 0.82fr) minmax(250px, 1.1fr) minmax(168px, 0.82fr);
+      }
+
+      .sidebar,
+      .board-panel {
+        gap: 8px;
+        padding: 12px;
+      }
+
+      .card {
+        padding: 10px;
+      }
+
+      .preview-frame {
+        aspect-ratio: 1.45;
+      }
+
+      .stat {
+        padding: 10px;
+      }
+
+      .stat-value {
+        font-size: clamp(22px, 3.2vw, 34px);
+      }
+
+      .event-box {
+        min-height: 66px;
+      }
+
+      .event-line {
+        font-size: 24px;
+      }
+
+      .control-item {
+        min-height: 54px;
+        padding: 8px;
+      }
+
+      .control-key {
+        font-size: 16px;
+      }
+
+      .board-stage {
+        padding: 8px;
+      }
+
+      .board-canvas {
+        width: min(100%, calc((100vh - 132px) * 0.5));
+      }
+
+      .footer-chip {
+        padding: 8px 10px;
       }
     }
 
@@ -1721,10 +1810,29 @@
       }
 
       function resizeAll() {
+        fitAppToViewport();
         fitCanvas(boardCanvas, boardCtx);
         fitCanvas(nextCanvas, nextCtx);
         fitCanvas(holdCanvas, holdCtx);
         render();
+      }
+
+      function fitAppToViewport() {
+        const app = document.querySelector(".app");
+        if (!app) return;
+
+        app.style.transform = "none";
+
+        const rect = app.getBoundingClientRect();
+        const contentWidth = Math.max(rect.width, app.scrollWidth);
+        const contentHeight = Math.max(rect.height, app.scrollHeight);
+        const widthScale = window.innerWidth / Math.max(1, contentWidth);
+        const heightScale = window.innerHeight / Math.max(1, contentHeight);
+        const scale = Math.min(1, widthScale, heightScale);
+        const scaledWidth = contentWidth * scale;
+        const offsetX = Math.max(0, (window.innerWidth - scaledWidth) / 2);
+
+        app.style.transform = `translateX(${offsetX}px) scale(${scale})`;
       }
 
       function gameLoop(now) {

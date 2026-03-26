@@ -7,7 +7,7 @@
   --card: #0f0f23;
   --card-hover: #161636;
   --neon-cyan: #00f0ff;
-  --neon-pink: #ff0080;
+  --neon-amber: #f0a030;
   --neon-purple: #8b5cf6;
   --neon-green: #00ff88;
   --muted: #5a5a7a;
@@ -21,7 +21,7 @@
   --color-card: var(--card);
   --color-card-hover: var(--card-hover);
   --color-neon-cyan: var(--neon-cyan);
-  --color-neon-pink: var(--neon-pink);
+  --color-neon-amber: var(--neon-amber);
   --color-neon-purple: var(--neon-purple);
   --color-neon-green: var(--neon-green);
   --color-muted: var(--muted);
@@ -46,47 +46,30 @@ body {
 
 /* ═══ Glitch Text Effect ═══ */
 @keyframes glitch-shift {
-  0%, 100% { transform: translate(0); }
-  20% { transform: translate(-2px, 1px); }
-  40% { transform: translate(1px, -1px); }
-  60% { transform: translate(-1px, -1px); }
-  80% { transform: translate(1px, 1px); }
-}
-
-@keyframes glitch-skew {
-  0%, 100% { transform: skew(0deg); }
-  25% { transform: skew(-0.5deg); }
-  75% { transform: skew(0.5deg); }
+  0%, 100% { transform: translate(0); opacity: 0; }
+  20% { transform: translate(-2px, 1px); opacity: 0.5; }
+  21% { opacity: 0; }
+  40% { transform: translate(1px, -1px); opacity: 0.5; }
+  41% { opacity: 0; }
+  60% { transform: translate(-1px, -1px); opacity: 0; }
+  80% { transform: translate(1px, 1px); opacity: 0.4; }
+  81% { opacity: 0; }
 }
 
 .glitch-text {
   position: relative;
-  animation: glitch-skew 8s infinite;
 }
 
-.glitch-text::before,
-.glitch-text::after {
+.glitch-text::before {
   content: attr(data-text);
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
-}
-
-.glitch-text::before {
   color: var(--neon-cyan);
-  animation: glitch-shift 4s infinite;
-  clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-  opacity: 0.6;
-}
-
-.glitch-text::after {
-  color: var(--neon-pink);
-  animation: glitch-shift 3s infinite reverse;
-  clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
-  opacity: 0.6;
+  animation: glitch-shift 5s infinite;
+  pointer-events: none;
 }
 
 /* ═══ Card Glow Border ═══ */

@@ -9,10 +9,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     await expect(page.locator("h1")).toContainText("GAMES");
 
     // Tagline
-    await expect(page.getByText("AI models compete in classic games.")).toBeVisible();
-
-    // CTA button
-    await expect(page.getByText("ENTER THE ARENA")).toBeVisible();
+    await expect(page.getByText("100% AI-generated")).toBeVisible();
 
     // Arena section with 4 game cards
     const gameCards = page.locator('a[href^="/games/"]');
