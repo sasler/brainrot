@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2048 · BrainRot Games</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050510;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;overflow:hidden;user-select:none}
+
+/* Screens */
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;position:absolute;inset:0;z-index:10}
+.screen.active{display:flex}
+
+/* Start Screen */
+#start-screen h1{font-size:clamp(4rem,12vw,8rem);font-weight:900;background:linear-gradient(135deg,#a855f7,#7c3aed,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none;letter-spacing:-2px;margin-bottom:0.2em}
+#start-screen p{color:#9ca3af;font-size:1rem;margin-bottom:2em}
+
+.btn{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;padding:14px 48px;font-size:1.1rem;font-weight:700;border-radius:12px;cursor:pointer;letter-spacing:1px;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:scale(1.05);box-shadow:0 0 30px rgba(168,85,247,.4)}
+
+/* Game Screen */
+#game-screen{display:none;flex-direction:column;align-items:center;padding:20px;position:relative;z-index:1}
+#game-screen.active{display:flex}
+
+.header{display:flex;align-items:center;justify-content:space-between;width:min(90vw,420px);margin-bottom:16px}
+.header h2{font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,#a855f7,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.score-box{background:#1a1a2e;border:1px solid #7c3aed44;border-radius:10px;padding:8px 20px;text-align:center}
+.score-box .label{font-size:.65rem;text-transform:uppercase;color:#9ca3af;letter-spacing:1px}
+.score-box .value{font-size:1.4rem;font-weight:800;color:#c084fc}
+
+/* Grid */
+.grid-wrap{position:relative;width:min(90vw,420px);aspect-ratio:1;background:#12121e;border-radius:14px;border:1px solid #7c3aed33;padding:8px}
+.grid-bg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;height:100%}
+.cell-bg{background:#1e1e30;border-radius:10px}
+
+.tile-layer{position:absolute;inset:8px;pointer-events:none}
+.tile{position:absolute;display:flex;align-items:center;justify-content:center;font-weight:800;border-radius:10px;transition:top .12s ease,left .12s ease;animation:tileAppear .18s ease}
+
+@keyframes tileAppear{
+  from{opacity:0;transform:scale(.5)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes tileMerge{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.15)}
+  100%{transform:scale(1)}
+}
+.tile.merged{animation:tileMerge .2s ease}
+
+/* Overlay */
+.overlay{display:none;position:absolute;inset:0;background:rgba(5,5,16,.88);border-radius:14px;flex-direction:column;align-items:center;justify-content:center;z-index:20}
+.overlay.active{display:flex}
+.overlay h3{font-size:2rem;font-weight:800;margin-bottom:6px}
+.overlay .final-score{color:#c084fc;font-size:1.2rem;margin-bottom:20px}
+.overlay .btn{padding:10px 36px;font-size:.95rem}
+.win-text{color:#a855f7}
+.lose-text{color:#ef4444}
+
+/* Responsive tile font */
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="start-screen" class="screen active">
+  <h1>2048</h1>
+  <p>Slide &amp; merge tiles to reach 2048</p>
+  <button class="btn" onclick="startGame()">Play</button>
+</div>
+
+<!-- Game Screen -->
+<div id="game-screen" class="screen">
+  <div class="header">
+    <h2>2048</h2>
+    <div class="score-box">
+      <div class="label">Score</div>
+      <div class="value" id="score-display">0</div>
+    </div>
+  </div>
+  <div class="grid-wrap">
+    <div class="grid-bg" id="grid-bg"></div>
+    <div class="tile-layer" id="tile-layer"></div>
+    <div class="overlay" id="overlay">
+      <h3 id="overlay-title"></h3>
+      <div class="final-score" id="overlay-score"></div>
+      <button class="btn" onclick="startGame()">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SIZE = 4;
+let grid, score, moved, won, gameOver;
+
+// Tile colors
+const TILE_COLORS = {
+  2:    { bg:'#2d1b69', fg:'#d8b4fe' },
+  4:    { bg:'#3b1f8e', fg:'#d8b4fe' },
+  8:    { bg:'#5b21b6', fg:'#f3e8ff' },
+  16:   { bg:'#6d28d9', fg:'#f3e8ff' },
+  32:   { bg:'#7c3aed', fg:'#ffffff' },
+  64:   { bg:'#8b5cf6', fg:'#ffffff' },
+  128:  { bg:'#a855f7', fg:'#ffffff' },
+  256:  { bg:'#c084fc', fg:'#1a1a2e' },
+  512:  { bg:'#d8b4fe', fg:'#1a1a2e' },
+  1024: { bg:'#e9d5ff', fg:'#1a1a2e' },
+  2048: { bg:'#fbbf24', fg:'#1a1a2e' },
+};
+
+function getColor(v) {
+  return TILE_COLORS[v] || { bg:'#fbbf24', fg:'#1a1a2e' };
+}
+
+// Init grid background cells
+(function initBG() {
+  const bg = document.getElementById('grid-bg');
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const d = document.createElement('div');
+    d.className = 'cell-bg';
+    bg.appendChild(d);
+  }
+})();
+
+function startGame() {
+  grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+  score = 0;
+  won = false;
+  gameOver = false;
+  document.getElementById('overlay').classList.remove('active');
+  document.getElementById('start-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+  addTile();
+  addTile();
+  render();
+}
+
+function emptyCells() {
+  const cells = [];
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++)
+      if (grid[r][c] === 0) cells.push([r, c]);
+  return cells;
+}
+
+function addTile() {
+  const cells = emptyCells();
+  if (!cells.length) return;
+  const [r, c] = cells[Math.floor(Math.random() * cells.length)];
+  grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+}
+
+// Slide a single row to the left, return { row, merged, moved }
+function slideRow(row) {
+  let merged = Array(SIZE).fill(false);
+  let didMove = false;
+  // Remove zeros
+  let arr = row.filter(v => v !== 0);
+  // Merge
+  for (let i = 0; i < arr.length - 1; i++) {
+    if (arr[i] === arr[i + 1]) {
+      arr[i] *= 2;
+      score += arr[i];
+      arr.splice(i + 1, 1);
+      merged[i] = true;
+    }
+  }
+  // Pad
+  while (arr.length < SIZE) arr.push(0);
+  // Check if moved
+  for (let i = 0; i < SIZE; i++) if (arr[i] !== row[i]) didMove = true;
+  return { row: arr, merged, moved: didMove };
+}
+
+function rotateGrid(g) {
+  // Rotate 90° clockwise
+  const n = [];
+  for (let c = 0; c < SIZE; c++) {
+    n.push([]);
+    for (let r = SIZE - 1; r >= 0; r--) n[c].push(g[r][c]);
+  }
+  return n;
+}
+
+// Merge flags per render
+let mergedCells = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+
+function move(dir) {
+  if (gameOver) return;
+  // Rotate grid so we always slide left
+  let rotations = { left: 0, up: 1, right: 2, down: 3 }[dir];
+  let g = grid.map(r => [...r]);
+  for (let i = 0; i < rotations; i++) g = rotateGrid(g);
+
+  let anyMoved = false;
+  mergedCells = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+  let mFlags = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+
+  for (let r = 0; r < SIZE; r++) {
+    const { row, merged, moved: rm } = slideRow(g[r]);
+    g[r] = row;
+    for (let c = 0; c < SIZE; c++) mFlags[r][c] = merged[c];
+    if (rm) anyMoved = true;
+  }
+
+  // Rotate back
+  for (let i = 0; i < (4 - rotations) % 4; i++) {
+    g = rotateGrid(g);
+    mFlags = rotateGrid(mFlags);
+  }
+
+  if (!anyMoved) return;
+  grid = g.map(r => [...r]);
+  mergedCells = mFlags;
+  addTile();
+  render();
+  checkState();
+}
+
+function canMove() {
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++) {
+      if (grid[r][c] === 0) return true;
+      if (c < SIZE - 1 && grid[r][c] === grid[r][c + 1]) return true;
+      if (r < SIZE - 1 && grid[r][c] === grid[r + 1][c]) return true;
+    }
+  return false;
+}
+
+function checkState() {
+  // Check win
+  if (!won) {
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++)
+        if (grid[r][c] === 2048) {
+          won = true;
+          showOverlay('You Win!', true);
+          return;
+        }
+  }
+  // Check lose
+  if (!canMove()) {
+    gameOver = true;
+    showOverlay('Game Over', false);
+  }
+}
+
+function showOverlay(text, isWin) {
+  const ov = document.getElementById('overlay');
+  const title = document.getElementById('overlay-title');
+  const sc = document.getElementById('overlay-score');
+  title.textContent = text;
+  title.className = isWin ? 'win-text' : 'lose-text';
+  sc.textContent = 'Score: ' + score;
+  if (isWin) gameOver = true;
+  ov.classList.add('active');
+}
+
+function render() {
+  document.getElementById('score-display').textContent = score;
+  const layer = document.getElementById('tile-layer');
+  layer.innerHTML = '';
+  const gap = 8;
+  const layerW = layer.offsetWidth || 1;
+  const cellSize = (layerW - gap * (SIZE - 1)) / SIZE;
+
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const v = grid[r][c];
+      if (!v) continue;
+      const col = getColor(v);
+      const el = document.createElement('div');
+      el.className = 'tile' + (mergedCells[r][c] ? ' merged' : '');
+      el.textContent = v;
+      const size = cellSize;
+      const left = c * (cellSize + gap);
+      const top = r * (cellSize + gap);
+      const fontSize = v >= 1024 ? size * 0.28 : v >= 128 ? size * 0.33 : size * 0.4;
+      el.style.cssText = `width:${size}px;height:${size}px;left:${left}px;top:${top}px;background:${col.bg};color:${col.fg};font-size:${fontSize}px;`;
+      layer.appendChild(el);
+    }
+  }
+}
+
+// Input
+document.addEventListener('keydown', e => {
+  const map = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down' };
+  if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
+});
+
+// Touch / swipe
+let touchX, touchY;
+document.addEventListener('touchstart', e => {
+  touchX = e.touches[0].clientX;
+  touchY = e.touches[0].clientY;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (touchX == null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  const dy = e.changedTouches[0].clientY - touchY;
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  if (Math.max(absDx, absDy) < 30) return;
+  if (absDx > absDy) move(dx > 0 ? 'right' : 'left');
+  else move(dy > 0 ? 'down' : 'up');
+  touchX = touchY = null;
+});
+
+// Re-render on resize
+window.addEventListener('resize', () => { if (!gameOver || won) render(); });
+</script>
+</body>
+</html>

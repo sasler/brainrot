@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper · BrainRot Games</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#050510;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#e0e0f0;user-select:none;-webkit-user-select:none}
+canvas{display:block}
+#app{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* Title Screen */
+#title-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;background:#050510}
+#title-screen h1{font-size:clamp(2rem,6vw,4.5rem);font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:#fff;text-shadow:0 0 20px rgba(0,200,255,.6),0 0 60px rgba(0,200,255,.3),0 0 100px rgba(0,100,255,.2);margin-bottom:.2em;animation:titlePulse 3s ease-in-out infinite}
+#title-screen .subtitle{font-size:clamp(.7rem,2vw,1.1rem);letter-spacing:.4em;text-transform:uppercase;color:rgba(0,200,255,.5);margin-bottom:2.5em}
+#title-screen .start-btn{position:relative;padding:.9em 3em;font-size:clamp(1rem,2.5vw,1.3rem);font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#0ff;background:transparent;border:2px solid rgba(0,255,255,.4);border-radius:4px;cursor:pointer;transition:all .3s ease;overflow:hidden}
+#title-screen .start-btn:hover{color:#fff;border-color:rgba(0,255,255,.9);box-shadow:0 0 25px rgba(0,255,255,.3),inset 0 0 25px rgba(0,255,255,.1);text-shadow:0 0 10px rgba(0,255,255,.8)}
+#title-screen .start-btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:rgba(0,255,255,.1);border-radius:50%;transform:translate(-50%,-50%);transition:width .5s,height .5s}
+#title-screen .start-btn:hover::before{width:300px;height:300px}
+#title-screen .mine-icon{font-size:clamp(3rem,8vw,6rem);margin-bottom:.3em;animation:float 4s ease-in-out infinite}
+#title-screen .info{margin-top:2em;font-size:clamp(.6rem,1.5vw,.85rem);color:rgba(200,200,255,.3);letter-spacing:.15em}
+
+/* Game Over Overlay */
+#game-over{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;background:rgba(5,5,16,.92);backdrop-filter:blur(8px);opacity:0;transition:opacity .5s ease}
+#game-over.show{display:flex;opacity:1}
+#game-over h2{font-size:clamp(1.8rem,5vw,3.5rem);font-weight:900;letter-spacing:.1em;margin-bottom:.15em}
+#game-over h2.win{color:#0f6;text-shadow:0 0 30px rgba(0,255,100,.5),0 0 80px rgba(0,255,100,.2)}
+#game-over h2.lose{color:#f33;text-shadow:0 0 30px rgba(255,50,50,.5),0 0 80px rgba(255,50,50,.2)}
+#game-over .stats{font-size:clamp(.9rem,2vw,1.2rem);color:rgba(200,200,255,.7);margin-bottom:2em;text-align:center;line-height:2}
+#game-over .restart-btn{padding:.8em 2.5em;font-size:clamp(.9rem,2vw,1.1rem);font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#0ff;background:transparent;border:2px solid rgba(0,255,255,.4);border-radius:4px;cursor:pointer;transition:all .3s ease}
+#game-over .restart-btn:hover{color:#fff;border-color:rgba(0,255,255,.9);box-shadow:0 0 25px rgba(0,255,255,.3),inset 0 0 25px rgba(0,255,255,.1)}
+
+/* HUD */
+#hud{position:absolute;top:0;left:0;right:0;display:none;justify-content:space-between;align-items:center;padding:clamp(8px,1.5vw,16px) clamp(12px,3vw,32px);z-index:50;background:linear-gradient(180deg,rgba(5,5,16,.95) 0%,rgba(5,5,16,.7) 70%,transparent 100%);pointer-events:none}
+#hud>*{pointer-events:auto}
+#hud .hud-item{display:flex;align-items:center;gap:.5em;font-size:clamp(.85rem,2vw,1.15rem);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.05em}
+#hud .hud-item .icon{font-size:1.3em}
+#hud .mine-count{color:#f44;text-shadow:0 0 12px rgba(255,68,68,.4)}
+#hud .timer{color:#0af;text-shadow:0 0 12px rgba(0,170,255,.4)}
+#hud .restart{padding:.4em .9em;font-size:clamp(.7rem,1.5vw,.9rem);font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(200,200,255,.6);background:rgba(255,255,255,.05);border:1px solid rgba(200,200,255,.15);border-radius:3px;cursor:pointer;transition:all .25s}
+#hud .restart:hover{color:#0ff;border-color:rgba(0,255,255,.5);box-shadow:0 0 15px rgba(0,255,255,.15)}
+
+@keyframes titlePulse{0%,100%{text-shadow:0 0 20px rgba(0,200,255,.6),0 0 60px rgba(0,200,255,.3),0 0 100px rgba(0,100,255,.2)}50%{text-shadow:0 0 30px rgba(0,200,255,.8),0 0 80px rgba(0,200,255,.5),0 0 120px rgba(0,100,255,.3)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game-canvas"></canvas>
+  <div id="hud">
+    <div class="hud-item mine-count"><span class="icon">💣</span><span id="mine-display">040</span></div>
+    <button class="restart" id="restart-btn">↻ Restart</button>
+    <div class="hud-item timer"><span class="icon">⏱</span><span id="timer-display">000</span></div>
+  </div>
+  <div id="title-screen">
+    <div class="mine-icon">💣</div>
+    <h1>Minesweeper</h1>
+    <div class="subtitle">BrainRot Games</div>
+    <button class="start-btn" id="start-btn">Start Game</button>
+    <div class="info">16 × 16 · 40 mines · Intermediate</div>
+  </div>
+  <div id="game-over">
+    <h2 id="go-title">Game Over</h2>
+    <div class="stats" id="go-stats"></div>
+    <button class="restart-btn" id="go-restart-btn">Play Again</button>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+// ── Constants ──
+const ROWS = 16, COLS = 16, MINES = 40;
+const CELL_MINE = -1;
+
+// Neon colors for numbers 1-8
+const NUM_COLORS = [
+  null,
+  '#00bfff', // 1 - cyan blue
+  '#00e676', // 2 - neon green
+  '#ff3d00', // 3 - neon red-orange
+  '#7b1fa2', // 4 - deep purple → make brighter
+  '#ff6f00', // 5 - neon orange
+  '#00e5ff', // 6 - bright cyan
+  '#ff1744', // 7 - hot pink-red
+  '#ffd600', // 8 - neon yellow
+];
+// brighter versions with glow
+const NUM_GLOW = [
+  null,
+  'rgba(0,191,255,.45)',
+  'rgba(0,230,118,.45)',
+  'rgba(255,61,0,.45)',
+  'rgba(170,50,255,.45)',
+  'rgba(255,111,0,.45)',
+  'rgba(0,229,255,.45)',
+  'rgba(255,23,68,.45)',
+  'rgba(255,214,0,.45)',
+];
+
+// ── DOM refs ──
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const titleScreen = document.getElementById('title-screen');
+const gameOverScreen = document.getElementById('game-over');
+const hudEl = document.getElementById('hud');
+const mineDisplay = document.getElementById('mine-display');
+const timerDisplay = document.getElementById('timer-display');
+const goTitle = document.getElementById('go-title');
+const goStats = document.getElementById('go-stats');
+
+// ── State ──
+let grid = [];        // cell values: -1=mine, 0-8=adjacent count
+let revealed = [];    // boolean
+let flagged = [];     // boolean
+let gameState = 'idle'; // idle | playing | won | lost
+let firstClick = true;
+let minesRemaining = MINES;
+let timerValue = 0;
+let timerInterval = null;
+let revealedCount = 0;
+let cellSize = 0;
+let gridOffsetX = 0, gridOffsetY = 0;
+let hoverCell = { r: -1, c: -1 };
+let animationFrameId = null;
+
+// Animation queues
+let revealAnims = [];   // { r, c, startTime, duration }
+let flagAnims = [];     // { r, c, startTime, duration, type:'place'|'remove' }
+let explosionAnims = []; // { r, c, startTime, duration }
+let shakeStart = 0;
+let shakeDuration = 400;
+const REVEAL_DUR = 220;
+const FLAG_DUR = 250;
+const EXPLOSION_DUR = 600;
+
+// ── Utility ──
+function idx(r, c) { return r * COLS + c; }
+function inBounds(r, c) { return r >= 0 && r < ROWS && c >= 0 && c < COLS; }
+function neighbors(r, c) {
+  const n = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++)
+      if ((dr || dc) && inBounds(r + dr, c + dc)) n.push([r + dr, c + dc]);
+  return n;
+}
+
+function pad3(n) { return String(Math.max(0, Math.min(999, n))).padStart(3, '0'); }
+
+// ── Grid generation ──
+function generateGrid(safeR, safeC) {
+  grid = new Array(ROWS * COLS).fill(0);
+  const safeSet = new Set();
+  safeSet.add(idx(safeR, safeC));
+  for (const [nr, nc] of neighbors(safeR, safeC)) safeSet.add(idx(nr, nc));
+
+  let placed = 0;
+  while (placed < MINES) {
+    const i = Math.floor(Math.random() * ROWS * COLS);
+    if (grid[i] === CELL_MINE || safeSet.has(i)) continue;
+    grid[i] = CELL_MINE;
+    placed++;
+  }
+  // Compute adjacency numbers
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (grid[idx(r, c)] === CELL_MINE) continue;
+      let count = 0;
+      for (const [nr, nc] of neighbors(r, c)) {
+        if (grid[idx(nr, nc)] === CELL_MINE) count++;
+      }
+      grid[idx(r, c)] = count;
+    }
+  }
+}
+
+function resetState() {
+  grid = new Array(ROWS * COLS).fill(0);
+  revealed = new Array(ROWS * COLS).fill(false);
+  flagged = new Array(ROWS * COLS).fill(false);
+  gameState = 'playing';
+  firstClick = true;
+  minesRemaining = MINES;
+  revealedCount = 0;
+  timerValue = 0;
+  revealAnims = [];
+  flagAnims = [];
+  explosionAnims = [];
+  shakeStart = 0;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  mineDisplay.textContent = pad3(minesRemaining);
+  timerDisplay.textContent = pad3(0);
+}
+
+// ── Sizing ──
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const hudHeight = 52;
+  const padding = 16;
+  const availW = w - padding * 2;
+  const availH = h - hudHeight - padding * 2;
+  cellSize = Math.floor(Math.min(availW / COLS, availH / ROWS));
+  cellSize = Math.max(cellSize, 14);
+  const gridW = cellSize * COLS;
+  const gridH = cellSize * ROWS;
+  gridOffsetX = Math.floor((w - gridW) / 2);
+  gridOffsetY = Math.floor((h - gridH) / 2) + hudHeight / 2;
+}
+
+// ── Reveal logic ──
+function revealCell(r, c, time) {
+  if (!inBounds(r, c) || revealed[idx(r, c)] || flagged[idx(r, c)]) return;
+  revealed[idx(r, c)] = true;
+  revealedCount++;
+  revealAnims.push({ r, c, startTime: time, duration: REVEAL_DUR });
+
+  if (grid[idx(r, c)] === CELL_MINE) {
+    triggerLoss(r, c, time);
+    return;
+  }
+
+  if (grid[idx(r, c)] === 0) {
+    // Flood fill with staggered animation
+    const queue = [[r, c, 0]];
+    const visited = new Set([idx(r, c)]);
+    while (queue.length) {
+      const [cr, cc, depth] = queue.shift();
+      for (const [nr, nc] of neighbors(cr, cc)) {
+        const ni = idx(nr, nc);
+        if (visited.has(ni) || revealed[ni] || flagged[ni]) continue;
+        visited.add(ni);
+        revealed[ni] = true;
+        revealedCount++;
+        const delay = depth * 18 + Math.random() * 15;
+        revealAnims.push({ r: nr, c: nc, startTime: time + delay, duration: REVEAL_DUR });
+        if (grid[ni] === 0) queue.push([nr, nc, depth + 1]);
+      }
+    }
+  }
+
+  checkWin(time);
+}
+
+function chordReveal(r, c, time) {
+  const i = idx(r, c);
+  if (!revealed[i] || grid[i] <= 0) return;
+  let adjFlags = 0;
+  for (const [nr, nc] of neighbors(r, c)) {
+    if (flagged[idx(nr, nc)]) adjFlags++;
+  }
+  if (adjFlags === grid[i]) {
+    for (const [nr, nc] of neighbors(r, c)) {
+      if (!revealed[idx(nr, nc)] && !flagged[idx(nr, nc)]) {
+        revealCell(nr, nc, time);
+        if (gameState === 'lost') return;
+      }
+    }
+  }
+}
+
+function checkWin(time) {
+  if (revealedCount === ROWS * COLS - MINES) {
+    gameState = 'won';
+    clearInterval(timerInterval);
+    timerInterval = null;
+    // Auto-flag remaining mines
+    for (let i = 0; i < ROWS * COLS; i++) {
+      if (grid[i] === CELL_MINE && !flagged[i]) {
+        flagged[i] = true;
+        const r = Math.floor(i / COLS), c = i % COLS;
+        flagAnims.push({ r, c, startTime: time, duration: FLAG_DUR, type: 'place' });
+      }
+    }
+    minesRemaining = 0;
+    mineDisplay.textContent = pad3(0);
+    setTimeout(() => showGameOver(true), 600);
+  }
+}
+
+function triggerLoss(clickR, clickC, time) {
+  gameState = 'lost';
+  clearInterval(timerInterval);
+  timerInterval = null;
+  shakeStart = time;
+
+  // Reveal all mines with staggered explosion
+  let delay = 0;
+  // First the clicked mine
+  explosionAnims.push({ r: clickR, c: clickC, startTime: time, duration: EXPLOSION_DUR, isClicked: true });
+
+  for (let i = 0; i < ROWS * COLS; i++) {
+    if (grid[i] === CELL_MINE) {
+      const r = Math.floor(i / COLS), c = i % COLS;
+      if (r === clickR && c === clickC) continue;
+      revealed[i] = true;
+      const dr = Math.abs(r - clickR) + Math.abs(c - clickC);
+      const d = 80 + dr * 40 + Math.random() * 30;
+      explosionAnims.push({ r, c, startTime: time + d, duration: EXPLOSION_DUR, isClicked: false });
+    }
+  }
+
+  setTimeout(() => showGameOver(false), 1600);
+}
+
+function showGameOver(won) {
+  goTitle.textContent = won ? 'You Win!' : 'Game Over';
+  goTitle.className = won ? 'win' : 'lose';
+  goStats.innerHTML = `Time: <strong>${timerValue}s</strong><br>Cells revealed: <strong>${revealedCount}</strong> / <strong>${ROWS * COLS - MINES}</strong>`;
+  gameOverScreen.classList.add('show');
+}
+
+// ── Timer ──
+function startTimer() {
+  timerValue = 0;
+  timerDisplay.textContent = pad3(0);
+  timerInterval = setInterval(() => {
+    timerValue++;
+    timerDisplay.textContent = pad3(timerValue);
+  }, 1000);
+}
+
+// ── Drawing ──
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function easeOutBack(t) { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); }
+
+function draw(time) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  // Screen shake
+  let shakeX = 0, shakeY = 0;
+  if (shakeStart > 0) {
+    const elapsed = time - shakeStart;
+    if (elapsed < shakeDuration) {
+      const intensity = 6 * (1 - elapsed / shakeDuration);
+      shakeX = (Math.random() - .5) * intensity * 2;
+      shakeY = (Math.random() - .5) * intensity * 2;
+    }
+  }
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // Subtle grid background glow
+  const glowGrad = ctx.createRadialGradient(
+    gridOffsetX + cellSize * COLS / 2, gridOffsetY + cellSize * ROWS / 2, 0,
+    gridOffsetX + cellSize * COLS / 2, gridOffsetY + cellSize * ROWS / 2, cellSize * COLS * .6
+  );
+  glowGrad.addColorStop(0, 'rgba(0,150,255,.03)');
+  glowGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Build animation lookup maps
+  const revealMap = new Map();
+  for (const a of revealAnims) {
+    const progress = Math.min(1, Math.max(0, (time - a.startTime) / a.duration));
+    const key = idx(a.r, a.c);
+    revealMap.set(key, easeOutCubic(progress));
+  }
+  const flagMap = new Map();
+  for (const a of flagAnims) {
+    const progress = Math.min(1, Math.max(0, (time - a.startTime) / a.duration));
+    flagMap.set(idx(a.r, a.c), { progress: easeOutBack(Math.min(1, progress)), type: a.type });
+  }
+  const explodeMap = new Map();
+  for (const a of explosionAnims) {
+    const progress = Math.min(1, Math.max(0, (time - a.startTime) / a.duration));
+    explodeMap.set(idx(a.r, a.c), { progress, isClicked: a.isClicked });
+  }
+
+  const gap = 1;
+  const innerSize = cellSize - gap * 2;
+  const fontSize = Math.max(10, cellSize * 0.52);
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const i = idx(r, c);
+      const x = gridOffsetX + c * cellSize;
+      const y = gridOffsetY + r * cellSize;
+      const isRevealed = revealed[i];
+      const isFlagged = flagged[i];
+      const isHover = hoverCell.r === r && hoverCell.c === c;
+      const revealProgress = revealMap.has(i) ? revealMap.get(i) : (isRevealed ? 1 : 0);
+      const flagData = flagMap.get(i);
+      const explodeData = explodeMap.get(i);
+
+      // Cell background
+      if (revealProgress > 0 && !explodeData) {
+        // Revealed cell
+        const alpha = .06 + revealProgress * .04;
+        ctx.fillStyle = `rgba(200,210,255,${alpha})`;
+        roundRect(ctx, x + gap, y + gap, innerSize, innerSize, 3);
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = `rgba(100,120,180,${.08 * revealProgress})`;
+        ctx.lineWidth = .5;
+        roundRect(ctx, x + gap, y + gap, innerSize, innerSize, 3);
+        ctx.stroke();
+      } else if (!explodeData) {
+        // Unrevealed cell
+        const baseAlpha = isHover && gameState === 'playing' ? .22 : .14;
+        const grad = ctx.createLinearGradient(x, y, x, y + cellSize);
+        grad.addColorStop(0, `rgba(40,50,80,${baseAlpha + .06})`);
+        grad.addColorStop(1, `rgba(20,25,50,${baseAlpha})`);
+        ctx.fillStyle = grad;
+        roundRect(ctx, x + gap, y + gap, innerSize, innerSize, 3);
+        ctx.fill();
+
+        // Border glow on hover
+        if (isHover && gameState === 'playing') {
+          ctx.strokeStyle = 'rgba(0,200,255,.3)';
+          ctx.lineWidth = 1.5;
+          roundRect(ctx, x + gap, y + gap, innerSize, innerSize, 3);
+          ctx.stroke();
+          // Subtle glow
+          ctx.shadowColor = 'rgba(0,200,255,.2)';
+          ctx.shadowBlur = 8;
+          ctx.strokeStyle = 'rgba(0,200,255,.15)';
+          roundRect(ctx, x + gap, y + gap, innerSize, innerSize, 3);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        } else {
+          ctx.strokeStyle = 'rgba(80,100,150,.12)';
+          ctx.lineWidth = .5;
+          roundRect(ctx, x + gap, y + gap, innerSize, innerSize, 3);
+          ctx.stroke();
+        }
+      }
+
+      // Explosion animation
+      if (explodeData) {
+        const p = explodeData.progress;
+        const cx_ = x + cellSize / 2;
+        const cy_ = y + cellSize / 2;
+
+        // Flash
+        if (p < .3) {
+          const flashP = p / .3;
+          const flashR = cellSize * .8 * flashP;
+          const flashGrad = ctx.createRadialGradient(cx_, cy_, 0, cx_, cy_, flashR);
+          if (explodeData.isClicked) {
+            flashGrad.addColorStop(0, `rgba(255,100,50,${.9 * (1 - flashP)})`);
+            flashGrad.addColorStop(1, `rgba(255,50,20,${.3 * (1 - flashP)})`);
+          } else {
+            flashGrad.addColorStop(0, `rgba(255,150,50,${.7 * (1 - flashP)})`);
+            flashGrad.addColorStop(1, `rgba(255,80,20,${.2 * (1 - flashP)})`);
+          }
+          ctx.fillStyle = flashGrad;
+          ctx.beginPath();
+          ctx.arc(cx_, cy_, flashR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Mine icon (after flash peaks)
+        if (p > .15) {
+          const mineP = Math.min(1, (p - .15) / .5);
+          const scale = easeOutBack(mineP);
+          ctx.save();
+          ctx.translate(cx_, cy_);
+          ctx.scale(scale, scale);
+          drawMine(ctx, 0, 0, innerSize * .32, explodeData.isClicked);
+          ctx.restore();
+        }
+
+        // Revealed bg
+        ctx.fillStyle = explodeData.isClicked ? 'rgba(255,50,30,.18)' : 'rgba(255,100,50,.08)';
+        roundRect(ctx, x + gap, y + gap, innerSize, innerSize, 3);
+        ctx.fill();
+      }
+
+      // Flag
+      if (isFlagged && !explodeData) {
+        const flagP = flagData ? flagData.progress : 1;
+        const cx_ = x + cellSize / 2;
+        const cy_ = y + cellSize / 2;
+        ctx.save();
+        ctx.translate(cx_, cy_);
+        ctx.scale(flagP, flagP);
+        ctx.globalAlpha = Math.min(1, flagP);
+        drawFlag(ctx, 0, 0, innerSize * .35);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+
+      // Number
+      if (isRevealed && grid[i] > 0 && !explodeData && revealProgress >= .5) {
+        const numAlpha = Math.min(1, (revealProgress - .5) * 2);
+        const num = grid[i];
+        ctx.save();
+        ctx.globalAlpha = numAlpha;
+        ctx.font = `bold ${fontSize}px 'Segoe UI',system-ui,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = NUM_GLOW[num];
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = NUM_COLORS[num];
+        ctx.fillText(num, x + cellSize / 2, y + cellSize / 2 + 1);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+    }
+  }
+
+  ctx.restore();
+
+  // Cleanup finished anims periodically
+  if (time % 2000 < 20) {
+    revealAnims = revealAnims.filter(a => time - a.startTime < a.duration + 50);
+    flagAnims = flagAnims.filter(a => time - a.startTime < a.duration + 50);
+  }
+
+  animationFrameId = requestAnimationFrame(draw);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawMine(ctx, cx, cy, size, isClicked) {
+  const color = isClicked ? '#ff3030' : '#e04020';
+  const glow = isClicked ? 'rgba(255,50,30,.6)' : 'rgba(255,80,30,.4)';
+
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 12;
+
+  // Body
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * .55, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Spikes
+  ctx.strokeStyle = color;
+  ctx.lineWidth = size * .15;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * size * .45, cy + Math.sin(angle) * size * .45);
+    ctx.lineTo(cx + Math.cos(angle) * size * .85, cy + Math.sin(angle) * size * .85);
+    ctx.moveTo(cx - Math.cos(angle) * size * .45, cy - Math.sin(angle) * size * .45);
+    ctx.lineTo(cx - Math.cos(angle) * size * .85, cy - Math.sin(angle) * size * .85);
+    ctx.stroke();
+  }
+
+  // Highlight
+  ctx.fillStyle = 'rgba(255,255,255,.35)';
+  ctx.beginPath();
+  ctx.arc(cx - size * .15, cy - size * .15, size * .18, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+}
+
+function drawFlag(ctx, cx, cy, size) {
+  ctx.shadowColor = 'rgba(255,50,80,.5)';
+  ctx.shadowBlur = 8;
+
+  // Pole
+  ctx.strokeStyle = '#aab';
+  ctx.lineWidth = size * .12;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - size * .7);
+  ctx.lineTo(cx, cy + size * .7);
+  ctx.stroke();
+
+  // Flag triangle
+  ctx.fillStyle = '#ff2255';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - size * .7);
+  ctx.lineTo(cx + size * .7, cy - size * .3);
+  ctx.lineTo(cx, cy + size * .1);
+  ctx.closePath();
+  ctx.fill();
+
+  // Base
+  ctx.strokeStyle = '#aab';
+  ctx.lineWidth = size * .1;
+  ctx.beginPath();
+  ctx.moveTo(cx - size * .35, cy + size * .7);
+  ctx.lineTo(cx + size * .35, cy + size * .7);
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+}
+
+// ── Input ──
+function getCellFromEvent(e) {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const c = Math.floor((mx - gridOffsetX) / cellSize);
+  const r = Math.floor((my - gridOffsetY) / cellSize);
+  if (inBounds(r, c)) return { r, c };
+  return null;
+}
+
+canvas.addEventListener('mousemove', (e) => {
+  const cell = getCellFromEvent(e);
+  if (cell) { hoverCell = cell; } else { hoverCell = { r: -1, c: -1 }; }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoverCell = { r: -1, c: -1 };
+});
+
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+let mouseDownButton = -1;
+let mouseDownCell = null;
+
+canvas.addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  if (gameState !== 'playing') return;
+  mouseDownButton = e.button;
+  mouseDownCell = getCellFromEvent(e);
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  e.preventDefault();
+  if (gameState !== 'playing') return;
+  const cell = getCellFromEvent(e);
+  if (!cell || !mouseDownCell || cell.r !== mouseDownCell.r || cell.c !== mouseDownCell.c) {
+    mouseDownButton = -1;
+    mouseDownCell = null;
+    return;
+  }
+
+  const { r, c } = cell;
+  const i = idx(r, c);
+  const now = performance.now();
+
+  if (e.button === 0) {
+    // Left click
+    if (flagged[i]) { mouseDownButton = -1; mouseDownCell = null; return; }
+
+    if (revealed[i] && grid[i] > 0) {
+      chordReveal(r, c, now);
+    } else if (!revealed[i]) {
+      if (firstClick) {
+        firstClick = false;
+        generateGrid(r, c);
+        startTimer();
+      }
+      revealCell(r, c, now);
+    }
+  } else if (e.button === 2) {
+    // Right click — flag/unflag
+    if (!revealed[i]) {
+      if (flagged[i]) {
+        flagged[i] = false;
+        minesRemaining++;
+        flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'remove' });
+      } else {
+        flagged[i] = true;
+        minesRemaining--;
+        flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'place' });
+      }
+      mineDisplay.textContent = pad3(minesRemaining);
+    }
+  }
+
+  mouseDownButton = -1;
+  mouseDownCell = null;
+});
+
+// Touch support
+let touchStartCell = null;
+let touchTimer = null;
+let touchHandled = false;
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (gameState !== 'playing') return;
+  const touch = e.touches[0];
+  const cell = getCellFromEvent(touch);
+  if (!cell) return;
+  touchStartCell = cell;
+  touchHandled = false;
+  hoverCell = cell;
+
+  // Long press for flag
+  touchTimer = setTimeout(() => {
+    if (!touchStartCell) return;
+    touchHandled = true;
+    const { r, c } = touchStartCell;
+    const i = idx(r, c);
+    const now = performance.now();
+    if (!revealed[i]) {
+      if (flagged[i]) {
+        flagged[i] = false;
+        minesRemaining++;
+        flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'remove' });
+      } else {
+        flagged[i] = true;
+        minesRemaining--;
+        flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'place' });
+      }
+      mineDisplay.textContent = pad3(minesRemaining);
+    }
+  }, 400);
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  clearTimeout(touchTimer);
+  hoverCell = { r: -1, c: -1 };
+  if (gameState !== 'playing' || !touchStartCell || touchHandled) {
+    touchStartCell = null;
+    return;
+  }
+
+  const touch = e.changedTouches[0];
+  const cell = getCellFromEvent(touch);
+  if (!cell || cell.r !== touchStartCell.r || cell.c !== touchStartCell.c) {
+    touchStartCell = null;
+    return;
+  }
+
+  const { r, c } = cell;
+  const i = idx(r, c);
+  const now = performance.now();
+
+  if (flagged[i]) { touchStartCell = null; return; }
+
+  if (revealed[i] && grid[i] > 0) {
+    chordReveal(r, c, now);
+  } else if (!revealed[i]) {
+    if (firstClick) {
+      firstClick = false;
+      generateGrid(r, c);
+      startTimer();
+    }
+    revealCell(r, c, now);
+  }
+  touchStartCell = null;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const cell = getCellFromEvent(touch);
+  if (cell) hoverCell = cell; else hoverCell = { r: -1, c: -1 };
+  // Cancel long-press if moved away from start cell
+  if (touchStartCell && cell && (cell.r !== touchStartCell.r || cell.c !== touchStartCell.c)) {
+    clearTimeout(touchTimer);
+  }
+}, { passive: false });
+
+// ── Game flow ──
+function startGame() {
+  titleScreen.style.display = 'none';
+  gameOverScreen.classList.remove('show');
+  hudEl.style.display = 'flex';
+  resetState();
+  resize();
+}
+
+function restartGame() {
+  gameOverScreen.classList.remove('show');
+  resetState();
+}
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', restartGame);
+document.getElementById('go-restart-btn').addEventListener('click', () => {
+  gameOverScreen.classList.remove('show');
+  resetState();
+});
+
+window.addEventListener('resize', resize);
+resize();
+
+// Start render loop
+animationFrameId = requestAnimationFrame(draw);
+
+// Particles on title screen
+const titleCanvas = document.createElement('canvas');
+titleCanvas.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:99';
+titleScreen.insertBefore(titleCanvas, titleScreen.firstChild);
+const tctx = titleCanvas.getContext('2d');
+
+function resizeTitleCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  titleCanvas.width = window.innerWidth * dpr;
+  titleCanvas.height = window.innerHeight * dpr;
+  titleCanvas.style.width = window.innerWidth + 'px';
+  titleCanvas.style.height = window.innerHeight + 'px';
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resizeTitleCanvas();
+window.addEventListener('resize', resizeTitleCanvas);
+
+const particles = [];
+for (let i = 0; i < 50; i++) {
+  particles.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    vx: (Math.random() - .5) * .3,
+    vy: (Math.random() - .5) * .3,
+    size: Math.random() * 2 + .5,
+    alpha: Math.random() * .3 + .05,
+  });
+}
+
+function drawTitleParticles() {
+  if (titleScreen.style.display === 'none') { return; }
+  const w = window.innerWidth, h = window.innerHeight;
+  tctx.clearRect(0, 0, w, h);
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0) p.x = w;
+    if (p.x > w) p.x = 0;
+    if (p.y < 0) p.y = h;
+    if (p.y > h) p.y = 0;
+    tctx.fillStyle = `rgba(0,180,255,${p.alpha})`;
+    tctx.beginPath();
+    tctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    tctx.fill();
+  }
+  requestAnimationFrame(drawTitleParticles);
+}
+requestAnimationFrame(drawTitleParticles);
+
+})();
+</script>
+</body>
+</html>

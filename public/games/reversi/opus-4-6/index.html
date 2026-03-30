@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reversi · BrainRot Games</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #050510;
+      color: #e4e4ef;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #ui-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    #ui-overlay.visible {
+      opacity: 1;
+    }
+
+    .score-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-pip {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .pip-player {
+      background: #00f0ff;
+      box-shadow: 0 0 6px #00f0ff80;
+    }
+
+    .pip-ai {
+      background: #ff2afc;
+      box-shadow: 0 0 6px #ff2afc80;
+    }
+
+    .score-label {
+      color: #5a5a7a;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .score-value {
+      font-size: 20px;
+      font-weight: 700;
+      min-width: 28px;
+      text-align: center;
+    }
+
+    .score-player .score-value { color: #00f0ff; }
+    .score-ai .score-value { color: #ff2afc; }
+
+    .turn-indicator {
+      color: #5a5a7a;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      text-align: center;
+      transition: color 0.3s;
+    }
+
+    .turn-indicator.player-turn { color: #00f0ff; }
+    .turn-indicator.ai-turn { color: #ff2afc; }
+
+    #start-screen,
+    #game-over-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 5, 16, 0.97);
+      z-index: 20;
+      transition: opacity 0.5s;
+    }
+
+    #start-screen h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: 0.25em;
+      margin-bottom: 0.3rem;
+      background: linear-gradient(135deg, #00f0ff, #ff2afc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      filter: drop-shadow(0 0 30px rgba(0, 240, 255, 0.3));
+    }
+
+    #start-screen .subtitle {
+      color: #3a3a5a;
+      font-size: 12px;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      margin-bottom: 3rem;
+    }
+
+    #start-screen .board-preview {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 2.5rem;
+      opacity: 0.5;
+    }
+
+    #game-over-screen h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.5rem;
+    }
+
+    #game-over-screen .result-text {
+      font-size: 1rem;
+      color: #5a5a7a;
+      margin-bottom: 0.3rem;
+    }
+
+    #game-over-screen .final-scores {
+      display: flex;
+      gap: 3rem;
+      margin: 1.5rem 0 2.5rem;
+      font-family: 'Courier New', monospace;
+    }
+
+    .final-score-item {
+      text-align: center;
+    }
+
+    .final-score-item .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #5a5a7a;
+      margin-bottom: 6px;
+    }
+
+    .final-score-item .value {
+      font-size: 2.5rem;
+      font-weight: 800;
+    }
+
+    .final-score-item.player .value { color: #00f0ff; }
+    .final-score-item.ai .value { color: #ff2afc; }
+
+    .btn {
+      background: transparent;
+      border: 1px solid #00f0ff40;
+      color: #00f0ff;
+      padding: 14px 40px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #00f0ff10, #ff2afc10);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .btn:hover {
+      border-color: #00f0ff;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.2), 0 0 50px rgba(0, 240, 255, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .btn:hover::before {
+      opacity: 1;
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui-overlay">
+    <div class="score-box score-player">
+      <span class="score-pip pip-player"></span>
+      <div>
+        <div class="score-label">You (White)</div>
+        <div class="score-value" id="player-score">2</div>
+      </div>
+    </div>
+    <div class="turn-indicator" id="turn-indicator">YOUR TURN</div>
+    <div class="score-box score-ai" style="flex-direction: row-reverse; text-align: right;">
+      <span class="score-pip pip-ai"></span>
+      <div>
+        <div class="score-label">AI (Black)</div>
+        <div class="score-value" id="ai-score">2</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="start-screen">
+    <canvas id="preview-canvas" class="board-preview" width="120" height="120"></canvas>
+    <h1>REVERSI</h1>
+    <div class="subtitle">BrainRot Games</div>
+    <button class="btn" id="start-btn">Start Game</button>
+  </div>
+
+  <div id="game-over-screen" class="hidden">
+    <h1 id="winner-text">GAME OVER</h1>
+    <div class="result-text" id="result-text"></div>
+    <div class="final-scores">
+      <div class="final-score-item player">
+        <div class="label">You (White)</div>
+        <div class="value" id="final-player-score">0</div>
+      </div>
+      <div class="final-score-item ai">
+        <div class="label">AI (Black)</div>
+        <div class="value" id="final-ai-score">0</div>
+      </div>
+    </div>
+    <button class="btn" id="restart-btn">Play Again</button>
+  </div>
+
+  <canvas id="game"></canvas>
+
+  <script>
+  'use strict';
+
+  // ═══════════════════════════════════════════════
+  // CONSTANTS
+  // ═══════════════════════════════════════════════
+  const EMPTY = 0;
+  const BLACK = 1; // AI
+  const WHITE = 2; // Player
+  const BOARD_SIZE = 8;
+
+  const COLORS = {
+    bg: '#050510',
+    boardBg: '#0a1a12',
+    boardBorder: '#0d2818',
+    gridLine: '#0f2f1c',
+    gridLineBright: '#154025',
+    cellHover: 'rgba(0, 240, 255, 0.08)',
+    validMove: 'rgba(0, 240, 255, 0.15)',
+    validMoveBorder: 'rgba(0, 240, 255, 0.4)',
+    whitePiece: '#e8eef0',
+    whitePieceEdge: '#b8c8d0',
+    whitePieceHighlight: '#ffffff',
+    whitePieceGlow: 'rgba(0, 240, 255, 0.25)',
+    blackPiece: '#1a1a2e',
+    blackPieceEdge: '#0e0e1c',
+    blackPieceHighlight: '#2a2a44',
+    blackPieceGlow: 'rgba(255, 42, 252, 0.25)',
+    neonCyan: '#00f0ff',
+    neonMagenta: '#ff2afc',
+    textDim: '#3a3a5a',
+  };
+
+  const DIRECTIONS = [
+    [-1, -1], [-1, 0], [-1, 1],
+    [0, -1],           [0, 1],
+    [1, -1],  [1, 0],  [1, 1]
+  ];
+
+  // Positional weights for AI evaluation
+  const POSITION_WEIGHTS = [
+    [100, -20,  10,   5,   5,  10, -20, 100],
+    [-20, -50,  -2,  -2,  -2,  -2, -50, -20],
+    [ 10,  -2,   5,   1,   1,   5,  -2,  10],
+    [  5,  -2,   1,   0,   0,   1,  -2,   5],
+    [  5,  -2,   1,   0,   0,   1,  -2,   5],
+    [ 10,  -2,   5,   1,   1,   5,  -2,  10],
+    [-20, -50,  -2,  -2,  -2,  -2, -50, -20],
+    [100, -20,  10,   5,   5,  10, -20, 100]
+  ];
+
+  // ═══════════════════════════════════════════════
+  // CANVAS SETUP
+  // ═══════════════════════════════════════════════
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  let canvasW, canvasH, boardPixelSize, cellSize, boardX, boardY;
+  let animationId = null;
+
+  function resizeCanvas() {
+    canvasW = window.innerWidth;
+    canvasH = window.innerHeight;
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+
+    const maxBoard = Math.min(canvasW, canvasH) * 0.78;
+    boardPixelSize = Math.floor(maxBoard / BOARD_SIZE) * BOARD_SIZE;
+    cellSize = boardPixelSize / BOARD_SIZE;
+    boardX = Math.floor((canvasW - boardPixelSize) / 2);
+    boardY = Math.floor((canvasH - boardPixelSize) / 2);
+  }
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+  });
+  resizeCanvas();
+
+  // ═══════════════════════════════════════════════
+  // GAME STATE
+  // ═══════════════════════════════════════════════
+  let board = [];
+  let currentPlayer = BLACK;
+  let gameRunning = false;
+  let playerCanMove = true;
+  let mouseCol = -1, mouseRow = -1;
+  let validMoves = [];
+  let animations = [];
+  let lastTime = 0;
+  let globalTime = 0;
+  let aiThinking = false;
+  let passMessage = '';
+  let passMessageTimer = 0;
+  let gameOverTriggered = false;
+  let consecutivePasses = 0;
+
+  // ═══════════════════════════════════════════════
+  // BOARD LOGIC
+  // ═══════════════════════════════════════════════
+  function initBoard() {
+    board = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      board[r] = [];
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        board[r][c] = EMPTY;
+      }
+    }
+    board[3][3] = WHITE;
+    board[3][4] = BLACK;
+    board[4][3] = BLACK;
+    board[4][4] = WHITE;
+  }
+
+  function inBounds(r, c) {
+    return r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE;
+  }
+
+  function opponent(player) {
+    return player === BLACK ? WHITE : BLACK;
+  }
+
+  function getFlips(b, r, c, player) {
+    if (b[r][c] !== EMPTY) return [];
+    const opp = opponent(player);
+    const allFlips = [];
+
+    for (const [dr, dc] of DIRECTIONS) {
+      const lineFlips = [];
+      let nr = r + dr, nc = c + dc;
+
+      while (inBounds(nr, nc) && b[nr][nc] === opp) {
+        lineFlips.push([nr, nc]);
+        nr += dr;
+        nc += dc;
+      }
+
+      if (lineFlips.length > 0 && inBounds(nr, nc) && b[nr][nc] === player) {
+        allFlips.push(...lineFlips);
+      }
+    }
+    return allFlips;
+  }
+
+  function getValidMoves(b, player) {
+    const moves = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (getFlips(b, r, c, player).length > 0) {
+          moves.push([r, c]);
+        }
+      }
+    }
+    return moves;
+  }
+
+  function applyMove(b, r, c, player) {
+    const flips = getFlips(b, r, c, player);
+    b[r][c] = player;
+    for (const [fr, fc] of flips) {
+      b[fr][fc] = player;
+    }
+    return flips;
+  }
+
+  function cloneBoard(b) {
+    return b.map(row => row.slice());
+  }
+
+  function countPieces(b) {
+    let black = 0, white = 0;
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (b[r][c] === BLACK) black++;
+        else if (b[r][c] === WHITE) white++;
+      }
+    }
+    return { black, white };
+  }
+
+  // ═══════════════════════════════════════════════
+  // AI — MINIMAX WITH ALPHA-BETA PRUNING
+  // ═══════════════════════════════════════════════
+  function evaluateBoard(b, aiPlayer) {
+    const opp = opponent(aiPlayer);
+    let score = 0;
+    const counts = countPieces(b);
+    const totalPieces = counts.black + counts.white;
+
+    // Positional scoring
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (b[r][c] === aiPlayer) score += POSITION_WEIGHTS[r][c];
+        else if (b[r][c] === opp) score -= POSITION_WEIGHTS[r][c];
+      }
+    }
+
+    // Mobility scoring
+    const aiMoves = getValidMoves(b, aiPlayer).length;
+    const oppMoves = getValidMoves(b, opp).length;
+    score += (aiMoves - oppMoves) * 5;
+
+    // Corner capture bonus
+    const corners = [[0,0],[0,7],[7,0],[7,7]];
+    for (const [cr, cc] of corners) {
+      if (b[cr][cc] === aiPlayer) score += 25;
+      else if (b[cr][cc] === opp) score -= 25;
+    }
+
+    // Stability — pieces adjacent to corners if corner is captured
+    const edgeAdjacent = {
+      '0,0': [[0,1],[1,0],[1,1]],
+      '0,7': [[0,6],[1,7],[1,6]],
+      '7,0': [[7,1],[6,0],[6,1]],
+      '7,7': [[7,6],[6,7],[6,6]]
+    };
+    for (const [cr, cc] of corners) {
+      const key = cr + ',' + cc;
+      if (b[cr][cc] === aiPlayer) {
+        for (const [ar, ac] of edgeAdjacent[key]) {
+          if (b[ar][ac] === aiPlayer) score += 10;
+        }
+      }
+    }
+
+    // End-game: maximize piece count
+    if (totalPieces > 54) {
+      const aiCount = aiPlayer === BLACK ? counts.black : counts.white;
+      const oppCount = aiPlayer === BLACK ? counts.white : counts.black;
+      score += (aiCount - oppCount) * 10;
+    }
+
+    return score;
+  }
+
+  function minimax(b, depth, alpha, beta, maximizing, aiPlayer) {
+    const currentP = maximizing ? aiPlayer : opponent(aiPlayer);
+    const moves = getValidMoves(b, currentP);
+
+    if (depth === 0) return evaluateBoard(b, aiPlayer);
+
+    if (moves.length === 0) {
+      const oppMoves = getValidMoves(b, opponent(currentP));
+      if (oppMoves.length === 0) {
+        // Game over
+        const counts = countPieces(b);
+        const aiCount = aiPlayer === BLACK ? counts.black : counts.white;
+        const oppCount = aiPlayer === BLACK ? counts.white : counts.black;
+        if (aiCount > oppCount) return 10000 + (aiCount - oppCount);
+        if (aiCount < oppCount) return -10000 - (oppCount - aiCount);
+        return 0;
+      }
+      // Pass — opponent plays next
+      return minimax(b, depth - 1, alpha, beta, !maximizing, aiPlayer);
+    }
+
+    // Move ordering: prefer corners and edges first
+    moves.sort((a, b_) => {
+      return POSITION_WEIGHTS[b_[0]][b_[1]] - POSITION_WEIGHTS[a[0]][a[1]];
+    });
+
+    if (maximizing) {
+      let best = -Infinity;
+      for (const [mr, mc] of moves) {
+        const nb = cloneBoard(b);
+        applyMove(nb, mr, mc, currentP);
+        const val = minimax(nb, depth - 1, alpha, beta, false, aiPlayer);
+        best = Math.max(best, val);
+        alpha = Math.max(alpha, val);
+        if (beta <= alpha) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const [mr, mc] of moves) {
+        const nb = cloneBoard(b);
+        applyMove(nb, mr, mc, currentP);
+        const val = minimax(nb, depth - 1, alpha, beta, true, aiPlayer);
+        best = Math.min(best, val);
+        beta = Math.min(beta, val);
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+  }
+
+  function aiChooseMove() {
+    const moves = getValidMoves(board, BLACK);
+    if (moves.length === 0) return null;
+
+    // Adaptive depth based on game phase
+    const counts = countPieces(board);
+    const totalPieces = counts.black + counts.white;
+    let depth = 4;
+    if (totalPieces > 50) depth = 6;
+    else if (totalPieces > 40) depth = 5;
+
+    let bestScore = -Infinity;
+    let bestMove = moves[0];
+
+    for (const [mr, mc] of moves) {
+      const nb = cloneBoard(board);
+      applyMove(nb, mr, mc, BLACK);
+      const score = minimax(nb, depth - 1, -Infinity, Infinity, false, BLACK);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = [mr, mc];
+      }
+    }
+    return bestMove;
+  }
+
+  // ═══════════════════════════════════════════════
+  // ANIMATIONS
+  // ═══════════════════════════════════════════════
+  class FlipAnimation {
+    constructor(row, col, fromColor, toColor, delay) {
+      this.row = row;
+      this.col = col;
+      this.fromColor = fromColor;
+      this.toColor = toColor;
+      this.delay = delay;
+      this.elapsed = 0;
+      this.duration = 400;
+      this.done = false;
+    }
+
+    update(dt) {
+      this.elapsed += dt;
+      if (this.elapsed < this.delay) return;
+      const t = Math.min(1, (this.elapsed - this.delay) / this.duration);
+      if (t >= 1) this.done = true;
+    }
+
+    getProgress() {
+      if (this.elapsed < this.delay) return 0;
+      return Math.min(1, (this.elapsed - this.delay) / this.duration);
+    }
+  }
+
+  class PlaceAnimation {
+    constructor(row, col, color) {
+      this.row = row;
+      this.col = col;
+      this.color = color;
+      this.elapsed = 0;
+      this.duration = 300;
+      this.done = false;
+    }
+
+    update(dt) {
+      this.elapsed += dt;
+      if (this.elapsed >= this.duration) this.done = true;
+    }
+
+    getScale() {
+      const t = Math.min(1, this.elapsed / this.duration);
+      // Elastic ease out
+      if (t === 0 || t === 1) return t;
+      return 1 - Math.pow(2, -10 * t) * Math.cos((t * 10 - 0.75) * ((2 * Math.PI) / 3));
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // RENDERING
+  // ═══════════════════════════════════════════════
+  function drawBoard() {
+    // Outer glow
+    const glowSize = 15;
+    const gradient = ctx.createLinearGradient(boardX, boardY, boardX + boardPixelSize, boardY + boardPixelSize);
+    gradient.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
+    gradient.addColorStop(0.5, 'rgba(255, 42, 252, 0.1)');
+    gradient.addColorStop(1, 'rgba(0, 240, 255, 0.15)');
+
+    ctx.shadowColor = 'rgba(0, 240, 255, 0.3)';
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = gradient;
+    ctx.fillRect(boardX - glowSize, boardY - glowSize, boardPixelSize + glowSize * 2, boardPixelSize + glowSize * 2);
+    ctx.shadowBlur = 0;
+
+    // Board background
+    const boardGrad = ctx.createRadialGradient(
+      boardX + boardPixelSize / 2, boardY + boardPixelSize / 2, 0,
+      boardX + boardPixelSize / 2, boardY + boardPixelSize / 2, boardPixelSize * 0.7
+    );
+    boardGrad.addColorStop(0, '#0d2418');
+    boardGrad.addColorStop(1, '#081a10');
+    ctx.fillStyle = boardGrad;
+    ctx.fillRect(boardX, boardY, boardPixelSize, boardPixelSize);
+
+    // Board border
+    ctx.strokeStyle = COLORS.gridLineBright;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(boardX - 1, boardY - 1, boardPixelSize + 2, boardPixelSize + 2);
+
+    // Animated neon border
+    const borderHue = (globalTime * 0.02) % 360;
+    const borderAlpha = 0.3 + 0.1 * Math.sin(globalTime * 0.003);
+    ctx.strokeStyle = `hsla(${180 + 20 * Math.sin(globalTime * 0.001)}, 100%, 60%, ${borderAlpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(boardX - 3, boardY - 3, boardPixelSize + 6, boardPixelSize + 6);
+
+    // Grid lines
+    ctx.strokeStyle = COLORS.gridLine;
+    ctx.lineWidth = 1;
+    for (let i = 1; i < BOARD_SIZE; i++) {
+      const x = boardX + i * cellSize;
+      const y = boardY + i * cellSize;
+
+      ctx.beginPath();
+      ctx.moveTo(x, boardY);
+      ctx.lineTo(x, boardY + boardPixelSize);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(boardX, y);
+      ctx.lineTo(boardX + boardPixelSize, y);
+      ctx.stroke();
+    }
+
+    // Center dots (standard Othello markers)
+    ctx.fillStyle = COLORS.gridLineBright;
+    const dotPositions = [[2, 2], [2, 6], [6, 2], [6, 6]];
+    for (const [dr, dc] of dotPositions) {
+      const dx = boardX + dc * cellSize;
+      const dy = boardY + dr * cellSize;
+      ctx.beginPath();
+      ctx.arc(dx, dy, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawValidMoves() {
+    if (currentPlayer !== WHITE || !playerCanMove || aiThinking) return;
+
+    for (const [r, c] of validMoves) {
+      const cx = boardX + c * cellSize + cellSize / 2;
+      const cy = boardY + r * cellSize + cellSize / 2;
+      const radius = cellSize * 0.12;
+
+      const pulse = 0.5 + 0.5 * Math.sin(globalTime * 0.005 + r * 0.5 + c * 0.7);
+
+      // Glow background
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, cellSize * 0.4);
+      glow.addColorStop(0, `rgba(0, 240, 255, ${0.06 + 0.04 * pulse})`);
+      glow.addColorStop(1, 'rgba(0, 240, 255, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(boardX + c * cellSize, boardY + r * cellSize, cellSize, cellSize);
+
+      // Indicator dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius + pulse * 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 240, 255, ${0.3 + 0.2 * pulse})`;
+      ctx.fill();
+
+      // Subtle ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, cellSize * 0.35, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0, 240, 255, ${0.08 + 0.06 * pulse})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  function drawHover() {
+    if (currentPlayer !== WHITE || !playerCanMove || aiThinking) return;
+    if (mouseRow < 0 || mouseCol < 0) return;
+
+    const isValid = validMoves.some(([r, c]) => r === mouseRow && c === mouseCol);
+    if (!isValid) return;
+
+    const x = boardX + mouseCol * cellSize;
+    const y = boardY + mouseRow * cellSize;
+
+    ctx.fillStyle = COLORS.cellHover;
+    ctx.fillRect(x, y, cellSize, cellSize);
+
+    // Preview piece outline
+    const cx = x + cellSize / 2;
+    const cy = y + cellSize / 2;
+    const pieceR = cellSize * 0.38;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, pieceR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, pieceR, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(232, 238, 240, 0.15)';
+    ctx.fill();
+  }
+
+  function drawPiece(cx, cy, color, scale, glowIntensity) {
+    if (scale === undefined) scale = 1;
+    if (glowIntensity === undefined) glowIntensity = 0;
+
+    const radius = cellSize * 0.38 * scale;
+    if (radius <= 0) return;
+
+    const isWhite = color === WHITE;
+    const baseColor = isWhite ? COLORS.whitePiece : COLORS.blackPiece;
+    const edgeColor = isWhite ? COLORS.whitePieceEdge : COLORS.blackPieceEdge;
+    const highlightColor = isWhite ? COLORS.whitePieceHighlight : COLORS.blackPieceHighlight;
+    const glowColor = isWhite ? COLORS.whitePieceGlow : COLORS.blackPieceGlow;
+
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(cx + 2, cy + 3, radius * 0.95, radius * 0.35, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fill();
+
+    // Glow
+    if (glowIntensity > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 1.5, 0, Math.PI * 2);
+      const gGlow = ctx.createRadialGradient(cx, cy, radius * 0.5, cx, cy, radius * 1.5);
+      const gc = isWhite ? '0, 240, 255' : '255, 42, 252';
+      gGlow.addColorStop(0, `rgba(${gc}, ${0.2 * glowIntensity})`);
+      gGlow.addColorStop(1, `rgba(${gc}, 0)`);
+      ctx.fillStyle = gGlow;
+      ctx.fill();
+    }
+
+    // Main piece body
+    const bodyGrad = ctx.createRadialGradient(
+      cx - radius * 0.25, cy - radius * 0.25, 0,
+      cx, cy, radius
+    );
+    bodyGrad.addColorStop(0, highlightColor);
+    bodyGrad.addColorStop(0.7, baseColor);
+    bodyGrad.addColorStop(1, edgeColor);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+
+    // Edge ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = edgeColor;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Specular highlight
+    ctx.beginPath();
+    ctx.ellipse(cx - radius * 0.2, cy - radius * 0.25, radius * 0.35, radius * 0.2, -0.3, 0, Math.PI * 2);
+    const specGrad = ctx.createRadialGradient(
+      cx - radius * 0.2, cy - radius * 0.25, 0,
+      cx - radius * 0.2, cy - radius * 0.25, radius * 0.35
+    );
+    specGrad.addColorStop(0, isWhite ? 'rgba(255,255,255,0.6)' : 'rgba(100,100,150,0.3)');
+    specGrad.addColorStop(1, isWhite ? 'rgba(255,255,255,0)' : 'rgba(100,100,150,0)');
+    ctx.fillStyle = specGrad;
+    ctx.fill();
+  }
+
+  function drawFlippingPiece(anim) {
+    const progress = anim.getProgress();
+    if (progress <= 0) {
+      // Not started yet — draw original
+      const cx = boardX + anim.col * cellSize + cellSize / 2;
+      const cy = boardY + anim.row * cellSize + cellSize / 2;
+      drawPiece(cx, cy, anim.fromColor, 1, 0);
+      return;
+    }
+
+    const cx = boardX + anim.col * cellSize + cellSize / 2;
+    const cy = boardY + anim.row * cellSize + cellSize / 2;
+
+    // Flip uses cosine for horizontal squash
+    const flipPhase = Math.cos(progress * Math.PI);
+    const scaleX = Math.abs(flipPhase);
+    const color = progress < 0.5 ? anim.fromColor : anim.toColor;
+    const glowI = progress < 0.5 ? (progress * 2) : (2 - progress * 2);
+
+    if (scaleX < 0.05) return; // skip when completely thin
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scaleX, 1);
+    drawPiece(0, 0, color, 1, glowI * 0.5);
+    ctx.restore();
+  }
+
+  function drawPieces() {
+    if (board.length === 0) return;
+
+    // Collect animating cells
+    const animatingCells = new Set();
+    for (const anim of animations) {
+      if (anim instanceof FlipAnimation) {
+        animatingCells.add(anim.row + ',' + anim.col);
+      }
+      if (anim instanceof PlaceAnimation) {
+        animatingCells.add(anim.row + ',' + anim.col);
+      }
+    }
+
+    // Draw static pieces
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (board[r][c] === EMPTY) continue;
+        if (animatingCells.has(r + ',' + c)) continue;
+
+        const cx = boardX + c * cellSize + cellSize / 2;
+        const cy = boardY + r * cellSize + cellSize / 2;
+        drawPiece(cx, cy, board[r][c], 1, 0);
+      }
+    }
+
+    // Draw animating pieces
+    for (const anim of animations) {
+      if (anim instanceof FlipAnimation) {
+        drawFlippingPiece(anim);
+      } else if (anim instanceof PlaceAnimation) {
+        const cx = boardX + anim.col * cellSize + cellSize / 2;
+        const cy = boardY + anim.row * cellSize + cellSize / 2;
+        drawPiece(cx, cy, anim.color, anim.getScale(), anim.getScale() * 0.8);
+      }
+    }
+  }
+
+  function drawAIThinking() {
+    if (!aiThinking) return;
+    const indicator = document.getElementById('turn-indicator');
+    const dots = '.'.repeat(1 + Math.floor((globalTime / 400) % 3));
+    indicator.textContent = `AI THINKING${dots}`;
+  }
+
+  function drawPassMessage() {
+    if (passMessageTimer <= 0 || !passMessage) return;
+
+    const alpha = Math.min(1, passMessageTimer / 500);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `bold ${Math.round(cellSize * 0.4)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = COLORS.neonCyan;
+    ctx.shadowColor = COLORS.neonCyan;
+    ctx.shadowBlur = 20;
+    ctx.fillText(passMessage, canvasW / 2, boardY - cellSize * 0.6);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // ═══════════════════════════════════════════════
+  // GAME FLOW
+  // ═══════════════════════════════════════════════
+  function updateScoreDisplay() {
+    const counts = countPieces(board);
+    document.getElementById('player-score').textContent = counts.white;
+    document.getElementById('ai-score').textContent = counts.black;
+  }
+
+  function updateTurnIndicator() {
+    const indicator = document.getElementById('turn-indicator');
+    if (aiThinking) {
+      indicator.className = 'turn-indicator ai-turn';
+    } else if (currentPlayer === WHITE) {
+      indicator.textContent = 'YOUR TURN';
+      indicator.className = 'turn-indicator player-turn';
+    } else {
+      indicator.textContent = 'AI TURN';
+      indicator.className = 'turn-indicator ai-turn';
+    }
+  }
+
+  function checkGameOver() {
+    const whiteMoves = getValidMoves(board, WHITE);
+    const blackMoves = getValidMoves(board, BLACK);
+
+    if (whiteMoves.length === 0 && blackMoves.length === 0) {
+      return true;
+    }
+    return false;
+  }
+
+  function showGameOver() {
+    if (gameOverTriggered) return;
+    gameOverTriggered = true;
+
+    setTimeout(() => {
+      gameRunning = false;
+      const counts = countPieces(board);
+      let winnerText, resultText;
+
+      if (counts.white > counts.black) {
+        winnerText = 'YOU WIN!';
+        resultText = 'White dominates the board';
+        document.getElementById('winner-text').style.color = COLORS.neonCyan;
+      } else if (counts.black > counts.white) {
+        winnerText = 'AI WINS';
+        resultText = 'Black dominates the board';
+        document.getElementById('winner-text').style.color = COLORS.neonMagenta;
+      } else {
+        winnerText = 'DRAW';
+        resultText = 'An evenly matched game';
+        document.getElementById('winner-text').style.color = '#e4e4ef';
+      }
+
+      document.getElementById('winner-text').textContent = winnerText;
+      document.getElementById('result-text').textContent = resultText;
+      document.getElementById('final-player-score').textContent = counts.white;
+      document.getElementById('final-ai-score').textContent = counts.black;
+      document.getElementById('game-over-screen').classList.remove('hidden');
+      document.getElementById('ui-overlay').classList.remove('visible');
+    }, 800);
+  }
+
+  function nextTurn() {
+    if (!gameRunning || gameOverTriggered) return;
+
+    currentPlayer = opponent(currentPlayer);
+    validMoves = getValidMoves(board, currentPlayer);
+    updateScoreDisplay();
+    updateTurnIndicator();
+
+    if (checkGameOver()) {
+      showGameOver();
+      return;
+    }
+
+    if (validMoves.length === 0) {
+      consecutivePasses++;
+      if (consecutivePasses >= 2) {
+        showGameOver();
+        return;
+      }
+
+      if (currentPlayer === WHITE) {
+        passMessage = 'NO VALID MOVES — PASS';
+        passMessageTimer = 1500;
+        setTimeout(() => nextTurn(), 1200);
+      } else {
+        passMessage = 'AI HAS NO MOVES — PASS';
+        passMessageTimer = 1500;
+        setTimeout(() => nextTurn(), 1200);
+      }
+      return;
+    }
+
+    consecutivePasses = 0;
+
+    if (currentPlayer === BLACK) {
+      aiThinking = true;
+      updateTurnIndicator();
+      // Small delay so UI updates before AI thinks
+      setTimeout(() => {
+        const move = aiChooseMove();
+        aiThinking = false;
+        if (move) {
+          executeMove(move[0], move[1], BLACK);
+        } else {
+          nextTurn();
+        }
+      }, 350);
+    }
+  }
+
+  function executeMove(row, col, player) {
+    const flips = getFlips(board, row, col, player);
+    board[row][col] = player;
+
+    // Place animation
+    animations.push(new PlaceAnimation(row, col, player));
+
+    // Flip animations with staggered delays
+    const fromColor = opponent(player);
+    for (let i = 0; i < flips.length; i++) {
+      const [fr, fc] = flips[i];
+      animations.push(new FlipAnimation(fr, fc, fromColor, player, 100 + i * 80));
+      // Actually flip the board state after a brief delay
+    }
+
+    // Flip board state after animations start
+    for (const [fr, fc] of flips) {
+      board[fr][fc] = player;
+    }
+
+    updateScoreDisplay();
+
+    // Wait for animations to complete before next turn
+    const maxDelay = 100 + flips.length * 80 + 400;
+    setTimeout(() => {
+      nextTurn();
+    }, maxDelay + 100);
+  }
+
+  function handleClick(row, col) {
+    if (!gameRunning || currentPlayer !== WHITE || aiThinking) return;
+    if (!validMoves.some(([r, c]) => r === row && c === col)) return;
+
+    playerCanMove = false;
+    executeMove(row, col, WHITE);
+  }
+
+  // ═══════════════════════════════════════════════
+  // INPUT
+  // ═══════════════════════════════════════════════
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const col = Math.floor((mx - boardX) / cellSize);
+    const row = Math.floor((my - boardY) / cellSize);
+
+    if (col >= 0 && col < BOARD_SIZE && row >= 0 && row < BOARD_SIZE) {
+      mouseCol = col;
+      mouseRow = row;
+      canvas.style.cursor = validMoves.some(([r, c]) => r === row && c === col) ? 'pointer' : 'default';
+    } else {
+      mouseCol = -1;
+      mouseRow = -1;
+      canvas.style.cursor = 'default';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseCol = -1;
+    mouseRow = -1;
+    canvas.style.cursor = 'default';
+  });
+
+  canvas.addEventListener('click', (e) => {
+    if (mouseRow >= 0 && mouseCol >= 0) {
+      handleClick(mouseRow, mouseCol);
+    }
+  });
+
+  // ═══════════════════════════════════════════════
+  // MAIN GAME LOOP
+  // ═══════════════════════════════════════════════
+  function update(dt) {
+    globalTime += dt;
+
+    // Update animations
+    for (const anim of animations) {
+      anim.update(dt);
+    }
+    animations = animations.filter(a => !a.done);
+
+    // Update pass message timer
+    if (passMessageTimer > 0) {
+      passMessageTimer -= dt;
+    }
+
+    // Re-enable player input when it's their turn and animations are done
+    if (currentPlayer === WHITE && animations.length === 0 && !aiThinking) {
+      playerCanMove = true;
+      validMoves = getValidMoves(board, WHITE);
+    }
+
+    drawAIThinking();
+  }
+
+  function render() {
+    // Clear
+    ctx.fillStyle = COLORS.bg;
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    // Subtle background pattern
+    ctx.save();
+    const patternAlpha = 0.015;
+    ctx.globalAlpha = patternAlpha;
+    for (let i = 0; i < 5; i++) {
+      const x = canvasW * 0.5 + Math.cos(globalTime * 0.0003 + i * 1.2) * canvasW * 0.3;
+      const y = canvasH * 0.5 + Math.sin(globalTime * 0.0004 + i * 0.8) * canvasH * 0.3;
+      const r = 200 + Math.sin(globalTime * 0.001 + i) * 100;
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+      grad.addColorStop(0, i % 2 === 0 ? COLORS.neonCyan : COLORS.neonMagenta);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    drawBoard();
+    drawValidMoves();
+    drawHover();
+    drawPieces();
+    drawPassMessage();
+  }
+
+  function gameLoop(timestamp) {
+    const dt = lastTime ? Math.min(timestamp - lastTime, 50) : 16;
+    lastTime = timestamp;
+
+    if (gameRunning) {
+      update(dt);
+    }
+    render();
+
+    animationId = requestAnimationFrame(gameLoop);
+  }
+
+  // ═══════════════════════════════════════════════
+  // START SCREEN PREVIEW
+  // ═══════════════════════════════════════════════
+  function drawPreview() {
+    const pc = document.getElementById('preview-canvas');
+    const pctx = pc.getContext('2d');
+    const s = 120;
+    const cs = s / 8;
+
+    pctx.clearRect(0, 0, s, s);
+
+    // Board
+    pctx.fillStyle = '#0d2418';
+    pctx.fillRect(0, 0, s, s);
+
+    // Grid
+    pctx.strokeStyle = '#1a3a25';
+    pctx.lineWidth = 0.5;
+    for (let i = 1; i < 8; i++) {
+      pctx.beginPath();
+      pctx.moveTo(i * cs, 0);
+      pctx.lineTo(i * cs, s);
+      pctx.stroke();
+      pctx.beginPath();
+      pctx.moveTo(0, i * cs);
+      pctx.lineTo(s, i * cs);
+      pctx.stroke();
+    }
+
+    // Starting pieces
+    const pieces = [[3,3,'w'],[3,4,'b'],[4,3,'b'],[4,4,'w']];
+    for (const [r, c, col] of pieces) {
+      const cx = c * cs + cs / 2;
+      const cy = r * cs + cs / 2;
+      const grad = pctx.createRadialGradient(cx - 2, cy - 2, 0, cx, cy, cs * 0.35);
+      if (col === 'w') {
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(1, '#a0b0b8');
+      } else {
+        grad.addColorStop(0, '#2a2a44');
+        grad.addColorStop(1, '#0e0e1c');
+      }
+      pctx.beginPath();
+      pctx.arc(cx, cy, cs * 0.35, 0, Math.PI * 2);
+      pctx.fillStyle = grad;
+      pctx.fill();
+    }
+
+    // Neon border
+    pctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+    pctx.lineWidth = 1.5;
+    pctx.strokeRect(0.5, 0.5, s - 1, s - 1);
+  }
+
+  // ═══════════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════════
+  function startGame() {
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-over-screen').classList.add('hidden');
+    document.getElementById('ui-overlay').classList.add('visible');
+
+    initBoard();
+    currentPlayer = BLACK;
+    validMoves = [];
+    animations = [];
+    gameRunning = true;
+    gameOverTriggered = false;
+    playerCanMove = false;
+    aiThinking = false;
+    passMessage = '';
+    passMessageTimer = 0;
+    consecutivePasses = 0;
+
+    updateScoreDisplay();
+    updateTurnIndicator();
+
+    // AI goes first (Black)
+    aiThinking = true;
+    updateTurnIndicator();
+    setTimeout(() => {
+      const move = aiChooseMove();
+      aiThinking = false;
+      if (move) {
+        executeMove(move[0], move[1], BLACK);
+      }
+    }, 600);
+  }
+
+  document.getElementById('start-btn').addEventListener('click', startGame);
+  document.getElementById('restart-btn').addEventListener('click', startGame);
+
+  // Keyboard start
+  document.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      if (!gameRunning && !document.getElementById('start-screen').style.display) {
+        startGame();
+      } else if (!gameRunning && !document.getElementById('game-over-screen').classList.contains('hidden')) {
+        startGame();
+      }
+    }
+  });
+
+  drawPreview();
+  // Start rendering immediately (for background effects)
+  lastTime = 0;
+  gameLoop(0);
+  </script>
+</body>
+</html>

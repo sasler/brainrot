@@ -8,6 +8,13 @@
       "accentColor": "#00ff88",
       "versions": [
         {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 651,
+          "path": "/games/snake/opus-4-6/index.html"
+        },
+        {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
@@ -37,6 +44,13 @@
       "icon": "💣",
       "accentColor": "#ff3366",
       "versions": [
+        {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 763,
+          "path": "/games/minesweeper/opus-4-6/index.html"
+        },
         {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
@@ -68,6 +82,13 @@
       "accentColor": "#00ccff",
       "versions": [
         {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 929,
+          "path": "/games/tetris/opus-4-6/index.html"
+        },
+        {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
@@ -98,6 +119,13 @@
       "accentColor": "#aa66ff",
       "versions": [
         {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 1116,
+          "path": "/games/reversi/opus-4-6/index.html"
+        },
+        {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
@@ -117,6 +145,80 @@
           "date": "2026-03-26",
           "linesOfCode": 1143,
           "path": "/games/reversi/gpt-5-4-mini/index.html"
+        }
+      ]
+    },
+    {
+      "id": "breakout",
+      "name": "Breakout",
+      "description": "Shatter neon bricks with a blazing ball. Catch power-ups, chain combos, and clear every level before your lives run out.",
+      "icon": "🏓",
+      "accentColor": "#ff8c00",
+      "versions": [
+        {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 892,
+          "path": "/games/breakout/opus-4-6/index.html"
+        },
+        {
+          "model": "Claude Sonnet 4.6",
+          "modelId": "sonnet-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 598,
+          "path": "/games/breakout/sonnet-4-6/index.html"
+        },
+        {
+          "model": "GPT 5.4",
+          "modelId": "gpt-5-4",
+          "date": "2026-03-30",
+          "linesOfCode": 1093,
+          "path": "/games/breakout/gpt-5-4/index.html"
+        },
+        {
+          "model": "GPT 5.4 Mini",
+          "modelId": "gpt-5-4-mini",
+          "date": "2026-03-30",
+          "linesOfCode": 360,
+          "path": "/games/breakout/gpt-5-4-mini/index.html"
+        }
+      ]
+    },
+    {
+      "id": "2048",
+      "name": "2048",
+      "description": "Slide, merge, and strategize on a 4×4 grid. Chase the elusive 2048 tile before the board fills up.",
+      "icon": "🔢",
+      "accentColor": "#ffcc00",
+      "versions": [
+        {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 724,
+          "path": "/games/2048/opus-4-6/index.html"
+        },
+        {
+          "model": "Claude Sonnet 4.6",
+          "modelId": "sonnet-4-6",
+          "date": "2026-03-30",
+          "linesOfCode": 501,
+          "path": "/games/2048/sonnet-4-6/index.html"
+        },
+        {
+          "model": "GPT 5.4",
+          "modelId": "gpt-5-4",
+          "date": "2026-03-30",
+          "linesOfCode": 539,
+          "path": "/games/2048/gpt-5-4/index.html"
+        },
+        {
+          "model": "GPT 5.4 Mini",
+          "modelId": "gpt-5-4-mini",
+          "date": "2026-03-30",
+          "linesOfCode": 277,
+          "path": "/games/2048/gpt-5-4-mini/index.html"
         }
       ]
     }

@@ -11,9 +11,9 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     // Tagline
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
-    // Arena section with 4 game cards
+    // Arena section with 6 game cards
     const gameCards = page.locator('a[href^="/games/"]');
-    await expect(gameCards).toHaveCount(4);
+    await expect(gameCards).toHaveCount(6);
 
     // Game names present in arena section
     const arena = page.locator("#arena");
@@ -21,6 +21,8 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     await expect(arena.getByText("Minesweeper")).toBeVisible();
     await expect(arena.getByText("Tetris")).toBeVisible();
     await expect(arena.getByText("Reversi")).toBeVisible();
+    await expect(arena.getByText("Breakout")).toBeVisible();
+    await expect(arena.getByText("2048", { exact: true }).first()).toBeVisible();
   });
 
   test("navbar has correct links", async ({ page }) => {
@@ -39,7 +41,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
   });
 
   test("game detail page loads for each game with versions", async ({ page }) => {
-    const games = ["snake", "minesweeper", "tetris", "reversi"];
+    const games = ["snake", "minesweeper", "tetris", "reversi", "breakout", "2048"];
 
     for (const game of games) {
       await page.goto(`/games/${game}`);
@@ -50,7 +52,8 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       // AI implementations section (games have versions now)
       await expect(page.getByText("AI IMPLEMENTATIONS")).toBeVisible();
 
-      // Should show version cards for all 3 models
+      // Should show version cards for all 4 models
+      await expect(page.getByText("Claude Opus 4.6")).toBeVisible();
       await expect(page.getByText("Claude Sonnet 4.6")).toBeVisible();
       await expect(page.getByText("GPT 5.4", { exact: true })).toBeVisible();
       await expect(page.getByText("GPT 5.4 Mini")).toBeVisible();
@@ -79,12 +82,14 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.games).toHaveLength(4);
+    expect(data.games).toHaveLength(6);
     expect(data.games.map((g: { id: string }) => g.id)).toEqual([
       "snake",
       "minesweeper",
       "tetris",
       "reversi",
+      "breakout",
+      "2048",
     ]);
   });
 
