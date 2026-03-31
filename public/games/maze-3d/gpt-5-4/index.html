@@ -531,7 +531,7 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050507);
-    scene.fog = new THREE.Fog(0x050507, 12, 84);
+    scene.fog = new THREE.Fog(0x050507, 20, 150);
 
     const camera = new THREE.PerspectiveCamera(76, 1, 0.05, 140);
     camera.rotation.order = "YXZ";
@@ -544,6 +544,7 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMappingExposure = 2.0;
     app.appendChild(renderer.domElement);
 
     const clock = new THREE.Clock();
@@ -591,10 +592,11 @@
       exitKnown: false
     };
 
-    const ambientLight = new THREE.HemisphereLight(0xfff1de, 0x3a2e22, 0.46);
+    const ambientLight = new THREE.HemisphereLight(0xfff1de, 0x4c3929, 1.5);
     scene.add(ambientLight);
+    scene.add(new THREE.AmbientLight(0xccaa88, 2.0));
 
-    const sunLight = new THREE.DirectionalLight(0xffc08a, 0.28);
+    const sunLight = new THREE.DirectionalLight(0xffc08a, 1.2);
     sunLight.position.set(16, 28, 8);
     scene.add(sunLight);
 
@@ -628,21 +630,21 @@
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#0a0909";
+      ctx.fillStyle = "#161110";
       ctx.fillRect(0, 0, size, size);
 
       for (let y = 0; y < size; y += 32) {
         for (let x = 0; x < size; x += 32) {
-          ctx.fillStyle = ((x + y) / 32) % 2 === 0 ? "#141212" : "#0e0d0d";
+          ctx.fillStyle = ((x + y) / 32) % 2 === 0 ? "#28201d" : "#1d1715";
           ctx.fillRect(x, y, 32, 32);
-          ctx.strokeStyle = "rgba(255,120,30,0.12)";
+          ctx.strokeStyle = "rgba(255,140,48,0.2)";
           ctx.lineWidth = 2;
           ctx.strokeRect(x + 1, y + 1, 30, 30);
         }
       }
 
       for (let i = 0; i < 120; i += 1) {
-        ctx.strokeStyle = `rgba(255, ${110 + Math.floor(Math.random() * 30)}, 20, ${0.05 + Math.random() * 0.1})`;
+        ctx.strokeStyle = `rgba(255, ${130 + Math.floor(Math.random() * 36)}, 42, ${0.08 + Math.random() * 0.12})`;
         ctx.lineWidth = 1 + Math.random() * 2;
         ctx.beginPath();
         const sx = Math.random() * size;
@@ -666,17 +668,17 @@
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#090809";
+      ctx.fillStyle = "#151011";
       ctx.fillRect(0, 0, size, size);
 
       for (let i = 0; i < 1800; i += 1) {
-        const value = 20 + Math.floor(Math.random() * 24);
-        ctx.fillStyle = `rgba(${value}, ${value - 4}, ${value - 4}, 0.12)`;
+        const value = 40 + Math.floor(Math.random() * 28);
+        ctx.fillStyle = `rgba(${value}, ${Math.max(value - 6, 0)}, ${Math.max(value - 8, 0)}, 0.18)`;
         ctx.fillRect(Math.random() * size, Math.random() * size, 2, 2);
       }
 
       for (let i = 0; i < size; i += 42) {
-        ctx.strokeStyle = "rgba(255,102,0,0.05)";
+        ctx.strokeStyle = "rgba(255,138,52,0.1)";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(i, 0);
@@ -704,15 +706,15 @@
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, "#2a211d");
-      gradient.addColorStop(0.4, "#1a1412");
-      gradient.addColorStop(1, "#120f10");
+      gradient.addColorStop(0, "#523d32");
+      gradient.addColorStop(0.4, "#382923");
+      gradient.addColorStop(1, "#261d1b");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
       for (let i = 0; i < 14; i += 1) {
         const x = i * 36 + 8;
-        ctx.strokeStyle = "rgba(255,130,40,0.22)";
+        ctx.strokeStyle = "rgba(255,150,58,0.3)";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(x, 14);
@@ -723,7 +725,7 @@
       }
 
       for (let i = 0; i < 56; i += 1) {
-        ctx.strokeStyle = `rgba(255, ${120 + Math.floor(Math.random() * 40)}, 40, ${0.05 + Math.random() * 0.1})`;
+        ctx.strokeStyle = `rgba(255, ${140 + Math.floor(Math.random() * 44)}, 54, ${0.08 + Math.random() * 0.12})`;
         ctx.lineWidth = 1 + Math.random() * 1.5;
         ctx.beginPath();
         const sx = Math.random() * width;
@@ -950,8 +952,9 @@
       const base = new THREE.Mesh(
         new THREE.CylinderGeometry(PORTAL_RADIUS * 1.15, PORTAL_RADIUS * 1.35, 0.2, 32),
         new THREE.MeshStandardMaterial({
-          color: 0x1f1008,
-          emissive: 0x2b1205,
+          color: 0x3e2010,
+          emissive: 0x56240a,
+          emissiveIntensity: 0.4,
           metalness: 0.18,
           roughness: 0.64
         })
@@ -1034,8 +1037,9 @@
       const bracket = new THREE.Mesh(
         new THREE.BoxGeometry(0.18, 0.6, 0.18),
         new THREE.MeshStandardMaterial({
-          color: 0x2a1b12,
-          emissive: 0x120803,
+          color: 0x543626,
+          emissive: 0x241008,
+          emissiveIntensity: 0.35,
           roughness: 0.84,
           metalness: 0.12
         })
@@ -1070,7 +1074,7 @@
       flare.scale.set(1.2, 1.7, 1);
       group.add(flare);
 
-      const light = new THREE.PointLight(0xff6600, 1.5, 10, 2);
+      const light = new THREE.PointLight(0xff6600, 4.0, 16, 2);
       light.position.y = 0.18;
       group.add(light);
 
@@ -1181,24 +1185,27 @@
 
       const floorMaterial = new THREE.MeshStandardMaterial({
         map: floorTexture,
-        color: 0xffffff,
+        color: 0xfff3e6,
         roughness: 0.98,
-        metalness: 0.01
+        metalness: 0.01,
+        emissive: 0x1a1008,
+        emissiveIntensity: 0.28
       });
       const ceilingMaterial = new THREE.MeshStandardMaterial({
         map: ceilingTexture,
-        color: 0xc7b19c,
+        color: 0xe5ccb8,
         roughness: 0.98,
         metalness: 0.01,
-        emissive: 0x120804
+        emissive: 0x2a140a,
+        emissiveIntensity: 0.42
       });
       const wallMaterial = new THREE.MeshStandardMaterial({
         map: wallTexture,
-        color: 0xf2d0b4,
+        color: 0xffe2c6,
         roughness: 0.94,
         metalness: 0.03,
-        emissive: 0x1d0f07,
-        emissiveIntensity: 0.24
+        emissive: 0x3a190c,
+        emissiveIntensity: 0.5
       });
 
       const totalWidth = COLS * CELL_SIZE;
@@ -1421,7 +1428,14 @@
         return;
       }
       try {
-        request.call(renderer.domElement);
+        const pointerLockResult = request.call(renderer.domElement);
+        if (pointerLockResult && typeof pointerLockResult.catch === "function") {
+          pointerLockResult.catch(() => {
+            if (state.phase === "playing" && !state.pointerLocked) {
+              setStatus("Pointer lock blocked. <strong>Drag look</strong> is active.");
+            }
+          });
+        }
       } catch {
         setStatus("Pointer lock blocked. <strong>Drag look</strong> is active.");
       }

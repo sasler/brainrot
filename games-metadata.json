@@ -314,21 +314,21 @@
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-31",
-          "linesOfCode": 1153,
+          "linesOfCode": 1157,
           "path": "/games/maze-3d/sonnet-4-6/index.html"
         },
         {
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-31",
-          "linesOfCode": 1612,
+          "linesOfCode": 1626,
           "path": "/games/maze-3d/gpt-5-4/index.html"
         },
         {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-31",
-          "linesOfCode": 1321,
+          "linesOfCode": 1339,
           "path": "/games/maze-3d/gpt-5-4-mini/index.html"
         }
       ]

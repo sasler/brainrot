@@ -90,11 +90,11 @@ const BALL_RADIUS = 0.1;
 const HOLE_RADIUS = 0.17;
 const WALL_H = 0.24;
 const FLOOR_THICK = 0.08;
-const FRICTION = 0.9865;
+const FRICTION = 0.99;
 const RESTITUTION = 0.62;
 const BUMPER_RESTITUTION = 0.85;
 const MIN_SPEED = 0.004;
-const MAX_POWER = 12;
+const MAX_POWER = 30;
 const POWER_SCALE = 0.06;
 
 // ===================== COURSES =====================
@@ -1076,7 +1076,7 @@ function moveAim(sx, sy) {
   }
 
   const dir = { x: -dragX / dragLen, z: -dragZ / dragLen };
-  const power = Math.min(dragLen * 3, MAX_POWER);
+  const power = Math.min(dragLen * 6, MAX_POWER);
 
   updateAimVisual(dir, power);
 }
@@ -1098,7 +1098,7 @@ function releaseAim() {
 
   if (dragLen < 0.1) { state.phase = 'playing'; $aimHint.style.display = 'block'; return; }
 
-  const power = Math.min(dragLen * 3, MAX_POWER);
+  const power = Math.min(dragLen * 6, MAX_POWER);
   const dirX = -dragX / dragLen;
   const dirZ = -dragZ / dragLen;
 

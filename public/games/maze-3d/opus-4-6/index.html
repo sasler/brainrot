@@ -250,8 +250,8 @@ const MAZE_W = 15;
 const MAZE_H = 15;
 const GEM_COUNT = 12;
 const GEM_COLLECT_DIST = 1.5;
-const FOG_NEAR = 4;
-const FOG_FAR = 30;
+const FOG_NEAR = 8;
+const FOG_FAR = 60;
 
 // ── DOM refs ──
 const overlay = document.getElementById('overlay');
@@ -300,7 +300,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
+renderer.toneMappingExposure = 1.9;
 document.body.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -400,37 +400,37 @@ function buildMaze3D() {
 
   // Materials
   const wallMat = new THREE.MeshStandardMaterial({
-    color: 0x2a2a44,
+    color: 0x5566aa,
     roughness: 0.85,
     metalness: 0.1,
-    emissive: 0x0a0a18,
-    emissiveIntensity: 0.4,
+    emissive: 0x1a1a40,
+    emissiveIntensity: 0.6,
     side: THREE.DoubleSide
   });
 
   const wallAccentMat = new THREE.MeshStandardMaterial({
-    color: 0x1e1e32,
+    color: 0x445588,
     roughness: 0.9,
     metalness: 0.05,
-    emissive: 0x080814,
-    emissiveIntensity: 0.3,
+    emissive: 0x141430,
+    emissiveIntensity: 0.5,
     side: THREE.DoubleSide
   });
 
   const floorMat = new THREE.MeshStandardMaterial({
-    color: 0x1a1a28,
+    color: 0x3a3a58,
     roughness: 0.95,
     metalness: 0.0,
-    emissive: 0x060610,
-    emissiveIntensity: 0.2
+    emissive: 0x101028,
+    emissiveIntensity: 0.4
   });
 
   const ceilMat = new THREE.MeshStandardMaterial({
-    color: 0x12121e,
+    color: 0x2a2a40,
     roughness: 1.0,
     metalness: 0.0,
-    emissive: 0x04040a,
-    emissiveIntensity: 0.15
+    emissive: 0x0c0c1e,
+    emissiveIntensity: 0.35
   });
 
   // Floor
@@ -513,24 +513,24 @@ function buildMaze3D() {
   addWall(totalW + WALL_T / 2, totalH / 2, WALL_T, totalH + WALL_T * 2);
 
   // ── Lighting ──
-  const ambient = new THREE.AmbientLight(0x334466, 0.5);
+  const ambient = new THREE.AmbientLight(0x8899bb, 1.5);
   scene.add(ambient);
 
-  const hemiLight = new THREE.HemisphereLight(0x6688cc, 0x223344, 0.4);
+  const hemiLight = new THREE.HemisphereLight(0xaabbdd, 0x445566, 1.2);
   scene.add(hemiLight);
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
   dirLight.position.set(0, WALL_H + 2, 0);
   scene.add(dirLight);
 
   // Player light (attached to camera later)
-  const playerLight = new THREE.PointLight(0xff6600, 2.0, 16, 1.5);
+  const playerLight = new THREE.PointLight(0xff6600, 4.0, 24, 1.5);
   playerLight.position.set(0, 0, 0);
   camera.add(playerLight);
   scene.add(camera);
 
   // Subtle warm fill
-  const fillLight = new THREE.PointLight(0xff4400, 0.5, 10, 2);
+  const fillLight = new THREE.PointLight(0xff4400, 1.0, 15, 2);
   fillLight.position.copy(camera.position);
   camera.add(fillLight);
   fillLight.position.set(0, -0.5, 0.5);
@@ -548,7 +548,7 @@ function buildMaze3D() {
   }
 
   torchPositions.forEach(pos => {
-    const light = new THREE.PointLight(0xff4400, 1.5, 10, 2);
+    const light = new THREE.PointLight(0xff4400, 3.0, 15, 2);
     light.position.copy(pos);
     scene.add(light);
     torchLights.push(light);

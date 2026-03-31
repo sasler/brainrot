@@ -87,7 +87,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
       <div className="relative min-h-0 flex-1 bg-black">
         <iframe
           src={version.path}
-          sandbox="allow-scripts"
+          sandbox="allow-scripts allow-pointer-lock"
           title={`${game.name} by ${version.model}`}
           className="absolute inset-0 h-full w-full border-0"
         />

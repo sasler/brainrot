@@ -449,7 +449,7 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050507);
-    scene.fog = new THREE.Fog(0x050507, 16, 96);
+    scene.fog = new THREE.Fog(0x050507, 25, 180);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 220);
     camera.rotation.order = 'YXZ';
@@ -459,14 +459,14 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 2.0;
     app.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0x33190d, 0.72);
-    const keyLight = new THREE.DirectionalLight(0xffb07a, 0.86);
+    const ambient = new THREE.AmbientLight(0xcc9966, 2.0);
+    const keyLight = new THREE.DirectionalLight(0xffb07a, 2.0);
     keyLight.position.set(-0.3, 1, 0.55);
-    const fillLight = new THREE.HemisphereLight(0x31170d, 0x050507, 0.48);
-    const headLamp = new THREE.PointLight(0xff7a1e, 0.95, 20, 2.1);
+    const fillLight = new THREE.HemisphereLight(0xddaa66, 0x664422, 1.5);
+    const headLamp = new THREE.PointLight(0xff7a1e, 3.0, 30, 2.1);
     headLamp.position.set(0, 0, 0);
     camera.add(headLamp);
     scene.add(camera, ambient, keyLight, fillLight);
@@ -494,15 +494,29 @@
     ceilingTexture.repeat.set(GRID_SIZE, GRID_SIZE);
     wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
 
-    const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture, color: 0x101114, roughness: 1, metalness: 0 });
-    const ceilingMat = new THREE.MeshStandardMaterial({ map: ceilingTexture, color: 0x09090d, roughness: 1, metalness: 0 });
+    const floorMat = new THREE.MeshStandardMaterial({
+      map: floorTexture,
+      color: 0x3c2d22,
+      roughness: 0.96,
+      metalness: 0,
+      emissive: 0x1a0f08,
+      emissiveIntensity: 0.18
+    });
+    const ceilingMat = new THREE.MeshStandardMaterial({
+      map: ceilingTexture,
+      color: 0x2f2426,
+      roughness: 1,
+      metalness: 0,
+      emissive: 0x120a06,
+      emissiveIntensity: 0.08
+    });
     const wallMat = new THREE.MeshStandardMaterial({
       map: wallTexture,
-      color: 0x25140d,
-      roughness: 0.96,
+      color: 0x8a5b3e,
+      roughness: 0.9,
       metalness: 0.02,
-      emissive: 0x120500,
-      emissiveIntensity: 0.42
+      emissive: 0x3a1707,
+      emissiveIntensity: 0.88
     });
     const collectibleMat = new THREE.MeshStandardMaterial({ color: 0xff9b3b, emissive: 0xff5a00, emissiveIntensity: 1.8, roughness: 0.25, metalness: 0.42 });
     const portalMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.84, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -518,7 +532,7 @@
     ceiling.position.set(WORLD_SIZE / 2, WALL_H, WORLD_SIZE / 2);
     scene.add(ceiling);
 
-    const tiltLight = new THREE.PointLight(0xff6633, 0.35, WORLD_SIZE * 1.2, 2);
+    const tiltLight = new THREE.PointLight(0xff6633, 0.55, WORLD_SIZE * 1.2, 2);
     tiltLight.position.set(WORLD_SIZE * 0.5, WALL_H * 0.7, WORLD_SIZE * 0.5);
     scene.add(tiltLight);
 
@@ -888,7 +902,7 @@
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xff6600, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }));
       glow.position.y = 1.75;
       glow.scale.set(5.5, 5.5, 1);
-      const light = new THREE.PointLight(0xff7a1e, 2.5, 18, 1.7);
+      const light = new THREE.PointLight(0xff7a1e, 5.0, 25, 1.7);
       light.position.y = 1.6;
       group.add(base, ring, ring2, core, shaft, glow, light);
       group.userData = { ring, ring2, core, glow, light };
@@ -926,7 +940,7 @@
         const flame = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture, color: 0xff7a1e, transparent: true, opacity: 0.88, depthWrite: false, blending: THREE.AdditiveBlending }));
         flame.position.x = 0.28;
         flame.scale.set(1.8, 1.8, 1);
-        const light = new THREE.PointLight(0xff6d14, 0.9, 9, 2);
+        const light = new THREE.PointLight(0xff6d14, 1.8, 12, 2);
         light.position.set(0.25, 0, 0.05);
         torch.add(arm, ember, flame, light);
         torch.userData = { flame, light, phase: Math.random() * Math.PI * 2 };
@@ -1398,7 +1412,11 @@
 
     function requestLockFromCanvas() {
       if (state.running && renderer.domElement.requestPointerLock && !pointer.locked) {
-        renderer.domElement.requestPointerLock();
+        try {
+          renderer.domElement.requestPointerLock();
+        } catch (err) {
+          console.warn('Pointer lock unavailable:', err);
+        }
       }
     }
 

@@ -1173,12 +1173,12 @@ canvas.addEventListener('touchcancel', () => cancelAim());
 //  UI MANAGEMENT
 // ══════════════════════════════════════════════════════
 function hideAllScreens() {
-  ['scr-start','scr-hole','scr-over'].forEach(id => document.getElementById(id).classList.add('hidden'));
-  document.getElementById('hud').classList.add('hidden');
+  ['scr-start','scr-hole','scr-over'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+  const hud = document.getElementById('hud'); if (hud) hud.classList.add('hidden');
 }
 function showScreen(id) {
   hideAllScreens();
-  document.getElementById(id).classList.remove('hidden');
+  if (id) { const el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
 }
 
 function updateHUD() {

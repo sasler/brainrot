@@ -301,8 +301,8 @@ const N_GEMS   = 10;          // collectibles count
 const GEM_PTS  = 50;          // score per gem
 const GEM_TIME = 5;           // seconds added per gem
 const T_PTS    = 10;          // score per second remaining
-const FOG_N    = 6;
-const FOG_F    = 32;
+const FOG_N    = 12;
+const FOG_F    = 80;
 
 // ═══════════════════════════════════════════════════════
 //  GAME STATE
@@ -501,8 +501,8 @@ function initThree() {
   });
 
   // Global lighting
-  scene.add(new THREE.AmbientLight(0x554433, 2.0));
-  const sky = new THREE.HemisphereLight(0x664422, 0x332200, 0.9);
+  scene.add(new THREE.AmbientLight(0xccaa88, 3.0));
+  const sky = new THREE.HemisphereLight(0xddaa66, 0x886644, 2.0);
   scene.add(sky);
 }
 
@@ -527,9 +527,9 @@ function buildMaze() {
   floorTex.repeat.set(MW * CELL / 3, MH * CELL / 3);
   ceilTex.repeat.set(MW * CELL / 4, MH * CELL / 4);
 
-  const matWall  = new THREE.MeshLambertMaterial({ map: wallTex, color: 0xffffff });
-  const matFloor = new THREE.MeshLambertMaterial({ map: floorTex });
-  const matCeil  = new THREE.MeshLambertMaterial({ map: ceilTex });
+  const matWall  = new THREE.MeshLambertMaterial({ map: wallTex, color: 0xffffff, emissive: 0x332211, emissiveIntensity: 0.4 });
+  const matFloor = new THREE.MeshLambertMaterial({ map: floorTex, emissive: 0x221a0e, emissiveIntensity: 0.3 });
+  const matCeil  = new THREE.MeshLambertMaterial({ map: ceilTex, emissive: 0x221a0e, emissiveIntensity: 0.3 });
 
   // Floor
   const fGeo = new THREE.PlaneGeometry(MW * CELL, MH * CELL);
@@ -634,7 +634,7 @@ function addTorches() {
     mazeGrp.add(inner);
 
     // Point light
-    const light = new THREE.PointLight(0xff6600, 3.0, 10, 2);
+    const light = new THREE.PointLight(0xff6600, 6.0, 16, 2);
     light.position.set(pos.x, ty + 0.32, pos.z);
     mazeGrp.add(light);
 
@@ -679,7 +679,7 @@ function addPortal() {
   mazeGrp.add(disc);
 
   // Strong point light
-  portalLamp = new THREE.PointLight(0xff5500, 5, 14, 2);
+  portalLamp = new THREE.PointLight(0xff5500, 10, 22, 2);
   portalLamp.position.set(ex, ey, ez);
   mazeGrp.add(portalLamp);
 
@@ -1280,7 +1280,11 @@ if (isTouchDevice) {
 // ═══════════════════════════════════════════════════════
 document.getElementById('btnStart').addEventListener('click', () => {
   if (isTouchDevice) { startGame(); return; }
-  renderer.domElement.requestPointerLock();
+  try {
+    renderer.domElement.requestPointerLock();
+    // Fallback: if pointer lock doesn't grant within 800ms, start anyway
+    setTimeout(() => { if (phase === 'start') startGame(); }, 800);
+  } catch(e) { startGame(); }
 });
 
 document.getElementById('btnWinPlay').addEventListener('click', startGame);
