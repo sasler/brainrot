@@ -349,12 +349,35 @@ function generateMaze(w, h) {
   return grid;
 }
 
+// ── GPU resource disposal helpers ──
+function disposeMaterial(material) {
+  if (!material) return;
+  if (Array.isArray(material)) {
+    material.forEach(m => disposeMaterial(m));
+    return;
+  }
+  for (const key of Object.keys(material)) {
+    const value = material[key];
+    if (value && value.isTexture) value.dispose();
+  }
+  material.dispose();
+}
+
+function disposeObject(obj) {
+  if (!obj) return;
+  if (obj.geometry) obj.geometry.dispose();
+  if (obj.material) disposeMaterial(obj.material);
+}
+
 // ── Build 3D Maze ──
 let wallMeshes = [];
 let floorMesh = null;
 let ceilingMesh = null;
 
 function buildMaze3D() {
+  // Dispose GPU resources before clearing the scene
+  scene.traverse(child => disposeObject(child));
+
   // Clear previous
   wallMeshes.forEach(m => scene.remove(m));
   wallMeshes = [];

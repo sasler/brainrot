@@ -12,11 +12,11 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
     // Arena section with 10 game cards
-    const gameCards = page.locator('a[href^="/games/"]');
+    const arena = page.locator("#arena");
+    const gameCards = arena.locator('a[href^="/games/"]');
     await expect(gameCards).toHaveCount(10);
 
     // Game names present in arena section
-    const arena = page.locator("#arena");
     await expect(arena.getByText("Snake")).toBeVisible();
     await expect(arena.getByText("Minesweeper")).toBeVisible();
     await expect(arena.getByText("Tetris")).toBeVisible();

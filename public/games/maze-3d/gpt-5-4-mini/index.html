@@ -807,7 +807,9 @@
 
       const exitWorld = {
         x: tileToWorld(exitCell.x * 2 + 1),
-        z: tileToWorld(exitCell.y * 2 + 1)
+        z: tileToWorld(exitCell.y * 2 + 1),
+        cellX: exitCell.x,
+        cellY: exitCell.y
       };
 
       buildPortal(exitWorld.x, exitWorld.z);
@@ -1146,8 +1148,8 @@
 
       const exit = state.exit;
       if (exit) {
-        const ex = offsetX + exit.x * 2 * tile;
-        const ey = offsetY + exit.y * 2 * tile;
+        const ex = offsetX + exit.cellX * tile;
+        const ey = offsetY + exit.cellY * tile;
         ctx.fillStyle = 'rgba(255, 212, 155, 0.9)';
         ctx.beginPath();
         ctx.arc(ex, ey, Math.max(2, tile * 0.55), 0, Math.PI * 2);
@@ -1292,7 +1294,7 @@
         }
 
         const moveX = (keyState.right ? 1 : 0) - (keyState.left ? 1 : 0);
-        const moveZ = (keyState.back ? 1 : 0) - (keyState.forward ? 1 : 0);
+        const moveZ = (keyState.forward ? 1 : 0) - (keyState.back ? 1 : 0);
         const inputLen = Math.hypot(moveX, moveZ);
         let speed = BASE_SPEED;
         if (inputLen > 0) {

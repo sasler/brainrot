@@ -492,6 +492,9 @@ function createFloor(outline) {
   const mat = new THREE.MeshStandardMaterial({
     map: tex, roughness: 0.9, metalness: 0.0, side: THREE.DoubleSide
   });
+  mat.addEventListener('dispose', function () {
+    tex.dispose();
+  });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.y = 0.001;
   mesh.receiveShadow = true;
