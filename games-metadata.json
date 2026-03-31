@@ -307,7 +307,7 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-31",
-          "linesOfCode": 1025,
+          "linesOfCode": 1045,
           "path": "/games/maze-3d/opus-4-6/index.html"
         },
         {
@@ -328,7 +328,7 @@
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-31",
-          "linesOfCode": 1319,
+          "linesOfCode": 1321,
           "path": "/games/maze-3d/gpt-5-4-mini/index.html"
         }
       ]
@@ -344,7 +344,7 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-31",
-          "linesOfCode": 1198,
+          "linesOfCode": 1201,
           "path": "/games/mini-golf/opus-4-6/index.html"
         },
         {
