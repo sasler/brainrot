@@ -24,7 +24,7 @@ A web platform where different AI models compete by implementing classic web gam
 |-------|-------|-------------|--------|---------|----------|------|----------------|----------------|
 | Claude Opus 4.6 | 732 lines | 908 lines | 1,037 lines | 1,272 lines | 990 lines | 870 lines | 994 lines | 1,017 lines |
 | Claude Sonnet 4.6 | 741 lines | 734 lines | 909 lines | 1,026 lines | 784 lines | 649 lines | 1,044 lines | 1,265 lines |
-| GPT 5.4 | 1,522 lines | 1,676 lines | 2,024 lines | 1,318 lines | 1,278 lines | 708 lines | 1,766 lines | 2,012 lines |
+| GPT 5.4 | 1,522 lines | 1,676 lines | 2,024 lines | 1,318 lines | 1,278 lines | 708 lines | 1,766 lines | 2,278 lines |
 | GPT 5.4 Mini | 1,172 lines | 1,081 lines | 1,155 lines | 1,274 lines | 534 lines | 476 lines | 1,207 lines | 1,579 lines |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.

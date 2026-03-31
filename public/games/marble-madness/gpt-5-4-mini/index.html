@@ -1451,21 +1451,35 @@
 
     function updatePhysics(dt) {
       rawTime += dt;
-      const g = 22;
+      const g = 28;
       const inputX = tilt.x;
       const inputZ = tilt.y;
-      const accel = new THREE.Vector3(inputX * 20, 0, inputZ * 20);
+      const moveInput = new THREE.Vector3(inputX, 0, inputZ);
+      if (moveInput.lengthSq() > 1) moveInput.normalize();
+      const groundAccel = 72;
+      const airAccel = 28;
+      const controlAccel = grounded ? groundAccel : airAccel;
       if (grounded) {
-        marbleVel.x += accel.x * dt;
-        marbleVel.z += accel.z * dt;
-        marbleVel.x *= Math.pow(0.984, dt * 60);
-        marbleVel.z *= Math.pow(0.984, dt * 60);
+        marbleVel.x += moveInput.x * controlAccel * dt;
+        marbleVel.z += moveInput.z * controlAccel * dt;
+        marbleVel.x *= Math.pow(0.972, dt * 60);
+        marbleVel.z *= Math.pow(0.972, dt * 60);
         marbleVel.y = Math.max(marbleVel.y, -0.2);
       } else {
-        marbleVel.x += accel.x * dt * 0.74;
-        marbleVel.z += accel.z * dt * 0.74;
+        marbleVel.x += moveInput.x * controlAccel * dt * 0.82;
+        marbleVel.z += moveInput.z * controlAccel * dt * 0.82;
       }
       marbleVel.y -= g * dt;
+
+      const maxGroundSpeed = 13.5;
+      const maxAirSpeed = 10.5;
+      const maxSpeed = grounded ? maxGroundSpeed : maxAirSpeed;
+      const horizontalSpeed = Math.hypot(marbleVel.x, marbleVel.z);
+      if (horizontalSpeed > maxSpeed) {
+        const scale = maxSpeed / horizontalSpeed;
+        marbleVel.x *= scale;
+        marbleVel.z *= scale;
+      }
       marble.position.addScaledVector(marbleVel, dt);
 
       for (const p of currentMoving) {

@@ -751,6 +751,9 @@
     renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.tabIndex = 0;
+    renderer.domElement.setAttribute('aria-label', 'Marble Madness game');
+    renderer.domElement.style.outline = 'none';
     app.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -1754,6 +1757,7 @@
       game.mode = 'playing';
       showOverlay(null);
       loadLevel(index);
+      renderer.domElement.focus({ preventScroll: true });
     }
 
     function restartCampaign() {
@@ -1952,7 +1956,7 @@
       const prevPlatform = marble.currentPlatform;
 
       if (game.jumpQueued && marble.grounded) {
-        marble.velocity.addScaledVector(marble.groundNormal, 9.8);
+        marble.velocity.addScaledVector(marble.groundNormal, 10.6);
         marble.grounded = false;
         marble.currentPlatform = null;
         marble.lastImpact = 0;
@@ -1960,19 +1964,26 @@
       }
       game.jumpQueued = false;
 
-      let controlForce = 11.5;
-      if (!marble.grounded) controlForce *= 0.34;
+      let controlForce = 28;
+      if (!marble.grounded) controlForce *= 0.45;
       if (control.lengthSq() > 0) {
         const planeDir = tempVecA.copy(control);
         if (marble.grounded) planeDir.projectOnPlane(marble.groundNormal).normalize();
         marble.velocity.addScaledVector(planeDir, controlForce * step);
       }
 
-      marble.velocity.y -= 24 * step;
+      marble.velocity.y -= 26 * step;
 
-      const damping = marble.grounded ? 0.92 : 0.986;
+      const damping = marble.grounded ? Math.pow(0.965, step * 60) : Math.pow(0.988, step * 60);
       marble.velocity.x *= damping;
       marble.velocity.z *= damping;
+      const planarSpeed = tempVecB.copy(marble.velocity).setY(0);
+      const maxPlanarSpeed = marble.grounded ? 8.8 : 7.2;
+      if (planarSpeed.lengthSq() > maxPlanarSpeed * maxPlanarSpeed) {
+        planarSpeed.setLength(maxPlanarSpeed);
+        marble.velocity.x = planarSpeed.x;
+        marble.velocity.z = planarSpeed.z;
+      }
       marble.position.addScaledVector(marble.velocity, step);
 
       let bestHit = null;
@@ -2023,7 +2034,7 @@
         marble.velocity.addScaledVector(tangentialVelocity, step * 0.4);
 
         const tangent = tempVecA.copy(marble.velocity).projectOnPlane(bestHit.normal);
-        tangent.multiplyScalar(0.93);
+        tangent.multiplyScalar(Math.pow(0.975, step * 60));
         marble.velocity.copy(tangent);
 
         if (bestHit.platform.kind === 'disappear' && !bestHit.platform.touched) {
@@ -2238,7 +2249,16 @@
       }
     });
 
-    window.addEventListener('pointerdown', () => audio.unlock(), { passive: true });
+    window.addEventListener('blur', () => {
+      keys.clear();
+      game.jumpQueued = false;
+      game.canQueueJump = true;
+    });
+
+    window.addEventListener('pointerdown', () => {
+      audio.unlock();
+      renderer.domElement.focus({ preventScroll: true });
+    }, { passive: true });
 
     window.addEventListener('resize', () => {
       const width = window.innerWidth;

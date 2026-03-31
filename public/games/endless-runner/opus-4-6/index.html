@@ -108,6 +108,8 @@ const INIT_SPEED = 20;
 const MAX_SPEED = 58;
 const SPD_INC = 0.4;
 const SPD_INTERVAL = 7;
+const OBSTACLE_MIN_GAP = 20;
+const OBSTACLE_MAX_GAP = 45;
 const COIN_VAL = 10;
 const COIN_H = 1.4;
 const PLAYER_H = 1.8;
@@ -411,6 +413,7 @@ function init() {
 
   camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.5, 400);
   camera.position.set(0, 7, -14);
+  camera.lookAt(0, 2, 15);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
