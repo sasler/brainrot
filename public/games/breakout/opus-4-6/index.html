@@ -27,6 +27,8 @@ canvas{display:block;position:absolute;top:0;left:0;width:100%;height:100%}
 .level-announce{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:15;pointer-events:none;text-align:center;opacity:0;transition:opacity 0.3s}
 .level-announce .level-text{font-size:clamp(36px,8vw,72px);font-weight:900;letter-spacing:6px;color:#ffcc00;text-shadow:0 0 40px #ffcc0060}
 .level-announce .level-sub{font-size:clamp(14px,2vw,20px);color:#ff66aa;letter-spacing:4px;margin-top:8px}
+#mute-btn{position:fixed;bottom:16px;right:16px;z-index:30;background:rgba(5,5,16,0.7);border:1px solid #5a5a7a;color:#e4e4ef;font-size:24px;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s;line-height:1;padding:0}
+#mute-btn:hover{border-color:#00f0ff;box-shadow:0 0 12px #00f0ff40}
 </style>
 </head>
 <body>
@@ -59,6 +61,8 @@ canvas{display:block;position:absolute;top:0;left:0;width:100%;height:100%}
   <div class="level-text" id="level-text">LEVEL 1</div>
   <div class="level-sub">GET READY</div>
 </div>
+
+<button id="mute-btn" title="Toggle sound">🔊</button>
 
 <script>
 'use strict';
@@ -167,6 +171,90 @@ function hexToRgb(hex) {
   const b = parseInt(hex.slice(5, 7), 16);
   return { r, g, b };
 }
+
+// --- Sound Manager (Web Audio API) ---
+let audioCtx = null;
+let isMuted = false;
+
+function initAudio() {
+  if (audioCtx) return;
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+}
+
+function playTone(freq, duration, type, volume, freqEnd) {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, t);
+  if (freqEnd != null) osc.frequency.linearRampToValueAtTime(freqEnd, t + duration);
+  gain.gain.setValueAtTime(volume || 0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + duration + 0.01);
+}
+
+function playNoise(duration, volume) {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const len = Math.max(1, Math.floor(audioCtx.sampleRate * duration));
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(volume || 0.15, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  src.connect(gain).connect(audioCtx.destination);
+  src.start(t);
+}
+
+const SFX = {
+  wallHit() { playTone(500, 0.02, 'sine', 0.2); },
+  paddleHit(hitPos) { playTone(300 + hitPos * 40, 0.04, 'sine', 0.25); },
+  brickHit(row) {
+    playTone(800 + row * 60, 0.03, 'triangle', 0.25);
+    playNoise(0.015, 0.1);
+  },
+  powerupCollect() { playTone(600, 0.1, 'sine', 0.2, 1200); },
+  lifeLost() { playTone(400, 0.2, 'sine', 0.3, 150); },
+  levelComplete() {
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.1, 'sine', 0.2), i * 100));
+  },
+  gameOver() {
+    [440, 370, 311, 261, 196].forEach((f, i) => setTimeout(() => playTone(f, 0.1, 'sine', 0.25), i * 100));
+  },
+  ballLaunch() {
+    if (isMuted || !audioCtx) return;
+    const t = audioCtx.currentTime;
+    const len = Math.max(1, Math.floor(audioCtx.sampleRate * 0.05));
+    const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    const flt = audioCtx.createBiquadFilter();
+    flt.type = 'bandpass';
+    flt.frequency.setValueAtTime(1000, t);
+    flt.frequency.linearRampToValueAtTime(3000, t + 0.05);
+    flt.Q.value = 1;
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    src.connect(flt).connect(gain).connect(audioCtx.destination);
+    src.start(t);
+  },
+};
+
+const muteBtn = document.getElementById('mute-btn');
+muteBtn.addEventListener('click', () => {
+  initAudio();
+  isMuted = !isMuted;
+  muteBtn.textContent = isMuted ? '🔇' : '🔊';
+});
 
 // --- Entity Creation ---
 function createPaddle() {
@@ -303,6 +391,7 @@ function showScreen(id, show) {
 
 // --- Input ---
 window.addEventListener('keydown', e => {
+  initAudio();
   keys[e.key] = true;
   if (e.key === ' ' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault();
   if (state === 'start' && (e.key === ' ' || e.key === 'Enter')) startGame();
@@ -318,6 +407,7 @@ canvas.addEventListener('mousemove', e => {
   mouseX = (px - offsetX) / scale;
 });
 canvas.addEventListener('click', () => {
+  initAudio();
   if (state === 'playing') launchBall();
 });
 
@@ -325,6 +415,7 @@ document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', restartGame);
 
 function startGame() {
+  initAudio();
   showScreen('start-screen', false);
   initGame();
   state = 'playing';
@@ -332,6 +423,7 @@ function startGame() {
 }
 
 function restartGame() {
+  initAudio();
   showScreen('game-over-screen', false);
   initGame();
   state = 'playing';
@@ -349,11 +441,12 @@ function launchBall() {
       const angle = rand(-Math.PI * 0.35, -Math.PI * 0.65);
       b.vx = Math.cos(angle) * b.speed;
       b.vy = Math.sin(angle) * b.speed;
+      SFX.ballLaunch();
     }
   });
 }
 
-function announceLevel() {
+function announceLevel(){
   levelText.textContent = 'LEVEL ' + level;
   levelAnnounce.style.opacity = '1';
   levelUpTimer = 2;
@@ -432,16 +525,19 @@ function update(dt) {
       ball.x = ball.radius;
       ball.vx = Math.abs(ball.vx);
       spawnParticles(ball.x, ball.y, '#00f0ff', 5, 2);
+      SFX.wallHit();
     }
     if (ball.x + ball.radius > GAME_W) {
       ball.x = GAME_W - ball.radius;
       ball.vx = -Math.abs(ball.vx);
       spawnParticles(ball.x, ball.y, '#00f0ff', 5, 2);
+      SFX.wallHit();
     }
     if (ball.y - ball.radius < 0) {
       ball.y = ball.radius;
       ball.vy = Math.abs(ball.vy);
       spawnParticles(ball.x, ball.y, '#00f0ff', 5, 2);
+      SFX.wallHit();
     }
 
     // Bottom — lose ball
@@ -469,6 +565,7 @@ function update(dt) {
 
       paddle.glow = 1;
       spawnParticles(ball.x, py1, '#00f0ff', 8, 3);
+      SFX.paddleHit(hitPos);
     }
 
     // Brick collisions
@@ -491,6 +588,7 @@ function update(dt) {
         // Hit brick
         brick.hp--;
         brick.flash = 1;
+        SFX.brickHit(Math.round((brick.y - BRICK_TOP_OFFSET) / (20 + BRICK_PADDING)));
 
         if (brick.hp <= 0) {
           brick.alive = false;
@@ -582,6 +680,7 @@ function update(dt) {
 
 function activatePowerup(p) {
   spawnParticles(p.x, p.y, p.color, 12, 4);
+  SFX.powerupCollect();
 
   switch (p.type) {
     case 'wide':
@@ -642,6 +741,7 @@ function activatePowerup(p) {
 
 function loseLife() {
   lives--;
+  SFX.lifeLost();
   shakeTimer = 0.4;
   shakeIntensity = 8;
   combo = 0;
@@ -676,6 +776,7 @@ function loseLife() {
 }
 
 function nextLevel() {
+  SFX.levelComplete();
   level++;
   // Keep score, lives
   startLevel();
@@ -685,6 +786,7 @@ function nextLevel() {
 
 function gameOver() {
   state = 'gameover';
+  SFX.gameOver();
   if (score > highScore) {
     highScore = score;
     try { localStorage.setItem('breakout_highscore', String(highScore)); } catch(e) {}

@@ -256,6 +256,26 @@
     color: var(--text-dim);
     letter-spacing: 1px;
   }
+
+  .mute-btn {
+    background: none;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    color: var(--text-dim);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    flex-shrink: 0;
+    align-self: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mute-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .mute-btn:active { transform: scale(0.9); }
 </style>
 </head>
 <body>
@@ -280,6 +300,7 @@
         <span class="score-label">Best</span>
         <span class="score-value" id="best-display">0</span>
       </div>
+      <button class="mute-btn" id="mute-btn" title="Toggle sound" aria-label="Toggle sound">🔊</button>
     </div>
   </div>
 
@@ -312,6 +333,134 @@
 
   const SIZE = 4;
   let grid, score, bestScore, won, continued, busy;
+
+  // ── Audio ──
+  let audioCtx = null;
+  let muted = false;
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function resumeAudio() {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  const sound = {
+    slide() {
+      if (muted) return;
+      const ctx = resumeAudio();
+      const dur = 0.03;
+      const bufSize = Math.floor(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 900;
+      filter.Q.value = 0.6;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      src.start();
+    },
+
+    merge(value) {
+      if (muted) return;
+      const ctx = resumeAudio();
+      const tier = Math.min(Math.log2(value), 11);
+      const baseFreq = 500 + tier * 50;
+      const endFreq = baseFreq * 1.4;
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + 0.04);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.28, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08);
+    },
+
+    spawn() {
+      if (muted) return;
+      const ctx = resumeAudio();
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 1000;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.015);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.02);
+    },
+
+    noMove() {
+      if (muted) return;
+      const ctx = resumeAudio();
+      const osc = ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(100, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.05);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.07, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.06);
+    },
+
+    victory() {
+      if (muted) return;
+      const ctx = resumeAudio();
+      [523, 659, 784, 1047].forEach(function (freq, i) {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const gain = ctx.createGain();
+        const t = ctx.currentTime + i * 0.11;
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.22, t + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.32);
+      });
+    },
+
+    gameOver() {
+      if (muted) return;
+      const ctx = resumeAudio();
+      [440, 370, 294, 220].forEach(function (freq, i) {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const gain = ctx.createGain();
+        const t = ctx.currentTime + i * 0.1;
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.linearRampToValueAtTime(0.18, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.26);
+      });
+    }
+  };
 
   const $ = (id) => document.getElementById(id);
   const startScreen   = $('start-screen');
@@ -380,7 +529,7 @@
     el.style.left = pos.left + 'px';
     el.style.top = pos.top + 'px';
     tileLayer.appendChild(el);
-
+    sound.spawn();
     grid[spot.r][spot.c] = { value: value, el: el };
   }
 
@@ -443,7 +592,8 @@
       }
     }
 
-    if (!moved) return;
+    if (!moved) { sound.noMove(); return; }
+    sound.slide();
     busy = true;
 
     setTimeout(function () {
@@ -454,6 +604,7 @@
         t.el.textContent = t.value;
         t.el.className = 'tile ' + tileClass(t.value) + ' merge-pop';
         t.merged = false;
+        sound.merge(t.value);
       }
 
       scoreDisplay.textContent = score;
@@ -470,12 +621,14 @@
           for (let c = 0; c < SIZE; c++)
             if (grid[r][c] && grid[r][c].value === 2048) {
               won = true;
+              sound.victory();
               winOverlay.classList.add('visible');
             }
       }
 
       if (!hasMovesLeft()) {
         finalScoreText.textContent = 'Score: ' + score;
+        sound.gameOver();
         gameoverOverlay.classList.add('visible');
       }
 
@@ -530,6 +683,11 @@
     startScreen.classList.add('hidden');
     gameContainer.classList.remove('hidden');
     initGame();
+  });
+
+  $('mute-btn').addEventListener('click', function () {
+    muted = !muted;
+    $('mute-btn').textContent = muted ? '🔇' : '🔊';
   });
 
   $('continue-btn').addEventListener('click', function () {

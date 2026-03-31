@@ -154,6 +154,9 @@ body{display:flex;justify-content:center;align-items:center}
   </div>
 
   <div class="controls">
+    <button class="ctrl-btn" id="btn-mute" aria-label="Mute sound" title="Mute sound">
+      🔊
+    </button>
     <button class="ctrl-btn" id="btn-undo" disabled>
       <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.6 0-5 1-6.9 2.6L2 7v9h9l-3.6-3.6A8 8 0 0 1 20 16l2.4-.8A10.5 10.5 0 0 0 12.5 8z"/></svg>
       Undo
@@ -239,6 +242,7 @@ const $gridBg         = document.getElementById('grid-bg');
 const $tileLayer      = document.getElementById('tile-layer');
 const $scoreDisplay   = document.getElementById('score-display');
 const $bestDisplay    = document.getElementById('best-display');
+const $btnMute        = document.getElementById('btn-mute');
 const $btnUndo        = document.getElementById('btn-undo');
 const $overlayWin     = document.getElementById('overlay-win');
 const $overlayLose    = document.getElementById('overlay-lose');
@@ -282,9 +286,165 @@ let grid, score, bestScore, moves, merges, highest, won, keepPlaying, gameOver;
 let prevStates = [];
 let tileId = 0;
 let timerStart, timerInterval;
+let isMuted = false;
 
 try { bestScore = parseInt(localStorage.getItem('2048_best') || '0', 10); } catch(e) {}
 $bestDisplay.textContent = bestScore;
+
+/* ══════════ Audio ══════════ */
+const sound = {
+  ctx: null,
+  noiseBuffer: null,
+  init() {
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      return this.ctx;
+    }
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return null;
+    this.ctx = new AudioCtx();
+    this.noiseBuffer = this.createNoiseBuffer();
+    return this.ctx;
+  },
+  createNoiseBuffer() {
+    if (!this.ctx) return null;
+    const length = Math.max(1, Math.floor(this.ctx.sampleRate * 0.08));
+    const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * 0.7;
+    return buffer;
+  },
+  canPlay() {
+    const ctx = this.init();
+    return !isMuted && ctx;
+  },
+  playSlide() {
+    const ctx = this.canPlay();
+    if (!ctx || !this.noiseBuffer) return;
+    const now = ctx.currentTime;
+    const source = ctx.createBufferSource();
+    source.buffer = this.noiseBuffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(900, now);
+    filter.Q.setValueAtTime(0.8, now);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.035, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    source.start(now);
+    source.stop(now + 0.03);
+  },
+  playMerge(value) {
+    const ctx = this.canPlay();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const pitchBoost = Math.min(260, Math.log2(Math.max(2, value) / 2) * 22);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600 + pitchBoost, now);
+    osc.frequency.exponentialRampToValueAtTime(800 + pitchBoost, now + 0.04);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.08, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.045);
+  },
+  playSpawn() {
+    const ctx = this.canPlay();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1000, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.03, now + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.015);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.02);
+  },
+  playNoMove() {
+    const ctx = this.canPlay();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(110, now);
+    osc.frequency.exponentialRampToValueAtTime(90, now + 0.05);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(180, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.028, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.06);
+  },
+  playVictory() {
+    const ctx = this.canPlay();
+    if (!ctx) return;
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    const start = ctx.currentTime;
+    notes.forEach((freq, i) => {
+      const when = start + i * 0.11;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = i === notes.length - 1 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(freq, when);
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.linearRampToValueAtTime(0.07, when + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.14);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(when);
+      osc.stop(when + 0.15);
+    });
+  },
+  playGameOver() {
+    const ctx = this.canPlay();
+    if (!ctx) return;
+    const notes = [392, 329.63, 261.63];
+    const start = ctx.currentTime;
+    notes.forEach((freq, i) => {
+      const when = start + i * 0.13;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, when);
+      osc.frequency.linearRampToValueAtTime(freq * 0.94, when + 0.12);
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.linearRampToValueAtTime(0.055, when + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(when);
+      osc.stop(when + 0.13);
+    });
+  }
+};
+
+function updateMuteButton() {
+  $btnMute.textContent = isMuted ? '🔇' : '🔊';
+  $btnMute.setAttribute('aria-label', isMuted ? 'Unmute sound' : 'Mute sound');
+  $btnMute.setAttribute('title', isMuted ? 'Unmute sound' : 'Mute sound');
+}
+
+function ensureAudioReady() {
+  sound.init();
+}
 
 /* ══════════ Helpers ══════════ */
 function emptyGrid() { return Array.from({length:SIZE}, () => Array(SIZE).fill(0)); }
@@ -463,19 +623,23 @@ function move(dir) {
   if (!moved) {
     prevStates.pop();
     if (!prevStates.length) $btnUndo.disabled = true;
+    sound.playNoMove();
     return false;
   }
 
   moves++;
+  sound.playSlide();
 
   // Particles for merges
   for (const [mr, mc] of mergedCells) {
     spawnMergeParticles(mr, mc, grid[mr][mc]);
     showScorePop(mr, mc, grid[mr][mc]);
+    sound.playMerge(grid[mr][mc]);
   }
 
   const spawned = addRandomTile();
   const newTiles = spawned ? [spawned] : [];
+  if (spawned) sound.playSpawn();
   renderTiles(newTiles, mergedCells);
   updateUI();
 
@@ -549,10 +713,12 @@ function newGame() {
 }
 
 function showWin() {
+  sound.playVictory();
   $winScore.textContent = score;
   $overlayWin.classList.add('active');
 }
 function showLose() {
+  sound.playGameOver();
   $loseScore.textContent = score;
   $overlayLose.classList.add('active');
 }
@@ -565,6 +731,7 @@ function startGame() {
 
 /* ══════════ Input ══════════ */
 document.addEventListener('keydown', e => {
+  ensureAudioReady();
   const map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right', w:'up', s:'down', a:'left', d:'right' };
   if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
   if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
@@ -591,12 +758,19 @@ document.addEventListener('touchend', e => {
 window.addEventListener('resize', () => { if ($gameContainer.classList.contains('active')) renderTiles(); });
 
 /* ══════════ Buttons ══════════ */
+document.addEventListener('click', ensureAudioReady, { once: true });
 document.getElementById('btn-start').addEventListener('click', startGame);
 document.getElementById('btn-new').addEventListener('click', newGame);
 document.getElementById('btn-new-win').addEventListener('click', () => { $overlayWin.classList.remove('active'); newGame(); });
 document.getElementById('btn-new-lose').addEventListener('click', () => { $overlayLose.classList.remove('active'); newGame(); });
 document.getElementById('btn-continue').addEventListener('click', () => { keepPlaying = true; $overlayWin.classList.remove('active'); });
+$btnMute.addEventListener('click', () => {
+  ensureAudioReady();
+  isMuted = !isMuted;
+  updateMuteButton();
+});
 $btnUndo.addEventListener('click', undo);
+updateMuteButton();
 
 })();
 </script>

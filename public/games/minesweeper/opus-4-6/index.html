@@ -40,6 +40,8 @@ canvas{display:block}
 #hud .timer{color:#0af;text-shadow:0 0 12px rgba(0,170,255,.4)}
 #hud .restart{padding:.4em .9em;font-size:clamp(.7rem,1.5vw,.9rem);font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(200,200,255,.6);background:rgba(255,255,255,.05);border:1px solid rgba(200,200,255,.15);border-radius:3px;cursor:pointer;transition:all .25s}
 #hud .restart:hover{color:#0ff;border-color:rgba(0,255,255,.5);box-shadow:0 0 15px rgba(0,255,255,.15)}
+#hud .mute-btn{padding:.4em .6em;font-size:clamp(.85rem,1.8vw,1.1rem);background:rgba(255,255,255,.05);border:1px solid rgba(200,200,255,.15);border-radius:3px;cursor:pointer;transition:all .25s;line-height:1;color:#e0e0f0}
+#hud .mute-btn:hover{border-color:rgba(0,255,255,.5);box-shadow:0 0 15px rgba(0,255,255,.15)}
 
 @keyframes titlePulse{0%,100%{text-shadow:0 0 20px rgba(0,200,255,.6),0 0 60px rgba(0,200,255,.3),0 0 100px rgba(0,100,255,.2)}50%{text-shadow:0 0 30px rgba(0,200,255,.8),0 0 80px rgba(0,200,255,.5),0 0 120px rgba(0,100,255,.3)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
@@ -51,6 +53,7 @@ canvas{display:block}
   <div id="hud">
     <div class="hud-item mine-count"><span class="icon">💣</span><span id="mine-display">040</span></div>
     <button class="restart" id="restart-btn">↻ Restart</button>
+    <button class="mute-btn" id="mute-btn" title="Toggle sound">🔊</button>
     <div class="hud-item timer"><span class="icon">⏱</span><span id="timer-display">000</span></div>
   </div>
   <div id="title-screen">
@@ -70,6 +73,141 @@ canvas{display:block}
 <script>
 (() => {
 'use strict';
+
+// ── Sound Manager (Web Audio API) ──
+let audioCtx = null;
+let soundMuted = false;
+
+function ensureAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+const SoundManager = {
+  revealTile() {
+    if (soundMuted) return;
+    const ctx = ensureAudioContext();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, t);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+    osc.start(t);
+    osc.stop(t + 0.03);
+  },
+
+  placeFlag() {
+    if (soundMuted) return;
+    const ctx = ensureAudioContext();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, t);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    osc.start(t);
+    osc.stop(t + 0.04);
+  },
+
+  removeFlag() {
+    if (soundMuted) return;
+    const ctx = ensureAudioContext();
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, t);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+    osc.start(t);
+    osc.stop(t + 0.03);
+  },
+
+  explosion() {
+    if (soundMuted) return;
+    const ctx = ensureAudioContext();
+    const t = ctx.currentTime;
+    // White noise burst
+    const bufferSize = Math.floor(ctx.sampleRate * 0.3);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseGain = ctx.createGain();
+    noise.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseGain.gain.setValueAtTime(0.3, t);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    noise.start(t);
+    noise.stop(t + 0.3);
+    // Low rumble
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, t);
+    osc.frequency.exponentialRampToValueAtTime(30, t + 0.3);
+    oscGain.gain.setValueAtTime(0.3, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    osc.start(t);
+    osc.stop(t + 0.3);
+  },
+
+  win() {
+    if (soundMuted) return;
+    const ctx = ensureAudioContext();
+    const t = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + i * 0.15);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.15, t + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.3);
+      osc.start(t + i * 0.15);
+      osc.stop(t + i * 0.15 + 0.3);
+    });
+  },
+
+  floodFill(count) {
+    if (soundMuted) return;
+    const ctx = ensureAudioContext();
+    const t = ctx.currentTime;
+    const numTones = Math.min(count, 8);
+    for (let i = 0; i < numTones; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(500 + i * 60 + Math.random() * 40, t + i * 0.02);
+      gain.gain.setValueAtTime(0.08, t + i * 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.02 + 0.04);
+      osc.start(t + i * 0.02);
+      osc.stop(t + i * 0.02 + 0.04);
+    }
+  }
+};
 
 // ── Constants ──
 const ROWS = 16, COLS = 16, MINES = 40;
@@ -247,6 +385,9 @@ function revealCell(r, c, time) {
         if (grid[ni] === 0) queue.push([nr, nc, depth + 1]);
       }
     }
+    SoundManager.floodFill(visited.size);
+  } else {
+    SoundManager.revealTile();
   }
 
   checkWin(time);
@@ -272,6 +413,7 @@ function chordReveal(r, c, time) {
 function checkWin(time) {
   if (revealedCount === ROWS * COLS - MINES) {
     gameState = 'won';
+    SoundManager.win();
     clearInterval(timerInterval);
     timerInterval = null;
     // Auto-flag remaining mines
@@ -293,6 +435,7 @@ function triggerLoss(clickR, clickC, time) {
   clearInterval(timerInterval);
   timerInterval = null;
   shakeStart = time;
+  SoundManager.explosion();
 
   // Reveal all mines with staggered explosion
   let delay = 0;
@@ -676,10 +819,12 @@ canvas.addEventListener('mouseup', (e) => {
         flagged[i] = false;
         minesRemaining++;
         flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'remove' });
+        SoundManager.removeFlag();
       } else {
         flagged[i] = true;
         minesRemaining--;
         flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'place' });
+        SoundManager.placeFlag();
       }
       mineDisplay.textContent = pad3(minesRemaining);
     }
@@ -716,10 +861,12 @@ canvas.addEventListener('touchstart', (e) => {
         flagged[i] = false;
         minesRemaining++;
         flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'remove' });
+        SoundManager.removeFlag();
       } else {
         flagged[i] = true;
         minesRemaining--;
         flagAnims.push({ r, c, startTime: now, duration: FLAG_DUR, type: 'place' });
+        SoundManager.placeFlag();
       }
       mineDisplay.textContent = pad3(minesRemaining);
     }
@@ -791,6 +938,13 @@ document.getElementById('restart-btn').addEventListener('click', restartGame);
 document.getElementById('go-restart-btn').addEventListener('click', () => {
   gameOverScreen.classList.remove('show');
   resetState();
+});
+
+// Mute toggle
+const muteBtn = document.getElementById('mute-btn');
+muteBtn.addEventListener('click', () => {
+  soundMuted = !soundMuted;
+  muteBtn.textContent = soundMuted ? '🔇' : '🔊';
 });
 
 window.addEventListener('resize', resize);

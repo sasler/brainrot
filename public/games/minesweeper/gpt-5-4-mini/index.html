@@ -120,6 +120,14 @@
       justify-content: flex-end;
     }
 
+    .sound-toggle {
+      width: 52px;
+      padding-inline: 0;
+      display: grid;
+      place-items: center;
+      font-size: 1.05rem;
+    }
+
     .select-wrap,
     .stat,
     .button {
@@ -559,6 +567,7 @@
             </select>
           </label>
           <button class="button primary" id="restartBtn" type="button">Restart</button>
+          <button class="button sound-toggle" id="soundToggleBtn" type="button" aria-pressed="false" aria-label="Mute sounds">🔊</button>
         </div>
       </header>
 
@@ -601,6 +610,7 @@
       const shellEl = document.getElementById('boardShell');
       const difficultyEl = document.getElementById('difficulty');
       const restartBtn = document.getElementById('restartBtn');
+      const soundToggleBtn = document.getElementById('soundToggleBtn');
       const mineCounterEl = document.getElementById('mineCounter');
       const timerEl = document.getElementById('timer');
       const statusEl = document.getElementById('status');
@@ -624,6 +634,154 @@
       let flagsPlaced = 0;
       let animateTokens = 0;
       let viewportRaf = 0;
+      let muted = false;
+      let audioContext = null;
+
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+
+      function updateSoundToggle() {
+        if (!soundToggleBtn) return;
+        soundToggleBtn.textContent = muted ? '🔇' : '🔊';
+        soundToggleBtn.setAttribute('aria-pressed', String(muted));
+        soundToggleBtn.setAttribute('aria-label', muted ? 'Unmute sounds' : 'Mute sounds');
+      }
+
+      function primeAudioContext() {
+        if (muted || !AudioContextCtor) return null;
+        if (!audioContext) {
+          audioContext = new AudioContextCtor();
+        }
+        if (audioContext.state === 'suspended') {
+          audioContext.resume().catch(() => {});
+        }
+        return audioContext;
+      }
+
+      function setMuted(nextMuted) {
+        muted = nextMuted;
+        updateSoundToggle();
+        if (audioContext) {
+          if (muted) {
+            audioContext.suspend().catch(() => {});
+          } else if (audioContext.state === 'suspended') {
+            audioContext.resume().catch(() => {});
+          }
+        }
+      }
+
+      function playTone({ frequency, duration, gain = 0.08, type = 'sine', attack = 0.003, release = 0.02, detune = 0, startTime } = {}) {
+        if (muted) return;
+        const ctx = primeAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const amp = ctx.createGain();
+        const now = typeof startTime === 'number' ? startTime : ctx.currentTime;
+        const end = now + duration;
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, now);
+        if (detune) osc.detune.setValueAtTime(detune, now);
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.linearRampToValueAtTime(gain, now + attack);
+        amp.gain.exponentialRampToValueAtTime(0.0001, Math.max(now + attack, end - release));
+
+        osc.connect(amp);
+        amp.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(end + 0.03);
+      }
+
+      function playRevealSound() {
+        playTone({ frequency: 600, duration: 0.03, gain: 0.09, attack: 0.002, release: 0.018 });
+      }
+
+      function playFlagSound(isPlaced) {
+        playTone({
+          frequency: isPlaced ? 800 : 400,
+          duration: isPlaced ? 0.04 : 0.03,
+          gain: isPlaced ? 0.085 : 0.075,
+          attack: 0.002,
+          release: 0.02
+        });
+      }
+
+      function playExplosionSound() {
+        if (muted) return;
+        const ctx = primeAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const duration = 0.3;
+
+        const noiseBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < noiseData.length; i++) {
+          noiseData[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = ctx.createBufferSource();
+        const noiseFilter = ctx.createBiquadFilter();
+        const noiseGain = ctx.createGain();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(900, now);
+        noiseFilter.Q.setValueAtTime(0.8, now);
+        noiseGain.gain.setValueAtTime(0.0001, now);
+        noiseGain.gain.linearRampToValueAtTime(0.35, now + 0.02);
+        noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        noise.buffer = noiseBuffer;
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start(now);
+        noise.stop(now + duration + 0.02);
+
+        const rumble = ctx.createOscillator();
+        const rumbleGain = ctx.createGain();
+        rumble.type = 'sine';
+        rumble.frequency.setValueAtTime(120, now);
+        rumble.frequency.exponentialRampToValueAtTime(40, now + duration);
+        rumbleGain.gain.setValueAtTime(0.0001, now);
+        rumbleGain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+        rumbleGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        rumble.connect(rumbleGain);
+        rumbleGain.connect(ctx.destination);
+        rumble.start(now);
+        rumble.stop(now + duration + 0.02);
+      }
+
+      function playWinSound() {
+        const ctx = primeAudioContext();
+        if (!ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        const start = ctx.currentTime;
+        notes.forEach((frequency, index) => {
+          playTone({
+            frequency,
+            duration: 0.16,
+            gain: 0.08,
+            attack: 0.004,
+            release: 0.05,
+            startTime: start + index * 0.11
+          });
+        });
+      }
+
+      function playFloodSound(tileCount) {
+        const ctx = primeAudioContext();
+        if (!ctx) return;
+        const bursts = Math.min(8, Math.max(4, Math.round(tileCount / 5)));
+        const base = [520, 610, 720, 840];
+        const start = ctx.currentTime;
+        for (let i = 0; i < bursts; i++) {
+          playTone({
+            frequency: base[i % base.length] + i * 18,
+            duration: 0.028,
+            gain: 0.06,
+            attack: 0.002,
+            release: 0.014,
+            startTime: start + i * 0.03
+          });
+        }
+      }
 
       function createBoardState() {
         board = Array.from({ length: config.rows }, (_, row) => Array.from({ length: config.cols }, (_, col) => ({
@@ -734,6 +892,7 @@
 
       function onCellClick(event) {
         event.preventDefault();
+        primeAudioContext();
         const cell = event.currentTarget;
         const row = Number(cell.dataset.row);
         const col = Number(cell.dataset.col);
@@ -754,6 +913,7 @@
 
       function onCellRightClick(event) {
         event.preventDefault();
+        primeAudioContext();
         const cell = event.currentTarget;
         const row = Number(cell.dataset.row);
         const col = Number(cell.dataset.col);
@@ -767,6 +927,7 @@
         cell.setAttribute('aria-label', tile.flagged ? `Flagged cell row ${row + 1}, column ${col + 1}` : `Hidden cell row ${row + 1}, column ${col + 1}`);
         flagsPlaced += tile.flagged ? 1 : -1;
         syncCounters();
+        playFlagSound(tile.flagged);
       }
 
       function generateMines(safeRow, safeCol) {
@@ -856,16 +1017,20 @@
           }
         }
 
+        if (revealOrder.length > 1) {
+          playFloodSound(revealOrder.length);
+        }
+
         revealOrder.forEach((item, index) => {
           const handle = setTimeout(() => {
             if (serial !== revealSerial) return;
-            showTile(item.row, item.col, item.depth);
+            showTile(item.row, item.col, item.depth, revealOrder.length);
           }, index * 16 + item.depth * 10);
           revealQueueHandles.push(handle);
         });
       }
 
-      function showTile(row, col, depth) {
+      function showTile(row, col, depth, revealCount = 1) {
         const tile = board[row][col];
         const el = tile.element;
         if (!el || tile.revealed || tile.flagged) return;
@@ -883,6 +1048,9 @@
           el.textContent = '';
           el.setAttribute('aria-label', `Revealed empty cell row ${row + 1}, column ${col + 1}`);
           el.classList.add('spark');
+        }
+        if (revealCount === 1 && !tile.mine) {
+          playRevealSound();
         }
         syncProgress();
         if (tile.adjacent === 0) {
@@ -917,6 +1085,7 @@
         stopTimer();
         updateStatus('Boom');
         showNotice('boom', 'Boom', 'A mine detonated. Every hidden mine is now revealed so you can study the pattern.');
+        playExplosionSound();
         revealAllMines(row, col);
         disableDifficulty(true);
         helpTextEl.textContent = 'Restart to try again. The first click remains safe on every fresh run.';
@@ -948,6 +1117,7 @@
         stopTimer();
         updateStatus('Victory');
         showNotice('win', 'Victory', 'All safe cells are uncovered. Enjoy the neon fireworks.');
+        playWinSound();
         celebrate();
         disableDifficulty(true);
         helpTextEl.textContent = 'Hit Restart to launch another board with a fresh mine layout.';
@@ -1022,7 +1192,13 @@
         scheduleResize();
       }
 
+      document.addEventListener('pointerdown', primeAudioContext, { once: true, capture: true });
+      document.addEventListener('keydown', primeAudioContext, { once: true, capture: true });
       restartBtn.addEventListener('click', restartGame);
+      soundToggleBtn.addEventListener('click', () => {
+        setMuted(!muted);
+        primeAudioContext();
+      });
       difficultyEl.addEventListener('change', (event) => setDifficulty(event.target.value));
       window.addEventListener('resize', onViewportChange, { passive: true });
       window.addEventListener('orientationchange', onViewportChange, { passive: true });
@@ -1037,6 +1213,7 @@
       resizeBoard();
       syncCounters();
       syncProgress();
+      updateSoundToggle();
       timerEl.textContent = '000';
       helpTextEl.textContent = 'Reveal any square to start. The first click will always carve out a safe opening area.';
     })();

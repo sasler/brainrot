@@ -86,6 +86,21 @@
     transform: scale(1.05);
     box-shadow: 0 0 24px #39ff1480;
   }
+  .mute-btn {
+    position: absolute;
+    top: 52px;
+    right: 12px;
+    z-index: 6;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 1.05rem;
+    letter-spacing: 0;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+  }
   #hud {
     position: absolute;
     top: 8px;
@@ -109,6 +124,7 @@
     <span id="hudScore">Score: 0</span>
     <span id="hudLives">Lives: 3</span>
   </div>
+  <button class="btn mute-btn" id="muteBtn" aria-pressed="false" aria-label="Mute sound">🔊</button>
   <div id="startScreen" class="overlay">
     <h1>BREAKOUT</h1>
     <p>Use arrow keys or mouse to move the paddle. Break all the bricks!</p>
@@ -131,6 +147,7 @@
   const hudLives = document.getElementById('hudLives');
   const finalScore = document.getElementById('finalScore');
   const endTitle = document.getElementById('endTitle');
+  const muteBtn = document.getElementById('muteBtn');
 
   const W = 600, H = 800;
   canvas.width = W;
@@ -151,6 +168,155 @@
   let paddle, ball, bricks, score, lives, gameRunning, animId;
   let keys = {};
   let mouseX = null;
+  let isMuted = false;
+  let audioCtx = null;
+  let masterGain = null;
+
+  function ensureAudioContext() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      audioCtx = new AudioContextClass();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = isMuted ? 0 : 0.65;
+      masterGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playTone({ type = 'sine', frequency = 440, endFrequency, duration = 0.1, gain = 0.2, detune = 0, attack = 0.004, release = 0.015 }) {
+    if (isMuted) return;
+    const ac = ensureAudioContext();
+    if (!ac || !masterGain) return;
+
+    const now = ac.currentTime;
+    const osc = ac.createOscillator();
+    const amp = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, now);
+    if (typeof endFrequency === 'number') {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(0.001, endFrequency), now + duration);
+    }
+    osc.detune.value = detune;
+    amp.gain.setValueAtTime(0.0001, now);
+    amp.gain.exponentialRampToValueAtTime(gain, now + attack);
+    amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(amp);
+    amp.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + duration + release);
+  }
+
+  function playNoise({ duration = 0.05, gain = 0.12, lowpassStart = 2200, lowpassEnd = 700, highpass = 180 }) {
+    if (isMuted) return;
+    const ac = ensureAudioContext();
+    if (!ac || !masterGain) return;
+
+    const now = ac.currentTime;
+    const buffer = ac.createBuffer(1, Math.max(1, Math.floor(ac.sampleRate * duration)), ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const src = ac.createBufferSource();
+    const band = ac.createBiquadFilter();
+    const low = ac.createBiquadFilter();
+    const amp = ac.createGain();
+    band.type = 'highpass';
+    band.frequency.setValueAtTime(highpass, now);
+    low.type = 'lowpass';
+    low.frequency.setValueAtTime(lowpassStart, now);
+    low.frequency.exponentialRampToValueAtTime(lowpassEnd, now + duration);
+    amp.gain.setValueAtTime(0.0001, now);
+    amp.gain.exponentialRampToValueAtTime(gain, now + Math.min(0.01, duration * 0.2));
+    amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    src.buffer = buffer;
+    src.connect(band);
+    band.connect(low);
+    low.connect(amp);
+    amp.connect(masterGain);
+    src.start(now);
+    src.stop(now + duration + 0.02);
+  }
+
+  const sound = {
+    playWallHit() {
+      playTone({ type: 'sine', frequency: 500, duration: 0.02, gain: 0.14, attack: 0.001, release: 0.006 });
+    },
+    playPaddleHit(hitRatio = 0.5) {
+      const freq = 240 + (hitRatio * 120);
+      playTone({ type: 'sine', frequency: freq, endFrequency: freq * 0.92, duration: 0.04, gain: 0.18, attack: 0.002, release: 0.01 });
+    },
+    playBrickHit(row = 0) {
+      const freq = 760 + row * 45;
+      playTone({ type: 'triangle', frequency: freq, endFrequency: freq * 0.88, duration: 0.03, gain: 0.2, attack: 0.001, release: 0.008 });
+      playNoise({ duration: 0.015, gain: 0.08, lowpassStart: 5200, lowpassEnd: 2200, highpass: 900 });
+    },
+    playPowerUpCollect() {
+      playTone({ type: 'sine', frequency: 600, endFrequency: 1200, duration: 0.1, gain: 0.16, attack: 0.002, release: 0.02 });
+    },
+    playLifeLost() {
+      playTone({ type: 'sine', frequency: 400, endFrequency: 150, duration: 0.2, gain: 0.18, attack: 0.004, release: 0.02 });
+    },
+    playLevelComplete() {
+      const ac = ensureAudioContext();
+      if (!ac || isMuted || !masterGain) return;
+      const now = ac.currentTime;
+      [392, 494, 659, 784].forEach((freq, index) => {
+        const t = now + index * 0.085;
+        const osc = ac.createOscillator();
+        const amp = ac.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+        amp.gain.setValueAtTime(0.0001, t);
+        amp.gain.exponentialRampToValueAtTime(0.18, t + 0.03);
+        amp.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+        osc.connect(amp);
+        amp.connect(masterGain);
+        osc.start(t);
+        osc.stop(t + 0.16);
+      });
+    },
+    playGameOver() {
+      const ac = ensureAudioContext();
+      if (!ac || isMuted || !masterGain) return;
+      const now = ac.currentTime;
+      [392, 311, 247, 196].forEach((freq, index) => {
+        const t = now + index * 0.12;
+        const osc = ac.createOscillator();
+        const amp = ac.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(80, freq * 0.7), t + 0.08);
+        amp.gain.setValueAtTime(0.0001, t);
+        amp.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+        amp.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+        osc.connect(amp);
+        amp.connect(masterGain);
+        osc.start(t);
+        osc.stop(t + 0.16);
+      });
+    },
+    playBallLaunch() {
+      playNoise({ duration: 0.05, gain: 0.12, lowpassStart: 1800, lowpassEnd: 450, highpass: 220 });
+    },
+    setMuted(nextMuted) {
+      isMuted = nextMuted;
+      muteBtn.textContent = isMuted ? '🔇' : '🔊';
+      muteBtn.setAttribute('aria-pressed', String(isMuted));
+      if (masterGain) {
+        masterGain.gain.setValueAtTime(isMuted ? 0 : 0.65, audioCtx.currentTime);
+      }
+    },
+    toggleMute() {
+      ensureAudioContext();
+      this.setMuted(!isMuted);
+    }
+  };
 
   function initGame() {
     paddle = { x: W / 2 - PADDLE_W / 2, w: PADDLE_W };
@@ -181,6 +347,7 @@
       dy: -BALL_SPEED
     };
     normalizeBallSpeed();
+    sound.playBallLaunch();
   }
 
   function normalizeBallSpeed() {
@@ -264,9 +431,11 @@
     ball.y += ball.dy;
 
     // Wall bounces
-    if (ball.x - BALL_R <= 0) { ball.x = BALL_R; ball.dx = Math.abs(ball.dx); }
-    if (ball.x + BALL_R >= W) { ball.x = W - BALL_R; ball.dx = -Math.abs(ball.dx); }
-    if (ball.y - BALL_R <= 0) { ball.y = BALL_R; ball.dy = Math.abs(ball.dy); }
+    let wallBounced = false;
+    if (ball.x - BALL_R <= 0) { ball.x = BALL_R; ball.dx = Math.abs(ball.dx); wallBounced = true; }
+    if (ball.x + BALL_R >= W) { ball.x = W - BALL_R; ball.dx = -Math.abs(ball.dx); wallBounced = true; }
+    if (ball.y - BALL_R <= 0) { ball.y = BALL_R; ball.dy = Math.abs(ball.dy); wallBounced = true; }
+    if (wallBounced) sound.playWallHit();
 
     // Paddle collision
     if (
@@ -282,6 +451,7 @@
       ball.dx = BALL_SPEED * Math.sin(angle);
       ball.dy = -BALL_SPEED * Math.cos(angle);
       normalizeBallSpeed();
+      sound.playPaddleHit(hit);
     }
 
     // Brick collision
@@ -296,6 +466,7 @@
         b.alive = false;
         score += 10;
         updateHUD();
+        sound.playBrickHit(Math.floor((b.y - BRICK_TOP) / (BRICK_H + BRICK_PAD)));
 
         // Determine bounce direction
         const overlapL = (ball.x + BALL_R) - b.x;
@@ -318,8 +489,10 @@
       lives--;
       updateHUD();
       if (lives <= 0) {
+        sound.playLifeLost();
         endGame(false);
       } else {
+        sound.playLifeLost();
         resetBall();
       }
     }
@@ -358,6 +531,11 @@
     endTitle.textContent = won ? 'YOU WIN!' : 'GAME OVER';
     finalScore.textContent = 'Score: ' + score;
     gameOverScreen.classList.remove('hidden');
+    if (won) {
+      sound.playLevelComplete();
+    } else {
+      sound.playGameOver();
+    }
   }
 
   // Input
@@ -366,6 +544,8 @@
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
   });
   document.addEventListener('keyup', e => { keys[e.key] = false; });
+  document.addEventListener('click', ensureAudioContext, { once: true, capture: true });
+  document.addEventListener('keydown', ensureAudioContext, { once: true, capture: true });
 
   canvas.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
@@ -382,6 +562,7 @@
 
   document.getElementById('startBtn').addEventListener('click', startGame);
   document.getElementById('restartBtn').addEventListener('click', startGame);
+  muteBtn.addEventListener('click', () => sound.toggleMute());
 })();
 </script>
 </body>

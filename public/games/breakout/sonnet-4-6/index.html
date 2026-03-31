@@ -105,11 +105,39 @@
     color: #3a5580;
     letter-spacing: 0.1em;
   }
+
+  #muteBtn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 20;
+    background: rgba(5, 5, 16, 0.75);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    border-radius: 6px;
+    color: #00e5ff;
+    font-size: 1.2rem;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+    backdrop-filter: blur(4px);
+    line-height: 1;
+  }
+
+  #muteBtn:hover {
+    background: rgba(0, 229, 255, 0.15);
+    border-color: rgba(0, 229, 255, 0.6);
+  }
 </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
+
+<button id="muteBtn" title="Toggle sound">🔊</button>
 
 <div class="overlay" id="startScreen">
   <div class="title">Breakout</div>
@@ -160,6 +188,168 @@ function resize() {
 
 window.addEventListener('resize', resize);
 resize();
+
+// ── Audio System ──────────────────────────────────────────────
+let audioCtx = null;
+let isMuted = false;
+
+function initAudio() {
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return;
+  }
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (e) { /* Web Audio unsupported */ }
+}
+
+// Lazily initialize on first user interaction (browser autoplay policy)
+document.addEventListener('keydown', initAudio);
+document.addEventListener('click', initAudio);
+
+function soundWallHit() {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(500, t);
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+  osc.start(t); osc.stop(t + 0.022);
+}
+
+function soundPaddleHit(hitPos) {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const freq = 300 + hitPos * 60;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, t);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.75, t + 0.04);
+  gain.gain.setValueAtTime(0.38, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  osc.start(t); osc.stop(t + 0.05);
+}
+
+function soundBrickHit(row, destroyed) {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const pitch = 800 + (BRICK_ROWS - 1 - row) * 45;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(pitch, t);
+  gain.gain.setValueAtTime(destroyed ? 0.35 : 0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+  osc.start(t); osc.stop(t + 0.04);
+  if (destroyed) {
+    const bufLen = Math.ceil(audioCtx.sampleRate * 0.015);
+    const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buf;
+    const ng = audioCtx.createGain();
+    ng.gain.setValueAtTime(0.18, t);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+    noise.connect(ng); ng.connect(audioCtx.destination);
+    noise.start(t);
+  }
+}
+
+function soundLifeLost() {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(400, t);
+  osc.frequency.exponentialRampToValueAtTime(150, t + 0.2);
+  gain.gain.setValueAtTime(0.4, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.start(t); osc.stop(t + 0.22);
+}
+
+function soundLevelComplete() {
+  if (isMuted || !audioCtx) return;
+  const notes = [261.63, 329.63, 392.00, 523.25];
+  notes.forEach((freq, i) => {
+    const t = audioCtx.currentTime + i * 0.09;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.35, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    osc.start(t); osc.stop(t + 0.12);
+  });
+}
+
+function soundGameOver() {
+  if (isMuted || !audioCtx) return;
+  const notes = [400, 320, 250, 190, 130];
+  notes.forEach((freq, i) => {
+    const t = audioCtx.currentTime + i * 0.09;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.28, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    osc.start(t); osc.stop(t + 0.12);
+  });
+}
+
+function soundBallLaunch() {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const bufLen = Math.ceil(audioCtx.sampleRate * 0.05);
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buf;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(800, t);
+  filter.frequency.linearRampToValueAtTime(2800, t + 0.05);
+  filter.Q.value = 2;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+  noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+  noise.start(t);
+}
+
+function soundPowerUp() {
+  if (isMuted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(600, t);
+  osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  osc.start(t); osc.stop(t + 0.12);
+}
+
+document.getElementById('muteBtn').addEventListener('click', (e) => {
+  e.stopPropagation(); // don't propagate to the document initAudio listener
+  initAudio();
+  isMuted = !isMuted;
+  document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+});
 
 // ── Game Constants ────────────────────────────────────────────
 const PADDLE_W = 100;
@@ -260,6 +450,7 @@ function launchBall() {
   const speed = BALL_BASE_SPEED * ballSpeedMultiplier;
   ball.dx = Math.cos(angle) * speed;
   ball.dy = Math.sin(angle) * speed;
+  soundBallLaunch();
 }
 
 // ── Particles ─────────────────────────────────────────────────
@@ -296,12 +487,14 @@ function initGame() {
 function nextLevel() {
   level++;
   if (level > MAX_LEVEL) {
+    soundLevelComplete();
     state = 'win';
     document.getElementById('winScore').textContent = score;
     document.getElementById('winLevel').textContent = 'Cleared all ' + MAX_LEVEL + ' levels!';
     document.getElementById('winScreen').classList.remove('hidden');
     return;
   }
+  soundLevelComplete();
   ballSpeedMultiplier = 1 + (level - 1) * 0.12;
   createBricks();
   resetBall();
@@ -381,22 +574,27 @@ function update() {
   if (ball.x - BALL_RADIUS <= 0) {
     ball.x = BALL_RADIUS;
     ball.dx = Math.abs(ball.dx);
+    soundWallHit();
   }
   if (ball.x + BALL_RADIUS >= DESIGN_W) {
     ball.x = DESIGN_W - BALL_RADIUS;
     ball.dx = -Math.abs(ball.dx);
+    soundWallHit();
   }
   if (ball.y - BALL_RADIUS <= 0) {
     ball.y = BALL_RADIUS;
     ball.dy = Math.abs(ball.dy);
+    soundWallHit();
   }
 
   // Bottom — lose life
   if (ball.y + BALL_RADIUS >= DESIGN_H) {
     lives--;
+    soundLifeLost();
     shakeTimer = 12;
     spawnParticles(ball.x, DESIGN_H, '#ff3a6e', 15);
     if (lives <= 0) {
+      soundGameOver();
       state = 'gameover';
       document.getElementById('finalScore').textContent = score;
       document.getElementById('finalLevel').textContent = 'Reached Level ' + level;
@@ -426,6 +624,7 @@ function update() {
     ball.dx = Math.cos(angle) * speed;
     ball.dy = Math.sin(angle) * speed;
     ball.y = PADDLE_Y - BALL_RADIUS - 1;
+    soundPaddleHit(clampedHit);
 
     spawnParticles(ball.x, PADDLE_Y, '#00e5ff', 5);
   }
@@ -460,6 +659,7 @@ function update() {
       if (brick.hp <= 0) {
         brick.alive = false;
         score += ROW_POINTS[brick.row] * level;
+        soundBrickHit(brick.row, true);
         spawnParticles(
           brick.x + brick.w / 2,
           brick.y + brick.h / 2,
@@ -467,6 +667,7 @@ function update() {
           10
         );
       } else {
+        soundBrickHit(brick.row, false);
         spawnParticles(
           brick.x + brick.w / 2,
           brick.y + brick.h / 2,

@@ -1,0 +1,1672 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MARBLE MADNESS</title>
+  <style>
+    :root{
+      --bg:#04050b;
+      --panel:rgba(10,14,28,.74);
+      --panel2:rgba(7,10,20,.92);
+      --text:#eef7ff;
+      --muted:#9ab0c8;
+      --green:#54ff9b;
+      --blue:#3fd6ff;
+      --purple:#c07bff;
+      --red:#ff5473;
+      --gold:#ffd86b;
+      --shadow:0 0 24px rgba(99, 219, 255, .18), 0 0 64px rgba(138, 90, 255, .08);
+    }
+    html,body{
+      margin:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(89, 255, 214, .08), transparent 32%),
+        radial-gradient(circle at 80% 20%, rgba(157, 102, 255, .12), transparent 30%),
+        radial-gradient(circle at 50% 70%, rgba(60, 189, 255, .08), transparent 35%),
+        linear-gradient(180deg, #04050b 0%, #070914 100%);
+      font-family:"Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
+      color:var(--text);
+      user-select:none;
+      touch-action:none;
+    }
+    #game{
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100vh;
+    }
+    canvas{display:block;}
+    #ui{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+    }
+    #titleBanner{
+      position:absolute;
+      top:3.5vh;
+      left:50%;
+      transform:translateX(-50%);
+      text-align:center;
+      letter-spacing:.28em;
+      pointer-events:none;
+      text-transform:uppercase;
+      text-shadow:0 0 8px rgba(255,255,255,.35), 0 0 24px rgba(92, 213, 255, .35);
+    }
+    #titleBanner .big{
+      font-size:clamp(30px, 5vw, 76px);
+      font-weight:800;
+      color:#f9fbff;
+    }
+    #titleBanner .sub{
+      margin-top:8px;
+      font-size:clamp(11px, 1.7vw, 15px);
+      color:var(--muted);
+      letter-spacing:.42em;
+    }
+    #hud{
+      position:absolute;
+      top:16px;
+      left:16px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      max-width:min(680px, calc(100vw - 32px));
+      pointer-events:none;
+      opacity:0;
+      transition:opacity .25s ease;
+    }
+    .chip{
+      padding:10px 14px;
+      border:1px solid rgba(129, 193, 255, .22);
+      background:linear-gradient(180deg, rgba(14,18,34,.76), rgba(8,10,18,.86));
+      box-shadow:var(--shadow);
+      border-radius:14px;
+      backdrop-filter:blur(10px);
+      color:#ecf6ff;
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.15em;
+      min-width:110px;
+    }
+    .chip b{
+      display:block;
+      margin-top:4px;
+      font-size:18px;
+      letter-spacing:.08em;
+      color:#fff;
+    }
+    #centerPanel{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+    }
+    #panel{
+      pointer-events:auto;
+      width:min(760px, calc(100vw - 28px));
+      max-height:min(84vh, 760px);
+      overflow:auto;
+      border:1px solid rgba(130, 198, 255, .22);
+      border-radius:24px;
+      background:
+        linear-gradient(180deg, rgba(8,12,24,.88), rgba(10,10,16,.94)),
+        radial-gradient(circle at top, rgba(98, 212, 255, .12), transparent 40%);
+      box-shadow:0 0 0 1px rgba(255,255,255,.04) inset, 0 24px 80px rgba(0,0,0,.55), 0 0 36px rgba(96, 218, 255, .12);
+      padding:24px;
+      backdrop-filter:blur(18px);
+      transform:translateY(0);
+    }
+    .panelTitle{
+      font-size:clamp(24px, 4vw, 42px);
+      margin:0 0 10px;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+    }
+    .panelText{
+      color:#bdcfe3;
+      line-height:1.6;
+      font-size:14px;
+      letter-spacing:.05em;
+      margin:0 0 16px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:12px;
+      margin:16px 0 18px;
+    }
+    .card{
+      border-radius:18px;
+      border:1px solid rgba(146, 207, 255, .16);
+      background:linear-gradient(180deg, rgba(15,21,39,.88), rgba(8,12,22,.92));
+      padding:14px;
+      box-shadow:var(--shadow);
+    }
+    .card h3{
+      margin:0 0 6px;
+      text-transform:uppercase;
+      letter-spacing:.14em;
+      font-size:15px;
+    }
+    .card p{
+      margin:0;
+      color:#b5c9df;
+      font-size:12px;
+      line-height:1.5;
+    }
+    .card .accent{
+      margin-top:10px;
+      height:3px;
+      border-radius:999px;
+      background:linear-gradient(90deg, transparent, currentColor, transparent);
+      opacity:.9;
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    button, .button{
+      pointer-events:auto;
+      appearance:none;
+      border:none;
+      border-radius:14px;
+      padding:12px 16px;
+      background:linear-gradient(180deg, rgba(70, 225, 255, .22), rgba(29, 36, 59, .88));
+      color:var(--text);
+      font:inherit;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      cursor:pointer;
+      box-shadow:0 0 0 1px rgba(154,219,255,.18) inset, 0 8px 28px rgba(0,0,0,.35);
+      transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    button:hover, .button:hover{
+      transform:translateY(-1px);
+      box-shadow:0 0 0 1px rgba(202,244,255,.34) inset, 0 12px 32px rgba(0,0,0,.42), 0 0 22px rgba(83, 205, 255, .2);
+    }
+    button.primary{
+      background:linear-gradient(180deg, rgba(120,255,198,.25), rgba(31,40,62,.94));
+    }
+    button.purple{
+      background:linear-gradient(180deg, rgba(186,120,255,.25), rgba(31,40,62,.94));
+    }
+    button.ghost{
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(31,40,62,.84));
+    }
+    #muteBtn{
+      position:fixed;
+      top:16px;
+      right:16px;
+      z-index:5;
+      pointer-events:auto;
+      min-width:54px;
+      height:54px;
+      border-radius:16px;
+      font-size:18px;
+      display:grid;
+      place-items:center;
+    }
+    #hint{
+      position:fixed;
+      right:16px;
+      bottom:16px;
+      text-align:right;
+      color:#c7d8ea;
+      font-size:12px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      opacity:.9;
+      pointer-events:none;
+      text-shadow:0 0 12px rgba(0,0,0,.7);
+    }
+    #toast{
+      position:fixed;
+      left:50%;
+      bottom:30px;
+      transform:translateX(-50%);
+      padding:10px 16px;
+      border-radius:999px;
+      background:rgba(8, 12, 21, .72);
+      border:1px solid rgba(148, 219, 255, .16);
+      color:#dff6ff;
+      box-shadow:var(--shadow);
+      opacity:0;
+      transition:opacity .25s ease, transform .25s ease;
+      pointer-events:none;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      font-size:12px;
+      backdrop-filter:blur(8px);
+    }
+    #toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+    .rating{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      margin-left:6px;
+      font-weight:700;
+    }
+    .gold{background:rgba(255,216,107,.14); color:#ffe59a;}
+    .silver{background:rgba(188,206,255,.14); color:#dfe8ff;}
+    .bronze{background:rgba(255,164,98,.12); color:#ffca9c;}
+    @media (max-width:700px){
+      .grid{grid-template-columns:1fr;}
+      #titleBanner{top:2vh;}
+      .chip{min-width:96px; padding:9px 11px; font-size:11px;}
+      .chip b{font-size:16px;}
+      #panel{padding:18px; border-radius:20px;}
+      #hud{left:10px; top:10px; gap:8px;}
+      #hint{font-size:10px;}
+    }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="ui">
+    <div id="titleBanner">
+      <div class="big">MARBLE MADNESS</div>
+      <div class="sub">NEON ORBIT CIRCUITS</div>
+    </div>
+
+    <div id="hud">
+      <div class="chip">Level<b id="hudLevel">1</b></div>
+      <div class="chip">Time<b id="hudTime">0.00</b></div>
+      <div class="chip">Gems<b id="hudGems">0/0</b></div>
+      <div class="chip">Lives<b id="hudLives">3</b></div>
+      <div class="chip">Checkpoint<b id="hudCheckpoint">A</b></div>
+    </div>
+
+    <button id="muteBtn" aria-label="mute">🔊</button>
+
+    <div id="centerPanel">
+      <div id="panel"></div>
+    </div>
+
+    <div id="hint">Move: WASD / Arrows • Jump: Space • Restart: R</div>
+    <div id="toast"></div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const container = document.getElementById('game');
+    const panel = document.getElementById('panel');
+    const hud = document.getElementById('hud');
+    const hudLevel = document.getElementById('hudLevel');
+    const hudTime = document.getElementById('hudTime');
+    const hudGems = document.getElementById('hudGems');
+    const hudLives = document.getElementById('hudLives');
+    const hudCheckpoint = document.getElementById('hudCheckpoint');
+    const muteBtn = document.getElementById('muteBtn');
+    const toast = document.getElementById('toast');
+    const titleBanner = document.getElementById('titleBanner');
+
+    const clock = new THREE.Clock();
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x04050b);
+    scene.fog = new THREE.FogExp2(0x04050b, 0.0125);
+
+    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1000);
+    camera.position.set(0, 11, 18);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.appendChild(renderer.domElement);
+
+    const listener = new THREE.AudioListener();
+    camera.add(listener);
+    const audioCtx = listener.context;
+    const audioIn = listener.getInput ? listener.getInput() : listener.gain;
+    const musicGain = audioCtx.createGain();
+    const sfxGain = audioCtx.createGain();
+    musicGain.connect(audioIn);
+    sfxGain.connect(audioIn);
+    musicGain.gain.value = 0.32;
+    sfxGain.gain.value = 0.76;
+    const dummyMusic = new THREE.Audio(listener);
+    const dummySfx = new THREE.Audio(listener);
+    void dummyMusic; void dummySfx;
+
+    const ambient = new THREE.AmbientLight(0x9bb8ff, 1.15);
+    scene.add(ambient);
+    const hemi = new THREE.HemisphereLight(0x78dfff, 0x10081c, 1.8);
+    scene.add(hemi);
+    const sun = new THREE.DirectionalLight(0xe8f6ff, 3.4);
+    sun.position.set(7, 16, 8);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 55;
+    sun.shadow.camera.left = -18;
+    sun.shadow.camera.right = 18;
+    sun.shadow.camera.top = 18;
+    sun.shadow.camera.bottom = -18;
+    scene.add(sun);
+
+    const world = new THREE.Group();
+    scene.add(world);
+
+    const trailGroup = new THREE.Group();
+    const fxGroup = new THREE.Group();
+    scene.add(trailGroup, fxGroup);
+
+    const marbleRadius = 0.72;
+    const marbleGeo = new THREE.SphereGeometry(marbleRadius, 42, 24);
+    const marbleMat = new THREE.MeshPhysicalMaterial({
+      color: 0xbff8ff,
+      emissive: 0x58eaff,
+      emissiveIntensity: 1.4,
+      metalness: 0.4,
+      roughness: 0.1,
+      clearcoat: 1,
+      clearcoatRoughness: 0.04,
+      transmission: 0.08,
+      thickness: 0.8
+    });
+    const marble = new THREE.Mesh(marbleGeo, marbleMat);
+    marble.castShadow = true;
+    marble.receiveShadow = true;
+    scene.add(marble);
+    const marbleCore = new THREE.Mesh(
+      new THREE.SphereGeometry(marbleRadius * 0.55, 26, 18),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.1, roughness: 0.28, metalness: 0.05 })
+    );
+    marble.add(marbleCore);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 96;
+    const c = canvas.getContext('2d');
+    const gradient = c.createRadialGradient(48, 48, 4, 48, 48, 48);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.15, 'rgba(182,255,252,0.95)');
+    gradient.addColorStop(0.42, 'rgba(83,233,255,0.45)');
+    gradient.addColorStop(1, 'rgba(83,233,255,0)');
+    c.fillStyle = gradient;
+    c.fillRect(0, 0, 96, 96);
+    const glowTex = new THREE.CanvasTexture(canvas);
+    glowTex.needsUpdate = true;
+
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 1800;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const r = 100 + Math.random() * 240;
+      const a = Math.random() * Math.PI * 2;
+      const b = Math.acos(THREE.MathUtils.randFloatSpread(2));
+      starPositions[i * 3] = Math.sin(b) * Math.cos(a) * r;
+      starPositions[i * 3 + 1] = Math.cos(b) * r * 0.65;
+      starPositions[i * 3 + 2] = Math.sin(b) * Math.sin(a) * r;
+      const tint = Math.random();
+      const col = new THREE.Color().setHSL(0.56 + tint * 0.16, 0.72, 0.62 + Math.random() * 0.18);
+      starColors[i * 3] = col.r;
+      starColors[i * 3 + 1] = col.g;
+      starColors[i * 3 + 2] = col.b;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    const starMat = new THREE.PointsMaterial({ size: 0.55, sizeAttenuation: true, vertexColors: true, transparent: true, opacity: 0.95 });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    const nebulaGroup = new THREE.Group();
+    for (let i = 0; i < 9; i++) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTex,
+        color: new THREE.Color().setHSL(0.55 + i * 0.05, 0.9, 0.75),
+        transparent: true,
+        opacity: 0.14,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      }));
+      s.position.set((Math.random() - 0.5) * 120, (Math.random() - 0.2) * 40, -120 - Math.random() * 160);
+      s.scale.setScalar(40 + Math.random() * 60);
+      nebulaGroup.add(s);
+    }
+    scene.add(nebulaGroup);
+
+    const marbleTrail = [];
+    const trailPool = [];
+    const trailMaterial = new THREE.SpriteMaterial({
+      map: glowTex,
+      transparent: true,
+      color: 0xa6f8ff,
+      opacity: 0.72,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    for (let i = 0; i < 54; i++) {
+      const sp = new THREE.Sprite(trailMaterial.clone());
+      sp.visible = false;
+      trailGroup.add(sp);
+      trailPool.push(sp);
+    }
+
+    const sparklePool = [];
+    for (let i = 0; i < 64; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTex,
+        transparent: true,
+        color: 0xffffff,
+        opacity: 0.9,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      }));
+      sp.visible = false;
+      fxGroup.add(sp);
+      sparklePool.push(sp);
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const up = new THREE.Vector3(0, 1, 0);
+    const tempV = new THREE.Vector3();
+    const tempV2 = new THREE.Vector3();
+    const tempQ = new THREE.Quaternion();
+
+    const keys = new Set();
+    let audioUnlocked = false;
+    let muted = false;
+    let state = 'title';
+    let sequenceMode = true;
+    let selectedLevel = 0;
+    let currentLevel = null;
+    let levelIndex = 0;
+    let currentLevelObjects = [];
+    let currentCheckpoints = [];
+    let currentGems = [];
+    let currentMoving = [];
+    let currentFinish = null;
+    let checkpointTag = 'A';
+    let checkpointPos = new THREE.Vector3(0, 3, 0);
+    let marbleVel = new THREE.Vector3();
+    let grounded = false;
+    let groundPlatform = null;
+    let tilt = new THREE.Vector2();
+    let tiltVisual = new THREE.Vector2();
+    let respawnTimer = 0;
+    let lives = 3;
+    let rawTime = 0;
+    let penaltyTime = 0;
+    let bonusTime = 0;
+    let activeGemCount = 0;
+    let collectedThisLevel = 0;
+    let totalCollected = 0;
+    let finishHold = 0;
+    let rollOsc = null;
+    let musicNodes = [];
+    let musicTimer = null;
+    let humOsc = null;
+    let nextToastTime = 0;
+
+    const levelThemes = [
+      { name: 'Circuit One', color: 0x54ff9b, accent: '#54ff9b', music: 174.61, spread: 0.16, bg: 0x04110d },
+      { name: 'Circuit Two', color: 0x3fd6ff, accent: '#3fd6ff', music: 146.83, spread: 0.21, bg: 0x08111b },
+      { name: 'Circuit Three', color: 0xc07bff, accent: '#c07bff', music: 130.81, spread: 0.27, bg: 0x120816 }
+    ];
+
+    function toastMsg(text) {
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => toast.classList.remove('show'), 1300);
+    }
+
+    function setPanel(html) { panel.innerHTML = html; }
+    function setMuted(v) {
+      muted = v;
+      muteBtn.textContent = muted ? '🔇' : '🔊';
+      if (audioCtx) {
+        musicGain.gain.value = muted ? 0 : 0.32;
+        sfxGain.gain.value = muted ? 0 : 0.76;
+      }
+    }
+
+    function ensureAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      audioCtx.resume().catch(() => {});
+      setMuted(muted);
+      toastMsg('Audio Online');
+    }
+
+    function tone(freq, dur, opts = {}) {
+      if (muted || !audioUnlocked) return;
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const f = ctx.createBiquadFilter();
+      o.type = opts.type || 'sine';
+      o.frequency.setValueAtTime(freq, now);
+      if (opts.detune) o.detune.setValueAtTime(opts.detune, now);
+      f.type = opts.filterType || 'lowpass';
+      f.frequency.setValueAtTime(opts.cutoff || 1200, now);
+      f.Q.value = opts.q || 0.8;
+      o.connect(f);
+      f.connect(g);
+      g.connect(sfxGain);
+      const attack = opts.attack ?? 0.012;
+      const release = opts.release ?? dur;
+      const volume = opts.volume ?? 0.14;
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + release);
+      o.start(now);
+      o.stop(now + release + 0.04);
+    }
+
+    function chordMusic(root, levelColor) {
+      stopMusic();
+      if (!audioUnlocked || muted) return;
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+      const filter = ctx.createBiquadFilter();
+      const pad = ctx.createGain();
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      filter.type = 'lowpass';
+      filter.frequency.value = 520;
+      filter.Q.value = 0.8;
+      pad.gain.value = 0.095;
+      filter.connect(pad);
+      pad.connect(musicGain);
+      lfo.type = 'sine';
+      lfo.frequency.value = 0.08;
+      lfoGain.gain.value = 220;
+      lfo.connect(lfoGain);
+      lfoGain.connect(filter.frequency);
+      lfo.start(now);
+      const notes = [
+        [1, 1.2599, 1.4983],
+        [1, 1.1892, 1.4953],
+        [1, 1.3348, 1.5874, 1.7818]
+      ];
+      const base = root;
+      const voices = notes[levelIndex] || notes[0];
+      const oscs = voices.map((ratio, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = i === 0 ? 'triangle' : 'sawtooth';
+        osc.frequency.value = base * ratio;
+        osc.detune.value = (i * 5 - 4) * 8;
+        gain.gain.value = i === 0 ? 0.26 : 0.09;
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(pad);
+        osc.start(now);
+        return { osc, gain };
+      });
+      musicNodes = [{ filter, pad, lfo, lfoGain }, ...oscs];
+      let phase = 0;
+      musicTimer = setInterval(() => {
+        if (state !== 'playing' || muted) return;
+        phase = (phase + 1) % 4;
+        const chordSets = [
+          [1, 1.1892, 1.4983],
+          [1, 1.2599, 1.5874],
+          [1, 1.3348, 1.7818]
+        ];
+        const chord = chordSets[(phase + levelIndex) % chordSets.length];
+        oscs.forEach((entry, i) => {
+          const r = chord[i % chord.length];
+          entry.osc.frequency.setTargetAtTime(base * r, audioCtx.currentTime, 0.08);
+          entry.gain.gain.setTargetAtTime(i === 0 ? 0.24 : 0.08, audioCtx.currentTime, 0.08);
+        });
+        filter.frequency.setTargetAtTime(500 + Math.sin(phase * 0.7) * 160, audioCtx.currentTime, 0.18);
+        if (Math.random() < 0.2) tone(base * 2, 0.12, { type: 'square', volume: 0.03, cutoff: 1800, release: 0.08 });
+      }, 3200);
+      if (humOsc) humOsc.stop();
+      humOsc = ctx.createOscillator();
+      const humGain = ctx.createGain();
+      const humFilter = ctx.createBiquadFilter();
+      humOsc.type = 'sawtooth';
+      humOsc.frequency.value = 44;
+      humFilter.type = 'lowpass';
+      humFilter.frequency.value = 140;
+      humFilter.Q.value = 0.7;
+      humGain.gain.value = 0.018;
+      humOsc.connect(humFilter);
+      humFilter.connect(humGain);
+      humGain.connect(musicGain);
+      humOsc.start(now);
+      musicNodes.push({ humOsc, humGain, humFilter });
+      if (rollOsc) rollOsc.stop();
+      rollOsc = ctx.createOscillator();
+      const rollGain = ctx.createGain();
+      const rollFilter = ctx.createBiquadFilter();
+      rollOsc.type = 'triangle';
+      rollOsc.frequency.value = 60;
+      rollFilter.type = 'bandpass';
+      rollFilter.frequency.value = 110;
+      rollFilter.Q.value = 4;
+      rollGain.gain.value = 0.0;
+      rollOsc.connect(rollFilter);
+      rollFilter.connect(rollGain);
+      rollGain.connect(sfxGain);
+      rollOsc.start(now);
+      musicNodes.push({ rollOsc, rollGain, rollFilter });
+      tone(base * 1.5, 0.18, { type: 'sine', volume: 0.08, attack: 0.02, release: 0.16 });
+    }
+
+    function stopMusic() {
+      if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+      for (const node of musicNodes) {
+        for (const key of ['osc', 'lfo', 'humOsc', 'rollOsc']) {
+          if (node[key]) {
+            try { node[key].stop(); } catch {}
+          }
+        }
+      }
+      musicNodes = [];
+      if (humOsc) { try { humOsc.stop(); } catch {} }
+      if (rollOsc) { try { rollOsc.stop(); } catch {} }
+      humOsc = null;
+      rollOsc = null;
+    }
+
+    function playJump() { tone(390, 0.16, { type: 'square', cutoff: 1800, volume: 0.08, release: 0.1 }); tone(520, 0.08, { type: 'sine', volume: 0.03, attack: 0.01, release: 0.05 }); }
+    function playLand() { tone(130, 0.12, { type: 'triangle', cutoff: 1200, volume: 0.07, release: 0.08 }); }
+    function playCollect() { tone(660, 0.12, { type: 'triangle', volume: 0.08 }); tone(880, 0.1, { type: 'sine', volume: 0.06, attack: 0.005, release: 0.08 }); tone(1170, 0.14, { type: 'sine', volume: 0.045, attack: 0.005, release: 0.1 }); }
+    function playFall() { tone(220, 0.26, { type: 'sawtooth', cutoff: 1000, volume: 0.06, release: 0.22 }); tone(120, 0.34, { type: 'square', cutoff: 700, volume: 0.05, release: 0.26 }); }
+    function playRespawn() { tone(440, 0.1, { type: 'sine', volume: 0.08 }); tone(880, 0.18, { type: 'triangle', volume: 0.06 }); }
+    function playComplete() {
+      tone(523.25, 0.18, { type: 'triangle', volume: 0.08 });
+      setTimeout(() => tone(659.25, 0.18, { type: 'triangle', volume: 0.08 }), 160);
+      setTimeout(() => tone(783.99, 0.2, { type: 'triangle', volume: 0.08 }), 320);
+      setTimeout(() => tone(1046.5, 0.28, { type: 'sine', volume: 0.08 }), 500);
+    }
+
+    function addTrail(pos, tint = 0xa6f8ff, scale = 0.34, life = 0.35, vel = null) {
+      const sp = trailPool.find(s => !s.visible);
+      if (!sp) return;
+      sp.visible = true;
+      sp.material.color.setHex(tint);
+      sp.material.opacity = 0.6;
+      sp.position.copy(pos);
+      sp.scale.setScalar(scale);
+      sp.userData.life = life;
+      sp.userData.max = life;
+      sp.userData.vel = vel ? vel.clone() : new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.4 + Math.random() * 0.8, (Math.random() - 0.5) * 0.6);
+    }
+
+    function addSparkle(pos, tint = 0xffffff, count = 10, power = 1) {
+      for (let i = 0; i < count; i++) {
+        const sp = sparklePool.find(s => !s.visible);
+        if (!sp) break;
+        sp.visible = true;
+        sp.material.color.setHex(tint);
+        sp.material.opacity = 1;
+        sp.position.copy(pos);
+        const dir = new THREE.Vector3(
+          (Math.random() - 0.5) * power,
+          (Math.random() * 1.2 + 0.4) * power,
+          (Math.random() - 0.5) * power
+        );
+        sp.userData.vel = dir;
+        sp.userData.life = 0.45 + Math.random() * 0.3;
+        sp.userData.max = sp.userData.life;
+        sp.scale.setScalar(0.16 + Math.random() * 0.22);
+      }
+    }
+
+    function clearLevel() {
+      for (const obj of currentLevelObjects) {
+        world.remove(obj);
+      }
+      currentLevelObjects = [];
+      currentCheckpoints = [];
+      currentGems = [];
+      currentMoving = [];
+      currentFinish = null;
+    }
+
+    function neonPlatform(size, color, options = {}) {
+      const group = new THREE.Group();
+      const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+      const baseMat = new THREE.MeshPhysicalMaterial({
+        color: 0x101425,
+        emissive: color,
+        emissiveIntensity: options.emissive ?? 0.55,
+        metalness: 0.2,
+        roughness: 0.12,
+        transparent: true,
+        opacity: options.opacity ?? 0.72,
+        transmission: 0.08,
+        clearcoat: 1,
+        clearcoatRoughness: 0.06
+      });
+      const mesh = new THREE.Mesh(geo, baseMat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+
+      const top = new THREE.Mesh(
+        new THREE.BoxGeometry(size.x * 0.985, size.y * 0.42, size.z * 0.985),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: options.surfaceOpacity ?? 0.16,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      top.position.y = size.y * 0.27;
+      group.add(top);
+
+      const wire = new THREE.Mesh(
+        new THREE.BoxGeometry(size.x * 1.01, size.y * 1.01, size.z * 1.01),
+        new THREE.MeshBasicMaterial({
+          color,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.25,
+          depthWrite: false
+        })
+      );
+      group.add(wire);
+
+      const edges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geo),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 })
+      );
+      group.add(edges);
+
+      const glow = new THREE.Mesh(
+        new THREE.BoxGeometry(size.x * 1.14, size.y * 1.18, size.z * 1.14),
+        new THREE.MeshBasicMaterial({
+          color,
+          transparent: true,
+          opacity: 0.07,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      group.add(glow);
+
+      group.userData = {
+        size: size.clone(),
+        basePosition: new THREE.Vector3(),
+        baseRotation: new THREE.Euler(),
+        motion: options.motion || null,
+        checkpoint: options.checkpoint || false,
+        checkpointId: options.checkpointId || '',
+        gem: false,
+        type: options.type || 'flat',
+        visibleAlpha: 1,
+        solid: options.solid !== false,
+        touched: false,
+        fade: 0,
+        mesh,
+        wire,
+        top,
+        edges,
+        glow,
+        prevPosition: new THREE.Vector3(),
+        prevQuat: new THREE.Quaternion(),
+        humPhase: Math.random() * Math.PI * 2
+      };
+      mesh.userData.parentPlatform = group.userData;
+      return group;
+    }
+
+    function checkpointMarker(color) {
+      const g = new THREE.Group();
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.28, 4.8, 18),
+        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.4, metalness: 0.5, roughness: 0.2 })
+      );
+      pole.position.y = 2.4;
+      pole.castShadow = true;
+      g.add(pole);
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.25, 0.12, 12, 28),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 3.65;
+      g.add(ring);
+      const halo = new THREE.Mesh(
+        new THREE.SphereGeometry(1.9, 18, 18),
+        new THREE.MeshBasicMaterial({ map: glowTex, color, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      halo.position.y = 3.6;
+      g.add(halo);
+      g.userData = { ring, halo, pulse: Math.random() * Math.PI * 2 };
+      return g;
+    }
+
+    function gemMarker(color) {
+      const g = new THREE.Group();
+      const m = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.6, 0),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: color, emissiveIntensity: 2, metalness: 0.15, roughness: 0.18 })
+      );
+      m.castShadow = true;
+      g.add(m);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowTex,
+        color,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      }));
+      halo.scale.setScalar(2.8);
+      g.add(halo);
+      g.userData = { mesh: m, halo, alive: true, phase: Math.random() * Math.PI * 2 };
+      return g;
+    }
+
+    function addPlatform(level, x, y, z, sx, sy, sz, opts = {}) {
+      const p = neonPlatform(new THREE.Vector3(sx, sy, sz), levelThemes[level].color, opts);
+      p.position.set(x, y, z);
+      if (opts.rx) p.rotation.x = opts.rx;
+      if (opts.ry) p.rotation.y = opts.ry;
+      if (opts.rz) p.rotation.z = opts.rz;
+      p.userData.basePosition.copy(p.position);
+      p.userData.baseRotation.copy(p.rotation);
+      p.userData.prevPosition.copy(p.position);
+      p.userData.prevQuat.copy(p.quaternion);
+      p.userData.levelIndex = level;
+      world.add(p);
+      currentLevelObjects.push(p);
+      if (opts.motion) currentMoving.push(p);
+      return p;
+    }
+
+    function addCheckpoint(level, x, y, z, tag) {
+      const c = checkpointMarker(levelThemes[level].color);
+      c.position.set(x, y, z);
+      c.userData.tag = tag;
+      world.add(c);
+      currentLevelObjects.push(c);
+      currentCheckpoints.push(c);
+      return c;
+    }
+
+    function addGem(level, x, y, z) {
+      const g = gemMarker(levelThemes[level].color);
+      g.position.set(x, y, z);
+      g.userData.level = level;
+      world.add(g);
+      currentLevelObjects.push(g);
+      currentGems.push(g);
+      return g;
+    }
+
+    function addFinish(level, x, y, z) {
+      const finish = new THREE.Group();
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(3.2, 0.24, 14, 40),
+        new THREE.MeshStandardMaterial({
+          color: levelThemes[level].color,
+          emissive: levelThemes[level].color,
+          emissiveIntensity: 2.4,
+          metalness: 0.2,
+          roughness: 0.25
+        })
+      );
+      ring.castShadow = true;
+      finish.add(ring);
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(1.4, 22, 18),
+        new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffffff, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      finish.add(core);
+      finish.position.set(x, y, z);
+      finish.userData = { pulse: Math.random() * Math.PI * 2 };
+      world.add(finish);
+      currentLevelObjects.push(finish);
+      currentFinish = finish;
+      return finish;
+    }
+
+    function spawnLevel(idx) {
+      levelIndex = idx;
+      currentLevel = levelThemes[idx];
+      clearLevel();
+      scene.fog.color.setHex(currentLevel.bg);
+      scene.background = new THREE.Color(currentLevel.bg);
+      world.rotation.set(0, 0, 0);
+      groundPlatform = null;
+      grounded = false;
+      marbleVel.set(0, 0, 0);
+      rawTime = 0;
+      penaltyTime = 0;
+      bonusTime = 0;
+      collectedThisLevel = 0;
+      finishHold = 0;
+      lives = 3;
+
+      const color = currentLevel.color;
+      if (idx === 0) buildLevelOne(color);
+      if (idx === 1) buildLevelTwo(color);
+      if (idx === 2) buildLevelThree(color);
+
+      activeGemCount = currentGems.length;
+      checkpointPos.copy(currentLevel.start);
+      checkpointTag = 'A';
+      marble.position.copy(currentLevel.start);
+      marble.position.y += 0.2;
+      camera.position.set(marble.position.x, marble.position.y + 11, marble.position.z - 18);
+      camera.lookAt(marble.position);
+      showHUD(true);
+      state = 'title';
+      renderPanelForTitle();
+      updateHUD();
+    }
+
+    function buildBaseSky(level) {
+      const sky = new THREE.Mesh(
+        new THREE.SphereGeometry(220, 24, 24),
+        new THREE.MeshBasicMaterial({ color: levelThemes[level].bg, side: THREE.BackSide, transparent: true, opacity: 0.18 })
+      );
+      world.add(sky);
+      currentLevelObjects.push(sky);
+    }
+
+    function buildLevelOne(color) {
+      currentLevel.start = new THREE.Vector3(0, 3.1, 0);
+      buildBaseSky(0);
+      addPlatform(0, 0, 0, 0, 18, 1.4, 18);
+      addCheckpoint(0, 0, 3.2, 0, 'A');
+      addGem(0, -4, 3.4, -2);
+      addGem(0, 4, 3.4, 2);
+      addPlatform(0, 0, 0, 14, 15, 1.2, 10, { rx: -0.1 });
+      addGem(0, 0, 2.9, 14);
+      addPlatform(0, 0, 0.6, 28, 16, 1.3, 14, { rx: -0.2 });
+      addCheckpoint(0, 0, 4.4, 28, 'B');
+      addGem(0, -2.5, 4.4, 28);
+      addPlatform(0, 4, 0.4, 42, 14, 1.2, 9, { rz: -0.08 });
+      addGem(0, 6, 2.8, 42);
+      addPlatform(0, 0, 0, 55, 16, 1.3, 16);
+      addPlatform(0, -2.5, 0, 68, 9, 1.0, 6, { rx: 0.08 });
+      addPlatform(0, 2.5, 0, 78, 12, 1.2, 12, { rx: -0.08 });
+      addCheckpoint(0, 2.5, 3.2, 78, 'C');
+      addGem(0, 2.5, 3.3, 78);
+      addFinish(0, 2.5, 3.6, 90);
+      currentLevel.title = 'INTRODUCTION';
+    }
+
+    function buildLevelTwo(color) {
+      currentLevel.start = new THREE.Vector3(-8, 3.2, 0);
+      buildBaseSky(1);
+      addPlatform(1, -8, 0, 0, 12, 1.3, 12);
+      addCheckpoint(1, -8, 3.2, 0, 'A');
+      addPlatform(1, -8, 0, 13, 7, 1.0, 18, { rz: 0.12 });
+      addGem(1, -10, 2.8, 13);
+      addPlatform(1, -2, 0.1, 25, 7, 1.0, 7, { motion: { type: 'slideX', amp: 4.2, speed: 0.9 } });
+      addGem(1, -2, 3.0, 25);
+      addPlatform(1, 6, 0, 34, 8, 1.1, 14, { rx: -0.1 });
+      addCheckpoint(1, 6, 3.3, 34, 'B');
+      addGem(1, 8, 3.2, 34);
+      addPlatform(1, 4, 0, 48, 5, 1.0, 5, { motion: { type: 'slideZ', amp: 4, speed: 1.15 } });
+      addPlatform(1, 10, 0, 58, 10, 1.2, 10, { ry: 0.12, motion: { type: 'rotateY', speed: 0.55 } });
+      addGem(1, 10, 3.3, 58);
+      addPlatform(1, 2, 0, 70, 7, 1.0, 18, { rx: -0.08 });
+      addPlatform(1, -4, 0, 84, 18, 1.3, 10);
+      addCheckpoint(1, -4, 3.4, 84, 'C');
+      addGem(1, -9, 3.2, 84);
+      addPlatform(1, 0, 0.4, 98, 10, 1.2, 8, { motion: { type: 'slideX', amp: 2.4, speed: 1.3 } });
+      addFinish(1, 0, 3.4, 110);
+      currentLevel.title = 'INTERMEDIATE';
+    }
+
+    function buildLevelThree(color) {
+      currentLevel.start = new THREE.Vector3(0, 3.3, 0);
+      buildBaseSky(2);
+      addPlatform(2, 0, 0, 0, 14, 1.3, 14);
+      addCheckpoint(2, 0, 3.2, 0, 'A');
+      addPlatform(2, 0, 0, 12, 9, 1.0, 7, { motion: { type: 'slideX', amp: 4.6, speed: 1.0 } });
+      addGem(2, -1.2, 2.8, 12);
+      addPlatform(2, -6, 0, 24, 7, 1.0, 7, { ry: 0.1, motion: { type: 'rotateY', speed: 0.75 } });
+      addPlatform(2, 4, 0, 36, 5, 1.0, 5, { solid: true, type: 'disappear' });
+      addGem(2, 4, 2.8, 36);
+      addPlatform(2, 0, 0, 48, 7, 1.0, 7, { solid: true, type: 'disappear' });
+      addPlatform(2, -7, 0, 60, 12, 1.2, 8, { rx: -0.14 });
+      addCheckpoint(2, -7, 3.2, 60, 'B');
+      addGem(2, -10, 3.0, 60);
+      addPlatform(2, -1, 0.4, 74, 5, 1.0, 12, { motion: { type: 'slideZ', amp: 5.6, speed: 1.45 } });
+      addPlatform(2, 6, 0, 88, 7, 1.0, 7, { ry: 0.18, motion: { type: 'rotateY', speed: -0.9 } });
+      addGem(2, 6, 3.0, 88);
+      addPlatform(2, 0, 0, 102, 13, 1.3, 11, { type: 'disappear' });
+      addPlatform(2, -8, 0, 116, 6, 1.0, 6, { type: 'disappear' });
+      addPlatform(2, 0, 0, 130, 9, 1.1, 18, { rx: 0.1 });
+      addCheckpoint(2, 0, 3.4, 130, 'C');
+      addGem(2, 2.7, 3.3, 130);
+      addPlatform(2, 0, 0, 145, 16, 1.3, 16, { rx: -0.22 });
+      addFinish(2, 0, 3.8, 160);
+      currentLevel.title = 'EXPERT';
+    }
+
+    function showHUD(v) {
+      hud.style.opacity = v ? '1' : '0';
+    }
+
+    function ratingForTime(t) {
+      if (t <= 65) return { label: 'GOLD', cls: 'gold' };
+      if (t <= 95) return { label: 'SILVER', cls: 'silver' };
+      return { label: 'BRONZE', cls: 'bronze' };
+    }
+
+    function formatTime(t) { return t.toFixed(2) + 's'; }
+
+    function renderPanelForTitle() {
+      showHUD(false);
+      titleBanner.style.opacity = '1';
+      setPanel(`
+        <h1 class="panelTitle">Marble Madness</h1>
+        <p class="panelText">Tilt the neon circuits, accelerate through space, and survive the shifting platforms. Collect gems to shave time, hit checkpoints to save your run, and conquer all three circuits with style.</p>
+        <div class="grid">
+          <div class="card" style="color: var(--green);">
+            <h3>Level 1 — Introduction</h3>
+            <p>Wide platforms, gentle ramps, and a forgiving line to learn the physics.</p>
+            <div class="accent"></div>
+          </div>
+          <div class="card" style="color: var(--blue);">
+            <h3>Level 2 — Intermediate</h3>
+            <p>Narrow bridges, moving platforms, and longer gaps to punish sloppy steering.</p>
+            <div class="accent"></div>
+          </div>
+          <div class="card" style="color: var(--purple);">
+            <h3>Level 3 — Expert</h3>
+            <p>Rotating platforms, disappearing tiles, and timing-heavy precision routes.</p>
+            <div class="accent"></div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="startSeq">Start Sequential Run</button>
+          <button class="ghost" id="lvl1">Play Level 1</button>
+          <button class="ghost" id="lvl2">Play Level 2</button>
+          <button class="ghost" id="lvl3">Play Level 3</button>
+        </div>
+        <p class="panelText" style="margin-top:14px;">Move with WASD or Arrow Keys. Space jumps. R restarts the current level. Use the mute toggle if you need silence.</p>
+      `);
+      document.getElementById('startSeq').onclick = () => { sequenceMode = true; startGame(0); };
+      document.getElementById('lvl1').onclick = () => { sequenceMode = false; startGame(0); };
+      document.getElementById('lvl2').onclick = () => { sequenceMode = false; startGame(1); };
+      document.getElementById('lvl3').onclick = () => { sequenceMode = false; startGame(2); };
+    }
+
+    function renderPanelForLevelComplete(doneAll = false) {
+      const rating = ratingForTime(getEffectiveTime());
+      titleBanner.style.opacity = '1';
+      setPanel(`
+        <h1 class="panelTitle">${doneAll ? 'CIRCUIT CLEARED' : 'LEVEL COMPLETE'}</h1>
+        <p class="panelText">${doneAll ? 'You threaded every circuit and survived the neon void.' : `Circuit ${levelIndex + 1} has been mastered. The next challenge awaits.`}</p>
+        <div class="grid">
+          <div class="card" style="color: var(--gold);">
+            <h3>Time</h3>
+            <p>${formatTime(getEffectiveTime())}</p>
+            <div class="accent"></div>
+          </div>
+          <div class="card" style="color: var(--blue);">
+            <h3>Gems</h3>
+            <p>${collectedThisLevel} collected</p>
+            <div class="accent"></div>
+          </div>
+          <div class="card" style="color: var(--purple);">
+            <h3>Rating</h3>
+            <p><span class="rating ${rating.cls}">${rating.label}</span></p>
+            <div class="accent"></div>
+          </div>
+        </div>
+        <div class="actions">
+          ${doneAll ? '<button class="primary" id="again">Play Again</button>' : '<button class="primary" id="next">Next Level</button>'}
+          <button class="ghost" id="back">Back to Title</button>
+        </div>
+      `);
+      const back = document.getElementById('back');
+      back.onclick = () => { state = 'title'; renderPanelForTitle(); };
+      if (doneAll) {
+        document.getElementById('again').onclick = () => { sequenceMode = true; startGame(0); };
+      } else {
+        document.getElementById('next').onclick = () => { startGame(levelIndex + 1); };
+      }
+    }
+
+    function renderPanelForGameOver() {
+      titleBanner.style.opacity = '1';
+      setPanel(`
+        <h1 class="panelTitle">GAME OVER</h1>
+        <p class="panelText">The marble shattered into the void. Every extra life has been spent. Press restart to try the circuit again.</p>
+        <div class="grid">
+          <div class="card" style="color: var(--red);">
+            <h3>Last Time</h3>
+            <p>${formatTime(getEffectiveTime())}</p>
+            <div class="accent"></div>
+          </div>
+          <div class="card" style="color: var(--blue);">
+            <h3>Gems</h3>
+            <p>${collectedThisLevel} collected</p>
+            <div class="accent"></div>
+          </div>
+          <div class="card" style="color: var(--purple);">
+            <h3>Level</h3>
+            <p>${currentLevel?.name || '—'}</p>
+            <div class="accent"></div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="retry">Retry</button>
+          <button class="ghost" id="menu">Back to Title</button>
+        </div>
+      `);
+      document.getElementById('retry').onclick = () => startGame(levelIndex);
+      document.getElementById('menu').onclick = () => { state = 'title'; renderPanelForTitle(); };
+    }
+
+    function startGame(idx) {
+      ensureAudio();
+      selectedLevel = idx;
+      spawnLevel(idx);
+      state = 'playing';
+      titleBanner.style.opacity = '0';
+      setPanel('');
+      showHUD(true);
+      chordMusic(currentLevel.music, currentLevel.color);
+      marble.position.copy(currentLevel.start).add(new THREE.Vector3(0, 0.35, 0));
+      checkpointPos.copy(currentLevel.start);
+      checkpointTag = 'A';
+      lives = 3;
+      rawTime = 0;
+      penaltyTime = 0;
+      bonusTime = 0;
+      collectedThisLevel = 0;
+      totalCollected += 0;
+      respawnTimer = 0;
+      marbleVel.set(0, 0, 0);
+      toastMsg(`${currentLevel.name} Loaded`);
+      updateHUD();
+    }
+
+    function startNextLevel() {
+      if (levelIndex < 2) {
+        sequenceMode = true;
+        startGame(levelIndex + 1);
+      } else {
+        state = 'gameComplete';
+        stopMusic();
+        playComplete();
+        showHUD(false);
+        titleBanner.style.opacity = '1';
+        setPanel(`
+          <h1 class="panelTitle">ALL LEVELS CLEARED</h1>
+          <p class="panelText">Final effective time: ${formatTime(getEffectiveTime())}. The neon circuit has fallen to your marble.</p>
+          <div class="grid">
+            <div class="card" style="color: var(--gold);">
+              <h3>Final Time</h3>
+              <p>${formatTime(getEffectiveTime())}</p>
+              <div class="accent"></div>
+            </div>
+            <div class="card" style="color: var(--blue);">
+              <h3>Total Gems</h3>
+              <p>${totalCollected}</p>
+              <div class="accent"></div>
+            </div>
+            <div class="card" style="color: var(--purple);">
+              <h3>Victory</h3>
+              <p>Complete</p>
+              <div class="accent"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="primary" id="again">Run Again</button>
+            <button class="ghost" id="menu">Back to Title</button>
+          </div>
+        `);
+        document.getElementById('again').onclick = () => { sequenceMode = true; startGame(0); };
+        document.getElementById('menu').onclick = () => { state = 'title'; renderPanelForTitle(); };
+      }
+    }
+
+    function getEffectiveTime() {
+      return Math.max(0, rawTime + penaltyTime - bonusTime);
+    }
+
+    function updateHUD() {
+      hudLevel.textContent = String(levelIndex + 1);
+      hudTime.textContent = formatTime(getEffectiveTime());
+      hudGems.textContent = `${collectedThisLevel}/${activeGemCount}`;
+      hudLives.textContent = String(lives);
+      hudCheckpoint.textContent = checkpointTag;
+    }
+
+    function respawn() {
+      lives -= 1;
+      penaltyTime += 5;
+      marble.position.copy(checkpointPos);
+      marble.position.y += 0.5;
+      marbleVel.set(0, 0, 0);
+      grounded = false;
+      groundPlatform = null;
+      respawnTimer = 0.35;
+      addSparkle(marble.position, currentLevel.color, 16, 2);
+      playFall();
+      playRespawn();
+      toastMsg('Checkpoint Respawn -5s');
+      if (lives <= 0) {
+        state = 'gameOver';
+        stopMusic();
+        showHUD(false);
+        renderPanelForGameOver();
+      }
+      updateHUD();
+    }
+
+    function collectGem(g) {
+      g.userData.alive = false;
+      g.visible = false;
+      collectedThisLevel += 1;
+      totalCollected += 1;
+      bonusTime += 1.5;
+      addSparkle(g.position, currentLevel.color, 20, 2.4);
+      playCollect();
+      toastMsg('+ GEM');
+      updateHUD();
+    }
+
+    function updatePlatformMotion(p, dt) {
+      p.userData.prevPosition.copy(p.position);
+      p.userData.prevQuat.copy(p.quaternion);
+      const m = p.userData.motion;
+      if (!m) {
+        if (p.userData.type === 'disappear') {
+          if (p.userData.touched && p.userData.fade > 0) {
+            p.userData.fade = Math.max(0, p.userData.fade - dt * 0.18);
+            const a = p.userData.fade;
+            p.userData.mesh.material.opacity = 0.08 + a * 0.72;
+            p.userData.top.material.opacity = 0.02 + a * 0.16;
+            p.userData.wire.material.opacity = 0.05 + a * 0.25;
+            p.userData.edges.material.opacity = 0.1 + a * 0.9;
+            p.userData.solid = a > 0.12;
+          } else if (!p.userData.solid) {
+            p.userData.fade = Math.min(1, p.userData.fade + dt * 0.06);
+            const a = p.userData.fade;
+            p.userData.mesh.material.opacity = 0.08 + a * 0.72;
+            p.userData.top.material.opacity = 0.02 + a * 0.16;
+            p.userData.wire.material.opacity = 0.05 + a * 0.25;
+            p.userData.edges.material.opacity = 0.1 + a * 0.9;
+            if (a > 0.98) p.userData.solid = true;
+          }
+        }
+        return;
+      }
+      p.userData.humPhase += dt * (m.speed || 1);
+      if (m.type === 'slideX') {
+        p.position.x = p.userData.basePosition.x + Math.sin(p.userData.humPhase) * (m.amp || 2);
+      } else if (m.type === 'slideZ') {
+        p.position.z = p.userData.basePosition.z + Math.sin(p.userData.humPhase) * (m.amp || 2);
+      } else if (m.type === 'rotateY') {
+        p.rotation.y = p.userData.baseRotation.y + p.userData.humPhase;
+      }
+      if (p.userData.type === 'disappear') {
+        if (p.userData.touched && p.userData.fade > 0) {
+          p.userData.fade = Math.max(0, p.userData.fade - dt * 0.18);
+          const a = p.userData.fade;
+          p.userData.mesh.material.opacity = 0.08 + a * 0.72;
+          p.userData.top.material.opacity = 0.02 + a * 0.16;
+          p.userData.wire.material.opacity = 0.05 + a * 0.25;
+          p.userData.edges.material.opacity = 0.1 + a * 0.9;
+          p.userData.solid = a > 0.12;
+        }
+      }
+    }
+
+    function applyPlatformCarry(p) {
+      const deltaPos = tempV.copy(p.position).sub(p.userData.prevPosition);
+      if (deltaPos.lengthSq() > 0) marble.position.add(deltaPos);
+      const prevYaw = new THREE.Euler().setFromQuaternion(p.userData.prevQuat, 'YXZ').y;
+      const currYaw = p.rotation.y;
+      const deltaYaw = currYaw - prevYaw;
+      if (Math.abs(deltaYaw) > 0.0001) {
+        const center = p.position.clone();
+        const rel = marble.position.clone().sub(center);
+        rel.applyAxisAngle(up, deltaYaw);
+        marble.position.copy(center.add(rel));
+      }
+    }
+
+    function collideWithPlatforms(dt) {
+      grounded = false;
+      groundPlatform = null;
+      const prevY = marble.position.y;
+      for (const p of currentLevelObjects) {
+        if (!p.isGroup || !p.userData || !p.userData.mesh) continue;
+        if (p.userData.type === 'checkpoint' || p.userData.gem) continue;
+        if (!p.userData.solid) continue;
+
+        const size = p.userData.size;
+        tempV.copy(marble.position);
+        p.worldToLocal(tempV);
+
+        if (Math.abs(tempV.x) <= size.x * 0.5 + 0.9 && Math.abs(tempV.z) <= size.z * 0.5 + 0.9) {
+          const topY = size.y * 0.5 + marbleRadius;
+          if (tempV.y <= topY + 0.28 && marbleVel.y <= 7.5) {
+            tempV.y = topY;
+            p.localToWorld(tempV);
+            if (marble.position.y > tempV.y - 0.06) {
+              marble.position.copy(tempV);
+            } else {
+              marble.position.y = tempV.y;
+            }
+            if (marbleVel.y < 0) marbleVel.y = 0;
+            grounded = true;
+            groundPlatform = p;
+            if (!p.userData.touched && p.userData.type === 'disappear') {
+              p.userData.touched = true;
+              p.userData.fade = 1;
+            }
+          }
+        }
+      }
+      if (grounded && !isNaN(prevY) && Math.abs(prevY - marble.position.y) > 0.001) {
+        playLand();
+      }
+    }
+
+    function updateMarkers(dt) {
+      for (const c of currentCheckpoints) {
+        c.userData.pulse += dt * 2.5;
+        const s = 1 + Math.sin(c.userData.pulse) * 0.08;
+        c.userData.ring.scale.setScalar(s);
+        c.userData.halo.scale.setScalar(1.9 + Math.sin(c.userData.pulse * 1.6) * 0.16);
+        c.rotation.y += dt * 0.5;
+      }
+      for (const g of currentGems) {
+        if (!g.userData.alive) continue;
+        g.userData.phase += dt * 2.3;
+        g.rotation.y += dt * 1.8;
+        g.rotation.x += dt * 1.4;
+        const bob = Math.sin(g.userData.phase) * 0.18;
+        g.position.y += bob * 0.04;
+        g.userData.halo.material.opacity = 0.78 + Math.sin(g.userData.phase * 2) * 0.12;
+      }
+      if (currentFinish) {
+        currentFinish.userData.pulse += dt * 3;
+        currentFinish.scale.setScalar(1 + Math.sin(currentFinish.userData.pulse) * 0.02);
+        currentFinish.rotation.y += dt * 0.7;
+      }
+    }
+
+    function handleGemAndCheckpoints() {
+      for (const c of currentCheckpoints) {
+        if (marble.position.distanceTo(c.position) < 2.5) {
+          checkpointPos.copy(c.position);
+          checkpointPos.y = c.position.y + 0.5;
+          checkpointTag = c.userData.tag;
+        }
+      }
+      for (const g of currentGems) {
+        if (!g.userData.alive) continue;
+        if (marble.position.distanceTo(g.position) < 1.3) collectGem(g);
+      }
+      if (currentFinish && marble.position.distanceTo(currentFinish.position) < 4.1) {
+        finishHold += 1;
+        if (finishHold > 0.5) completeLevel();
+      } else {
+        finishHold = 0;
+      }
+    }
+
+    function completeLevel() {
+      if (state !== 'playing') return;
+      state = 'levelComplete';
+      stopMusic();
+      playComplete();
+      showHUD(false);
+      const doneAll = levelIndex >= 2;
+      renderPanelForLevelComplete(doneAll);
+      toastMsg('LEVEL COMPLETE');
+    }
+
+    function updateMarbleAudio(speed) {
+      if (!rollOsc || muted || !audioUnlocked) return;
+      const now = audioCtx.currentTime;
+      rollOsc.frequency.setTargetAtTime(48 + speed * 12, now, 0.04);
+      const gain = Math.min(0.12, Math.max(0, (speed - 1.2) * 0.025));
+      const node = musicNodes.find(n => n.rollGain);
+      if (node) node.rollGain.gain.setTargetAtTime(gain, now, 0.05);
+    }
+
+    function updatePhysics(dt) {
+      rawTime += dt;
+      const g = 22;
+      const inputX = tilt.x;
+      const inputZ = tilt.y;
+      const accel = new THREE.Vector3(inputX * 20, 0, inputZ * 20);
+      if (grounded) {
+        marbleVel.x += accel.x * dt;
+        marbleVel.z += accel.z * dt;
+        marbleVel.x *= Math.pow(0.984, dt * 60);
+        marbleVel.z *= Math.pow(0.984, dt * 60);
+        marbleVel.y = Math.max(marbleVel.y, -0.2);
+      } else {
+        marbleVel.x += accel.x * dt * 0.74;
+        marbleVel.z += accel.z * dt * 0.74;
+      }
+      marbleVel.y -= g * dt;
+      marble.position.addScaledVector(marbleVel, dt);
+
+      for (const p of currentMoving) {
+        const before = p.userData.prevPosition.clone();
+        updatePlatformMotion(p, dt);
+        if (groundPlatform === p && grounded) {
+          applyPlatformCarry(p);
+        }
+        if (p.userData.motion && p.userData.motion.type === 'rotateY' && groundPlatform === p && grounded) {
+          const deltaYaw = p.rotation.y - new THREE.Euler().setFromQuaternion(p.userData.prevQuat, 'YXZ').y;
+          if (Math.abs(deltaYaw) > 0.0001) {
+            const center = p.position.clone();
+            const rel = marble.position.clone().sub(center);
+            rel.applyAxisAngle(up, deltaYaw);
+            marble.position.copy(center.add(rel));
+          }
+        }
+        void before;
+      }
+
+      for (const p of currentLevelObjects) {
+        if (p.isGroup && p.userData && p.userData.mesh && !currentMoving.includes(p)) updatePlatformMotion(p, dt);
+      }
+
+      collideWithPlatforms(dt);
+
+      if (marble.position.y < -20 || marble.position.length() > 220 || Math.abs(marble.position.x) > 90 || Math.abs(marble.position.z) > 220) {
+        if (state === 'playing') respawn();
+      }
+
+      if (respawnTimer > 0) respawnTimer -= dt;
+
+      const speed = marbleVel.length();
+      updateMarbleAudio(speed);
+      marble.rotation.x += marbleVel.z * dt * 0.65;
+      marble.rotation.z -= marbleVel.x * dt * 0.65;
+      marbleCore.rotation.x += dt * 2.4;
+      marbleCore.rotation.y += dt * 1.8;
+      if (grounded) {
+        addTrail(marble.position.clone().add(new THREE.Vector3(0, -0.3, 0)), levelThemes[levelIndex].color, 0.28 + Math.min(0.3, speed * 0.06), 0.24 + Math.min(0.2, speed * 0.015));
+      }
+      handleGemAndCheckpoints();
+      updateHUD();
+    }
+
+    function updateCamera(dt) {
+      const target = marble.position.clone().add(new THREE.Vector3(-tiltVisual.x * 5.5, 9.8, -15.5 + tiltVisual.y * 3.2));
+      camera.position.lerp(target, 1 - Math.pow(0.001, dt));
+      const lookTarget = marble.position.clone().add(new THREE.Vector3(0, 1.2, 0));
+      camera.lookAt(lookTarget);
+    }
+
+    function updateVisualTilt(dt) {
+      tiltVisual.lerp(tilt, 1 - Math.pow(0.001, dt * 2.5));
+      world.rotation.z = THREE.MathUtils.lerp(world.rotation.z, -tiltVisual.x * 0.12, 1 - Math.pow(0.001, dt * 6));
+      world.rotation.x = THREE.MathUtils.lerp(world.rotation.x, tiltVisual.y * 0.12, 1 - Math.pow(0.001, dt * 6));
+      stars.rotation.y += dt * 0.02;
+      nebulaGroup.rotation.y += dt * 0.008;
+      nebulaGroup.rotation.x += dt * 0.003;
+    }
+
+    function updateTrail(dt) {
+      for (const sp of trailPool) {
+        if (!sp.visible) continue;
+        sp.userData.life -= dt;
+        sp.position.addScaledVector(sp.userData.vel, dt);
+        sp.material.opacity = Math.max(0, sp.userData.life / sp.userData.max);
+        sp.scale.multiplyScalar(1 + dt * 0.2);
+        if (sp.userData.life <= 0) sp.visible = false;
+      }
+      for (const sp of sparklePool) {
+        if (!sp.visible) continue;
+        sp.userData.life -= dt;
+        sp.position.addScaledVector(sp.userData.vel, dt);
+        sp.userData.vel.y -= 4.5 * dt;
+        sp.material.opacity = Math.max(0, sp.userData.life / sp.userData.max);
+        sp.scale.multiplyScalar(1 + dt * 0.35);
+        if (sp.userData.life <= 0) sp.visible = false;
+      }
+    }
+
+    function updateTitlePulse(dt) {
+      const t = performance.now() * 0.001;
+      titleBanner.style.transform = `translateX(-50%) translateY(${Math.sin(t * 1.3) * 2}px)`;
+      titleBanner.children[0].style.textShadow = `0 0 10px rgba(255,255,255,.4), 0 0 30px rgba(${Math.round(60 + Math.sin(t) * 50)}, ${Math.round(190 + Math.sin(t * 0.8) * 40)}, 255, .3)`;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.033);
+      updateTitlePulse(dt);
+      updateVisualTilt(dt);
+      updateTrail(dt);
+      if (state === 'playing') {
+        updatePhysics(dt);
+        updateCamera(dt);
+        updateMarkers(dt);
+        if (currentLevel) {
+          const movingHum = currentMoving.length > 0 ? 1 : 0;
+          if (musicNodes[4] && musicNodes[4].humGain) musicNodes[4].humGain.gain.setTargetAtTime(muted ? 0 : (0.018 + movingHum * 0.01), audioCtx.currentTime, 0.1);
+        }
+      } else if (state === 'title') {
+        camera.position.lerp(new THREE.Vector3(0, 11, 18), 1 - Math.pow(0.001, dt));
+        camera.lookAt(0, 0.8, 0);
+      } else {
+        updateMarkers(dt);
+      }
+      renderer.render(scene, camera);
+    }
+
+    function restartCurrent() {
+      if (state === 'playing' || state === 'levelComplete' || state === 'gameOver') {
+        startGame(levelIndex);
+      }
+    }
+
+    function keyDir(code) {
+      if (code === 'ArrowLeft' || code === 'KeyA') return [-1, 0];
+      if (code === 'ArrowRight' || code === 'KeyD') return [1, 0];
+      if (code === 'ArrowUp' || code === 'KeyW') return [0, -1];
+      if (code === 'ArrowDown' || code === 'KeyS') return [0, 1];
+      return [0, 0];
+    }
+
+    window.addEventListener('keydown', (e) => {
+      ensureAudio();
+      keys.add(e.code);
+      const [x, z] = keyDir(e.code);
+      if (x || z) e.preventDefault();
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (state === 'title') {
+          startGame(selectedLevel);
+          return;
+        }
+        if (state === 'levelComplete') {
+          if (levelIndex < 2) startGame(levelIndex + 1); else startNextLevel();
+          return;
+        }
+        if (state === 'gameOver' || state === 'gameComplete') {
+          startGame(0);
+          return;
+        }
+        if (state === 'playing' && grounded) {
+          marbleVel.y = 9.2;
+          grounded = false;
+          groundPlatform = null;
+          playJump();
+          addSparkle(marble.position.clone().add(new THREE.Vector3(0, -0.5, 0)), currentLevel.color, 14, 1.6);
+        }
+      } else if (e.code === 'KeyR') {
+        restartCurrent();
+      } else if (e.code === 'Digit1') {
+        selectedLevel = 0;
+        if (state === 'title') toastMsg('Level 1 Selected');
+      } else if (e.code === 'Digit2') {
+        selectedLevel = 1;
+        if (state === 'title') toastMsg('Level 2 Selected');
+      } else if (e.code === 'Digit3') {
+        selectedLevel = 2;
+        if (state === 'title') toastMsg('Level 3 Selected');
+      }
+    });
+
+    window.addEventListener('keyup', (e) => keys.delete(e.code));
+    window.addEventListener('pointerdown', ensureAudio, { passive: true });
+    muteBtn.addEventListener('click', () => { ensureAudio(); setMuted(!muted); toastMsg(muted ? 'Sound On' : 'Muted'); });
+
+    function pollInput() {
+      let x = 0, z = 0;
+      if (keys.has('ArrowLeft') || keys.has('KeyA')) x -= 1;
+      if (keys.has('ArrowRight') || keys.has('KeyD')) x += 1;
+      if (keys.has('ArrowUp') || keys.has('KeyW')) z -= 1;
+      if (keys.has('ArrowDown') || keys.has('KeyS')) z += 1;
+      tilt.set(
+        THREE.MathUtils.clamp(x, -1, 1),
+        THREE.MathUtils.clamp(z, -1, 1)
+      );
+    }
+
+    function resize() {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    }
+    window.addEventListener('resize', resize);
+
+    function init() {
+      renderPanelForTitle();
+      showHUD(false);
+      spawnLevel(0);
+      state = 'title';
+      selectedLevel = 0;
+      pollInput();
+      animate();
+    }
+
+    function gameLoopInput() { pollInput(); requestAnimationFrame(gameLoopInput); }
+    gameLoopInput();
+    init();
+  </script>
+</body>
+</html>

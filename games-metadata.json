@@ -11,28 +11,28 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 651,
+          "linesOfCode": 732,
           "path": "/games/snake/opus-4-6/index.html"
         },
         {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "linesOfCode": 709,
+          "linesOfCode": 741,
           "path": "/games/snake/sonnet-4-6/index.html"
         },
         {
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "linesOfCode": 1303,
+          "linesOfCode": 1522,
           "path": "/games/snake/gpt-5-4/index.html"
         },
         {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "linesOfCode": 1106,
+          "linesOfCode": 1172,
           "path": "/games/snake/gpt-5-4-mini/index.html"
         }
       ]
@@ -48,28 +48,28 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 763,
+          "linesOfCode": 908,
           "path": "/games/minesweeper/opus-4-6/index.html"
         },
         {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "linesOfCode": 646,
+          "linesOfCode": 734,
           "path": "/games/minesweeper/sonnet-4-6/index.html"
         },
         {
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "linesOfCode": 1696,
+          "linesOfCode": 1676,
           "path": "/games/minesweeper/gpt-5-4/index.html"
         },
         {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "linesOfCode": 921,
+          "linesOfCode": 1081,
           "path": "/games/minesweeper/gpt-5-4-mini/index.html"
         }
       ]
@@ -85,28 +85,28 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 929,
+          "linesOfCode": 1037,
           "path": "/games/tetris/opus-4-6/index.html"
         },
         {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "linesOfCode": 799,
+          "linesOfCode": 909,
           "path": "/games/tetris/sonnet-4-6/index.html"
         },
         {
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "linesOfCode": 1939,
+          "linesOfCode": 2024,
           "path": "/games/tetris/gpt-5-4/index.html"
         },
         {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "linesOfCode": 1072,
+          "linesOfCode": 1155,
           "path": "/games/tetris/gpt-5-4-mini/index.html"
         }
       ]
@@ -122,28 +122,28 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 1116,
+          "linesOfCode": 1272,
           "path": "/games/reversi/opus-4-6/index.html"
         },
         {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-26",
-          "linesOfCode": 919,
+          "linesOfCode": 1026,
           "path": "/games/reversi/sonnet-4-6/index.html"
         },
         {
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-26",
-          "linesOfCode": 1259,
+          "linesOfCode": 1318,
           "path": "/games/reversi/gpt-5-4/index.html"
         },
         {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-26",
-          "linesOfCode": 1143,
+          "linesOfCode": 1274,
           "path": "/games/reversi/gpt-5-4-mini/index.html"
         }
       ]
@@ -159,28 +159,28 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 892,
+          "linesOfCode": 990,
           "path": "/games/breakout/opus-4-6/index.html"
         },
         {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 598,
+          "linesOfCode": 784,
           "path": "/games/breakout/sonnet-4-6/index.html"
         },
         {
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-30",
-          "linesOfCode": 1093,
+          "linesOfCode": 1278,
           "path": "/games/breakout/gpt-5-4/index.html"
         },
         {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-30",
-          "linesOfCode": 360,
+          "linesOfCode": 534,
           "path": "/games/breakout/gpt-5-4-mini/index.html"
         }
       ]
@@ -196,29 +196,103 @@
           "model": "Claude Opus 4.6",
           "modelId": "opus-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 724,
+          "linesOfCode": 870,
           "path": "/games/2048/opus-4-6/index.html"
         },
         {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-03-30",
-          "linesOfCode": 501,
+          "linesOfCode": 649,
           "path": "/games/2048/sonnet-4-6/index.html"
         },
         {
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-03-30",
-          "linesOfCode": 539,
+          "linesOfCode": 708,
           "path": "/games/2048/gpt-5-4/index.html"
         },
         {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-30",
-          "linesOfCode": 277,
+          "linesOfCode": 476,
           "path": "/games/2048/gpt-5-4-mini/index.html"
+        }
+      ]
+    },
+    {
+      "id": "endless-runner",
+      "name": "Endless Runner 3D",
+      "description": "A neon-soaked 3D sprint through an endless cyberpunk corridor with obstacles, collectibles, and power-ups.",
+      "icon": "🏃",
+      "accentColor": "#00ffff",
+      "versions": [
+        {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-31",
+          "linesOfCode": 994,
+          "path": "/games/endless-runner/opus-4-6/index.html"
+        },
+        {
+          "model": "Claude Sonnet 4.6",
+          "modelId": "sonnet-4-6",
+          "date": "2026-03-31",
+          "linesOfCode": 1044,
+          "path": "/games/endless-runner/sonnet-4-6/index.html"
+        },
+        {
+          "model": "GPT 5.4",
+          "modelId": "gpt-5-4",
+          "date": "2026-03-31",
+          "linesOfCode": 1766,
+          "path": "/games/endless-runner/gpt-5-4/index.html"
+        },
+        {
+          "model": "GPT 5.4 Mini",
+          "modelId": "gpt-5-4-mini",
+          "date": "2026-03-31",
+          "linesOfCode": 1207,
+          "path": "/games/endless-runner/gpt-5-4-mini/index.html"
+        }
+      ]
+    },
+    {
+      "id": "marble-madness",
+      "name": "Marble Madness",
+      "description": "Roll a glowing marble across neon platforms suspended in space. Master physics, dodge hazards, and race the clock.",
+      "icon": "🔮",
+      "accentColor": "#ff00ff",
+      "versions": [
+        {
+          "model": "Claude Opus 4.6",
+          "modelId": "opus-4-6",
+          "date": "2026-03-31",
+          "linesOfCode": 1017,
+          "path": "/games/marble-madness/opus-4-6/index.html"
+        },
+        {
+          "model": "Claude Sonnet 4.6",
+          "modelId": "sonnet-4-6",
+          "date": "2026-03-31",
+          "linesOfCode": 1265,
+          "path": "/games/marble-madness/sonnet-4-6/index.html"
+        },
+        {
+          "model": "GPT 5.4",
+          "modelId": "gpt-5-4",
+          "date": "2026-03-31",
+          "linesOfCode": 2012,
+          "path": "/games/marble-madness/gpt-5-4/index.html"
+        },
+        {
+          "model": "GPT 5.4 Mini",
+          "modelId": "gpt-5-4-mini",
+          "date": "2026-03-31",
+          "linesOfCode": 1579,
+          "path": "/games/marble-madness/gpt-5-4-mini/index.html"
         }
       ]
     }

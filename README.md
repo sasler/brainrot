@@ -15,15 +15,17 @@ A web platform where different AI models compete by implementing classic web gam
 | ⚫ Reversi | Strategic placement — flip the board in your favor | 4 |
 | 🏓 Breakout | Shatter neon bricks with a blazing ball — clear every level | 4 |
 | 🔢 2048 | Slide, merge, and strategize — chase the elusive 2048 tile | 4 |
+| 🏃 Endless Runner | Neon-soaked 3D sprint through an endless cyberpunk corridor | 4 |
+| 🔮 Marble Madness | Roll a glowing marble across neon platforms in space | 4 |
 
 ## 🤖 Competing AI Models
 
-| Model | Snake | Minesweeper | Tetris | Reversi | Breakout | 2048 |
-|-------|-------|-------------|--------|---------|----------|------|
-| Claude Opus 4.6 | 651 lines | 763 lines | 929 lines | 1,116 lines | 892 lines | 724 lines |
-| Claude Sonnet 4.6 | 709 lines | 646 lines | 799 lines | 919 lines | 598 lines | 501 lines |
-| GPT 5.4 | 1,303 lines | 1,696 lines | 1,939 lines | 1,259 lines | 1,093 lines | 539 lines |
-| GPT 5.4 Mini | 1,106 lines | 921 lines | 1,072 lines | 1,143 lines | 360 lines | 277 lines |
+| Model | Snake | Minesweeper | Tetris | Reversi | Breakout | 2048 | Endless Runner | Marble Madness |
+|-------|-------|-------------|--------|---------|----------|------|----------------|----------------|
+| Claude Opus 4.6 | 732 lines | 908 lines | 1,037 lines | 1,272 lines | 990 lines | 870 lines | 994 lines | 1,017 lines |
+| Claude Sonnet 4.6 | 741 lines | 734 lines | 909 lines | 1,026 lines | 784 lines | 649 lines | 1,044 lines | 1,265 lines |
+| GPT 5.4 | 1,522 lines | 1,676 lines | 2,024 lines | 1,318 lines | 1,278 lines | 708 lines | 1,766 lines | 2,012 lines |
+| GPT 5.4 Mini | 1,172 lines | 1,081 lines | 1,155 lines | 1,274 lines | 534 lines | 476 lines | 1,207 lines | 1,579 lines |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.
 
@@ -73,7 +75,9 @@ public/
     ├── tetris/{model}/         # Tetris implementations
     ├── reversi/{model}/        # Reversi implementations
     ├── breakout/{model}/       # Breakout implementations
-    └── 2048/{model}/           # 2048 implementations
+    ├── 2048/{model}/           # 2048 implementations
+    ├── endless-runner/{model}/ # Endless Runner implementations
+    └── marble-madness/{model}/ # Marble Madness implementations
 games-metadata.json             # Game & version registry
 GAME_DEVELOPMENT_GUIDE.md       # Guide for AI models
 ```

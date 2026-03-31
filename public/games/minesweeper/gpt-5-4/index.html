@@ -188,6 +188,39 @@
       align-self: center;
     }
 
+    .sound-toggle {
+      width: 56px;
+      height: 56px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent),
+        rgba(8, 10, 24, 0.82);
+      color: #fff;
+      font-size: 1.35rem;
+      cursor: pointer;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 14px 28px rgba(0, 0, 0, 0.22);
+      transition: transform 140ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+    }
+
+    .sound-toggle:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 231, 255, 0.28);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 18px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    .sound-toggle:active {
+      transform: translateY(1px) scale(0.97);
+    }
+
+    .sound-toggle[aria-pressed="true"] {
+      opacity: 0.78;
+    }
+
     .signal {
       min-width: 170px;
       padding: 12px 14px;
@@ -1006,6 +1039,7 @@
               <div class="signal-label">Safe Cells Left</div>
               <div class="signal-value" id="safe-left">216</div>
             </div>
+            <button class="sound-toggle" id="sound-toggle" type="button" aria-label="Mute sound" aria-pressed="false" title="Toggle sound">🔊</button>
           </div>
         </div>
 
@@ -1140,6 +1174,117 @@
     const overlayFlagsEl = document.getElementById("overlay-flags");
     const celebrationEl = document.getElementById("celebration");
     const toastEl = document.getElementById("toast");
+    const soundToggleEl = document.getElementById("sound-toggle");
+    let isMuted = false;
+
+    const soundManager = {
+      context: null,
+      masterGain: null,
+      noiseBuffer: null,
+      ensureContext() {
+        if (typeof window.AudioContext !== "function" && typeof window.webkitAudioContext !== "function") {
+          return null;
+        }
+        if (!this.context) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          this.context = new AudioContextClass();
+          this.masterGain = this.context.createGain();
+          this.masterGain.gain.value = 0.18;
+          this.masterGain.connect(this.context.destination);
+          this.noiseBuffer = this.createNoiseBuffer(0.5);
+        }
+        if (this.context.state === "suspended") {
+          this.context.resume().catch(() => {});
+        }
+        return this.context;
+      },
+      createNoiseBuffer(duration) {
+        const ctx = this.context;
+        const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
+        const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
+        const channel = buffer.getChannelData(0);
+        for (let i = 0; i < sampleCount; i += 1) {
+          channel[i] = (Math.random() * 2) - 1;
+        }
+        return buffer;
+      },
+      canPlay() {
+        return !isMuted && !!this.ensureContext();
+      },
+      makeTone({ frequency, duration, type = "sine", volume = 0.12, when = 0 }) {
+        if (!this.canPlay()) return;
+        const ctx = this.context;
+        const startAt = ctx.currentTime + when;
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, startAt);
+        gain.gain.setValueAtTime(0.0001, startAt);
+        gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.003);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+        oscillator.connect(gain);
+        gain.connect(this.masterGain);
+        oscillator.start(startAt);
+        oscillator.stop(startAt + duration + 0.02);
+      },
+      makeNoiseBurst({ duration = 0.3, volume = 0.18, lowpass = 900, when = 0 }) {
+        if (!this.canPlay()) return;
+        const ctx = this.context;
+        const startAt = ctx.currentTime + when;
+        const source = ctx.createBufferSource();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        source.buffer = this.noiseBuffer || this.createNoiseBuffer(duration + 0.1);
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(lowpass, startAt);
+        gain.gain.setValueAtTime(0.0001, startAt);
+        gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.masterGain);
+        source.start(startAt);
+        source.stop(startAt + duration + 0.02);
+      },
+      playReveal() {
+        this.makeTone({ frequency: 600, duration: 0.03, volume: 0.09 });
+      },
+      playPlaceFlag() {
+        this.makeTone({ frequency: 800, duration: 0.04, volume: 0.11 });
+      },
+      playRemoveFlag() {
+        this.makeTone({ frequency: 400, duration: 0.03, volume: 0.09 });
+      },
+      playExplosion() {
+        if (!this.canPlay()) return;
+        this.makeNoiseBurst({ duration: 0.3, volume: 0.22, lowpass: 1200 });
+        this.makeTone({ frequency: 82, duration: 0.3, volume: 0.16, type: "sine" });
+        this.makeTone({ frequency: 56, duration: 0.26, volume: 0.12, type: "sine", when: 0.04 });
+      },
+      playWin() {
+        [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+          this.makeTone({
+            frequency,
+            duration: 0.12,
+            volume: 0.11 + (index * 0.01),
+            when: index * 0.11
+          });
+        });
+      },
+      playFloodFillReveal(wave) {
+        if (!this.canPlay() || !wave.length) return;
+        const cascade = wave.slice(0, 8);
+        cascade.forEach(({ depth }, index) => {
+          const frequency = 520 + Math.min(6, depth) * 45 + (index % 3) * 28;
+          this.makeTone({
+            frequency,
+            duration: 0.024,
+            volume: 0.045,
+            when: index * 0.024
+          });
+        });
+      }
+    };
 
     const state = {
       difficulty: "medium",
@@ -1192,6 +1337,17 @@
       faceEmojiEl.textContent = emoji;
     }
 
+    function updateSoundToggle() {
+      soundToggleEl.textContent = isMuted ? "🔇" : "🔊";
+      soundToggleEl.setAttribute("aria-label", isMuted ? "Unmute sound" : "Mute sound");
+      soundToggleEl.setAttribute("aria-pressed", String(isMuted));
+      soundToggleEl.title = isMuted ? "Unmute sound" : "Mute sound";
+    }
+
+    function initializeAudio() {
+      soundManager.ensureContext();
+    }
+
     function updateHud() {
       mineCountEl.textContent = padNumber(state.mines - state.flags);
       flagsUsedEl.textContent = padNumber(state.flags);
@@ -1218,6 +1374,9 @@
     }
 
     function bindControls() {
+      document.addEventListener("click", initializeAudio, { capture: true, once: true });
+      document.addEventListener("keydown", initializeAudio, { capture: true, once: true });
+
       difficultyGridEl.addEventListener("click", (event) => {
         const button = event.target.closest("[data-difficulty]");
         if (!button) return;
@@ -1234,6 +1393,11 @@
       restartButtonEl.addEventListener("click", () => startNewGame(state.difficulty));
       document.getElementById("overlay-restart").addEventListener("click", () => startNewGame(state.difficulty));
       document.getElementById("overlay-close").addEventListener("click", () => overlayEl.classList.remove("visible"));
+      soundToggleEl.addEventListener("click", () => {
+        initializeAudio();
+        isMuted = !isMuted;
+        updateSoundToggle();
+      });
 
       document.addEventListener("keydown", (event) => {
         if (event.key.toLowerCase() === "r") {
@@ -1428,6 +1592,11 @@
         cell.element.removeAttribute("data-value");
       }
       setFace(cell.flagged ? "😎" : "🙂");
+      if (cell.flagged) {
+        soundManager.playPlaceFlag();
+      } else {
+        soundManager.playRemoveFlag();
+      }
       updateHud();
     }
 
@@ -1478,6 +1647,12 @@
       state.animating = true;
       let maxDelay = 0;
 
+      if (wave.length > 1) {
+        soundManager.playFloodFillReveal(wave);
+      } else {
+        soundManager.playReveal();
+      }
+
       wave.forEach(({ cell, depth }, index) => {
         const delay = Math.min(360, (depth * 28) + Math.min(index, 10) * 8);
         maxDelay = Math.max(maxDelay, delay);
@@ -1521,6 +1696,7 @@
       setFace("💥");
       setStatus("Detonation detected");
       boardEl.classList.add("lost");
+      soundManager.playExplosion();
 
       let maxDelay = 0;
       for (let y = 0; y < state.rows; y += 1) {
@@ -1653,6 +1829,7 @@
       setFace("😈");
       setStatus("Sector cleared");
       boardEl.classList.add("won");
+      soundManager.playWin();
       openOverlay({
         kicker: "Mission Complete",
         title: "Sector Cleared",
@@ -1690,6 +1867,7 @@
 
     createDifficultyControls();
     bindControls();
+    updateSoundToggle();
     startNewGame("medium");
   </script>
 </body>

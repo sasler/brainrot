@@ -224,11 +224,41 @@
       height: 10px;
       border-radius: 50%;
     }
+
+    .sound-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 140, 0, 0.35);
+      border-radius: 999px;
+      background: rgba(8, 12, 24, 0.8);
+      color: var(--text);
+      font-size: 1.1rem;
+      cursor: pointer;
+      z-index: 15;
+      box-shadow: 0 0 16px rgba(255, 140, 0, 0.18);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .sound-toggle:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 22px rgba(255, 140, 0, 0.28);
+      background: rgba(14, 20, 34, 0.92);
+    }
+
+    .sound-toggle:active {
+      transform: scale(0.96);
+    }
   </style>
 </head>
 <body>
   <div id="wrapper">
     <canvas id="gameCanvas"></canvas>
+    <button class="sound-toggle" id="soundToggle" type="button" aria-label="Mute sound" title="Mute sound">🔊</button>
 
     <div class="overlay active" id="startScreen">
       <div class="overlay-bg"></div>
@@ -287,6 +317,7 @@
   const finalLevelEl = document.getElementById("finalLevel");
   const levelTitle = document.getElementById("levelTitle");
   const levelSubtitle = document.getElementById("levelSubtitle");
+  const soundToggle = document.getElementById("soundToggle");
 
   // ─── Game Constants ───
   const GAME_W = 800;
@@ -363,6 +394,161 @@
   let comboDisplay = 0;
   let comboAlpha = 0;
   let levelTransitionTimer = 0;
+  let isMuted = false;
+
+  // ─── Audio ───
+  const soundManager = (() => {
+    let audioContext = null;
+    let noiseBuffer = null;
+
+    function ensureAudioContext() {
+      if (!audioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        audioContext = new AudioCtx();
+      }
+      if (audioContext.state === "suspended") {
+        audioContext.resume().catch(() => {});
+      }
+      return audioContext;
+    }
+
+    function canPlay() {
+      if (isMuted) return null;
+      return ensureAudioContext();
+    }
+
+    function createGainEnvelope(startTime, duration, peak) {
+      const context = audioContext;
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(peak, startTime + Math.min(duration * 0.18, 0.02));
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      gain.connect(context.destination);
+      return gain;
+    }
+
+    function playTone({ type = "sine", frequency, duration, volume = 0.1, frequencyEnd, detune = 0, when = 0 }) {
+      const context = canPlay();
+      if (!context) return;
+      const startTime = context.currentTime + when;
+      const osc = context.createOscillator();
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, startTime);
+      if (frequencyEnd && frequencyEnd !== frequency) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(1, frequencyEnd), startTime + duration);
+      }
+      if (detune) {
+        osc.detune.setValueAtTime(detune, startTime);
+      }
+      const gain = createGainEnvelope(startTime, duration, volume);
+      osc.connect(gain);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.02);
+    }
+
+    function getNoiseBuffer() {
+      if (noiseBuffer) return noiseBuffer;
+      const context = ensureAudioContext();
+      if (!context) return null;
+      const length = Math.max(1, Math.floor(context.sampleRate * 0.25));
+      noiseBuffer = context.createBuffer(1, length, context.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      return noiseBuffer;
+    }
+
+    function playNoise({ duration, volume = 0.08, filterType = "highpass", frequency = 800, q = 1, when = 0, sweepTo, lowpassFrequency }) {
+      const context = canPlay();
+      if (!context) return;
+      const buffer = getNoiseBuffer();
+      if (!buffer) return;
+      const startTime = context.currentTime + when;
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      const filter = context.createBiquadFilter();
+      filter.type = filterType;
+      filter.frequency.setValueAtTime(frequency, startTime);
+      filter.Q.setValueAtTime(q, startTime);
+      if (sweepTo) {
+        filter.frequency.exponentialRampToValueAtTime(Math.max(10, sweepTo), startTime + duration);
+      }
+      let destination = filter;
+      if (lowpassFrequency) {
+        const lowpass = context.createBiquadFilter();
+        lowpass.type = "lowpass";
+        lowpass.frequency.setValueAtTime(lowpassFrequency, startTime);
+        filter.connect(lowpass);
+        destination = lowpass;
+      }
+      const gain = createGainEnvelope(startTime, duration, volume);
+      destination.connect(gain);
+      source.connect(filter);
+      source.start(startTime);
+      source.stop(startTime + duration + 0.02);
+    }
+
+    return {
+      init: ensureAudioContext,
+      playWall() {
+        playTone({ type: "sine", frequency: 500, duration: 0.02, volume: 0.05 });
+      },
+      playPaddle(hitPos) {
+        const pitch = 300 + hitPos * 45;
+        playTone({ type: "sine", frequency: Math.max(220, pitch), duration: 0.04, volume: 0.09 });
+      },
+      playBrick(row) {
+        const rowOffset = (BRICK_ROWS - 1 - row) * 24;
+        const baseFreq = 800 + rowOffset;
+        playTone({ type: "triangle", frequency: baseFreq, duration: 0.03, volume: 0.08 });
+        playNoise({ duration: 0.015, volume: 0.045, filterType: "bandpass", frequency: baseFreq * 1.35, q: 1.8 });
+      },
+      playPowerup() {
+        playTone({ type: "sine", frequency: 600, frequencyEnd: 1200, duration: 0.1, volume: 0.08 });
+      },
+      playLifeLost() {
+        playTone({ type: "sine", frequency: 400, frequencyEnd: 150, duration: 0.2, volume: 0.09 });
+      },
+      playLevelComplete() {
+        const notes = [400, 500, 600, 800];
+        notes.forEach((note, index) => {
+          playTone({ type: "triangle", frequency: note, duration: 0.09, volume: 0.08, when: index * 0.1 });
+        });
+      },
+      playGameOver() {
+        const notes = [520, 420, 320, 230];
+        notes.forEach((note, index) => {
+          playTone({ type: "triangle", frequency: note, frequencyEnd: Math.max(120, note - 70), duration: 0.11, volume: 0.09, when: index * 0.125 });
+        });
+      },
+      playLaunch() {
+        playNoise({ duration: 0.05, volume: 0.07, filterType: "bandpass", frequency: 1500, sweepTo: 450, q: 0.8, lowpassFrequency: 2200 });
+      },
+    };
+  })();
+
+  function updateSoundToggle() {
+    soundToggle.textContent = isMuted ? "🔇" : "🔊";
+    soundToggle.setAttribute("aria-label", isMuted ? "Unmute sound" : "Mute sound");
+    soundToggle.title = isMuted ? "Unmute sound" : "Mute sound";
+  }
+
+  function initializeAudioOnInteraction() {
+    soundManager.init();
+  }
+
+  window.addEventListener("pointerdown", initializeAudioOnInteraction, { once: true });
+  window.addEventListener("keydown", initializeAudioOnInteraction, { once: true });
+
+  soundToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    soundManager.init();
+    isMuted = !isMuted;
+    updateSoundToggle();
+  });
+  updateSoundToggle();
 
   // ─── Resize ───
   function resize() {
@@ -545,6 +731,7 @@
     const speed = getBallSpeed();
     ball.vx = Math.cos(angle) * speed;
     ball.vy = Math.sin(angle) * speed;
+    soundManager.playLaunch();
   }
 
   function getBallSpeed() {
@@ -604,6 +791,7 @@
     }
     spawnParticles(pu.x, pu.y, pu.color, 15, 1.5);
     addShake(3);
+    soundManager.playPowerup();
   }
 
   // ─── Game Init ───
@@ -651,6 +839,7 @@
     levelSubtitle.textContent = level <= 3 ? "Get Ready" : level <= 6 ? "Bricks Harder" : "Good Luck";
     levelScreen.classList.add("active");
     levelTransitionTimer = 2000;
+    soundManager.playLevelComplete();
   }
 
   // ─── Collision ───
@@ -669,6 +858,7 @@
     ball.y = paddle.y - BALL_R - 1;
     spawnParticles(ball.x, ball.y, "#ff8c00", 6, 0.8);
     combo = 0;
+    soundManager.playPaddle(hitPos);
     return true;
   }
 
@@ -684,6 +874,7 @@
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < BALL_R) {
+        soundManager.playBrick(brick.row);
         brick.hp--;
         if (brick.hp <= 0) {
           brick.alive = false;
@@ -834,9 +1025,11 @@
       for (const t of ball.trail) t.life -= 0.08;
 
       // Wall collisions
-      if (ball.x - BALL_R <= 0) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx); }
-      if (ball.x + BALL_R >= GAME_W) { ball.x = GAME_W - BALL_R; ball.vx = -Math.abs(ball.vx); }
-      if (ball.y - BALL_R <= 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); }
+      let wallHit = false;
+      if (ball.x - BALL_R <= 0) { ball.x = BALL_R; ball.vx = Math.abs(ball.vx); wallHit = true; }
+      if (ball.x + BALL_R >= GAME_W) { ball.x = GAME_W - BALL_R; ball.vx = -Math.abs(ball.vx); wallHit = true; }
+      if (ball.y - BALL_R <= 0) { ball.y = BALL_R; ball.vy = Math.abs(ball.vy); wallHit = true; }
+      if (wallHit) soundManager.playWall();
 
       // Bottom
       if (ball.y + BALL_R > GAME_H + 20) {
@@ -875,9 +1068,11 @@
         finalLevelEl.textContent = "Level " + level;
         gameOverScreen.classList.add("active");
         addShake(10);
+        soundManager.playGameOver();
       } else {
         resetBall();
         addShake(6);
+        soundManager.playLifeLost();
       }
     }
 

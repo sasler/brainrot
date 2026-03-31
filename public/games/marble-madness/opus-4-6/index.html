@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARBLE MADNESS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;color:#fff}
+canvas{display:block}
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;pointer-events:none;transition:opacity 0.4s}
+.overlay.active{pointer-events:all}
+.overlay.hidden{display:none;opacity:0}
+.panel{background:rgba(0,0,0,0.88);border:1px solid rgba(0,255,136,0.5);border-radius:16px;padding:36px 52px;text-align:center;backdrop-filter:blur(12px);box-shadow:0 0 40px rgba(0,255,136,0.15),inset 0 0 60px rgba(0,255,136,0.03);max-width:90vw}
+#title-screen .title{font-size:clamp(28px,6vw,56px);font-weight:bold;letter-spacing:10px;background:linear-gradient(180deg,#00ffcc,#00ff88,#44ff44);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 20px rgba(0,255,136,0.6));margin-bottom:8px;line-height:1.2}
+#title-screen .subtitle{font-size:clamp(10px,2vw,14px);color:#6a8;letter-spacing:6px;margin-bottom:28px}
+.level-btn{display:block;width:100%;padding:12px 20px;margin:6px 0;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.25);color:#00ff88;font-family:'Courier New',monospace;font-size:clamp(12px,2vw,16px);cursor:pointer;border-radius:8px;transition:all 0.25s;pointer-events:all}
+.level-btn:hover{background:rgba(0,255,136,0.18);border-color:#00ff88;box-shadow:0 0 20px rgba(0,255,136,0.3);transform:translateY(-1px)}
+.level-btn.locked{opacity:0.35;pointer-events:none}
+.controls-info{margin-top:22px;font-size:clamp(9px,1.5vw,12px);color:#556;line-height:2}
+#hud{position:fixed;top:0;left:0;right:0;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:5;font-size:clamp(11px,1.8vw,16px);pointer-events:none;gap:8px;flex-wrap:wrap}
+#hud.hidden{display:none}
+.hud-item{background:rgba(0,0,0,0.65);padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap;text-shadow:0 0 8px currentColor}
+#mute-btn{position:fixed;bottom:18px;right:18px;z-index:20;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:22px;padding:8px 12px;border-radius:8px;cursor:pointer;pointer-events:all;transition:background 0.2s}
+#mute-btn:hover{background:rgba(255,255,255,0.1)}
+.stat-row{display:flex;justify-content:space-between;padding:5px 0;font-size:clamp(13px,2vw,18px);gap:30px}
+.stat-label{color:#778}
+.stat-value{color:#fff;text-align:right}
+.rating-gold{color:#ffd700;text-shadow:0 0 15px #ffd700}
+.rating-silver{color:#c0c0c0;text-shadow:0 0 10px #c0c0c0}
+.rating-bronze{color:#cd7f32;text-shadow:0 0 10px #cd7f32}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.pulse{animation:pulse 1.5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#lc-rating{animation:float 2s ease-in-out infinite}
+#level-complete .panel{border-color:rgba(0,180,255,0.5);box-shadow:0 0 40px rgba(0,180,255,0.15)}
+#game-complete .panel{border-color:rgba(200,100,255,0.5);box-shadow:0 0 40px rgba(200,100,255,0.2)}
+#loading{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;color:#00ff88;z-index:100;letter-spacing:4px}
+#death-flash{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,0,80,0.25);z-index:4;pointer-events:none;opacity:0;transition:opacity 0.15s}
+#controls-hint{position:fixed;bottom:18px;left:18px;z-index:5;font-size:11px;color:#445;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="title-screen" class="overlay active">
+<div class="panel">
+<div class="title">MARBLE<br>MADNESS</div>
+<div class="subtitle">◆ A NEON ODYSSEY ◆</div>
+<button class="level-btn" data-level="0">▶ LEVEL 1 &mdash; NEON GENESIS</button>
+<button class="level-btn" data-level="1">▶ LEVEL 2 &mdash; CYBER CIRCUIT</button>
+<button class="level-btn" data-level="2">▶ LEVEL 3 &mdash; VOID NEXUS</button>
+<div class="controls-info">
+[WASD / Arrows] Move &nbsp;·&nbsp; [Space] Jump<br>
+[M] Mute &nbsp;·&nbsp; Complete levels for the best time
+</div>
+</div>
+</div>
+<div id="hud" class="hidden">
+<div class="hud-item" id="hud-level">LEVEL 1</div>
+<div class="hud-item" id="hud-timer">⏱ 00:00.0</div>
+<div class="hud-item" id="hud-gems">💎 0/0</div>
+</div>
+<div id="level-complete" class="overlay hidden">
+<div class="panel">
+<h2 id="lc-title" style="font-size:clamp(22px,4vw,34px);margin-bottom:18px">LEVEL COMPLETE!</h2>
+<div id="lc-stats" style="margin:16px 0">
+<div class="stat-row"><span class="stat-label">Time:</span><span class="stat-value" id="lc-time"></span></div>
+<div class="stat-row"><span class="stat-label">Gems:</span><span class="stat-value" id="lc-gems"></span></div>
+<div class="stat-row"><span class="stat-label">Bonus:</span><span class="stat-value" id="lc-bonus" style="color:#0f8"></span></div>
+<div class="stat-row" style="border-top:1px solid #333;padding-top:8px;margin-top:4px"><span class="stat-label">Final:</span><span class="stat-value" id="lc-final" style="font-size:clamp(16px,3vw,24px)"></span></div>
+</div>
+<div id="lc-rating" style="font-size:clamp(24px,4vw,40px);margin:12px 0"></div>
+<div class="pulse" style="margin-top:12px;color:#667;font-size:13px">Press SPACE to continue</div>
+</div>
+</div>
+<div id="game-complete" class="overlay hidden">
+<div class="panel">
+<h2 style="font-size:clamp(24px,4vw,38px);margin-bottom:8px">🏆 VICTORY 🏆</h2>
+<p style="color:#889;margin-bottom:18px;font-size:13px">All levels conquered!</p>
+<div id="gc-stats" style="margin:16px 0">
+<div class="stat-row"><span class="stat-label">Total Time:</span><span class="stat-value" id="gc-time"></span></div>
+<div class="stat-row"><span class="stat-label">Total Gems:</span><span class="stat-value" id="gc-gems"></span></div>
+</div>
+<div class="pulse" style="margin-top:14px;color:#667;font-size:13px">Press SPACE to play again</div>
+</div>
+</div>
+<div id="death-flash"></div>
+<div id="controls-hint">[WASD] Move · [Space] Jump · [M] Mute</div>
+<button id="mute-btn">🔊</button>
+<div id="loading">LOADING...</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// ─── Constants ───
+const MR = 0.4;
+const GRAVITY = -30;
+const MOVE_FORCE = 24;
+const JUMP_VEL = 9.5;
+const GROUND_FRIC = 0.91;
+const AIR_FRIC = 0.997;
+const MAX_SPEED = 20;
+const FALL_Y = -40;
+const TIME_PENALTY = 5;
+const GEM_BONUS = 3;
+const LEVEL_COLORS = [0x00ff88, 0x00aaff, 0xbb55ff];
+const LEVEL_NAMES = ['NEON GENESIS', 'CYBER CIRCUIT', 'VOID NEXUS'];
+const LEVEL_GOLD = [35, 55, 75];
+const LEVEL_SILVER = [55, 85, 115];
+const TRAIL_COUNT = 60;
+const MAX_PARTICLES = 250;
+
+// ─── Sound Manager ───
+class SoundManager {
+  constructor() {
+    this.ctx = null; this.master = null; this.muted = false;
+    this.musicNodes = []; this.rollOsc = null; this.rollGain = null; this.ready = false;
+  }
+  init() {
+    if (this.ready) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.5;
+      this.master.connect(this.ctx.destination);
+      this.ready = true;
+    } catch (e) { console.warn('No audio', e); }
+  }
+  resume() { if (this.ctx?.state === 'suspended') this.ctx.resume(); }
+  setMute(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.5, this.ctx.currentTime, 0.05);
+  }
+  tone(freq, dur, type = 'sine', vol = 0.25, delay = 0) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + dur);
+    return o;
+  }
+  playJump() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(280, t);
+    o.frequency.exponentialRampToValueAtTime(700, t + 0.12);
+    g.gain.setValueAtTime(0.22, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    o.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + 0.2);
+    const o2 = this.ctx.createOscillator(), g2 = this.ctx.createGain();
+    o2.type = 'triangle'; o2.frequency.setValueAtTime(400, t);
+    o2.frequency.exponentialRampToValueAtTime(900, t + 0.1);
+    g2.gain.setValueAtTime(0.1, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    o2.connect(g2); g2.connect(this.master);
+    o2.start(t); o2.stop(t + 0.15);
+  }
+  playLand(intensity = 0.3) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const len = this.ctx.sampleRate * 0.08;
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.08));
+    const s = this.ctx.createBufferSource(); s.buffer = buf;
+    const f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 180;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(Math.min(intensity, 0.35), t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(t);
+  }
+  playGem() {
+    if (!this.ready) return;
+    [880, 1108, 1318, 1760].forEach((f, i) => {
+      this.tone(f, 0.25, 'sine', 0.18, i * 0.055);
+    });
+    this.tone(1760, 0.4, 'triangle', 0.08, 0.22);
+  }
+  playFall() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(500, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.9);
+    g.gain.setValueAtTime(0.18, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + 1);
+  }
+  playRespawn() {
+    [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.28, 'sine', 0.2, i * 0.08));
+  }
+  playLevelComplete() {
+    if (!this.ready) return;
+    const notes = [523, 659, 784, 1047, 784, 1047, 1319];
+    notes.forEach((f, i) => {
+      const dur = i >= 5 ? 0.5 : 0.13;
+      this.tone(f, dur, i < 5 ? 'sine' : 'triangle', 0.22, i * 0.11);
+    });
+  }
+  startRoll() {
+    if (!this.ready || this.rollOsc) return;
+    this.rollOsc = this.ctx.createOscillator();
+    this.rollGain = this.ctx.createGain();
+    this.rollOsc.type = 'sine'; this.rollOsc.frequency.value = 55;
+    this.rollGain.gain.value = 0;
+    this.rollOsc.connect(this.rollGain); this.rollGain.connect(this.master);
+    this.rollOsc.start();
+  }
+  updateRoll(speed, grounded) {
+    if (!this.rollOsc) return;
+    const tg = grounded ? Math.min(speed * 0.012, 0.12) : 0;
+    const tf = 50 + speed * 10;
+    const t = this.ctx.currentTime;
+    this.rollGain.gain.setTargetAtTime(tg, t, 0.04);
+    this.rollOsc.frequency.setTargetAtTime(tf, t, 0.04);
+  }
+  stopRoll() {
+    if (this.rollOsc) { try { this.rollOsc.stop(); } catch(e){} this.rollOsc = null; this.rollGain = null; }
+  }
+  startMusic(lvl) {
+    this.stopMusic();
+    if (!this.ready) return;
+    const chords = [
+      [130.81, 164.81, 196.00, 261.63],
+      [146.83, 174.61, 220.00, 293.66],
+      [155.56, 185.00, 233.08, 311.13],
+    ];
+    const notes = chords[lvl] || chords[0];
+    notes.forEach((freq, i) => {
+      const o1 = this.ctx.createOscillator(), o2 = this.ctx.createOscillator();
+      o1.type = 'sine'; o2.type = 'triangle';
+      o1.frequency.value = freq; o2.frequency.value = freq * 1.004;
+      const g = this.ctx.createGain(); g.gain.value = 0.028;
+      const lfo = this.ctx.createOscillator(), lg = this.ctx.createGain();
+      lfo.frequency.value = 0.12 + i * 0.06; lg.gain.value = freq * 0.008;
+      lfo.connect(lg); lg.connect(o1.frequency);
+      o1.connect(g); o2.connect(g); g.connect(this.master);
+      o1.start(); o2.start(); lfo.start();
+      this.musicNodes.push(o1, o2, lfo);
+    });
+  }
+  stopMusic() {
+    this.musicNodes.forEach(n => { try { n.stop(); } catch(e){} });
+    this.musicNodes = [];
+  }
+}
+
+// ─── Level Data ───
+function getLevelData(idx) {
+  const L = [
+    { // Level 1: Neon Genesis
+      platforms: [
+        { type:'flat', pos:[0,0,0], size:[9,0.5,9] },
+        { type:'flat', pos:[0,0,-13], size:[6,0.5,6] },
+        { type:'ramp', pos:[0,1.3,-24], size:[6,0.5,12], rot:[0.22,0,0] },
+        { type:'flat', pos:[0,2.6,-36], size:[8,0.5,8], isCheckpoint:true },
+        { type:'flat', pos:[7,2.6,-43], size:[5,0.5,5] },
+        { type:'flat', pos:[7,2.6,-53], size:[5,0.5,5] },
+        { type:'flat', pos:[3,2.6,-61], size:[4,0.5,10] },
+        { type:'flat', pos:[0,2.6,-72], size:[6,0.5,6] },
+        { type:'flat', pos:[0,2.6,-84], size:[9,0.5,9], isGoal:true },
+      ],
+      gems: [
+        [0,1.2,-13],[-2,1.2,-13],[2,1.2,-13],
+        [0,4,-36],[7,4,-43],[7,4,-53],
+        [3,4,-57],[0,4,-72],
+      ],
+      spawn:[0,1.5,0],
+    },
+    { // Level 2: Cyber Circuit
+      platforms: [
+        { type:'flat', pos:[0,0,0], size:[7,0.5,7] },
+        { type:'flat', pos:[0,0,-11], size:[3.2,0.5,6] },
+        { type:'moving', pos:[0,0,-22], size:[4.5,0.5,4.5], moveAxis:'x', moveRange:6, moveSpeed:2.2 },
+        { type:'flat', pos:[0,0,-32], size:[6,0.5,6], isCheckpoint:true },
+        { type:'flat', pos:[0,0,-43], size:[2,0.5,12] },
+        { type:'flat', pos:[0,0,-56], size:[5,0.5,5] },
+        { type:'moving', pos:[0,0,-66], size:[4,0.5,4], moveAxis:'z', moveRange:4, moveSpeed:1.8 },
+        { type:'flat', pos:[6,0,-75], size:[4.5,0.5,4.5] },
+        { type:'flat', pos:[-6,0,-84], size:[4.5,0.5,4.5] },
+        { type:'flat', pos:[6,0,-93], size:[5,0.5,5], isCheckpoint:true },
+        { type:'moving', pos:[0,0,-102], size:[4,0.5,4], moveAxis:'x', moveRange:5, moveSpeed:2.8 },
+        { type:'moving', pos:[0,0,-112], size:[4,0.5,4], moveAxis:'x', moveRange:5, moveSpeed:-2.4 },
+        { type:'flat', pos:[0,0,-123], size:[9,0.5,9], isGoal:true },
+      ],
+      gems: [
+        [0,1.2,-11],[0,1.2,-22],[0,1.2,-38],[0,1.2,-43],
+        [0,1.2,-56],[6,1.2,-75],[-6,1.2,-84],[6,1.2,-93],
+        [0,1.2,-107],[0,1.2,-117],
+      ],
+      spawn:[0,1.5,0],
+    },
+    { // Level 3: Void Nexus
+      platforms: [
+        { type:'flat', pos:[0,0,0], size:[6,0.5,6] },
+        { type:'disappearing', pos:[0,0,-9], size:[3.5,0.5,3.5], fadeDelay:1.6 },
+        { type:'disappearing', pos:[0,0,-17], size:[3.5,0.5,3.5], fadeDelay:1.6 },
+        { type:'rotating', pos:[0,0,-27], size:[9,0.5,3], rotSpeed:0.45 },
+        { type:'flat', pos:[0,0,-38], size:[6,0.5,6], isCheckpoint:true },
+        { type:'flat', pos:[0,0,-50], size:[1.8,0.5,14] },
+        { type:'moving', pos:[0,0,-64], size:[3.5,0.5,3.5], moveAxis:'x', moveRange:6, moveSpeed:2.8 },
+        { type:'disappearing', pos:[0,0,-74], size:[3.5,0.5,3.5], fadeDelay:1.3 },
+        { type:'disappearing', pos:[4,0,-82], size:[3.5,0.5,3.5], fadeDelay:1.3 },
+        { type:'disappearing', pos:[-4,0,-90], size:[3.5,0.5,3.5], fadeDelay:1.3 },
+        { type:'flat', pos:[0,0,-100], size:[6,0.5,6], isCheckpoint:true },
+        { type:'rotating', pos:[0,0,-112], size:[11,0.5,2.5], rotSpeed:-0.55 },
+        { type:'disappearing', pos:[0,0,-123], size:[3.5,0.5,3.5], fadeDelay:1.1 },
+        { type:'flat', pos:[0,0.5,-131], size:[3.5,0.5,3.5] },
+        { type:'disappearing', pos:[0,1,-139], size:[3.5,0.5,3.5], fadeDelay:1.1 },
+        { type:'moving', pos:[0,1,-149], size:[4.5,0.5,4.5], moveAxis:'x', moveRange:7, moveSpeed:3.2 },
+        { type:'flat', pos:[0,1,-161], size:[9,0.5,9], isGoal:true },
+      ],
+      gems: [
+        [0,1.2,-9],[0,1.2,-17],[0,1.2,-27],[0,1.2,-45],
+        [0,1.2,-50],[0,1.2,-64],[0,1.2,-74],[4,1.2,-82],
+        [-4,1.2,-90],[0,1.2,-112],[0,1.7,-131],[0,2.2,-149],
+      ],
+      spawn:[0,1.5,0],
+    },
+  ];
+  return L[idx];
+}
+
+// ─── Main Game ───
+class Game {
+  constructor() {
+    this.scene = null; this.camera = null; this.renderer = null; this.composer = null;
+    this.clock = new THREE.Clock();
+    this.marble = null; this.marbleLight = null;
+    this.platforms = []; this.gems = []; this.goalPlatform = null;
+    this.velocity = new THREE.Vector3();
+    this.onGround = false; this.canJump = true;
+    this.state = 'title'; this.currentLevel = 0;
+    this.timer = 0; this.gemsCollected = 0; this.totalGems = 0;
+    this.totalTime = 0; this.totalGemsAll = 0; this.totalGemsMax = 0;
+    this.checkpointPos = new THREE.Vector3();
+    this.respawning = false; this.respawnTimer = 0;
+    this.levelGroup = null; this.neonColor = new THREE.Color(LEVEL_COLORS[0]);
+    this.trailIdx = 0; this.particles = [];
+    this.keys = {}; this.sound = new SoundManager();
+    this.wasInAir = false; this.landCooldown = 0;
+    this.elapsedTime = 0;
+    this.cameraTarget = new THREE.Vector3();
+    this.cameraPos = new THREE.Vector3(0, 10, 15);
+    this.ui = {
+      title: document.getElementById('title-screen'),
+      hud: document.getElementById('hud'),
+      hudLevel: document.getElementById('hud-level'),
+      hudTimer: document.getElementById('hud-timer'),
+      hudGems: document.getElementById('hud-gems'),
+      lc: document.getElementById('level-complete'),
+      lcTime: document.getElementById('lc-time'),
+      lcGems: document.getElementById('lc-gems'),
+      lcBonus: document.getElementById('lc-bonus'),
+      lcFinal: document.getElementById('lc-final'),
+      lcRating: document.getElementById('lc-rating'),
+      gc: document.getElementById('game-complete'),
+      gcTime: document.getElementById('gc-time'),
+      gcGems: document.getElementById('gc-gems'),
+      mute: document.getElementById('mute-btn'),
+      loading: document.getElementById('loading'),
+      flash: document.getElementById('death-flash'),
+      hint: document.getElementById('controls-hint'),
+    };
+  }
+
+  init() {
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x030311);
+    this.scene.fog = new THREE.FogExp2(0x030311, 0.006);
+
+    this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 600);
+    this.camera.position.set(0, 12, 18);
+
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    this.renderer.setSize(innerWidth, innerHeight);
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.1;
+    document.body.appendChild(this.renderer.domElement);
+
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.0, 0.35, 0.15);
+    this.composer.addPass(bloom);
+    this.composer.addPass(new OutputPass());
+    this.bloomPass = bloom;
+
+    // Lights
+    this.scene.add(new THREE.AmbientLight(0x223344, 0.6));
+    const dir = new THREE.DirectionalLight(0xffffff, 0.7);
+    dir.position.set(15, 40, 20); dir.castShadow = true;
+    dir.shadow.mapSize.set(2048, 2048);
+    dir.shadow.camera.near = 1; dir.shadow.camera.far = 120;
+    dir.shadow.camera.left = -60; dir.shadow.camera.right = 60;
+    dir.shadow.camera.top = 60; dir.shadow.camera.bottom = -60;
+    this.scene.add(dir); this.dirLight = dir;
+
+    this.createStarfield();
+    this.createVoidGrid();
+    this.createMarble();
+    this.createTrail();
+    this.createParticleSystem();
+    this.setupInput();
+
+    window.addEventListener('resize', () => this.onResize());
+    this.ui.mute.addEventListener('click', () => {
+      this.sound.init(); this.sound.resume();
+      this.sound.setMute(!this.sound.muted);
+      this.ui.mute.textContent = this.sound.muted ? '🔇' : '🔊';
+    });
+    document.querySelectorAll('.level-btn').forEach(b => {
+      b.addEventListener('click', e => this.startLevel(+e.target.dataset.level));
+    });
+    this.ui.loading.style.display = 'none';
+    this.animate();
+  }
+
+  createStarfield() {
+    const N = 4000, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      pos[i*3]   = (Math.random()-0.5)*500;
+      pos[i*3+1] = (Math.random()-0.5)*500;
+      pos[i*3+2] = (Math.random()-0.5)*500;
+      const b = 0.4 + Math.random()*0.6;
+      col[i*3] = b*(Math.random()>0.7?1.3:0.9);
+      col[i*3+1] = b;
+      col[i*3+2] = b*(Math.random()>0.5?1.4:0.9);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    this.scene.add(new THREE.Points(g, new THREE.PointsMaterial({
+      size: 0.6, vertexColors: true, transparent: true, opacity: 0.8, sizeAttenuation: true, depthWrite: false
+    })));
+  }
+
+  createVoidGrid() {
+    const g = new THREE.GridHelper(400, 80, 0x002215, 0x001109);
+    g.position.y = -50; g.material.transparent = true; g.material.opacity = 0.25;
+    this.scene.add(g);
+  }
+
+  createMarble() {
+    const g = new THREE.SphereGeometry(MR, 32, 32);
+    const m = new THREE.MeshStandardMaterial({
+      color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 0.5,
+      metalness: 0.95, roughness: 0.05
+    });
+    this.marble = new THREE.Mesh(g, m);
+    this.marble.castShadow = true;
+    this.marble.position.set(0, 2, 0);
+    this.scene.add(this.marble);
+    this.marbleLight = new THREE.PointLight(0x00ffff, 3, 14);
+    this.marble.add(this.marbleLight);
+    // Inner glow sphere
+    const ig = new THREE.SphereGeometry(MR * 0.6, 16, 16);
+    const im = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+    this.marble.add(new THREE.Mesh(ig, im));
+  }
+
+  createTrail() {
+    const pos = new Float32Array(TRAIL_COUNT * 3);
+    const alp = new Float32Array(TRAIL_COUNT);
+    for (let i = 0; i < TRAIL_COUNT; i++) { pos[i*3+1] = -200; alp[i] = 0; }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('alpha', new THREE.BufferAttribute(alp, 1));
+    this.trail = new THREE.Points(g, new THREE.PointsMaterial({
+      color: 0x00ffff, size: 0.18, transparent: true, opacity: 0.5,
+      sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+    this.scene.add(this.trail);
+  }
+
+  createParticleSystem() {
+    const pos = new Float32Array(MAX_PARTICLES * 3);
+    const col = new Float32Array(MAX_PARTICLES * 3);
+    for (let i = 0; i < MAX_PARTICLES; i++) pos[i*3+1] = -200;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    this.particleMesh = new THREE.Points(g, new THREE.PointsMaterial({
+      size: 0.22, vertexColors: true, transparent: true, opacity: 0.9,
+      sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false
+    }));
+    this.scene.add(this.particleMesh);
+  }
+
+  spawnParticles(pos, color, count = 18, spread = 5, upForce = 7) {
+    const c = new THREE.Color(color);
+    for (let i = 0; i < count; i++) {
+      this.particles.push({
+        x: pos.x, y: pos.y, z: pos.z,
+        vx: (Math.random()-0.5)*spread, vy: Math.random()*upForce+1, vz: (Math.random()-0.5)*spread,
+        r: c.r, g: c.g, b: c.b, life: 1, decay: 0.8 + Math.random()*1.2
+      });
+    }
+    while (this.particles.length > MAX_PARTICLES) this.particles.shift();
+  }
+
+  updateParticles(dt) {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.vy -= 12 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+      p.life -= p.decay * dt;
+      if (p.life <= 0) this.particles.splice(i, 1);
+    }
+    const pa = this.particleMesh.geometry.getAttribute('position');
+    const ca = this.particleMesh.geometry.getAttribute('color');
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+      if (i < this.particles.length) {
+        const p = this.particles[i];
+        pa.setXYZ(i, p.x, p.y, p.z);
+        ca.setXYZ(i, p.r * p.life, p.g * p.life, p.b * p.life);
+      } else { pa.setXYZ(i, 0, -200, 0); ca.setXYZ(i, 0, 0, 0); }
+    }
+    pa.needsUpdate = true; ca.needsUpdate = true;
+  }
+
+  setupInput() {
+    window.addEventListener('keydown', e => {
+      this.keys[e.code] = true;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (this.state === 'title') this.startLevel(0);
+        else if (this.state === 'levelComplete') {
+          if (this.currentLevel < 2) this.startLevel(this.currentLevel + 1);
+          else this.showGameComplete();
+        } else if (this.state === 'gameComplete') this.showTitle();
+      }
+      if (e.code === 'KeyM') {
+        this.sound.init(); this.sound.resume();
+        this.sound.setMute(!this.sound.muted);
+        this.ui.mute.textContent = this.sound.muted ? '🔇' : '🔊';
+      }
+    });
+    window.addEventListener('keyup', e => { this.keys[e.code] = false; });
+  }
+
+  onResize() {
+    this.camera.aspect = innerWidth / innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(innerWidth, innerHeight);
+    this.composer.setSize(innerWidth, innerHeight);
+  }
+
+  startLevel(idx) {
+    this.sound.init(); this.sound.resume();
+    this.currentLevel = idx; this.state = 'playing';
+    this.timer = 0; this.gemsCollected = 0;
+    this.respawning = false; this.respawnTimer = 0;
+    this.velocity.set(0, 0, 0); this.onGround = false; this.wasInAir = false;
+    this.landCooldown = 0;
+
+    const nc = LEVEL_COLORS[idx];
+    this.neonColor.set(nc);
+    this.marble.material.color.set(nc);
+    this.marble.material.emissive.set(nc);
+    this.marbleLight.color.set(nc);
+    this.trail.material.color.set(nc);
+
+    if (this.levelGroup) {
+      this.scene.remove(this.levelGroup);
+      this.levelGroup.traverse(o => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) { if (Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); }
+      });
+    }
+    this.levelGroup = new THREE.Group();
+    this.scene.add(this.levelGroup);
+    this.platforms = []; this.gems = []; this.goalPlatform = null; this.particles = [];
+
+    const data = getLevelData(idx);
+    this.totalGems = data.gems.length;
+    data.platforms.forEach(p => this.buildPlatform(p, nc));
+    data.gems.forEach(g => this.buildGem(g, nc));
+
+    this.marble.position.set(...data.spawn);
+    this.checkpointPos.set(...data.spawn);
+
+    const tp = this.trail.geometry.getAttribute('position');
+    for (let i = 0; i < TRAIL_COUNT; i++) tp.setXYZ(i, data.spawn[0], -200, data.spawn[2]);
+    tp.needsUpdate = true; this.trailIdx = 0;
+
+    // Camera instant
+    this.cameraPos.set(data.spawn[0], data.spawn[1] + 10, data.spawn[2] + 16);
+    this.camera.position.copy(this.cameraPos);
+
+    // UI
+    this.ui.title.classList.add('hidden'); this.ui.title.classList.remove('active');
+    this.ui.hud.classList.remove('hidden');
+    this.ui.lc.classList.add('hidden'); this.ui.lc.classList.remove('active');
+    this.ui.gc.classList.add('hidden'); this.ui.gc.classList.remove('active');
+    this.ui.hint.style.display = 'block';
+    const hexStr = '#' + nc.toString(16).padStart(6, '0');
+    this.ui.hudLevel.textContent = `LV${idx+1}: ${LEVEL_NAMES[idx]}`;
+    this.ui.hudLevel.style.color = hexStr;
+
+    // Light follow
+    const avgZ = data.platforms.reduce((s,p) => s + p.pos[2], 0) / data.platforms.length;
+    this.dirLight.position.set(15, 40, avgZ + 25);
+    this.dirLight.target.position.set(0, 0, avgZ);
+    this.dirLight.target.updateMatrixWorld();
+
+    this.sound.stopMusic(); this.sound.stopRoll();
+    this.sound.startMusic(idx); this.sound.startRoll();
+  }
+
+  buildPlatform(d, neonHex) {
+    const grp = new THREE.Group();
+    const ud = { ...d, origPos: [...d.pos], dState: 'solid', dTimer: 0, touched: false, platformVel: new THREE.Vector3() };
+    grp.userData = ud;
+    const [w, h, depth] = d.size;
+    const nc = new THREE.Color(neonHex);
+
+    // Body
+    const geo = new THREE.BoxGeometry(w, h, depth);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0x0b0b20, transparent: true, opacity: 0.75, metalness: 0.35, roughness: 0.3
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    grp.add(mesh);
+
+    // Edges
+    const edgeMat = new THREE.LineBasicMaterial({ color: neonHex, transparent: true, opacity: 0.85 });
+    grp.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat));
+
+    // Top glow
+    const topMat = new THREE.MeshStandardMaterial({
+      color: neonHex, emissive: neonHex, emissiveIntensity: 0.12,
+      transparent: true, opacity: 0.12, side: THREE.DoubleSide
+    });
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.05, depth - 0.05), topMat);
+    top.rotation.x = -Math.PI / 2; top.position.y = h / 2 + 0.01;
+    grp.add(top);
+
+    // Grid texture
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const cx = cv.getContext('2d');
+    cx.clearRect(0, 0, 128, 128);
+    const r = (nc.r * 255) | 0, g2 = (nc.g * 255) | 0, b = (nc.b * 255) | 0;
+    cx.strokeStyle = `rgba(${r},${g2},${b},0.18)`; cx.lineWidth = 1;
+    for (let i = 0; i <= 8; i++) {
+      cx.beginPath(); cx.moveTo(i*16, 0); cx.lineTo(i*16, 128); cx.stroke();
+      cx.beginPath(); cx.moveTo(0, i*16); cx.lineTo(128, i*16); cx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(Math.max(1, w / 2), Math.max(1, depth / 2));
+    const gp = new THREE.Mesh(
+      new THREE.PlaneGeometry(w - 0.02, depth - 0.02),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide })
+    );
+    gp.rotation.x = -Math.PI / 2; gp.position.y = h / 2 + 0.015;
+    grp.add(gp);
+
+    // Type-specific decorations
+    if (d.type === 'moving') {
+      // Small arrows on moving platforms
+      const arrowMat = new THREE.MeshBasicMaterial({ color: neonHex, transparent: true, opacity: 0.4 });
+      const ag = new THREE.ConeGeometry(0.25, 0.5, 4);
+      for (let s = -1; s <= 1; s += 2) {
+        const arrow = new THREE.Mesh(ag, arrowMat);
+        arrow.position.y = h / 2 + 0.3;
+        if (d.moveAxis === 'x') { arrow.position.x = s * (w * 0.35); arrow.rotation.z = s * Math.PI / 2; }
+        else { arrow.position.z = s * (depth * 0.35); arrow.rotation.x = -s * Math.PI / 2; }
+        grp.add(arrow);
+      }
+    }
+
+    if (d.type === 'disappearing') {
+      // Warning stripes
+      const stripeMat = new THREE.MeshBasicMaterial({ color: 0xff4444, transparent: true, opacity: 0.15 });
+      const stripe = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.8, depth * 0.08), stripeMat);
+      stripe.rotation.x = -Math.PI / 2; stripe.position.y = h / 2 + 0.02;
+      grp.add(stripe);
+    }
+
+    if (d.isCheckpoint) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(1.6, 0.07, 8, 32),
+        new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0xffdd00, emissiveIntensity: 0.9, transparent: true, opacity: 0.85 })
+      );
+      ring.rotation.x = Math.PI / 2; ring.position.y = h / 2 + 1.5;
+      grp.add(ring); ud.cpRing = ring;
+      const cpLight = new THREE.PointLight(0xffdd00, 1.5, 8);
+      cpLight.position.y = h / 2 + 1.5; grp.add(cpLight);
+    }
+
+    if (d.isGoal) {
+      const portal = new THREE.Mesh(
+        new THREE.TorusGeometry(2.2, 0.1, 12, 48),
+        new THREE.MeshStandardMaterial({ color: 0xff44ff, emissive: 0xff44ff, emissiveIntensity: 1.0, transparent: true, opacity: 0.9 })
+      );
+      portal.rotation.x = Math.PI / 2; portal.position.y = h / 2 + 2.2;
+      grp.add(portal); ud.portal = portal;
+      const inner = new THREE.Mesh(
+        new THREE.CircleGeometry(2.2, 32),
+        new THREE.MeshBasicMaterial({ color: 0xff44ff, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+      );
+      inner.rotation.x = Math.PI / 2; inner.position.y = h / 2 + 2.2;
+      grp.add(inner); ud.portalInner = inner;
+      const gl = new THREE.PointLight(0xff44ff, 2, 12);
+      gl.position.y = h / 2 + 2.2; grp.add(gl); ud.goalLight = gl;
+      this.goalPlatform = grp;
+    }
+
+    grp.position.set(...d.pos);
+    if (d.rot) grp.rotation.set(...d.rot);
+    ud.bodyMat = mat; ud.edgeMat = edgeMat; ud.topMat = topMat;
+    this.levelGroup.add(grp);
+    this.platforms.push(grp);
+  }
+
+  buildGem(posArr, neonHex) {
+    const grp = new THREE.Group();
+    const geo = new THREE.OctahedronGeometry(0.32, 0);
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffdd00, emissive: 0xffdd00, emissiveIntensity: 0.9,
+      metalness: 0.85, roughness: 0.08, transparent: true, opacity: 0.92
+    });
+    grp.add(new THREE.Mesh(geo, mat));
+    // Outer wireframe
+    const wf = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.42, 0)),
+      new THREE.LineBasicMaterial({ color: 0xffdd00, transparent: true, opacity: 0.5 })
+    );
+    grp.add(wf);
+    grp.add(new THREE.PointLight(0xffdd00, 1.2, 6));
+    grp.position.set(...posArr);
+    grp.userData = { collected: false, baseY: posArr[1] };
+    this.levelGroup.add(grp);
+    this.gems.push(grp);
+  }
+
+  // ─── Collision ───
+  sphereBoxCollision(spherePos, radius, boxGroup) {
+    const ud = boxGroup.userData;
+    if (ud.dState === 'gone') return null;
+
+    // Transform sphere into box local space
+    boxGroup.updateMatrixWorld(true);
+    const inv = new THREE.Matrix4().copy(boxGroup.matrixWorld).invert();
+    const localPos = spherePos.clone().applyMatrix4(inv);
+    const hs = new THREE.Vector3(ud.size[0]/2, ud.size[1]/2, ud.size[2]/2);
+
+    // Closest point on box to sphere center
+    const closest = new THREE.Vector3(
+      Math.max(-hs.x, Math.min(hs.x, localPos.x)),
+      Math.max(-hs.y, Math.min(hs.y, localPos.y)),
+      Math.max(-hs.z, Math.min(hs.z, localPos.z))
+    );
+    const diff = new THREE.Vector3().subVectors(localPos, closest);
+    const dist = diff.length();
+    if (dist >= radius) return null;
+
+    let localNormal;
+    if (dist < 0.001) {
+      // Sphere center is inside box — push out along smallest axis
+      const dx = hs.x - Math.abs(localPos.x);
+      const dy = hs.y - Math.abs(localPos.y);
+      const dz = hs.z - Math.abs(localPos.z);
+      if (dy <= dx && dy <= dz) localNormal = new THREE.Vector3(0, localPos.y >= 0 ? 1 : -1, 0);
+      else if (dx <= dz) localNormal = new THREE.Vector3(localPos.x >= 0 ? 1 : -1, 0, 0);
+      else localNormal = new THREE.Vector3(0, 0, localPos.z >= 0 ? 1 : -1);
+    } else {
+      localNormal = diff.normalize();
+    }
+
+    // Transform normal to world space
+    const normalMat = new THREE.Matrix3().getNormalMatrix(boxGroup.matrixWorld);
+    const worldNormal = localNormal.clone().applyMatrix3(normalMat).normalize();
+    return { normal: worldNormal, penetration: radius - dist };
+  }
+
+  checkCollisions(dt) {
+    if (this.respawning) return;
+    let grounded = false;
+    let standingPlatform = null;
+    const pos = this.marble.position;
+
+    for (const plat of this.platforms) {
+      const col = this.sphereBoxCollision(pos, MR, plat);
+      if (!col) continue;
+
+      // Resolve penetration
+      pos.addScaledVector(col.normal, col.penetration + 0.002);
+
+      // Remove velocity into surface
+      const vn = this.velocity.dot(col.normal);
+      if (vn < 0) {
+        this.velocity.addScaledVector(col.normal, -vn * 1.0);
+      }
+
+      // Is this a floor-like surface?
+      if (col.normal.y > 0.45) {
+        grounded = true;
+        standingPlatform = plat;
+      }
+    }
+
+    // Landing detection
+    if (grounded && !this.onGround && this.wasInAir && this.landCooldown <= 0) {
+      this.sound.playLand(Math.min(Math.abs(this.velocity.y) * 0.05, 0.35));
+      this.spawnParticles(pos, this.neonColor.getHex(), 8, 3, 3);
+      this.landCooldown = 0.15;
+    }
+    this.wasInAir = !grounded;
+    this.onGround = grounded;
+
+    // Moving platform carry
+    if (standingPlatform && standingPlatform.userData.platformVel) {
+      const pv = standingPlatform.userData.platformVel;
+      pos.x += pv.x * dt;
+      pos.y += pv.y * dt;
+      pos.z += pv.z * dt;
+    }
+
+    // Disappearing platform touch
+    if (standingPlatform && standingPlatform.userData.type === 'disappearing' && !standingPlatform.userData.touched) {
+      standingPlatform.userData.touched = true;
+      standingPlatform.userData.dState = 'fading';
+      standingPlatform.userData.dTimer = standingPlatform.userData.fadeDelay;
+    }
+
+    // Goal check
+    if (standingPlatform && standingPlatform.userData.isGoal) {
+      this.showLevelComplete();
+    }
+
+    // Checkpoint check
+    if (standingPlatform && standingPlatform.userData.isCheckpoint) {
+      this.checkpointPos.copy(standingPlatform.position).add(new THREE.Vector3(0, standingPlatform.userData.size[1]/2 + MR + 0.5, 0));
+    }
+  }
+
+  updatePlatforms(dt) {
+    const time = this.elapsedTime;
+    for (const plat of this.platforms) {
+      const ud = plat.userData;
+
+      if (ud.type === 'moving') {
+        const prev = plat.position.clone();
+        const base = ud.origPos;
+        const off = Math.sin(time * ud.moveSpeed) * ud.moveRange;
+        if (ud.moveAxis === 'x') plat.position.x = base[0] + off;
+        else plat.position.z = base[2] + off;
+        ud.platformVel.subVectors(plat.position, prev).divideScalar(Math.max(dt, 0.001));
+      }
+
+      if (ud.type === 'rotating') {
+        plat.rotation.y += ud.rotSpeed * dt;
+      }
+
+      if (ud.type === 'disappearing') {
+        if (ud.dState === 'fading') {
+          ud.dTimer -= dt;
+          const progress = 1 - Math.max(0, ud.dTimer / ud.fadeDelay);
+          // Blink faster as time runs out
+          const blink = progress > 0.7 ? Math.sin(time * 25) * 0.5 + 0.5 : 1;
+          ud.bodyMat.opacity = 0.75 * (1 - progress) * blink;
+          ud.edgeMat.opacity = 0.85 * (1 - progress) * blink;
+          ud.topMat.opacity = 0.12 * (1 - progress) * blink;
+          if (ud.dTimer <= 0) {
+            ud.dState = 'gone'; ud.dTimer = 4;
+            ud.bodyMat.opacity = 0; ud.edgeMat.opacity = 0; ud.topMat.opacity = 0;
+          }
+        } else if (ud.dState === 'gone') {
+          ud.dTimer -= dt;
+          if (ud.dTimer <= 0) { ud.dState = 'returning'; ud.dTimer = 1; }
+        } else if (ud.dState === 'returning') {
+          ud.dTimer -= dt;
+          const p = 1 - Math.max(0, ud.dTimer);
+          ud.bodyMat.opacity = 0.75 * p; ud.edgeMat.opacity = 0.85 * p; ud.topMat.opacity = 0.12 * p;
+          if (ud.dTimer <= 0) { ud.dState = 'solid'; ud.touched = false; }
+        }
+      }
+    }
+  }
+
+  handleFall() {
+    this.respawning = true; this.respawnTimer = 1.2;
+    this.timer += TIME_PENALTY;
+    this.sound.playFall();
+    this.ui.flash.style.opacity = '1';
+    setTimeout(() => { this.ui.flash.style.opacity = '0'; }, 200);
+    this.velocity.set(0, 0, 0);
+    this.marble.position.copy(this.checkpointPos);
+    this.onGround = false;
+    setTimeout(() => this.sound.playRespawn(), 500);
+    this.spawnParticles(this.checkpointPos, 0xffffff, 25, 6, 8);
+  }
+
+  updateGems(dt) {
+    const t = this.elapsedTime;
+    for (const gem of this.gems) {
+      if (gem.userData.collected) continue;
+      gem.rotation.y += 2.5 * dt;
+      gem.position.y = gem.userData.baseY + Math.sin(t * 3 + gem.position.x) * 0.15;
+      // Pulse scale
+      const s = 1 + Math.sin(t * 4) * 0.08;
+      gem.scale.set(s, s, s);
+
+      // Collection check
+      if (this.marble.position.distanceTo(gem.position) < MR + 0.5) {
+        gem.userData.collected = true;
+        gem.visible = false;
+        this.gemsCollected++;
+        this.sound.playGem();
+        this.spawnParticles(gem.position, 0xffdd00, 22, 4, 8);
+      }
+    }
+  }
+
+  updateCamera(dt) {
+    const mp = this.marble.position;
+    const targetPos = new THREE.Vector3(mp.x * 0.6, mp.y + 9, mp.z + 14);
+    this.cameraPos.lerp(targetPos, 1 - Math.pow(0.03, dt));
+    this.camera.position.copy(this.cameraPos);
+    this.cameraTarget.lerp(mp, 1 - Math.pow(0.05, dt));
+    this.camera.lookAt(this.cameraTarget);
+  }
+
+  updateTrail() {
+    if (this.state !== 'playing') return;
+    const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.z ** 2);
+    if (speed < 0.5 || this.respawning) return;
+    const pa = this.trail.geometry.getAttribute('position');
+    pa.setXYZ(this.trailIdx, this.marble.position.x, this.marble.position.y - MR * 0.5, this.marble.position.z);
+    this.trailIdx = (this.trailIdx + 1) % TRAIL_COUNT;
+    pa.needsUpdate = true;
+  }
+
+  animateDecorations(dt) {
+    this.elapsedTime += dt;
+    const t = this.elapsedTime;
+    // Animate checkpoint rings
+    for (const plat of this.platforms) {
+      const ud = plat.userData;
+      if (ud.cpRing) {
+        ud.cpRing.rotation.z += dt * 1.5;
+        ud.cpRing.position.y = ud.size[1] / 2 + 1.5 + Math.sin(t * 2) * 0.2;
+      }
+      if (ud.portal) {
+        ud.portal.rotation.z += dt * 2;
+        const pulse = 0.8 + Math.sin(t * 3) * 0.2;
+        ud.portal.material.emissiveIntensity = pulse;
+        if (ud.goalLight) ud.goalLight.intensity = 1.5 + Math.sin(t * 3) * 0.5;
+      }
+    }
+    // Marble rotation based on velocity
+    if (this.marble && this.state === 'playing') {
+      const spd = this.velocity.length();
+      if (spd > 0.1) {
+        const axis = new THREE.Vector3(-this.velocity.z, 0, this.velocity.x).normalize();
+        this.marble.rotateOnWorldAxis(axis, spd * dt / MR);
+      }
+    }
+  }
+
+  updateHUD() {
+    this.ui.hudTimer.textContent = '⏱ ' + this.fmtTime(this.timer);
+    this.ui.hudGems.textContent = `💎 ${this.gemsCollected}/${this.totalGems}`;
+  }
+
+  fmtTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2,'0')}:${sec.toFixed(1).padStart(4,'0')}`;
+  }
+
+  showTitle() {
+    this.state = 'title';
+    this.ui.title.classList.remove('hidden'); this.ui.title.classList.add('active');
+    this.ui.hud.classList.add('hidden');
+    this.ui.lc.classList.add('hidden'); this.ui.lc.classList.remove('active');
+    this.ui.gc.classList.add('hidden'); this.ui.gc.classList.remove('active');
+    this.ui.hint.style.display = 'none';
+    this.sound.stopMusic(); this.sound.stopRoll();
+    this.totalTime = 0; this.totalGemsAll = 0; this.totalGemsMax = 0;
+  }
+
+  showLevelComplete() {
+    this.state = 'levelComplete';
+    const bonus = this.gemsCollected * GEM_BONUS;
+    const final_ = Math.max(0, this.timer - bonus);
+    this.totalTime += final_; this.totalGemsAll += this.gemsCollected; this.totalGemsMax += this.totalGems;
+
+    let rating, cls;
+    if (final_ <= LEVEL_GOLD[this.currentLevel]) { rating = '⭐ GOLD ⭐'; cls = 'rating-gold'; }
+    else if (final_ <= LEVEL_SILVER[this.currentLevel]) { rating = '🥈 SILVER 🥈'; cls = 'rating-silver'; }
+    else { rating = '🥉 BRONZE 🥉'; cls = 'rating-bronze'; }
+
+    this.ui.lcTime.textContent = this.fmtTime(this.timer);
+    this.ui.lcGems.textContent = `${this.gemsCollected}/${this.totalGems}`;
+    this.ui.lcBonus.textContent = `-${bonus.toFixed(1)}s`;
+    this.ui.lcFinal.textContent = this.fmtTime(final_);
+    this.ui.lcRating.innerHTML = `<span class="${cls}">${rating}</span>`;
+    this.ui.lc.classList.remove('hidden'); this.ui.lc.classList.add('active');
+    this.sound.playLevelComplete(); this.sound.stopRoll();
+    this.spawnParticles(this.marble.position, 0xff44ff, 35, 8, 12);
+    this.spawnParticles(this.marble.position, 0xffdd00, 25, 6, 10);
+  }
+
+  showGameComplete() {
+    this.state = 'gameComplete';
+    this.ui.lc.classList.add('hidden'); this.ui.lc.classList.remove('active');
+    this.ui.gcTime.textContent = this.fmtTime(this.totalTime);
+    this.ui.gcGems.textContent = `${this.totalGemsAll}/${this.totalGemsMax}`;
+    this.ui.gc.classList.remove('hidden'); this.ui.gc.classList.add('active');
+    this.sound.stopMusic();
+  }
+
+  animate() {
+    requestAnimationFrame(() => this.animate());
+    const dt = Math.min(this.clock.getDelta(), 0.04);
+    this.landCooldown = Math.max(0, this.landCooldown - dt);
+
+    if (this.state === 'playing') {
+      this.timer += dt;
+      if (!this.respawning) {
+        // Input
+        const f = MOVE_FORCE;
+        if (this.keys['ArrowLeft'] || this.keys['KeyA']) this.velocity.x -= f * dt;
+        if (this.keys['ArrowRight'] || this.keys['KeyD']) this.velocity.x += f * dt;
+        if (this.keys['ArrowUp'] || this.keys['KeyW']) this.velocity.z -= f * dt;
+        if (this.keys['ArrowDown'] || this.keys['KeyS']) this.velocity.z += f * dt;
+        if (this.keys['Space'] && this.onGround && this.canJump) {
+          this.velocity.y = JUMP_VEL; this.onGround = false; this.canJump = false;
+          this.sound.playJump();
+          this.spawnParticles(this.marble.position, this.neonColor.getHex(), 6, 2, 2);
+        }
+        if (!this.keys['Space']) this.canJump = true;
+
+        // Physics
+        this.velocity.y += GRAVITY * dt;
+        const fric = this.onGround ? GROUND_FRIC : AIR_FRIC;
+        const ff = Math.pow(fric, dt * 60);
+        this.velocity.x *= ff; this.velocity.z *= ff;
+        const hs = Math.sqrt(this.velocity.x**2 + this.velocity.z**2);
+        if (hs > MAX_SPEED) { const sc = MAX_SPEED / hs; this.velocity.x *= sc; this.velocity.z *= sc; }
+        this.marble.position.x += this.velocity.x * dt;
+        this.marble.position.y += this.velocity.y * dt;
+        this.marble.position.z += this.velocity.z * dt;
+      }
+
+      this.updatePlatforms(dt);
+      this.checkCollisions(dt);
+      this.updateGems(dt);
+      this.updateCamera(dt);
+      this.updateTrail();
+      this.updateParticles(dt);
+      this.updateHUD();
+
+      const spd = Math.sqrt(this.velocity.x**2 + this.velocity.z**2);
+      this.sound.updateRoll(spd, this.onGround);
+
+      if (this.marble.position.y < FALL_Y && !this.respawning) this.handleFall();
+
+      if (this.respawning) {
+        this.respawnTimer -= dt;
+        if (this.respawnTimer <= 0) { this.respawning = false; this.marble.visible = true; }
+        else this.marble.visible = Math.sin(this.respawnTimer * 22) > 0;
+      }
+    } else {
+      this.updateParticles(dt);
+    }
+
+    this.animateDecorations(dt);
+    this.composer.render();
+  }
+}
+
+// ─── Start ───
+const game = new Game();
+game.init();
+</script>
+</body>
+</html>

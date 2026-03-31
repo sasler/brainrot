@@ -81,6 +81,7 @@ body::after{
   transition:all .15s;display:flex;align-items:center;gap:5px;
 }
 .hbtn:hover{color:var(--acc);background:rgba(255,51,102,.08);text-shadow:0 0 10px rgba(255,51,102,.5)}
+#muteBtn{border-right:none;border-left:1px solid var(--border);font-size:.95rem;padding:0 13px;min-width:2.8em}
 
 /* ── GRID WRAPPER ── */
 .gwrap{
@@ -248,6 +249,7 @@ body::after{
     <span class="hl">⏱ time</span>
     <span class="hv" id="tCnt">000</span>
   </div>
+  <button class="hbtn" id="muteBtn" onclick="toggleMute()" title="Toggle sound [M]">🔊</button>
 </div>
 
 <div class="gwrap">
@@ -271,6 +273,97 @@ body::after{
 
 <script>
 'use strict';
+
+// ─── SOUND ───────────────────────────────────────────────────────────────────
+let _ac = null, _muted = false;
+
+function _ctx() {
+  if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (_ac.state === 'suspended') _ac.resume();
+  return _ac;
+}
+
+function toggleMute() {
+  _muted = !_muted;
+  document.getElementById('muteBtn').textContent = _muted ? '🔇' : '🔊';
+}
+
+function sndReveal() {
+  if (_muted) return;
+  const c = _ctx(), o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.type = 'sine'; o.frequency.value = 600;
+  g.gain.setValueAtTime(0.13, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.03);
+  o.start(); o.stop(c.currentTime + 0.03);
+}
+
+function sndFlag() {
+  if (_muted) return;
+  const c = _ctx(), o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.type = 'sine'; o.frequency.value = 800;
+  g.gain.setValueAtTime(0.13, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04);
+  o.start(); o.stop(c.currentTime + 0.04);
+}
+
+function sndUnflag() {
+  if (_muted) return;
+  const c = _ctx(), o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.type = 'sine'; o.frequency.value = 400;
+  g.gain.setValueAtTime(0.11, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.03);
+  o.start(); o.stop(c.currentTime + 0.03);
+}
+
+function sndBoom() {
+  if (_muted) return;
+  const c = _ctx(), dur = 0.35, sr = c.sampleRate;
+  const buf = c.createBuffer(1, sr * dur | 0, sr);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const noise = c.createBufferSource(), ng = c.createGain();
+  noise.buffer = buf; noise.connect(ng); ng.connect(c.destination);
+  ng.gain.setValueAtTime(0.45, c.currentTime);
+  ng.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+  noise.start(); noise.stop(c.currentTime + dur);
+  const o = c.createOscillator(), og = c.createGain();
+  o.connect(og); og.connect(c.destination);
+  o.type = 'sine';
+  o.frequency.setValueAtTime(90, c.currentTime);
+  o.frequency.exponentialRampToValueAtTime(25, c.currentTime + dur);
+  og.gain.setValueAtTime(0.4, c.currentTime);
+  og.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+  o.start(); o.stop(c.currentTime + dur);
+}
+
+function sndWin() {
+  if (_muted) return;
+  const c = _ctx();
+  [523, 659, 784, 1047].forEach((freq, i) => {
+    const t = c.currentTime + i * 0.13;
+    const o = c.createOscillator(), g = c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.18, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    o.start(t); o.stop(t + 0.22);
+  });
+}
+
+function sndFloodTick(waveIdx) {
+  if (_muted) return;
+  const c = _ctx(), freq = 380 + (waveIdx % 10) * 35;
+  const o = c.createOscillator(), g = c.createGain();
+  o.connect(g); g.connect(c.destination);
+  o.type = 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.07, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.045);
+  o.start(); o.stop(c.currentTime + 0.045);
+}
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const DIFFS = {
@@ -435,6 +528,7 @@ function floodReveal(sr,sc){
     const batch=waves.get(d);
     if(!batch) continue;
     setTimeout(()=>{
+      sndFloodTick(d);
       for(const ni of batch){
         const r=Math.floor(ni/G.cols), c=ni%G.cols;
         renderCell(r,c,true);
@@ -455,7 +549,7 @@ function reveal(r,c){
 
   renderCell(r,c,true);
   if(G.board[i]===0) floodReveal(r,c);
-  else checkWin();
+  else { sndReveal(); checkWin(); }
 }
 
 // ─── CHORD CLICK ─────────────────────────────────────────────────────────────
@@ -477,6 +571,7 @@ function boom(br,bc){
   stopTimer();G.over=true;
   renderBoom(br,bc);
   flash('fred');
+  sndBoom();
   setSbar('💀 BOOM — GAME OVER',false);
 
   // Collect all non-flagged mines sorted by radial distance from boom point
@@ -512,6 +607,7 @@ function checkWin(){
   G.won=true;
   stopTimer();
   flash('fgrn');
+  sndWin();
   setSbar('🏆 BOARD CLEARED!',true);
 
   // Auto-flag remaining mines + wave-sweep the grid
@@ -629,8 +725,8 @@ document.getElementById('grid').addEventListener('contextmenu',e=>{
   const ce=e.target.closest('.c');if(!ce) return;
   const i=+ce.dataset.i, r=Math.floor(i/G.cols), c=i%G.cols;
   if(G.state[i]==='r') return;
-  if(G.state[i]==='h'){G.state[i]='f';G.flags++;}
-  else if(G.state[i]==='f'){G.state[i]='q';G.flags--;}
+  if(G.state[i]==='h'){G.state[i]='f';G.flags++;sndFlag();}
+  else if(G.state[i]==='f'){G.state[i]='q';G.flags--;sndUnflag();}
   else if(G.state[i]==='q'){G.state[i]='h';}
   updateHUD();renderCell(r,c,false);
 });
@@ -656,8 +752,8 @@ document.getElementById('grid').addEventListener('touchend',e=>{
     e.preventDefault();
     const i=_ti, r=Math.floor(i/G.cols), c=i%G.cols;
     if(G.state[i]!=='r'&&!G.over&&!G.won){
-      if(G.state[i]==='h'){G.state[i]='f';G.flags++;}
-      else if(G.state[i]==='f'){G.state[i]='q';G.flags--;}
+      if(G.state[i]==='h'){G.state[i]='f';G.flags++;sndFlag();}
+      else if(G.state[i]==='f'){G.state[i]='q';G.flags--;sndUnflag();}
       else if(G.state[i]==='q'){G.state[i]='h';}
       updateHUD();renderCell(r,c,false);
     }
@@ -672,6 +768,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='1') setDiff('easy');
   if(e.key==='2') setDiff('medium');
   if(e.key==='3') setDiff('hard');
+  if(e.key==='m'||e.key==='M') toggleMute();
 });
 
 // ─── RESIZE ──────────────────────────────────────────────────────────────────
