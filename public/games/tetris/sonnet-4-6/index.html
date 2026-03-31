@@ -14,14 +14,181 @@ body{
   user-select:none;-webkit-user-select:none;
 }
 canvas{display:block}
+#mute-btn{
+  position:fixed;top:10px;right:12px;
+  background:rgba(2,10,32,0.85);
+  border:1px solid rgba(0,150,220,0.4);
+  color:#00ccff;font-size:20px;cursor:pointer;
+  padding:4px 8px;border-radius:6px;
+  z-index:100;line-height:1;
+  transition:opacity 0.2s;
+}
+#mute-btn:hover{opacity:0.8;}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<button id="mute-btn" title="Toggle sound">🔊</button>
 <script>
 'use strict';
 // ═══════════════════════════════════════════════════════════
-//  CONSTANTS & PIECE DATA
+//  AUDIO (Web Audio API — procedural sound effects)
+// ═══════════════════════════════════════════════════════════
+let audioCtx=null;
+let muted=false;
+
+function initAudio(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+function _ac(){
+  if(!audioCtx||muted) return null;
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// Piece move left/right: very short soft tick (sine 500Hz, 15ms)
+function sndMove(){
+  const ac=_ac(); if(!ac) return;
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.connect(g); g.connect(ac.destination);
+  o.type='sine'; o.frequency.value=500;
+  g.gain.setValueAtTime(0.1,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.015);
+  o.start(ac.currentTime); o.stop(ac.currentTime+0.015);
+}
+
+// Piece rotate: short blip (sine 700Hz, 25ms)
+function sndRotate(){
+  const ac=_ac(); if(!ac) return;
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.connect(g); g.connect(ac.destination);
+  o.type='sine'; o.frequency.value=700;
+  g.gain.setValueAtTime(0.13,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.025);
+  o.start(ac.currentTime); o.stop(ac.currentTime+0.025);
+}
+
+// Piece land/lock: thud (sine 200Hz, 50ms with fast decay)
+function sndLand(){
+  const ac=_ac(); if(!ac) return;
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.connect(g); g.connect(ac.destination);
+  o.type='sine'; o.frequency.value=200;
+  o.frequency.exponentialRampToValueAtTime(120,ac.currentTime+0.05);
+  g.gain.setValueAtTime(0.28,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.05);
+  o.start(ac.currentTime); o.stop(ac.currentTime+0.05);
+}
+
+// Soft drop: subtle filtered-noise whoosh (20ms)
+function sndSoftDrop(){
+  const ac=_ac(); if(!ac) return;
+  const bufSize=Math.floor(ac.sampleRate*0.02);
+  const buf=ac.createBuffer(1,bufSize,ac.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<bufSize;i++) data[i]=Math.random()*2-1;
+  const src=ac.createBufferSource();
+  src.buffer=buf;
+  const flt=ac.createBiquadFilter();
+  flt.type='bandpass'; flt.frequency.value=900; flt.Q.value=0.6;
+  const g=ac.createGain();
+  src.connect(flt); flt.connect(g); g.connect(ac.destination);
+  g.gain.setValueAtTime(0.07,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.02);
+  src.start(ac.currentTime); src.stop(ac.currentTime+0.02);
+}
+
+// Hard drop: louder descending thud (sine 150→80Hz, 80ms)
+function sndHardDrop(){
+  const ac=_ac(); if(!ac) return;
+  const o=ac.createOscillator(), g=ac.createGain();
+  o.connect(g); g.connect(ac.destination);
+  o.type='sine'; o.frequency.setValueAtTime(150,ac.currentTime);
+  o.frequency.exponentialRampToValueAtTime(70,ac.currentTime+0.08);
+  g.gain.setValueAtTime(0.38,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.08);
+  o.start(ac.currentTime); o.stop(ac.currentTime+0.08);
+}
+
+// Line clear: rising sweep for 1 line; richer sweep for 2-3; Tetris chord for 4
+function sndLineClear(n){
+  const ac=_ac(); if(!ac) return;
+  if(n>=4){
+    // Tetris: staggered rising chord (4 voices) + sparkle
+    [260,390,520,780].forEach((freq,i)=>{
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.type='sine';
+      const t0=ac.currentTime+i*0.045;
+      o.frequency.setValueAtTime(freq,t0);
+      o.frequency.exponentialRampToValueAtTime(freq*2.4,t0+0.28);
+      g.gain.setValueAtTime(0,t0);
+      g.gain.linearRampToValueAtTime(0.22,t0+0.012);
+      g.gain.exponentialRampToValueAtTime(0.001,t0+0.3);
+      o.start(t0); o.stop(t0+0.3);
+    });
+  } else if(n>=2){
+    // Double/Triple: two-voice sweep
+    [350,525].forEach((freq,i)=>{
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.type='sine';
+      const t0=ac.currentTime+i*0.03;
+      o.frequency.setValueAtTime(freq,t0);
+      o.frequency.exponentialRampToValueAtTime(freq*2.2,t0+0.18);
+      g.gain.setValueAtTime(0.2,t0);
+      g.gain.exponentialRampToValueAtTime(0.001,t0+0.2);
+      o.start(t0); o.stop(t0+0.2);
+    });
+  } else {
+    // Single: clean rising sweep 400→1000Hz
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type='sine';
+    o.frequency.setValueAtTime(400,ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(1000,ac.currentTime+0.15);
+    g.gain.setValueAtTime(0.22,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.15);
+    o.start(ac.currentTime); o.stop(ac.currentTime+0.15);
+  }
+}
+
+// Level up: ascending 3-note arpeggio
+function sndLevelUp(){
+  const ac=_ac(); if(!ac) return;
+  [440,554,660].forEach((freq,i)=>{
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type='sine'; o.frequency.value=freq;
+    const t0=ac.currentTime+i*0.1;
+    g.gain.setValueAtTime(0.24,t0);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+0.14);
+    o.start(t0); o.stop(t0+0.14);
+  });
+}
+
+// Game over: sad descending sequence
+function sndGameOver(){
+  const ac=_ac(); if(!ac) return;
+  [440,330,220,165].forEach((freq,i)=>{
+    const o=ac.createOscillator(), g=ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type='sine'; o.frequency.value=freq;
+    const t0=ac.currentTime+i*0.13;
+    g.gain.setValueAtTime(0.26,t0);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+0.18);
+    o.start(t0); o.stop(t0+0.2);
+  });
+}
+
+// Mute toggle button
+const _muteBtn=document.getElementById('mute-btn');
+_muteBtn.addEventListener('click',()=>{
+  initAudio();
+  muted=!muted;
+  _muteBtn.textContent=muted?'🔇':'🔊';
+});
+
 // ═══════════════════════════════════════════════════════════
 const COLS=10,ROWS=20,BUF=2;
 
@@ -238,7 +405,7 @@ function spawnPiece(){
   cur={type,rot:0,x:Math.floor(COLS/2)-2,y:0};
   lockTimer=-1; lockMoves=0;
   gravAcc=0; sdsAcc=0; // don't carry over accumulated gravity
-  if(!valid(cur)) gstate='OVER';
+  if(!valid(cur)) { gstate='OVER'; sndGameOver(); }
 }
 
 function mat(type,rot){return ROTS[type][rot];}
@@ -262,14 +429,14 @@ function rotate(dir){
   for(const [dx,dy] of table){
     if(valid(cur,dx,dy,nr)){
       cur.x+=dx; cur.y+=dy; cur.rot=nr;
-      resetLock(); return true;
+      resetLock(); sndRotate(); return true;
     }
   }
   return false;
 }
 
 function moveLR(dx){
-  if(valid(cur,dx,0)){cur.x+=dx; resetLock(); return true;}
+  if(valid(cur,dx,0)){cur.x+=dx; resetLock(); sndMove(); return true;}
   return false;
 }
 
@@ -282,12 +449,13 @@ function ghostRow(){
 function startLock(){ if(lockTimer<0) lockTimer=LOCK_MS; }
 function resetLock(){ if(lockTimer>=0&&lockMoves<LOCK_MAX){lockMoves++;lockTimer=LOCK_MS;} }
 
-function lockPiece(){
+function lockPiece(fromHardDrop=false){
   const m=mat(cur.type,cur.rot);
   for(let r=0;r<4;r++) for(let c=0;c<4;c++){
     if(m[r][c]){ const br=cur.y+r; if(br>=0) board[br][cur.x+c]=cur.type; }
   }
   lockTimer=-1;
+  if(!fromHardDrop) sndLand();
   clearCheck();
 }
 
@@ -304,7 +472,9 @@ function clearCheck(){
     const gained=LINE_PTS[n]*mult + (combo>0?50*combo*level:0);
     score+=gained;
     lines+=n;
+    const prevLevel=level;
     level=Math.floor(lines/10)+1;
+    if(level>prevLevel) sndLevelUp();
     // Particles & shake
     const visBot=rows[rows.length-1]-BUF;
     spawnParticles(visBot,n);
@@ -316,6 +486,7 @@ function clearCheck(){
     if(combo>1) addPop(`${combo}× COMBO`,px,py-CS*1.2,'#FF88FF');
     if(isTet&&b2b) addPop('BACK-TO-BACK',px,py-CS*2.4,'#FF6600');
     // Start clear animation
+    sndLineClear(n);
     clearAnim={rows,t:38};
     gstate='CLEARING';
   } else {
@@ -329,7 +500,8 @@ function hardDrop(){
   score+=(gy-cur.y)*2;
   cur.y=gy;
   addShake(6,8);
-  lockPiece();
+  sndHardDrop();
+  lockPiece(true);
 }
 
 function holdPiece(){
@@ -338,7 +510,7 @@ function holdPiece(){
   else {
     const t=held; held=cur.type;
     cur={type:t,rot:0,x:Math.floor(COLS/2)-2,y:0};
-    if(!valid(cur)){ gstate='OVER'; return; }
+    if(!valid(cur)){ gstate='OVER'; sndGameOver(); return; }
   }
   canHold=false; lockTimer=-1; lockMoves=0;
 }
@@ -352,6 +524,7 @@ let dasLacc=0,dasRacc=0,arrLacc=0,arrRacc=0;
 const DAS=133, ARR=10, SDS=33; // ms
 
 window.addEventListener('keydown',e=>{
+  initAudio();
   if(K[e.code]) return;
   K[e.code]=true;
   if(gstate==='TITLE'&&(e.code==='Space'||e.code==='Enter')){initGame();gstate='PLAYING';e.preventDefault();return;}
@@ -368,7 +541,7 @@ window.addEventListener('keydown',e=>{
     case 'ArrowUp':    rotate(1);  break;
     case 'KeyZ':       rotate(-1); break;
     case 'KeyX':       rotate(1);  break;
-    case 'ArrowDown':  if(valid(cur,0,1)){cur.y++;score++;resetLock();}else startLock(); break;
+    case 'ArrowDown':  if(valid(cur,0,1)){cur.y++;score++;resetLock();sndSoftDrop();}else startLock(); break;
     case 'Space':      hardDrop(); break;
     case 'KeyC': case 'ShiftLeft': case 'ShiftRight': holdPiece(); break;
   }
@@ -733,7 +906,7 @@ function mainLoop(ts){
       sdsAcc+=dt;
       while(sdsAcc>=SDS){
         sdsAcc-=SDS;
-        if(valid(cur,0,1)){cur.y++;score++;resetLock();}
+        if(valid(cur,0,1)){cur.y++;score++;resetLock();sndSoftDrop();}
         else startLock();
       }
     } else sdsAcc=0;

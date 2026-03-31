@@ -154,6 +154,36 @@
       transform: translateY(0);
     }
 
+    .audio-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 6;
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 204, 255, 0.32);
+      background: rgba(8, 12, 26, 0.78);
+      color: #eff8ff;
+      display: grid;
+      place-items: center;
+      font-size: 1.05rem;
+      cursor: pointer;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04) inset, 0 10px 28px rgba(0, 0, 0, 0.28);
+      backdrop-filter: blur(8px);
+      transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .audio-toggle:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 204, 255, 0.7);
+      box-shadow: 0 0 18px rgba(0, 204, 255, 0.16), 0 10px 28px rgba(0, 0, 0, 0.28);
+    }
+
+    .audio-toggle:active {
+      transform: translateY(0);
+    }
+
     .hint {
       margin-top: 16px;
       color: #8f9bcc;
@@ -163,6 +193,7 @@
 </head>
 <body>
   <canvas id="game"></canvas>
+  <button id="muteBtn" class="audio-toggle" type="button" aria-label="Mute sound" title="Mute sound">🔊</button>
 
   <div id="titleOverlay" class="overlay">
     <div class="shell">
@@ -207,6 +238,7 @@
       const finalScore = document.getElementById("finalScore");
       const finalLines = document.getElementById("finalLines");
       const finalLevel = document.getElementById("finalLevel");
+      const muteBtn = document.getElementById("muteBtn");
 
       const COLS = 10;
       const ROWS = 20;
@@ -289,6 +321,146 @@
         "0>3": [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]]
       };
       const MINO_TYPES = ["I", "J", "L", "O", "S", "T", "Z"];
+
+      let isMuted = false;
+
+      function updateMuteButton() {
+        muteBtn.textContent = isMuted ? "🔇" : "🔊";
+        muteBtn.setAttribute("aria-label", isMuted ? "Unmute sound" : "Mute sound");
+        muteBtn.title = isMuted ? "Unmute sound" : "Mute sound";
+      }
+
+      const sound = (() => {
+        let context = null;
+        let noiseBuffer = null;
+        let unlocked = false;
+
+        function ensureContext() {
+          if (!context) {
+            const AudioCtor = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtor) return null;
+            context = new AudioCtor();
+            const length = Math.max(1, Math.floor(context.sampleRate * 0.12));
+            noiseBuffer = context.createBuffer(1, length, context.sampleRate);
+            const data = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < length; i += 1) {
+              data[i] = Math.random() * 2 - 1;
+            }
+          }
+          if (context.state === "suspended") context.resume();
+          return context;
+        }
+
+        function startEnvelope(gainNode, startTime, duration, peak) {
+          gainNode.gain.setValueAtTime(0.0001, startTime);
+          gainNode.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), startTime + Math.max(0.002, Math.min(0.012, duration * 0.18)));
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        }
+
+        function playTone({ frequency, endFrequency = null, type = "sine", duration = 0.1, gain = 0.08, at = 0, filter = null, detune = 0 }) {
+          if (isMuted) return;
+          const ctx = ensureContext();
+          if (!ctx) return;
+          const startTime = ctx.currentTime + at;
+          const osc = ctx.createOscillator();
+          const amp = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(frequency, startTime);
+          if (endFrequency !== null) osc.frequency.linearRampToValueAtTime(endFrequency, startTime + duration);
+          if (detune) osc.detune.setValueAtTime(detune, startTime);
+          startEnvelope(amp, startTime, duration, gain);
+          if (filter) {
+            osc.connect(filter);
+            filter.connect(amp);
+          } else {
+            osc.connect(amp);
+          }
+          amp.connect(ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + duration + 0.03);
+        }
+
+        function playChord(frequencies, options) {
+          frequencies.forEach((frequency, index) => {
+            playTone({
+              ...options,
+              frequency,
+              at: (options.at || 0) + (options.spread || 0) * index
+            });
+          });
+        }
+
+        function playNoiseWhoosh({ duration = 0.02, gain = 0.05, at = 0 }) {
+          if (isMuted) return;
+          const ctx = ensureContext();
+          if (!ctx || !noiseBuffer) return;
+          const startTime = ctx.currentTime + at;
+          const source = ctx.createBufferSource();
+          const filter = ctx.createBiquadFilter();
+          const amp = ctx.createGain();
+          source.buffer = noiseBuffer;
+          filter.type = "bandpass";
+          filter.frequency.setValueAtTime(1200, startTime);
+          filter.frequency.linearRampToValueAtTime(360, startTime + duration);
+          filter.Q.setValueAtTime(0.9, startTime);
+          startEnvelope(amp, startTime, duration, gain);
+          source.connect(filter);
+          filter.connect(amp);
+          amp.connect(ctx.destination);
+          source.start(startTime);
+          source.stop(startTime + duration + 0.03);
+        }
+
+        function unlock() {
+          if (unlocked) return;
+          unlocked = true;
+          ensureContext();
+          window.removeEventListener("pointerdown", unlock, true);
+          window.removeEventListener("keydown", unlock, true);
+        }
+
+        window.addEventListener("pointerdown", unlock, true);
+        window.addEventListener("keydown", unlock, true);
+
+        return {
+          toggleMute() {
+            isMuted = !isMuted;
+            updateMuteButton();
+          },
+          tick() {
+            playTone({ frequency: 500, duration: 0.015, gain: 0.04, type: "sine" });
+          },
+          rotate() {
+            playTone({ frequency: 700, duration: 0.025, gain: 0.055, type: "sine" });
+          },
+          lock() {
+            playTone({ frequency: 200, endFrequency: 120, duration: 0.05, gain: 0.08, type: "sine" });
+          },
+          softDrop() {
+            playNoiseWhoosh({ duration: 0.02, gain: 0.03 });
+          },
+          hardDrop() {
+            playTone({ frequency: 150, endFrequency: 95, duration: 0.08, gain: 0.11, type: "sine" });
+          },
+          clearSingle() {
+            playTone({ frequency: 400, endFrequency: 1000, duration: 0.15, gain: 0.07, type: "sine" });
+          },
+          clearMultiple() {
+            playChord([300, 375, 450], { duration: 0.3, gain: 0.06, type: "sine", spread: 0.012 });
+            playTone({ frequency: 1800, endFrequency: 3200, duration: 0.18, gain: 0.03, type: "triangle", at: 0.06 });
+          },
+          levelUp() {
+            playTone({ frequency: 520, duration: 0.08, gain: 0.055, type: "sine" });
+            playTone({ frequency: 660, duration: 0.08, gain: 0.055, type: "sine", at: 0.085 });
+            playTone({ frequency: 880, duration: 0.11, gain: 0.06, type: "sine", at: 0.17 });
+          },
+          gameOver() {
+            playTone({ frequency: 720, endFrequency: 540, duration: 0.16, gain: 0.055, type: "sine" });
+            playTone({ frequency: 540, endFrequency: 360, duration: 0.16, gain: 0.05, type: "sine", at: 0.18 });
+            playTone({ frequency: 360, endFrequency: 220, duration: 0.18, gain: 0.045, type: "sine", at: 0.36 });
+          }
+        };
+      })();
 
       let width = 0;
       let height = 0;
@@ -437,6 +609,7 @@
         const type = overrideType || queue.shift();
         if (!overrideType) fillQueue();
         current = makePiece(type);
+        softDropCells = 0;
         holdUsed = false;
         lockAccumulator = 0;
         fallAccumulator = 0;
@@ -448,6 +621,7 @@
       function triggerGameOver() {
         running = false;
         gameOver = true;
+        sound.gameOver();
         finalScore.textContent = String(score);
         finalLines.textContent = String(lines);
         finalLevel.textContent = String(level);
@@ -472,10 +646,12 @@
 
       function awardClear(count) {
         if (!count) return;
+        const previousLevel = level;
         const points = [0, 100, 300, 500, 800][count] * level;
         score += points;
         lines += count;
         level = 1 + Math.floor(lines / 10);
+        if (level > previousLevel) sound.levelUp();
         cameraShake = Math.max(cameraShake, count * 6);
       }
 
@@ -494,7 +670,7 @@
         while (board.length < ROWS) board.unshift(Array(COLS).fill(null));
       }
 
-      function lockPiece() {
+      function lockPiece(fromHardDrop = false) {
         placeCurrentPiece();
         const rows = detectLines();
         if (rows.length) {
@@ -503,7 +679,10 @@
             time: 0
           };
           awardClear(rows.length);
+          if (rows.length === 1) sound.clearSingle();
+          else sound.clearMultiple();
         } else {
+          if (!fromHardDrop) sound.lock();
           spawnPiece();
         }
       }
@@ -515,11 +694,15 @@
         current.x = nx;
         current.y = ny;
         lockAccumulator = 0;
+        if (dy === 0 && dx !== 0) sound.tick();
         return true;
       }
 
       function tryRotate(dir) {
-        if (current.type === "O") return true;
+        if (current.type === "O") {
+          sound.rotate();
+          return true;
+        }
         const from = current.rot;
         const to = (current.rot + dir + 4) % 4;
         const kicks = current.type === "I" ? I_KICKS : JLSTZ_KICKS;
@@ -533,6 +716,7 @@
             current.y = ny;
             current.rot = to;
             lockAccumulator = 0;
+            sound.rotate();
             return true;
           }
         }
@@ -543,7 +727,8 @@
         let dropped = 0;
         while (move(0, 1)) dropped += 1;
         score += dropped * 2;
-        lockPiece();
+        sound.hardDrop();
+        lockPiece(true);
       }
 
       function holdCurrent() {
@@ -568,6 +753,7 @@
           fallAccumulator -= interval;
           if (move(0, 1)) {
             score += 1;
+            if (softDropCells === 0) sound.softDrop();
             softDropCells += 1;
           } else {
             break;
@@ -609,7 +795,11 @@
         while (fallAccumulator >= interval) {
           fallAccumulator -= interval;
           if (move(0, 1)) {
-            if (input.down) score += 1;
+            if (input.down) {
+              if (softDropCells === 0) sound.softDrop();
+              score += 1;
+              softDropCells += 1;
+            }
             lockAccumulator = 0;
           } else {
             break;
@@ -1055,6 +1245,9 @@
       document.addEventListener("keyup", keyUp, { passive: true });
       startBtn.addEventListener("click", startGame);
       restartBtn.addEventListener("click", restartGame);
+      muteBtn.addEventListener("click", () => {
+        sound.toggleMute();
+      });
       titleOverlay.addEventListener("click", (e) => {
         if (e.target === titleOverlay) startGame();
       });
@@ -1063,6 +1256,7 @@
       });
 
       let bag = makeBag();
+      updateMuteButton();
       createStars();
       resize();
       requestAnimationFrame(loop);

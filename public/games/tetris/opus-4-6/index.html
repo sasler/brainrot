@@ -49,6 +49,14 @@ canvas{display:block}
 .go-stats .value{color:#00f0ff;font-size:1.6rem;font-weight:700}
 .go-stats .value.lines{color:#ff00aa}
 .go-stats .value.level{color:#ffee00}
+#mute-btn{
+  position:fixed;top:12px;right:12px;z-index:30;
+  background:rgba(10,10,30,0.7);border:1px solid rgba(0,240,255,0.25);
+  color:#aaa;font-size:1.4rem;width:40px;height:40px;
+  border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;line-height:1;padding:0;
+}
+#mute-btn:hover{border-color:#00f0ff;color:#00f0ff;background:rgba(0,240,255,0.08)}
 </style>
 </head>
 <body>
@@ -76,10 +84,108 @@ canvas{display:block}
   <button class="btn" id="restart-btn">PLAY AGAIN</button>
 </div>
 
+<button id="mute-btn" title="Toggle sound">🔊</button>
 <canvas id="c"></canvas>
 
 <script>
 'use strict';
+
+// ═══════════════════════════════════════════════════════════
+//  SOUND MANAGER (Web Audio API)
+// ═══════════════════════════════════════════════════════════
+const SFX = (() => {
+  let actx = null;
+  let muted = false;
+
+  function init() {
+    if (actx) return;
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+  }
+
+  function isMuted() { return muted; }
+  function toggleMute() {
+    muted = !muted;
+    document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+  }
+
+  function tone(freq, duration, vol, type, freqEnd) {
+    if (muted || !actx) return;
+    const t = actx.currentTime;
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    if (freqEnd) osc.frequency.linearRampToValueAtTime(freqEnd, t + duration);
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    osc.connect(gain).connect(actx.destination);
+    osc.start(t);
+    osc.stop(t + duration);
+  }
+
+  function noise(duration, vol) {
+    if (muted || !actx) return;
+    const t = actx.currentTime;
+    const bufSize = Math.ceil(actx.sampleRate * duration);
+    const buf = actx.createBuffer(1, bufSize, actx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    const src = actx.createBufferSource();
+    src.buffer = buf;
+    const filter = actx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2000;
+    filter.Q.value = 0.5;
+    const gain = actx.createGain();
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    src.connect(filter).connect(gain).connect(actx.destination);
+    src.start(t);
+    src.stop(t + duration);
+  }
+
+  return {
+    init,
+    isMuted,
+    toggleMute,
+    move()      { tone(500, 0.015, 0.08, 'sine'); },
+    rotate()    { tone(700, 0.025, 0.1, 'sine'); },
+    lock()      { tone(200, 0.05, 0.15, 'sine'); },
+    softDrop()  { noise(0.02, 0.06); },
+    hardDrop()  { tone(150, 0.08, 0.2, 'sine'); },
+    lineClear(count) {
+      if (count >= 4) {
+        tone(300, 0.3, 0.15, 'sine', 900);
+        tone(450, 0.3, 0.12, 'sine', 1200);
+        tone(600, 0.3, 0.1, 'sine', 1500);
+      } else {
+        tone(400, 0.15, 0.15, 'sine', 1000);
+      }
+    },
+    levelUp() {
+      tone(500, 0.1, 0.12, 'sine');
+      setTimeout(() => tone(650, 0.1, 0.12, 'sine'), 80);
+      setTimeout(() => tone(850, 0.15, 0.14, 'sine'), 160);
+    },
+    gameOver() {
+      tone(440, 0.12, 0.15, 'sine');
+      setTimeout(() => tone(370, 0.12, 0.15, 'sine'), 120);
+      setTimeout(() => tone(300, 0.12, 0.15, 'sine'), 240);
+      setTimeout(() => tone(220, 0.25, 0.18, 'sine'), 360);
+    },
+  };
+})();
+
+// Init AudioContext on first user interaction
+['click', 'keydown', 'touchstart'].forEach(evt =>
+  document.addEventListener(evt, () => SFX.init(), { once: true })
+);
+document.getElementById('mute-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  SFX.init();
+  SFX.toggleMute();
+});
 
 // ═══════════════════════════════════════════════════════════
 //  CONSTANTS
@@ -299,6 +405,7 @@ function lockPiece() {
     return;
   }
 
+  SFX.lock();
   holdUsed = false;
   checkLines();
   spawnNext();
@@ -325,6 +432,7 @@ function checkLines() {
     combo = 0;
     return;
   }
+  SFX.lineClear(cleared.length);
 
   // Start line clear animation
   lineClearAnim = { rows: cleared, timer: 0, duration: 350 };
@@ -353,6 +461,7 @@ function checkLines() {
   const newLevel = Math.floor(lines / 10) + 1;
   if (newLevel > level) {
     level = newLevel;
+    SFX.levelUp();
   }
   dropInterval = LEVEL_SPEEDS[Math.min(level - 1, LEVEL_SPEEDS.length - 1)];
 
@@ -401,6 +510,7 @@ function tryRotate(dir) {
       current.y += dy;
       current.rot = to;
       current.lockMoves++;
+      SFX.rotate();
       return true;
     }
   }
@@ -424,6 +534,7 @@ function holdSwap() {
 function triggerGameOver() {
   gameOverFlag = true;
   gameRunning = false;
+  SFX.gameOver();
   document.getElementById('final-score').textContent = score.toLocaleString();
   document.getElementById('final-lines').textContent = lines;
   document.getElementById('final-level').textContent = level;
@@ -493,6 +604,7 @@ function movePiece(dx) {
   if (isValid(current.type, current.rot, current.x + dx, current.y)) {
     current.x += dx;
     current.lockMoves++;
+    SFX.move();
     return true;
   }
   return false;
@@ -503,6 +615,7 @@ function softDrop() {
     current.y++;
     score += 1;
     dropTimer = 0;
+    SFX.softDrop();
     return true;
   }
   return false;
@@ -515,6 +628,7 @@ function hardDrop() {
     dist++;
   }
   score += dist * 2;
+  SFX.hardDrop();
 
   // Spawn hard drop particles
   forEachCell(current, (x, y) => {
