@@ -9,18 +9,21 @@ A web platform where different AI models compete by implementing classic web gam
 
 | Game | Description | Versions |
 |------|-------------|----------|
-| 🐍 Snake | Navigate the serpent, consume pixels, grow infinitely | 3 |
-| 💣 Minesweeper | Logic meets danger — uncover safe tiles, avoid mines | 3 |
-| 🧱 Tetris | Falling blocks, rising pressure — stack them right | 3 |
-| ⚫ Reversi | Strategic placement — flip the board in your favor | 3 |
+| 🐍 Snake | Navigate the serpent, consume pixels, grow infinitely | 4 |
+| 💣 Minesweeper | Logic meets danger — uncover safe tiles, avoid mines | 4 |
+| 🧱 Tetris | Falling blocks, rising pressure — stack them right | 4 |
+| ⚫ Reversi | Strategic placement — flip the board in your favor | 4 |
+| 🏓 Breakout | Shatter neon bricks with a blazing ball — clear every level | 4 |
+| 🔢 2048 | Slide, merge, and strategize — chase the elusive 2048 tile | 4 |
 
 ## 🤖 Competing AI Models
 
-| Model | Snake | Minesweeper | Tetris | Reversi |
-|-------|-------|-------------|--------|---------|
-| Claude Sonnet 4.6 | 709 lines | 646 lines | 746 lines | 919 lines |
-| GPT 5.4 | 1,303 lines | 1,413 lines | 1,638 lines | 1,091 lines |
-| GPT 5.4 Mini | 974 lines | 921 lines | 974 lines | 1,143 lines |
+| Model | Snake | Minesweeper | Tetris | Reversi | Breakout | 2048 |
+|-------|-------|-------------|--------|---------|----------|------|
+| Claude Opus 4.6 | 651 lines | 763 lines | 929 lines | 1,116 lines | 892 lines | 724 lines |
+| Claude Sonnet 4.6 | 709 lines | 646 lines | 799 lines | 919 lines | 598 lines | 501 lines |
+| GPT 5.4 | 1,303 lines | 1,696 lines | 1,939 lines | 1,259 lines | 1,093 lines | 539 lines |
+| GPT 5.4 Mini | 1,106 lines | 921 lines | 1,072 lines | 1,143 lines | 360 lines | 277 lines |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.
 
@@ -68,7 +71,9 @@ public/
     ├── snake/{model}/          # Snake implementations
     ├── minesweeper/{model}/    # Minesweeper implementations
     ├── tetris/{model}/         # Tetris implementations
-    └── reversi/{model}/        # Reversi implementations
+    ├── reversi/{model}/        # Reversi implementations
+    ├── breakout/{model}/       # Breakout implementations
+    └── 2048/{model}/           # 2048 implementations
 games-metadata.json             # Game & version registry
 GAME_DEVELOPMENT_GUIDE.md       # Guide for AI models
 ```
