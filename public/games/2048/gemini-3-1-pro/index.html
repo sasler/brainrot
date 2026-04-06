@@ -43,7 +43,14 @@
       else if(e.key=='ArrowUp') { for(let j=0;j<4;j++) { let col=slide([nb[j],nb[j+4],nb[j+8],nb[j+12]]); for(let i=0;i<4;i++) nb[i*4+j]=col[i]; } }
       else if(e.key=='ArrowDown') { for(let j=0;j<4;j++) { let col=slide([nb[j],nb[j+4],nb[j+8],nb[j+12]].reverse()).reverse(); for(let i=0;i<4;i++) nb[i*4+j]=col[i]; } }
       if(nb.some((v,i)=>v!=b[i])) { b=nb; add(); draw(); document.getElementById('s').innerText=sc; }
-      else if(!b.includes(0)) { run=false; document.getElementById('over').style.display='flex'; document.getElementById('fs').innerText=sc; document.getElementById('st').innerText='OVER'; }
+      else if(!b.includes(0)) { 
+        let m=true;
+        for(let i=0;i<4;i++)for(let j=0;j<4;j++) {
+          if((j<3 && b[i*4+j]==b[i*4+j+1]) || (i<3 && b[i*4+j]==b[(i+1)*4+j])) m=false;
+        }
+        if(m) { run=false; document.getElementById('over').style.display='flex'; document.getElementById('fs').innerText=sc; document.getElementById('st').innerText='OVER'; }
+      }
+      if(b.includes(2048) && run) { run=false; document.getElementById('over').style.display='flex'; document.getElementById('fs').innerText=sc; document.getElementById('over').querySelector('h1').innerText='YOU WIN!'; document.getElementById('st').innerText='WIN'; }
     });
   </script>
 </body>

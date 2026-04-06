@@ -1,13 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Maze</title>
-  <style>body { background: #050510; color: #e4e4ef; margin: 0; overflow: hidden; font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }</style>
-</head>
+<head><meta charset="UTF-8"><title>3D Maze</title><style>
+  body { background: #050510; color: #fff; margin: 0; overflow: hidden; font-family: monospace; }
+  canvas { background: #111; display: block; width: 100vw; height: 100vh; }
+  #ui { position: fixed; top: 10px; left: 10px; z-index: 10; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); z-index: 20; }
+  button { margin-top: 20px; padding: 10px 20px; background: transparent; border: 1px solid #0ff; color: #0ff; cursor: pointer; }
+</style></head>
 <body>
-  <div><h1>3D MAZE</h1></div>
-  <script>console.log("3D Maze placeholder");</script>
+  <div id="ui">MAZE <span id="t">0</span></div>
+  <div id="start" class="screen"><h1>3D MAZE</h1><button onclick="st()">START</button></div>
+  <div id="over" class="screen" style="display:none;"><h1 id="om">GAME OVER</h1><button onclick="st()">RETRY</button></div>
+  <canvas id="c"></canvas>
+  <script>
+    const cvs=document.getElementById('c'), ctx=cvs.getContext('2d');
+    let W,H, p, run=false, tm=0, keys={};
+    function rs() { W=cvs.width=window.innerWidth; H=cvs.height=window.innerHeight; }
+    window.addEventListener('resize', rs); rs();
+    let map = [
+      "11111111",
+      "10000001",
+      "10111001",
+      "10001011",
+      "11101002",
+      "11111111"
+    ];
+    function st() {
+      document.getElementById('start').style.display='none'; document.getElementById('over').style.display='none';
+      p={x: 1.5, y: 1.5, a: 0}; run=true; tm=Date.now(); loop();
+    }
+    window.addEventListener('keydown', e=>{keys[e.code]=true;});
+    window.addEventListener('keyup', e=>{keys[e.code]=false;});
+    function go(win) { run=false; document.getElementById('over').style.display='flex'; document.getElementById('om').innerText=win?'YOU WIN!':'GAME OVER'; }
+    function loop() {
+      if(!run) return; requestAnimationFrame(loop);
+      if(keys['ArrowLeft']) p.a -= 0.05; if(keys['ArrowRight']) p.a += 0.05;
+      let nx = p.x, ny = p.y;
+      if(keys['ArrowUp']) { nx += Math.cos(p.a)*0.1; ny += Math.sin(p.a)*0.1; }
+      if(keys['ArrowDown']) { nx -= Math.cos(p.a)*0.1; ny -= Math.sin(p.a)*0.1; }
+      if(map[ny|0][nx|0] == '0') { p.x=nx; p.y=ny; } else if(map[ny|0][nx|0] == '2') return go(true);
+      document.getElementById('t').innerText=((Date.now()-tm)/1000).toFixed(1);
+      
+      ctx.clearRect(0,0,W,H);
+      for(let i=0; i<W; i+=4) {
+        let ra = p.a - 0.5 + (i/W);
+        let d = 0, hit = 0;
+        while(!hit && d<10) {
+          d += 0.1;
+          let rx = p.x + Math.cos(ra)*d, ry = p.y + Math.sin(ra)*d;
+          if(ry<0||ry>=map.length||rx<0||rx>=map[0].length||map[ry|0][rx|0]=='1') hit = 1;
+          else if(map[ry|0][rx|0]=='2') hit = 2;
+        }
+        let hLine = H / (d*Math.cos(ra-p.a));
+        ctx.fillStyle = hit==2 ? '#0f0' : gb(0,\,\);
+        ctx.fillRect(i, (H-hLine)/2, 4, hLine);
+      }
+    }
+  </script>
 </body>
 </html>

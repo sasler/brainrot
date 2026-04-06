@@ -1,13 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Endless Runner</title>
-  <style>body { background: #050510; color: #e4e4ef; margin: 0; overflow: hidden; font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }</style>
-</head>
+<head><meta charset="UTF-8"><title>Endless Runner</title><style>
+  body { background: #050510; color: #fff; margin: 0; overflow: hidden; font-family: monospace; }
+  canvas { background: #111; display: block; }
+  #ui { position: fixed; top: 10px; left: 10px; z-index: 10; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); z-index: 20; }
+  button { margin-top: 20px; padding: 10px 20px; background: transparent; border: 1px solid #0ff; color: #0ff; cursor: pointer; }
+</style></head>
 <body>
-  <div><h1>ENDLESS RUNNER</h1></div>
-  <script>console.log("Endless runner placeholder");</script>
+  <div id="ui">SCORE: <span id="s">0</span></div>
+  <div id="start" class="screen"><h1>ENDLESS RUNNER</h1><button onclick="st()">START</button></div>
+  <div id="over" class="screen" style="display:none;"><h1>GAME OVER</h1><p>Score: <span id="fs">0</span></p><button onclick="st()">RETRY</button></div>
+  <canvas id="c"></canvas>
+  <script>
+    const cvs=document.getElementById('c'), ctx=cvs.getContext('2d');
+    let W,H, p, obs=[], sc=0, run=false, spd, f;
+    function rs() { W=cvs.width=window.innerWidth; H=cvs.height=window.innerHeight; }
+    window.addEventListener('resize', rs); rs();
+    function st() {
+      document.getElementById('start').style.display='none'; document.getElementById('over').style.display='none';
+      p={x: 50, y: H-50, w:30, h:30, vy:0}; obs=[]; sc=0; spd=5; f=0; run=true; loop();
+    }
+    window.addEventListener('keydown', e=>{ if((e.code=='Space'||e.code=='ArrowUp') && p.y>=H-50 && run) p.vy=-15; });
+    window.addEventListener('touchstart', e=>{ if(p.y>=H-50 && run) p.vy=-15; });
+    function go() { run=false; document.getElementById('over').style.display='flex'; document.getElementById('fs').innerText=Math.floor(sc); }
+    function loop() {
+      if(!run) return; requestAnimationFrame(loop);
+      p.y += p.vy; p.vy += 0.6;
+      if(p.y > H-50) { p.y=H-50; p.vy=0; }
+      if(f++%60==0) { obs.push({x:W, y:H-40+(Math.random()*20-10), w:20, h:40}); }
+      for(let i=obs.length-1; i>=0; i--) {
+        let o = obs[i]; o.x -= spd;
+        if(o.x+o.w<0) { obs.splice(i,1); continue; }
+        if(p.x<o.x+o.w && p.x+p.w>o.x && p.y<o.y+o.h && p.y+p.h>o.y) return go();
+      }
+      sc+=0.1; spd+=0.001; document.getElementById('s').innerText=Math.floor(sc);
+      ctx.clearRect(0,0,W,H); ctx.fillStyle='#0ff'; ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.fillStyle='#f00'; obs.forEach(o=>ctx.fillRect(o.x,o.y,o.w,o.h));
+    }
+  </script>
 </body>
 </html>
