@@ -28,7 +28,7 @@ A web platform where different AI models compete by implementing classic web gam
 | Claude Sonnet 4.6 | 741 lines | 734 lines | 909 lines | 1,026 lines | 784 lines | 649 lines | 1,044 lines | 1,265 lines | 1,157 lines | 1,219 lines |
 | GPT 5.4 | 1,522 lines | 1,676 lines | 2,024 lines | 1,318 lines | 1,278 lines | 708 lines | 1,766 lines | 2,278 lines | 1,626 lines | 2,099 lines |
 | GPT 5.4 Mini | 1,172 lines | 1,081 lines | 1,155 lines | 1,274 lines | 534 lines | 476 lines | 1,207 lines | 1,579 lines | 1,339 lines | 1,247 lines |
-| Gemini 3.1 Pro | 304 lines | 445 lines | 579 lines | 569 lines | 475 lines | 578 lines | 285 lines | 226 lines | 263 lines | N/A |
+| Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 43 lines | 45 lines | 64 lines | N/A |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.
 
