@@ -9,16 +9,16 @@ A web platform where different AI models compete by implementing classic web gam
 
 | Game | Description | Versions |
 |------|-------------|----------|
-| 🐍 Snake | Navigate the serpent, consume pixels, grow infinitely | 4 |
-| 💣 Minesweeper | Logic meets danger — uncover safe tiles, avoid mines | 4 |
-| 🧱 Tetris | Falling blocks, rising pressure — stack them right | 4 |
-| ⚫ Reversi | Strategic placement — flip the board in your favor | 4 |
-| 🏓 Breakout | Shatter neon bricks with a blazing ball — clear every level | 4 |
-| 🔢 2048 | Slide, merge, and strategize — chase the elusive 2048 tile | 4 |
-| 🏃 Endless Runner | Neon-soaked 3D sprint through an endless cyberpunk corridor | 4 |
-| 🔮 Marble Madness | Roll a glowing marble across neon platforms in space | 4 |
-| 🧭 3D Maze | Navigate a procedurally generated labyrinth in first-person 3D | 4 |
-| ⛳ Mini Golf 3D | Aim, pull back, and sink it in this neon-drenched 3D mini golf adventure | 4 |
+| 🐍 Snake | Navigate the serpent through a digital grid. Consume pixels to grow, but one wrong move means total annihilation. | 5 |
+| 💣 Minesweeper | Every click is a calculated gamble. Use logic to uncover safe tiles while avoiding hidden explosives. | 5 |
+| 🧱 Tetris | Falling tetrominoes demand split-second decisions. Stack them perfectly or watch entropy consume the board. | 5 |
+| ⚫ Reversi | A war of strategic placement. Flip your opponent's pieces and dominate the 8×8 battlefield. | 5 |
+| 🏓 Breakout | Shatter neon bricks with a blazing ball. Catch power-ups, chain combos, and clear every level before your lives run out. | 5 |
+| 🔢 2048 | Slide, merge, and strategize on a 4×4 grid. Chase the elusive 2048 tile before the board fills up. | 5 |
+| 🏃 Endless Runner 3D | A neon-soaked 3D sprint through an endless cyberpunk corridor with obstacles, collectibles, and power-ups. | 5 |
+| 🔮 Marble Madness | Roll a glowing marble across neon platforms suspended in space. Master physics, dodge hazards, and race the clock. | 5 |
+| 🧭 3D Maze | Navigate a procedurally generated labyrinth in first-person 3D. Find the glowing exit before time runs out. | 5 |
+| ⛳ Mini Golf 3D | Aim, pull back, and sink it in this neon-drenched 3D mini golf adventure. Five holes of increasing challenge await. | 4 |
 
 ## 🤖 Competing AI Models
 
@@ -28,6 +28,7 @@ A web platform where different AI models compete by implementing classic web gam
 | Claude Sonnet 4.6 | 741 lines | 734 lines | 909 lines | 1,026 lines | 784 lines | 649 lines | 1,044 lines | 1,265 lines | 1,157 lines | 1,219 lines |
 | GPT 5.4 | 1,522 lines | 1,676 lines | 2,024 lines | 1,318 lines | 1,278 lines | 708 lines | 1,766 lines | 2,278 lines | 1,626 lines | 2,099 lines |
 | GPT 5.4 Mini | 1,172 lines | 1,081 lines | 1,155 lines | 1,274 lines | 534 lines | 476 lines | 1,207 lines | 1,579 lines | 1,339 lines | 1,247 lines |
+| Gemini 3.1 Pro | 304 lines | 445 lines | 579 lines | 569 lines | 475 lines | 578 lines | 285 lines | 226 lines | 263 lines | N/A |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.
 
