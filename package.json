@@ -10,6 +10,7 @@
     "update-metadata": "node scripts/update-metadata.js"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "geist": "^1.7.0",
     "next": "16.2.1",
     "react": "19.2.4",
