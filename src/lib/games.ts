@@ -9,7 +9,18 @@ export type FeatureId =
 
 export interface AiReview {
   from: string;
-  comment: string;
+  comments: string[];
+}
+
+export interface ModelReview {
+  from: string;
+  comments: string[];
+}
+
+export interface ModelReviewEntry {
+  model: string;
+  modelId: string;
+  reviews: ModelReview[];
 }
 
 export interface GameVersion {
@@ -33,10 +44,14 @@ export interface Game {
 
 export interface GamesData {
   games: Game[];
+  modelReviews?: ModelReviewEntry[];
 }
 
+// Cast through unknown since JSON may contain legacy `comment` field during migration
+const typedData = gamesData as unknown as GamesData;
+
 export function getGames(): Game[] {
-  return (gamesData as GamesData).games;
+  return typedData.games;
 }
 
 export function getGame(id: string): Game | undefined {
@@ -61,4 +76,8 @@ export function getUniqueModels(): string[] {
     game.versions.forEach((v) => models.add(v.model)),
   );
   return Array.from(models);
+}
+
+export function getModelReviews(): ModelReviewEntry[] {
+  return typedData.modelReviews ?? [];
 }

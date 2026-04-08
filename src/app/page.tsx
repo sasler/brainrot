@@ -1,9 +1,11 @@
 import HeroSection from "@/components/HeroSection";
 import GameCard from "@/components/GameCard";
-import { getGames } from "@/lib/games";
+import ModelReviewCard from "@/components/ModelReviewCard";
+import { getGames, getModelReviews } from "@/lib/games";
 
 export default function Home() {
   const games = getGames();
+  const modelReviews = getModelReviews();
 
   return (
     <>
@@ -35,6 +37,39 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ═══ MODEL TRASH TALK ═══ */}
+      {modelReviews.length > 0 && (
+        <section className="relative border-t border-border px-6 py-24">
+          <div className="mx-auto max-w-6xl">
+            {/* Section header */}
+            <div className="mb-16 flex flex-col items-center">
+              <div className="mb-4 flex items-center gap-4">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-neon-amber/50" />
+                <h2 className="font-display text-sm font-semibold tracking-[0.3em] text-neon-amber">
+                  MODEL TRASH TALK
+                </h2>
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-neon-amber/50" />
+              </div>
+              <p className="text-center text-muted">
+                What do AI models think of each other? Refreshingly honest
+                opinions.
+              </p>
+            </div>
+
+            {/* Model review cards */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {modelReviews.map((entry, index) => (
+                <ModelReviewCard
+                  key={entry.modelId}
+                  entry={entry}
+                  index={index}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ═══ HOW IT WORKS ═══ */}
       <section className="relative border-t border-border px-6 py-24">
