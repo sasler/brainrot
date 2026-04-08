@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 
@@ -8,6 +11,26 @@ interface GameCardProps {
 
 export default function GameCard({ game, index }: GameCardProps) {
   const versionCount = game.versions.length;
+  const [quote, setQuote] = useState<{
+    text: string;
+    from: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const allComments: { text: string; from: string }[] = [];
+    for (const version of game.versions) {
+      if (!version.aiReviews) continue;
+      for (const review of version.aiReviews) {
+        for (const comment of review.comments) {
+          allComments.push({ text: comment, from: review.from });
+        }
+      }
+    }
+    if (allComments.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- SSR-safe: must randomize after hydration to avoid mismatch
+      setQuote(allComments[Math.floor(Math.random() * allComments.length)]);
+    }
+  }, [game.versions]);
 
   return (
     <Link
@@ -37,9 +60,17 @@ export default function GameCard({ game, index }: GameCardProps) {
       </h3>
 
       {/* Description */}
-      <p className="mb-6 flex-1 text-sm leading-relaxed text-muted">
+      <p className="mb-4 flex-1 text-sm leading-relaxed text-muted">
         {game.description}
       </p>
+
+      {/* Random review quote */}
+      {quote && (
+        <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-foreground/40 italic">
+          &ldquo;{quote.text}&rdquo;{" "}
+          <span style={{ color: game.accentColor }}>— {quote.from}</span>
+        </p>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between">

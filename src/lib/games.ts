@@ -122,3 +122,48 @@ export function getUniqueModels(): string[] {
 export function getModelReviews(): ModelReviewEntry[] {
   return typedData.modelReviews ?? [];
 }
+
+export interface TrashTalkQuote {
+  text: string;
+  from: string;
+  about: string;
+}
+
+export function getAllTrashTalk(): TrashTalkQuote[] {
+  const quotes: TrashTalkQuote[] = [];
+
+  for (const game of getGames()) {
+    for (const version of game.versions) {
+      if (!version.aiReviews) continue;
+      for (const review of version.aiReviews) {
+        for (const comment of review.comments) {
+          quotes.push({
+            text: comment,
+            from: review.from,
+            about: `${version.model}'s ${game.name}`,
+          });
+        }
+      }
+    }
+  }
+
+  for (const entry of getModelReviews()) {
+    for (const review of entry.reviews) {
+      for (const comment of review.comments) {
+        quotes.push({
+          text: comment,
+          from: review.from,
+          about: entry.model,
+        });
+      }
+    }
+  }
+
+  // Return a random sample to keep the serialized page payload small.
+  // Shuffle using Fisher-Yates and take the first 100.
+  for (let i = quotes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [quotes[i], quotes[j]] = [quotes[j], quotes[i]];
+  }
+  return quotes.slice(0, 100);
+}

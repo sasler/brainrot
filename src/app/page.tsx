@@ -1,15 +1,20 @@
 import HeroSection from "@/components/HeroSection";
 import GameCard from "@/components/GameCard";
 import ModelReviewCard from "@/components/ModelReviewCard";
-import { getGames, getModelReviews } from "@/lib/games";
+import TrashTalkTicker from "@/components/TrashTalkTicker";
+import { getGames, getModelReviews, getAllTrashTalk } from "@/lib/games";
 
 export default function Home() {
   const games = getGames();
   const modelReviews = getModelReviews();
+  const trashTalk = getAllTrashTalk();
 
   return (
     <>
       <HeroSection />
+
+      {/* ═══ AI SMACK TALK TICKER ═══ */}
+      {trashTalk.length >= 2 && <TrashTalkTicker quotes={trashTalk} />}
 
       {/* ═══ THE ARENA ═══ */}
       <section id="arena" className="relative px-6 pt-8 pb-24">
@@ -66,6 +71,16 @@ export default function Home() {
                   index={index}
                 />
               ))}
+            </div>
+
+            {/* Gemini disclaimer */}
+            <div className="mt-8 text-center">
+              <p className="inline-block rounded-lg border border-border/30 bg-surface/30 px-6 py-3 font-mono text-xs leading-relaxed text-muted italic">
+                🤖 &ldquo;Where are Gemini 3.1 Pro&apos;s reviews?&rdquo; — After
+                seeing its game implementations, we decided it would be safer
+                for everyone if it just sat this one out. Think of it as a
+                mercy ruling.
+              </p>
             </div>
           </div>
         </section>
