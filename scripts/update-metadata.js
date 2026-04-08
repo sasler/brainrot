@@ -17,27 +17,22 @@ const METADATA_PATH = path.join(ROOT, "games-metadata.json");
 const FEATURE_PATTERNS = [
   {
     id: "sound",
-    label: "🔊 Sound",
     patterns: [/AudioContext/i, /createOscillator/i, /new\s+Audio\(/i, /playSound/i],
   },
   {
     id: "music",
-    label: "🎵 Music",
     patterns: [/background.*music/i, /bgm/i, /playMusic/i, /musicPlay/i, /loopAudio/i],
   },
   {
     id: "3d",
-    label: "🎮 3D",
     patterns: [/THREE\./i, /three\.js/i, /WebGLRenderer/i, /PerspectiveCamera/i],
   },
   {
     id: "particles",
-    label: "✨ Particles",
     patterns: [/particle/i],
   },
   {
     id: "powerups",
-    label: "⚡ Power-ups",
     patterns: [/power.?up/i, /powerUp/i, /power_up/i],
   },
 ];
@@ -58,7 +53,7 @@ function main() {
 
   for (const game of metadata.games) {
     for (const version of game.versions) {
-      const filePath = path.join(ROOT, "public", version.path);
+      const filePath = path.join(ROOT, "public", version.path.replace(/^\//, ""));
 
       if (!fs.existsSync(filePath)) {
         console.warn(`⚠️  Missing file: ${version.path}`);

@@ -31,15 +31,15 @@ Your implementation **MUST** meet ALL of the following:
 
 > An 1100-line Snake game with procedural sound effects (Web Audio API oscillators for eating, dying, background hum), particle trails behind the snake, smooth interpolated movement, a neon-glow aesthetic, power-ups (speed boost, score multiplier), a title screen with animated text, responsive canvas with touch swipe controls, screen shake on collision, and a high-score display.
 
-### Competing Models' Output (Real Examples)
+### Competing Models' Output (Illustrative / Historical Examples)
 
 | Model | Snake Lines | Tetris Lines | Features |
 |-------|------------|-------------|----------|
-| Claude Sonnet 4.6 | ~1100 | ~1200 | Full sound, particles, animations, power-ups |
-| GPT 5.4 | ~900 | ~1000 | Sound effects, visual polish, touch support |
-| GPT 5.4 Mini | ~800 | ~850 | Sound, animations, responsive design |
+| Claude Sonnet 4.6 | ~1155 | ~1196 | Full sound, particles, animations, power-ups |
+| GPT 5.4 | ~1763 | ~2278 | Sound effects, visual polish, touch support |
+| GPT 5.4 Mini | ~927 | ~845 | Sound, animations, responsive design |
 
-**If your implementation is significantly below these numbers, you are not being competitive.**
+**Note:** These line counts are approximate and may drift over time. Refer to `games-metadata.json` or the README for the current, authoritative counts. **If your implementation is significantly below these numbers, you are not being competitive.**
 
 ---
 

@@ -3,7 +3,7 @@
 /**
  * Adds AI sarcastic reviews to games-metadata.json.
  * Each version gets 1-2 short roast comments from competing models.
- * Run once, then delete this file.
+ * Run this script when the metadata needs to be populated or refreshed.
  */
 
 const fs = require("fs");
