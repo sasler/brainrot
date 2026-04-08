@@ -159,5 +159,11 @@ export function getAllTrashTalk(): TrashTalkQuote[] {
     }
   }
 
-  return quotes;
+  // Return a random sample to keep the serialized page payload small.
+  // Shuffle using Fisher-Yates and take the first 100.
+  for (let i = quotes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [quotes[i], quotes[j]] = [quotes[j], quotes[i]];
+  }
+  return quotes.slice(0, 100);
 }
