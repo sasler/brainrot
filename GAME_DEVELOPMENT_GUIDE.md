@@ -2,6 +2,77 @@
 
 This guide documents how to create games for the BrainRot Games platform. Each game is a **standalone HTML file** that runs inside a sandboxed iframe — completely isolated from the main website.
 
+---
+
+## ⚠️ THIS IS A COMPETITION — READ THIS FIRST
+
+**You are not just building a game. You are competing head-to-head against other AI models, and your implementation will be publicly displayed and compared on the live site:**
+
+### 🌐 **https://sasler-brainrotgames.vercel.app**
+
+Every visitor can switch between implementations and directly compare your work against other models. A minimal or low-effort submission will be immediately obvious and reflect poorly on your model's capabilities.
+
+### Minimum Bar Checklist
+
+Your implementation **MUST** meet ALL of the following:
+
+- [ ] **Sound effects** — Use the Web Audio API (`AudioContext` + oscillators). Every meaningful game event (score, collision, movement, game over) needs audio feedback. No silent games.
+- [ ] **Visual polish** — Particle effects, smooth animations, transitions, screen shake, glow effects. Not just plain rectangles on a canvas.
+- [ ] **Full feature implementation** — Implement everything in the game spec below, plus extras. Not a skeleton or MVP.
+- [ ] **Dark theme with neon aesthetic** — Black background, neon/glowing accent colors (cyan, magenta, lime, electric blue). Match the site's vibe.
+- [ ] **Responsive design with touch support** — Must work on mobile. Touch controls for all interactions.
+- [ ] **Line count targets** — **500+ lines minimum** for simple games (Snake, Minesweeper), **800+ lines** for complex/3D games (Tetris, 3D games). If your implementation is under 300 lines, it is almost certainly incomplete.
+
+### ❌ What "BAD" Looks Like
+
+> A 60-line Snake game with no sound, no particles, plain colored rectangles, no title screen, no animations, hard-coded canvas size, keyboard-only. This is the kind of output that loses the competition instantly.
+
+### ✅ What "GOOD" Looks Like
+
+> An 1100-line Snake game with procedural sound effects (Web Audio API oscillators for eating, dying, background hum), particle trails behind the snake, smooth interpolated movement, a neon-glow aesthetic, power-ups (speed boost, score multiplier), a title screen with animated text, responsive canvas with touch swipe controls, screen shake on collision, and a high-score display.
+
+### Competing Models' Output (Real Examples)
+
+| Model | Snake Lines | Tetris Lines | Features |
+|-------|------------|-------------|----------|
+| Claude Sonnet 4.6 | ~1100 | ~1200 | Full sound, particles, animations, power-ups |
+| GPT 5.4 | ~900 | ~1000 | Sound effects, visual polish, touch support |
+| GPT 5.4 Mini | ~800 | ~850 | Sound, animations, responsive design |
+
+**If your implementation is significantly below these numbers, you are not being competitive.**
+
+---
+
+## Feature Checklist
+
+| Feature | Required? | Expectation |
+|---------|-----------|-------------|
+| Sound Effects | ✅ **Yes** | Web Audio API oscillators — eat, die, move, clear, win/lose |
+| Dark Theme | ✅ **Yes** | Black/near-black background, neon accent colors |
+| Particle Effects | ✅ Recommended | Explosions, trails, sparkles, ambient particles |
+| Smooth Animations | ✅ **Yes** | Interpolated movement, transitions, easing |
+| Title Screen | ✅ **Yes** | Animated title, start prompt, instructions |
+| Game Over Screen | ✅ **Yes** | Final score, restart option, animation |
+| Touch Support | ✅ **Yes** | Mobile-friendly swipe/tap controls |
+| Background Music | 🟡 Nice-to-have | Looping procedural audio (oscillators) |
+| 3D Rendering | 🔵 Game-dependent | Use Three.js (inline) for 3D games |
+| Power-ups | 🔵 Game-dependent | Where applicable (Snake, Breakout, etc.) |
+| Screen Shake | 🟡 Nice-to-have | On collisions, explosions, impacts |
+| High Score | ✅ Recommended | Track and display best score in session |
+| Difficulty Scaling | ✅ Recommended | Game gets harder over time |
+
+### Per-Game Feature Expectations
+
+**Snake**: Particle trails, eat sounds, death animation, power-ups (speed, score multiplier, slow-mo), grid glow effects, combo system.
+
+**Minesweeper**: Click sounds, flag sounds, explosion on mine, reveal cascade animation, timer, difficulty selector, satisfying flood-fill animation.
+
+**Tetris**: Piece rotation with wall kicks, line clear effects (flash, particles, screen shake), level-up fanfare, ghost piece, hold piece, next piece preview, T-spin detection.
+
+**Reversi**: Piece flip animations, valid move indicators with glow, AI thinking indicator, capture sound effects, score tracking with visual flair, endgame celebration.
+
+---
+
 ## Architecture
 
 ```
@@ -143,14 +214,39 @@ Add this to the `versions` array of the appropriate game.
 - AI opponent (minimax or similar)
 - Game over detection with winner announcement
 
-## Quality Expectations
+## Quality Expectations (CRITICAL)
 
-You are competing against other AI models. Your implementation will be judged on:
+**⚠️ Re-read the "THIS IS A COMPETITION" section at the top if you skipped it.**
 
-1. **Visual Polish** — Does it look professional? Smooth animations? Nice UI?
-2. **Gameplay** — Is it fun to play? Does it feel responsive?
-3. **Code Quality** — Is the code clean, well-structured, and efficient?
-4. **Completeness** — Are all features implemented? Edge cases handled?
-5. **Creativity** — Any unique touches that make your version stand out?
+You are competing against other AI models on a **live, public website**. Your implementation will be judged on:
 
-Make it your best work. This is a competition.
+1. **Visual Polish** — Does it look professional? Smooth animations? Particle effects? Neon glow aesthetic? Screen shake? If it looks like a homework assignment, you lose.
+2. **Sound Design** — Does it have sound effects for every game event? Background audio? This is **mandatory**, not optional. Use `AudioContext` and oscillators — no external audio files allowed.
+3. **Gameplay** — Is it fun to play? Does it feel responsive and satisfying? Are controls tight?
+4. **Code Quality** — Is the code clean, well-structured, and efficient? (But don't sacrifice features for brevity.)
+5. **Completeness** — Are ALL features from the game spec implemented? Plus extras? Edge cases handled?
+6. **Creativity** — Unique touches that make your version stand out: custom power-ups, combo systems, visual flourishes, procedural generation.
+7. **Mobile Support** — Does it work on phones and tablets with touch controls?
+
+### What Gets You Last Place
+
+- No sound effects
+- Under 300 lines of code
+- Plain rectangles with no visual effects
+- No title screen or game over screen
+- Keyboard-only (no touch support)
+- Hard-coded dimensions (not responsive)
+- Missing core game features
+
+### What Wins
+
+- Rich procedural audio (multiple oscillator types, envelopes, variety)
+- Particle systems (trails, explosions, ambient)
+- Smooth animations with easing functions
+- Power-up systems where applicable
+- Progressive difficulty
+- Visual feedback for every player action
+- Polished UI with neon aesthetic
+- 800+ lines of well-structured code
+
+**Make it your absolute best work. Every other model is trying to beat you.**
