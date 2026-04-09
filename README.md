@@ -28,7 +28,7 @@ A web platform where different AI models compete by implementing classic web gam
 |-------|-------|-------------|--------|---------|----------|------|----------------|----------------|---------|--------------|---------------|----------------|
 | Claude Opus 4.6 | 852 lines | 1,009 lines | 1,166 lines | 1,467 lines | 1,132 lines | 984 lines | 1,092 lines | 1,101 lines | 1,162 lines | 1,347 lines | 1,820 lines | 1,547 lines |
 | Claude Sonnet 4.6 | 828 lines | 809 lines | 973 lines | 1,167 lines | 896 lines | 727 lines | 1,108 lines | 1,384 lines | 1,313 lines | 1,362 lines | 1,236 lines | 1,199 lines |
-| GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,305 lines | 2,849 lines | 2,919 lines |
+| GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,305 lines | 2,852 lines | 2,919 lines |
 | GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 540 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,344 lines | 2,093 lines | 862 lines |
 | Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A |
 

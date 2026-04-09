@@ -44,6 +44,9 @@ function layout() {
   canvas.width = W; canvas.height = H;
   BX = Math.floor((W - boardW) / 2);
   BY = Math.floor((H - boardW) / 2) + 28;
+  if (grid && grid.length) {
+    for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) if (grid[y] && grid[y][x]) grid[y][x].snapToGrid();
+  }
 }
 layout();
 window.addEventListener('resize', layout);
@@ -913,7 +916,7 @@ function update(ts) {
       break;
     }
     case P.SHUFFLE: {
-      if(phaseT===1) shuffleBoard();
+      if(phaseT>=1 && phaseT-dt<1) shuffleBoard();
       if(phaseT>=phaseDur) beginPhase(P.IDLE);
       break;
     }
@@ -1221,7 +1224,7 @@ const _origUpdate=update;
         }
         break;
       }
-      case P.SHUFFLE: if(phaseT===1) shuffleBoard(); if(phaseT>=phaseDur) beginPhase(P.IDLE); break;
+      case P.SHUFFLE: if(phaseT>=1 && phaseT-dt<1) shuffleBoard(); if(phaseT>=phaseDur) beginPhase(P.IDLE); break;
     }
 
     renderGame();
