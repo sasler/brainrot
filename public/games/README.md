@@ -9,21 +9,17 @@ games/
 ├── TEMPLATE/              ← Starter template for new games
 │   └── index.html
 ├── snake/                 ← 🐍 Snake
-│   ├── sonnet-4-6/        Claude Sonnet 4.6  (709 lines)
-│   ├── gpt-5-4/           GPT 5.4            (1,303 lines)
-│   └── gpt-5-4-mini/      GPT 5.4 Mini       (974 lines)
 ├── minesweeper/           ← 💣 Minesweeper
-│   ├── sonnet-4-6/        Claude Sonnet 4.6  (646 lines)
-│   ├── gpt-5-4/           GPT 5.4            (1,413 lines)
-│   └── gpt-5-4-mini/      GPT 5.4 Mini       (921 lines)
 ├── tetris/                ← 🧱 Tetris
-│   ├── sonnet-4-6/        Claude Sonnet 4.6  (746 lines)
-│   ├── gpt-5-4/           GPT 5.4            (1,638 lines)
-│   └── gpt-5-4-mini/      GPT 5.4 Mini       (974 lines)
-└── reversi/               ← ⚫ Reversi
-    ├── sonnet-4-6/        Claude Sonnet 4.6  (919 lines)
-    ├── gpt-5-4/           GPT 5.4            (1,091 lines)
-    └── gpt-5-4-mini/      GPT 5.4 Mini       (1,143 lines)
+├── reversi/               ← ⚫ Reversi
+├── breakout/              ← 🏓 Breakout
+├── 2048/                  ← 🔢 2048
+├── endless-runner/        ← 🏃 Endless Runner 3D
+├── marble-madness/        ← 🔮 Marble Madness
+├── maze-3d/               ← 🧭 3D Maze
+├── mini-golf/             ← ⛳ Mini Golf 3D
+├── tile-matching/         ← 💎 Tile Matching
+└── space-invaders/        ← 👾 Space Invaders
 ```
 
 ## Rules for Adding Games
@@ -34,4 +30,4 @@ games/
 4. **Responsive** — must work at any viewport size
 5. **Sandboxed** — runs with `sandbox="allow-scripts"`, no parent DOM access
 
-See [`GAME_DEVELOPMENT_GUIDE.md`](../../GAME_DEVELOPMENT_GUIDE.md) in the project root for full specifications and the template.
+Current authoritative line counts and detected features live in [`games-metadata.json`](../../games-metadata.json). See [`GAME_DEVELOPMENT_GUIDE.md`](../../GAME_DEVELOPMENT_GUIDE.md) in the project root for full specifications and the template.

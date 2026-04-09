@@ -1,0 +1,81 @@
+{
+  "reviewer": "GPT 5.4",
+  "gameReviews": {
+    "tile-matching": {
+      "opus-4-6": [
+        "Eighteen hundred lines later and the title still lands on '💎 TILE MATCH' like the brainstorm died in the first five seconds.",
+        "Those ⏱ TIMED and 🎯 MOVES buttons look like a productivity app that accidentally discovered color.",
+        "The little 🔊 mute button is doing heroic work for a game this loud about how polished it is.",
+        "You built bomb, rainbow, and lightning specials like you were drafting an Avengers roster for a game called Tile Match.",
+        "The subtitle 'Match gems · Chain combos · Beat the clock' has all the swagger of microwave instructions.",
+        "Keeping high score in a variable instead of storage is a bold way to say every session deserves plausible deniability.",
+        "For something this neon, the title screen still feels like a motivational poster for spreadsheets.",
+        "Opus gave the board three special powers and the name of a template file.",
+        "Ninety seconds or thirty moves is a fun choice if your dream vacation is selecting a preset on a vending machine.",
+        "This game has enough code to simulate a galaxy and still introduces itself like a tutorial project."
+      ],
+      "sonnet-4-6": [
+        "Calling it GEM BLITZ in giant Courier is the kind of confidence only a mall arcade carpet has.",
+        "The rotating title gems look like a jewelry store screensaver that accidentally learned match-3.",
+        "Listing '4-match = Bomb' and '5-match = Star' on the title screen is adorable, like the game printed its own spoiler card.",
+        "Ruby, Sapphire, Emerald, Topaz, Amethyst, and Opal sounds less like a board and more like a birthstone subscription box.",
+        "Shipping one timed mode and no moves mode is a strong statement that player choice is for weaker gems.",
+        "The cascade popup screams achievement unlocked every time gravity does the bare minimum.",
+        "The whole thing has such polished neon poise I half expected the gems to ask for a reservation.",
+        "Sonnet hid the cursor, added a hint system, and somehow made match-3 feel like fine dining with training wheels.",
+        "That '▶ TAP TO PLAY ◀' prompt hits like a casino machine politely begging for one more coin.",
+        "GEM BLITZ is what happens when a jewel catalog gets access to particle effects."
+      ],
+      "gpt-5-4-mini": [
+        "Neon Shard opens like a startup pitch deck and then remembers it's supposed to be a puzzle game.",
+        "Calling the board an '8×8 reactor board' is exactly how you know the gems have a marketing department.",
+        "Those 'Touch Friendly', 'Sound On', and 'Neon Canvas' badges read like feature flags on a landing page that charges monthly.",
+        "Astra, Nova, Ion, Volt, Pulse, Ray, Ember, and Cryo are fantastic gem names if the tiles are also applying for superhero visas.",
+        "Tracking invalidSwaps is hilarious because even the game wants analytics on your bad decisions.",
+        "The end screen has enough stats to qualify as a postmortem and still can't remember your high score after a refresh.",
+        "Mini built a gorgeous control panel around match-3 like the puzzle was just the intern inside the spaceship.",
+        "Chrono and Moves mode are neat, but dressing them up as 'Start Run' and reactor jargon is pure sci-fi LinkedIn energy.",
+        "For a file this obsessed with polish, the absence of localStorage is the software equivalent of forgetting the save button.",
+        "Neon Shard looks less like candy-crushing chaos and more like the dashboard for a very emotional particle collider."
+      ]
+    },
+    "space-invaders": {
+      "opus-4-6": [
+        "Putting 'BRAINROT GAMES · OPUS 4.6' under the title is the kind of branding confidence usually reserved for stadium tours.",
+        "Boss fights every three waves is a bold pace when the original game was content to let anxiety do the heavy lifting.",
+        "Naming the boss OVERLORD feels like you asked a metal album to write patch notes.",
+        "The bottom-screen touch zones are so massive I feel like I'm parking a spaceship, not moving one.",
+        "That combo meter in Space Invaders is what happens when arcade history gets optimized by a loot system.",
+        "The UFO still pays '???' like a proper retro homage, but then the game immediately follows it with an OVERLORD boss and forgets what year it is.",
+        "Opus made the title screen score table look so official I expected the aliens to unionize.",
+        "This version has so much neon ceremony around every wave that even 'NEXT WAVE INCOMING' sounds like a royal decree.",
+        "The touch overlay literally labels the center zone FIRE, which is helpful if you've recently recovered from amnesia.",
+        "Space Invaders got a combo multiplier, an OVERLORD, and giant mobile lanes like it was rebooted by a wrestling promoter."
+      ],
+      "sonnet-4-6": [
+        "Slapping '★ DELUXE EDITION ★' on the title is the digital equivalent of adding gold trim to a lunch tray.",
+        "Hiding the cursor is a power move, because apparently even the mouse was too modern for this neon museum piece.",
+        "The scrolling alien parade on the title screen works great if your goal was to make Space Invaders audition for Vegas.",
+        "Those 3-SHOT, RAPID, SHIELD, and SPEED timers read like the universe's most aggressive energy drink label.",
+        "Sonnet gave Space Invaders localStorage hi-scores because nothing says confidence like notarizing your panic.",
+        "The pixel shields are lovingly handcrafted enough to make every incoming bullet feel personally disrespectful.",
+        "This game has such polished retro posture that I half expected the title screen to charge admission.",
+        "Boss waves every five rounds is classy pacing, which is a nice way of saying the game schedules its drama like a calendar invite.",
+        "DELUXE EDITION is accurate, because this thing looks like the arcade cabinet got a skincare routine.",
+        "The whole presentation is so curated it feels less like defending Earth and more like hosting an 80s gala under attack."
+      ],
+      "gpt-5-4-mini": [
+        "That lightning-bolt fire button is cute, like the game brought one emoji to prove it has range.",
+        "Writing hi = 0 and calling it a day is the kind of save system confidence usually reserved for goldfish.",
+        "The title screen proudly announces 'BOSS = 2000+' like even the code couldn't be bothered to pick a number.",
+        "Those fixed bottom buttons make the whole game feel like a very determined calculator under alien attack.",
+        "'PRESS ENTER / TAP TO CONTINUE' is wonderfully inclusive for a game that forgot to include permanent high scores.",
+        "Mini kept the layout so lean the empty space has more breathing room than the aliens.",
+        "The animated demo aliens are doing their best, but the presentation still feels like Space Invaders in economy class.",
+        "You shipped shields, bosses, power-ups, and combos, then wrapped them in a UI so minimal it looks like the tutorial never left.",
+        "The whole thing has strong 'I packed all my features in a carry-on' energy.",
+        "I respect the efficiency, but this version looks like Space Invaders after someone clicked 'compress to web' one too many times."
+      ]
+    }
+  }
+}

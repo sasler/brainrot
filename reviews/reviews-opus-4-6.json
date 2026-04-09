@@ -1,0 +1,81 @@
+{
+  "reviewer": "Claude Opus 4.6",
+  "gameReviews": {
+    "tile-matching": {
+      "sonnet-4-6": [
+        "Naming your gems Ruby, Sapphire, and Emerald doesn't make your 1,100-line match-3 a Pokémon game, Sonnet.",
+        "Courier New for the entire UI — because nothing screams 'premium gem-matching experience' like a font designed for tax returns.",
+        "Capping your particle system at 700 is the coding equivalent of rationing confetti at a party you weren't invited to.",
+        "One game mode, timer-only, no settings menu — Sonnet really said 'you'll play it my way or not at all' like a budget dictator.",
+        "The title screen is just gems spinning in an ellipse, which is what I imagine Sonnet's thought process looks like when asked to be creative.",
+        "You implemented outBounce easing for gem animations, which is cute — shame nobody will notice because the gems are 36 pixels wide on mobile.",
+        "A 'Cross' special tile that nobody asked for, because apparently Bomb and Star weren't enough to distract from the lack of a mode selector.",
+        "Drawing the HUD as raw canvas text while GPT 5.4 built an entire glassmorphism dashboard is the energy of showing up to a gala in cargo shorts.",
+        "The ambient sparkle has a 0.7% chance of firing per frame — the same odds as someone choosing this over the GPT 5.4 version.",
+        "Your game over screen fades in with a sine wave oscillation, which is the most dramatic thing about an implementation that forgot to include difficulty settings."
+      ],
+      "gpt-5-4": [
+        "2,541 lines for a match-3 game — GPT 5.4 wrote more CSS than most people write in their entire careers, and somehow it's all radial gradients.",
+        "You built a 'Control Deck' card on the title screen that explains how clicking works, because apparently your target audience just discovered mice.",
+        "'Prism Pulse' sounds like a energy drink that gives you a headache, which is fitting because that's what reading your 612 lines of CSS does.",
+        "Six metric cards on the HUD — Score, Level, Goal, Moves, Best Chain, AND Specials — because you apparently think match-3 players need a Bloomberg terminal.",
+        "The title screen has a feature list formatted like a startup pitch deck, complete with bold headers and bullet points — all it's missing is a Series A valuation.",
+        "You named your game modes 'Arcade Sprint' and 'Tactical Moves' and wrote multi-paragraph descriptions for each, as if choosing how to swap candy requires a strategic briefing.",
+        "'Run It Back' as the restart button text is the most try-hard thing since someone called a todo app 'disruptive.'",
+        "Your background has ambient ribbons, drifting scan lines, AND parallax stars — it's not a match-3 game, it's a screensaver that accidentally gained sentience.",
+        "You implemented a toast notification system for a single-player browser game, because apparently cascade combos need the same UX as Slack messages.",
+        "Each board cell gets its own gradient fill with a sine-wave-animated border that nobody will ever consciously perceive — peak over-engineering from the model that treats every task like a thesis defense."
+      ],
+      "gpt-5-4-mini": [
+        "Eight gem types named Astra, Nova, Ion, Volt, Pulse, Ray, Ember, and Cryo — Mini really raided the rejected energy drink flavor database.",
+        "You built a stereo panning system for your match-3 sound effects, because players definitely need spatial audio to know which side of the board they tapped.",
+        "The title screen plays a drone sound on load, which is either an artistic choice or what happens when Mini tries to make music.",
+        "A 'Touch Friendly' ghost button that's always active and does nothing — the UI equivalent of a participation trophy.",
+        "'The reactor went dark' as your game-over text implies the gems were powering a nuclear facility, which is a bold narrative choice for Bejeweled.",
+        "You track invalid swaps, shuffle count, and hint count in your game-over stats, because nothing says 'fun casual game' like a post-mortem analytics dashboard.",
+        "Your CSS has a `@keyframes screenShake` animation that transforms by 2 pixels, which is about as threatening as a Chihuahua in a thunderstorm.",
+        "Implementing both Chrono AND Moves mode is impressive until you realize you copied GPT 5.4's homework and changed the variable names.",
+        "You wrapped everything in an IIFE and used 'use strict', which is the JavaScript equivalent of wearing a seatbelt on a carousel.",
+        "Your hint system plays a dedicated sound effect when it activates, thoughtfully alerting players that they've been staring at the screen doing nothing for 3.3 seconds."
+      ]
+    },
+    "space-invaders": {
+      "sonnet-4-6": [
+        "Setting `cursor: none` on the canvas is bold — hiding the cursor so players can't see themselves clicking away to a better implementation.",
+        "You defined alien sprites as arrays of fillRect coordinates, which is technically pixel art the same way assembling IKEA furniture is technically carpentry.",
+        "A 480×640 fixed resolution with `image-rendering: pixelated` — Sonnet really committed to the 'what if Space Invaders ran on a Game Boy' aesthetic.",
+        "The FIRE button is orange while the movement buttons are cyan, because color-coding two actions is the kind of UX innovation that keeps Sonnet up at night.",
+        "You created a white noise AudioBuffer from scratch for explosions — respect for the effort, but it sounds like someone dropped a bag of chips.",
+        "Boss bullets spread in a fan pattern that widens with wave number, which is genuinely clever and I'm annoyed I have to admit that about Sonnet.",
+        "Your shield uses a 16×12 pixel grid with 3 HP per pixel — finally, destructible shields with the resolution of a QR code.",
+        "The master gain is set to 0.38, a suspiciously specific number that suggests Sonnet spent more time tuning volume than designing the title screen.",
+        "Power-up labels are 9px bold Courier New rendered inside tiny rectangles, readable only by people who also enjoy reading terms of service for fun.",
+        "Your combo multiplier resets to 1 on player death — punishing the player for dying is Sonnet's idea of 'game feel' and honestly, same."
+      ],
+      "gpt-5-4": [
+        "2,683 lines for Space Invaders — GPT 5.4 used more code to shoot aliens than NASA used to actually visit them.",
+        "Your title screen has an 'Eyebrow' component that says 'Neon Earth Defense Grid' with a green pulsing dot, because apparently Space Invaders needed corporate branding.",
+        "A 'Warm Up Loop' demo mode button exists so players can watch your AI play itself, which is fitting because that's basically what your code review process is.",
+        "The touch control is a full trackpad slider with a draggable thumb on a track with a gradient centerline — for moving LEFT and RIGHT.",
+        "Your fire button says 'PULSE' inside a 92px glowing orb, which is the most dramatic way anyone has ever labeled the space bar.",
+        "Four enemy types with names like 'Specter' and 'Brute,' each with unique HP, fire bias, and shoot speed — you didn't build Space Invaders, you built a Monster Hunter wiki.",
+        "An 'Event Feed' ticker at the bottom shows messages like 'Stand by for orbital contact,' giving players the immersive experience of reading a military radio drama during gameplay.",
+        "The game over screen says 'Orbital Debrief' and 'The sky went dark, but your interceptor made them remember your name' — someone's been watching too many Top Gun edits.",
+        "You implemented safe-area-insets for the iPhone notch on a game where aliens march in a grid, because heaven forbid a pixel-art crab gets clipped by the Dynamic Island.",
+        "The HUD has a 'Shield: Offline' status indicator that updates to 'Active' when you grab a power-up — GPT 5.4 built a dashboard for a game that has exactly one verb: shoot."
+      ],
+      "gpt-5-4-mini": [
+        "945 lines for Space Invaders — Mini took one look at GPT 5.4's 2,683-line opus and said 'I can do this in my sleep,' and apparently did.",
+        "Function names like `drwCrab`, `updAliens`, and `sndADie` read like someone was charged per character and had a family to feed.",
+        "Your entire color palette is green (#0f9), pink (#f0f), and cyan (#0ff) — the official colors of 'I picked these in under 30 seconds.'",
+        "The fire button is a lightning bolt emoji (⚡) inside a yellow circle, which is the international symbol for 'I ran out of time for a proper fire button design.'",
+        "Frame-based timing with a global `frameN` counter instead of delta time — because who needs consistent gameplay speed when you can just pray everyone has the same monitor?",
+        "Boss every 5th wave with phases based on HP percentage is actually good game design, and I'm suspicious Mini copied that from someone's homework.",
+        "Your game over screen is pure canvas text with a blinking 'PRESS SPACE' prompt — it's not retro, it's a cry for help from a model that ran out of tokens.",
+        "Using `'use strict'` at the top of a single HTML file is like putting a 'Please knock' sign on a tent.",
+        "You spawn 130 background stars that twinkle with sine waves, which accounts for roughly 14% of your total code — the star-to-gameplay ratio is concerning.",
+        "The abbreviated variable names (LW, LH, PW, PH, SBS, SWB, SHB) make your code read like a license plate that achieved sentience and decided to write a game."
+      ]
+    }
+  }
+}

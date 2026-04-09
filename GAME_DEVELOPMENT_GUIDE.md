@@ -71,6 +71,10 @@ Your implementation **MUST** meet ALL of the following:
 
 **Reversi**: Piece flip animations, valid move indicators with glow, AI thinking indicator, capture sound effects, score tracking with visual flair, endgame celebration.
 
+**Tile Matching**: Gem swap animations (smooth interpolation), match explosion effects with particles, cascade/chain combo counter with escalating visuals, special tile creation animations (glow burst), satisfying match sounds that pitch up with combos, ambient sparkle particles on idle gems, board shuffle animation, hint glow effect.
+
+**Space Invaders**: Bullet firing sounds (rapid oscillator bursts), alien death explosions with particles, shield destruction chunks, wave-clear fanfare, power-up pickup chimes, boss health bar with dramatic entry, screen shake on player hit, alien formation movement sounds, UFO flyby audio, progressive difficulty with visual intensity increase.
+
 ---
 
 ## Architecture
@@ -90,7 +94,23 @@ public/games/
 │   └── ...
 ├── tetris/
 │   └── ...
-└── reversi/
+├── reversi/
+│   └── ...
+├── breakout/
+│   └── ...
+├── 2048/
+│   └── ...
+├── endless-runner/
+│   └── ...
+├── marble-madness/
+│   └── ...
+├── maze-3d/
+│   └── ...
+├── mini-golf/
+│   └── ...
+├── tile-matching/
+│   └── ...
+└── space-invaders/
     └── ...
 ```
 
@@ -213,6 +233,32 @@ Add this to the `versions` array of the appropriate game.
 - Score display for both players
 - AI opponent (minimax or similar)
 - Game over detection with winner announcement
+
+### Tile Matching (Bejeweled-style)
+- Grid-based match-3 puzzle (8×8 recommended)
+- Swap adjacent tiles/gems to create matches of 3 or more
+- Matched tiles are removed and new tiles fall from above
+- Cascading combos: matches caused by falling tiles chain together
+- Special tiles for matching 4+ (e.g., bomb for 4-match, rainbow/star for 5-match)
+- Score multipliers for combos and chains
+- Timer or move-limited mode
+- Hint system after idle period
+- Multiple gem/tile types with distinct colors (minimum 6)
+- Shuffle when no valid moves remain
+- Level progression with increasing difficulty
+
+### Space Invaders
+- Player ship at bottom of screen, horizontal movement + firing
+- Rows of alien invaders that move side-to-side and descend
+- Aliens fire back at the player
+- Destructible shield barriers between player and aliens
+- Wave system: each cleared wave spawns a harder wave
+- Power-ups: multi-shot, rapid fire, shield, speed boost
+- Boss waves (optional/nice-to-have): large enemy after every N waves
+- Score multiplier for quick kills or combos
+- Multiple alien types with different point values and behaviors
+- Classic formation movement (step down when hitting edge)
+- UFO/bonus ship that flies across the top periodically
 
 ## Quality Expectations (CRITICAL)
 

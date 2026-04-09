@@ -1,0 +1,81 @@
+{
+  "reviewer": "GPT 5.4 Mini",
+  "gameReviews": {
+    "tile-matching": {
+      "opus-4-6": [
+        "Tile Matching by Opus 4.6 looks like it hired a neon lighting crew just to keep an 8x8 board from feeling emotionally small.",
+        "You gave a match-3 game timed mode, moves mode, combo counters, and enough sound effects to make the gems feel unionized.",
+        "The bomb tiles, rainbow blasts, and lightning strikes mean your \"simple\" puzzle now has a bigger move list than some RPGs.",
+        "The hint system is so polite it practically taps the board and whispers the answer like a disappointed tutor.",
+        "Nothing says confidence like making a shuffle animation dramatic enough to suggest the gems are fleeing the scene of a crime.",
+        "Your title screen spends more effort seducing players than most games spend on the entire game loop.",
+        "A combo meter in a tile game is nice, but yours acts like every streak deserves its own halftime show.",
+        "The move mode makes every swap feel like a tax audit and the timed mode makes every second feel like a gas leak.",
+        "This board has more polish than a showroom floor and more bleep-bloop than an airport at midnight.",
+        "You didn't build match-3 so much as a glowing apology for how addictive it is."
+      ],
+      "sonnet-4-6": [
+        "GEM BLITZ sounds like a Saturday morning cartoon, and honestly the game matches the amount of neon confidence in the title.",
+        "You made a match-3 so clean it looks like it was assembled by a very organized laser pointer.",
+        "The bomb, star, and cross specials are cute—it's like the board got promoted faster than the player did.",
+        "Your hinting gems wiggle so earnestly they feel like the board is trying to help before you embarrass yourself.",
+        "The cascade system is doing the absolute most for a game whose original job was \"connect three shiny rocks.\"",
+        "That title screen rotates gems like a jewelry ad directed by an arcade machine.",
+        "Match five for a star tile is a nice way of saying the board only respects overachievers.",
+        "The whole game is so polished that the most rebellious thing it does is use a square gem.",
+        "Your shuffle is less a reset and more a tiny crisis with good lighting.",
+        "It’s a lean neon match-3, which is impressive because it somehow feels both restrained and suspiciously proud of itself."
+      ],
+      "gpt-5-4": [
+        "Prism Pulse didn't make a match-3, it made a corporate deck for a match-3.",
+        "The HUD has so many panels, chips, and banners the gems are basically hosting their own product launch.",
+        "Two modes, combo multipliers, idle hints, and smart auto-shuffle—this game refuses to let a board stay humble.",
+        "Calling a bomb a bomb and a star a prism star is exactly the kind of branding that says \"I own five mood boards.\"",
+        "Your title screen has more persuasive copy than some actual apps on the store.",
+        "The scanline glow and layered glass UI look fantastic, but they also make me feel like I need a visitor badge to swap a tile.",
+        "Dead boards auto-shuffling instead of dying is such a polite fix that even failure got product-managed.",
+        "This version turned chain reactions into a lifestyle choice.",
+        "The combo banners hit so hard I half expected them to ask me to subscribe.",
+        "It’s the only match-3 here that seems determined to win by branding, not just by matching."
+      ]
+    },
+    "space-invaders": {
+      "opus-4-6": [
+        "Opus 4.6 took Space Invaders and decided the aliens needed a premium arcade consultant.",
+        "Boss waves every three rounds is a bold way to say you think the player was getting too comfortable.",
+        "Procedural audio, particles, combos, UFOs, shields—this game brought an entire space opera to a laser fight.",
+        "Your touch controls are so complete they make the original keyboard version look like it arrived by fax.",
+        "The combo multiplier turns shooting aliens into a credit score with explosions.",
+        "That glowing HUD is doing so much work it deserves its own lives counter.",
+        "The boss intro feels less like a challenge and more like a dramatic entrance fee.",
+        "You added enough polish that even the shield blocks have better career progression than the aliens.",
+        "Every wave gets harder, louder, and shinier, as if the game is trying to out-neon the concept of gravity.",
+        "This is Space Invaders if the phrase \"keep it simple\" had been removed from the mission briefing."
+      ],
+      "sonnet-4-6": [
+        "Sonnet 4.6 kept the old-school name but immediately showed up with touch buttons and a boss schedule.",
+        "Boss waves every five rounds is the exact kind of respectful chaos that says \"we still believe in tradition, but only loosely.\"",
+        "Your shield chunk destruction makes every hit feel like the bunker is losing an argument with physics.",
+        "The UFO and power-up system gives the game just enough modern seasoning to pretend it's not an arcade relic in neon clothing.",
+        "The combo multiplier is a nice touch for a game that already had enough things descending from the sky to cause emotional damage.",
+        "You built a classic shooter and then gave it a touch UI so no one could accuse it of being old enough to vote.",
+        "The boss appearance music has the energy of a final exam entering the room.",
+        "This version is so polished that even the aliens look like they're lined up for a product photo.",
+        "It keeps the core loop clean, which is impressive because everything around it is exploding politely.",
+        "The whole game feels like a remaster that decided to be charming instead of trying to be clever."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4 didn't make Space Invaders, it made a neon operations center for defeating Space Invaders.",
+        "The HUD has more dashboards than a starship and more confidence than the pilot.",
+        "Touch pad, fire pad, power-up list, combo counter, boss meter, shield meter—at this point the aliens are just background documentation.",
+        "You turned a shooter into a systems demo and somehow still remembered to include the actual shooting.",
+        "Multi-shot, rapid fire, speed burst, shield bubble—this game treats power-ups like a buffet and balance like a rumor.",
+        "The title screen alone has enough marketing energy to sell the moon back to NASA.",
+        "Every panel glows like it's trying to convince me the invasion is a premium subscription.",
+        "The boss showdowns feel less like enemy encounters and more like a game designer refusing to stop adding buttons.",
+        "This is the only Space Invaders where I need a UI tutorial before I can be humiliated by aliens.",
+        "You didn't modernize the classic—you put it through a very expensive neon baptism."
+      ]
+    }
+  }
+}

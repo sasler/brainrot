@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GEM BLITZ — Neon Match-3</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #050510;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: 'Courier New', monospace;
+}
+canvas {
+  display: block;
+  touch-action: none;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ================================================================
+// GEM BLITZ — Neon Match-3  |  Claude Sonnet 4.6 Implementation
+// ================================================================
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// ── Layout ──────────────────────────────────────────────────────
+const GRID = 8;
+let CELL = 60, BX = 0, BY = 0;
+
+function layout() {
+  const W = window.innerWidth, H = window.innerHeight;
+  const maxBoard = Math.min(W * 0.97, H * 0.74, 530);
+  CELL = Math.max(36, Math.floor(maxBoard / GRID));
+  const boardW = CELL * GRID;
+  canvas.width = W; canvas.height = H;
+  BX = Math.floor((W - boardW) / 2);
+  BY = Math.floor((H - boardW) / 2) + 28;
+  if (grid && grid.length) {
+    for (let y = 0; y < GRID; y++) for (let x = 0; x < GRID; x++) if (grid[y] && grid[y][x]) grid[y][x].snapToGrid();
+  }
+}
+layout();
+window.addEventListener('resize', layout);
+
+// ── Gem Definitions ─────────────────────────────────────────────
+const GEMS = [
+  { name:'Ruby',     color:'#ff2255', glow:'#ff0040', dark:'#550015', shape:'diamond' },
+  { name:'Sapphire', color:'#2299ff', glow:'#0066ff', dark:'#001855', shape:'circle'  },
+  { name:'Emerald',  color:'#00ee66', glow:'#00cc44', dark:'#003d18', shape:'square'  },
+  { name:'Topaz',    color:'#ffbb00', glow:'#ff8800', dark:'#553800', shape:'oval'    },
+  { name:'Amethyst', color:'#cc44ff', glow:'#aa00ff', dark:'#3a005e', shape:'star'    },
+  { name:'Opal',     color:'#00ddff', glow:'#00aaff', dark:'#003344', shape:'hex'     },
+];
+const GN = GEMS.length;
+const SP_NONE = 0, SP_BOMB = 1, SP_STAR = 2, SP_CROSS = 3;
+
+// ── Audio ────────────────────────────────────────────────────────
+let AC = null;
+function getAC() {
+  if (!AC) try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+  return AC;
+}
+function note(freq, type, dur, vol = 0.22, delay = 0) {
+  try {
+    const a = getAC(); if (!a) return;
+    const osc = a.createOscillator(), g = a.createGain(), cmp = a.createDynamicsCompressor();
+    osc.connect(g); g.connect(cmp); cmp.connect(a.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, a.currentTime + delay);
+    g.gain.setValueAtTime(0.001, a.currentTime + delay);
+    g.gain.linearRampToValueAtTime(vol, a.currentTime + delay + 0.016);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + delay + dur);
+    osc.start(a.currentTime + delay);
+    osc.stop(a.currentTime + delay + dur + 0.01);
+  } catch(e) {}
+}
+
+const SND = {
+  swap()     { note(540,'sine',0.08,0.14); note(720,'sine',0.06,0.08,0.06); },
+  bad()      { note(160,'sawtooth',0.12,0.2); note(130,'sawtooth',0.1,0.15,0.08); },
+  match(ch=0){
+    const b = 280 + ch*70;
+    note(b,'sine',0.25,0.2); note(b*1.26,'sine',0.2,0.14,0.05);
+    note(b*1.5,'sine',0.15,0.1,0.1);
+    if (ch>=2) note(b*2,'triangle',0.15,0.12,0.17);
+  },
+  cascade(n) {
+    const b = 340 + n*90;
+    [0,0.07,0.14,0.22].forEach((t,i)=>note(b*(1+i*.15),'triangle',0.3,0.2-i*.03,t));
+  },
+  makeSpecial(t) {
+    if (t===SP_BOMB)  { note(900,'sine',0.14,0.3); note(1100,'sine',0.18,0.32,0.07); note(1300,'sine',0.14,0.24,0.14); }
+    if (t===SP_STAR)  { [600,800,1000,1200,1500].forEach((f,i)=>note(f,'sine',0.2,0.26,i*.05)); }
+    if (t===SP_CROSS) { note(750,'triangle',0.2,0.28); note(950,'triangle',0.22,0.28,0.07); note(1150,'triangle',0.18,0.22,0.13); }
+  },
+  fireSpecial(t) {
+    if (t===SP_BOMB)  { note(200,'sawtooth',0.4,0.33); note(150,'square',0.33,0.25,0.07); note(100,'sawtooth',0.28,0.2,0.14); }
+    if (t===SP_STAR)  { [1600,1400,1200,1000,800,600].forEach((f,i)=>note(f,'sine',0.45,0.24,i*.07)); }
+    if (t===SP_CROSS) { note(500,'sawtooth',0.28,0.3); note(700,'sawtooth',0.32,0.28,0.06); note(900,'sawtooth',0.28,0.22,0.12); }
+  },
+  shuffle()  { for(let i=0;i<8;i++) note(200+i*80,'triangle',0.14,0.14,i*.04); },
+  levelup()  { [400,500,600,800,1000,1400].forEach((f,i)=>note(f,'sine',0.32,0.32,i*.09)); },
+  gameover() { [520,430,350,280,210,160].forEach((f,i)=>note(f,'sawtooth',0.48,0.28,i*.16)); },
+};
+
+// ── Easing ───────────────────────────────────────────────────────
+const ease = {
+  outCubic: t => 1-(1-t)**3,
+  outBack:  t => { const c=1.7; return 1+(c+1)*(t-1)**3+c*(t-1)**2; },
+  outBounce(t) {
+    if(t<1/2.75)  return 7.5625*t*t;
+    if(t<2/2.75)  return 7.5625*(t-=1.5/2.75)*t+.75;
+    if(t<2.5/2.75)return 7.5625*(t-=2.25/2.75)*t+.9375;
+    return 7.5625*(t-=2.625/2.75)*t+.984375;
+  },
+};
+
+// ── Particle System ──────────────────────────────────────────────
+const parts = [];
+
+function mkPart(x, y, color, opts={}) {
+  if (parts.length > 700) return;
+  const p = { x, y, color, life:1, type: opts.type||'spark' };
+  switch(p.type) {
+    case 'spark': {
+      const spd = (opts.spd||4) + Math.random()*5;
+      const ang = opts.ang!==undefined ? opts.ang+(Math.random()-.5)*1.1 : Math.random()*Math.PI*2;
+      p.vx=Math.cos(ang)*spd; p.vy=Math.sin(ang)*spd;
+      p.decay=0.025+Math.random()*.03; p.size=1.5+Math.random()*3; p.grav=0.12; break;
+    }
+    case 'burst': {
+      const spd=(opts.spd||7)+Math.random()*8, ang=Math.random()*Math.PI*2;
+      p.vx=Math.cos(ang)*spd; p.vy=Math.sin(ang)*spd;
+      p.decay=0.016+Math.random()*.018; p.size=2+Math.random()*5; p.grav=0.08; break;
+    }
+    case 'ring': {
+      p.r=3; p.maxR=CELL*(opts.scale||1.3); p.decay=0.022; p.size=2.5; p.grav=0; p.vx=0; p.vy=0; break;
+    }
+    case 'shockwave': {
+      p.r=0; p.maxR=CELL*(opts.scale||2.8); p.decay=0.018; p.size=4; p.grav=0; p.vx=0; p.vy=0; break;
+    }
+    case 'sparkle': {
+      const ang=Math.random()*Math.PI*2, spd=.3+Math.random()*1.5;
+      p.vx=Math.cos(ang)*spd; p.vy=Math.sin(ang)*spd-.9;
+      p.decay=0.011+Math.random()*.013; p.size=0.8+Math.random()*2; p.grav=0.01; break;
+    }
+    case 'trail': {
+      p.vx=(Math.random()-.5)*2; p.vy=-1.5-Math.random()*3;
+      p.decay=0.03+Math.random()*.025; p.size=1.5+Math.random()*3; p.grav=0.02; break;
+    }
+  }
+  p.startSize = p.size || 0;
+  parts.push(p);
+}
+
+function emit(x, y, color, n, opts={}) {
+  for(let i=0;i<n;i++) mkPart(x, y, color, opts);
+}
+
+function emitMatch(gx, gy, color, extra=0) {
+  const cx=BX+gx*CELL+CELL/2, cy=BY+gy*CELL+CELL/2;
+  emit(cx,cy,color,10+extra,{type:'spark'});
+  emit(cx,cy,color,6+extra,{type:'burst'});
+  mkPart(cx,cy,color,{type:'ring'});
+}
+
+function emitBigExplosion(gx, gy, color) {
+  const cx=BX+gx*CELL+CELL/2, cy=BY+gy*CELL+CELL/2;
+  emit(cx,cy,color,30,{type:'burst',spd:9});
+  emit(cx,cy,color,20,{type:'spark'});
+  mkPart(cx,cy,color,{type:'ring',scale:2});
+  mkPart(cx,cy,color,{type:'shockwave',scale:3});
+}
+
+function tickParts() {
+  for(let i=parts.length-1;i>=0;i--) {
+    const p=parts[i];
+    p.life-=p.decay;
+    if(p.type==='ring'||p.type==='shockwave') {
+      p.r+=(p.maxR-p.r)*.16;
+    } else {
+      p.x+=p.vx; p.y+=p.vy; p.vy+=p.grav; p.vx*=.97;
+    }
+    if(p.life<=0) parts.splice(i,1);
+  }
+}
+
+function drawParts() {
+  for(const p of parts) {
+    if(p.life<=0) continue;
+    ctx.save();
+    ctx.globalAlpha=Math.max(0,Math.min(1,p.life));
+    if(p.type==='ring'||p.type==='shockwave') {
+      ctx.strokeStyle=p.color; ctx.lineWidth=p.size*p.life;
+      ctx.shadowColor=p.color; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.stroke();
+    } else {
+      const sz=p.size*Math.max(0.05,p.life);
+      ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=6;
+      ctx.beginPath(); ctx.arc(p.x,p.y,sz,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ── Gem Drawing ──────────────────────────────────────────────────
+function gemGrad(r, light, mid, dark) {
+  const g=ctx.createRadialGradient(-r*.32,-r*.38,0,0,0,r*1.1);
+  g.addColorStop(0,light); g.addColorStop(0.45,mid); g.addColorStop(1,dark);
+  return g;
+}
+
+function drawPoly(sides, r, inR) {
+  ctx.beginPath();
+  const n = sides*(inR!==undefined?2:1);
+  for(let i=0;i<n;i++){
+    const a=i*Math.PI/sides-Math.PI/2;
+    const rad=inR!==undefined?(i%2===0?r:inR):r;
+    i===0?ctx.moveTo(Math.cos(a)*rad,Math.sin(a)*rad):ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);
+  }
+  ctx.closePath();
+}
+
+function drawGemBody(shape, r, color, glow, dark) {
+  ctx.shadowColor=glow; ctx.shadowBlur=14;
+  switch(shape) {
+    case 'diamond': {
+      ctx.beginPath();
+      ctx.moveTo(0,-r); ctx.lineTo(r*.76,0); ctx.lineTo(0,r); ctx.lineTo(-r*.76,0);
+      ctx.closePath();
+      ctx.fillStyle=gemGrad(r,'rgba(255,255,255,.55)',color,dark); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=.9;
+      ctx.beginPath(); ctx.moveTo(0,-r); ctx.lineTo(0,r); ctx.moveTo(-r*.76,0); ctx.lineTo(r*.76,0); ctx.stroke();
+      break;
+    }
+    case 'circle': {
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+      ctx.fillStyle=gemGrad(r,'rgba(255,255,255,.55)',color,dark); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.28)'; ctx.lineWidth=.9;
+      ctx.beginPath(); ctx.arc(0,0,r*.56,0,Math.PI*2); ctx.stroke();
+      break;
+    }
+    case 'square': {
+      const s=r*.83;
+      ctx.beginPath(); ctx.roundRect(-s,-s,s*2,s*2,s*.22);
+      ctx.fillStyle=gemGrad(r,'rgba(255,255,255,.55)',color,dark); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=.9;
+      ctx.strokeRect(-s*.54,-s*.54,s*1.08,s*1.08);
+      break;
+    }
+    case 'oval': {
+      ctx.beginPath(); ctx.ellipse(0,0,r*.68,r,0,0,Math.PI*2);
+      ctx.fillStyle=gemGrad(r,'rgba(255,255,255,.55)',color,dark); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=.9;
+      ctx.beginPath(); ctx.ellipse(0,0,r*.33,r*.55,0,0,Math.PI*2); ctx.stroke();
+      break;
+    }
+    case 'star': {
+      drawPoly(6,r,r*.44);
+      ctx.fillStyle=gemGrad(r,'rgba(255,255,255,.55)',color,dark); ctx.fill();
+      drawPoly(6,r*.5,r*.25); ctx.fillStyle='rgba(255,255,255,.28)'; ctx.fill();
+      break;
+    }
+    case 'hex': {
+      drawPoly(6,r);
+      ctx.fillStyle=gemGrad(r,'rgba(255,255,255,.55)',color,dark); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=.9;
+      drawPoly(6,r*.58); ctx.stroke();
+      break;
+    }
+  }
+  // Universal shine highlight
+  ctx.fillStyle='rgba(255,255,255,.52)';
+  ctx.beginPath(); ctx.ellipse(-r*.2,-r*.36,r*.22,r*.12,-0.5,0,Math.PI*2); ctx.fill();
+}
+
+function drawBomb(r, color, glow, dark) {
+  ctx.shadowColor='#ff6600'; ctx.shadowBlur=22;
+  const g=ctx.createRadialGradient(-r*.2,-r*.2,0,0,0,r);
+  g.addColorStop(0,color+'cc'); g.addColorStop(.5,glow); g.addColorStop(1,'#110000');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#ff9900'; ctx.lineWidth=r*.16; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-r*.42,-r*.42); ctx.lineTo(r*.42,r*.42);
+  ctx.moveTo(r*.42,-r*.42); ctx.lineTo(-r*.42,r*.42); ctx.stroke();
+  ctx.strokeStyle='rgba(255,102,0,.8)'; ctx.lineWidth=2; ctx.shadowBlur=18;
+  ctx.beginPath(); ctx.arc(0,0,r*1.08,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.42)'; ctx.beginPath(); ctx.arc(-r*.26,-r*.3,r*.17,0,Math.PI*2); ctx.fill();
+}
+
+function drawStar(r) {
+  ctx.shadowColor='#ffffff'; ctx.shadowBlur=28;
+  const g=ctx.createLinearGradient(-r,-r,r,r);
+  g.addColorStop(0,'#ff0080'); g.addColorStop(.2,'#ff8800'); g.addColorStop(.4,'#ffff00');
+  g.addColorStop(.6,'#00ff88'); g.addColorStop(.8,'#00ccff'); g.addColorStop(1,'#cc00ff');
+  drawPoly(8,r,r*.42); ctx.fillStyle=g; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(0,0,r*.2,0,Math.PI*2); ctx.fill();
+}
+
+function drawCross(r, color, glow) {
+  ctx.shadowColor=glow; ctx.shadowBlur=22;
+  const w=r*.43;
+  const hg=ctx.createLinearGradient(-r,0,r,0);
+  hg.addColorStop(0,glow); hg.addColorStop(.5,'#ffffff'); hg.addColorStop(1,glow);
+  ctx.fillStyle=hg;
+  ctx.beginPath(); ctx.roundRect(-r,-w,r*2,w*2,w*.35); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-w,-r,w*2,r*2,w*.35); ctx.fill();
+  ctx.fillStyle='#ffffff'; ctx.shadowBlur=30;
+  ctx.beginPath(); ctx.arc(0,0,w*.62,0,Math.PI*2); ctx.fill();
+}
+
+// ── Gem Class ────────────────────────────────────────────────────
+class Gem {
+  constructor(type, gx, gy) {
+    this.type=type; this.special=SP_NONE;
+    this.gx=gx; this.gy=gy;
+    this.px=BX+gx*CELL; this.py=BY+gy*CELL;
+    this.tx=this.px; this.ty=this.py;
+    this.alpha=1; this.scale=1;
+    this.removing=false; this.selected=false; this.hinting=false;
+    this.hintPhase=Math.random()*Math.PI*2;
+    this.spawnT=0; this.spawning=true;
+    this.removeT=0; this.removeAnim=false;
+  }
+
+  def() { return GEMS[this.type]; }
+
+  setTarget(gx, gy) {
+    this.gx=gx; this.gy=gy;
+    this.tx=BX+gx*CELL; this.ty=BY+gy*CELL;
+  }
+
+  snapToGrid() {
+    this.px=this.tx=BX+this.gx*CELL;
+    this.py=this.ty=BY+this.gy*CELL;
+  }
+
+  isAtTarget(thr=1.5) {
+    return Math.abs(this.px-this.tx)<thr && Math.abs(this.py-this.ty)<thr;
+  }
+
+  update() {
+    const LERP=0.26;
+    this.px+=(this.tx-this.px)*LERP;
+    this.py+=(this.ty-this.py)*LERP;
+
+    if(this.spawning) {
+      this.spawnT=Math.min(this.spawnT+0.09,1);
+      if(this.spawnT>=1) this.spawning=false;
+    }
+    if(this.removeAnim) {
+      this.removeT=Math.min(this.removeT+0.08,1);
+      this.scale=1-ease.outCubic(this.removeT)*0.5;
+      this.alpha=1-ease.outCubic(this.removeT);
+    }
+    if(this.hinting) this.hintPhase+=0.07;
+
+    // Ambient sparkle
+    if(!this.removing && Math.random()<0.007) {
+      const cx=this.px+CELL/2, cy=this.py+CELL/2;
+      mkPart(cx+(Math.random()-.5)*CELL*.55, cy+(Math.random()-.5)*CELL*.55, this.def().glow, {type:'sparkle'});
+    }
+  }
+
+  draw() {
+    if(this.alpha<=0) return;
+    const cx=this.px+CELL/2, cy=this.py+CELL/2;
+    let sc=this.scale;
+    if(this.spawning) sc*=ease.outBack(this.spawnT);
+    if(this.hinting) sc*=1+Math.sin(this.hintPhase)*.1;
+    if(this.selected) sc*=1.14;
+
+    const r=CELL*.4*sc;
+    const d=this.def();
+
+    ctx.save();
+    ctx.globalAlpha=this.alpha;
+    ctx.translate(cx,cy);
+
+    if(this.selected) {
+      ctx.shadowColor='#ffffff'; ctx.shadowBlur=22;
+      ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.arc(0,0,CELL*.49,0,Math.PI*2); ctx.stroke();
+    }
+    if(this.hinting) {
+      ctx.shadowColor=d.glow; ctx.shadowBlur=28;
+      ctx.strokeStyle=d.glow; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(0,0,CELL*.5,0,Math.PI*2); ctx.stroke();
+    }
+
+    switch(this.special) {
+      case SP_NONE:  drawGemBody(d.shape,r,d.color,d.glow,d.dark); break;
+      case SP_BOMB:  drawBomb(r,d.color,d.glow,d.dark); break;
+      case SP_STAR:  drawStar(r); break;
+      case SP_CROSS: drawCross(r,d.color,d.glow); break;
+    }
+
+    ctx.restore();
+  }
+}
+
+// ── Grid Logic ───────────────────────────────────────────────────
+let grid = []; // grid[y][x]
+
+function mkGem(gx, gy, exclude=[]) {
+  let t; do { t=Math.floor(Math.random()*GN); } while(exclude.includes(t));
+  return new Gem(t, gx, gy);
+}
+
+function initGrid() {
+  grid=[];
+  for(let y=0;y<GRID;y++) {
+    grid[y]=[];
+    for(let x=0;x<GRID;x++) {
+      const ex=[];
+      if(x>=2 && grid[y][x-1]?.type===grid[y][x-2]?.type) ex.push(grid[y][x-1].type);
+      if(y>=2 && grid[y-1]?.[x]?.type===grid[y-2]?.[x]?.type) ex.push(grid[y-1][x].type);
+      const g=mkGem(x,y,ex); g.spawning=false; g.spawnT=1;
+      grid[y][x]=g;
+    }
+  }
+}
+
+function getGem(x,y) {
+  if(x<0||x>=GRID||y<0||y>=GRID) return null;
+  return grid[y][x];
+}
+
+function rawSwap(x1,y1,x2,y2) {
+  [grid[y1][x1],grid[y2][x2]]=[grid[y2][x2],grid[y1][x1]];
+  if(grid[y1][x1]){grid[y1][x1].gx=x1;grid[y1][x1].gy=y1;}
+  if(grid[y2][x2]){grid[y2][x2].gx=x2;grid[y2][x2].gy=y2;}
+}
+
+function findGroups() {
+  const groups=[];
+  // Horizontal
+  for(let y=0;y<GRID;y++){
+    let x=0;
+    while(x<GRID){
+      const g=grid[y][x];
+      if(!g){x++;continue;}
+      let len=1;
+      while(x+len<GRID && grid[y][x+len]?.type===g.type) len++;
+      if(len>=3){
+        const cells=[]; for(let i=0;i<len;i++) cells.push({x:x+i,y});
+        groups.push({cells,horiz:true,len});
+      }
+      x+=len;
+    }
+  }
+  // Vertical
+  for(let x=0;x<GRID;x++){
+    let y=0;
+    while(y<GRID){
+      const g=grid[y][x];
+      if(!g){y++;continue;}
+      let len=1;
+      while(y+len<GRID && grid[y+len][x]?.type===g.type) len++;
+      if(len>=3){
+        const cells=[]; for(let i=0;i<len;i++) cells.push({x,y:y+i});
+        groups.push({cells,horiz:false,len});
+      }
+      y+=len;
+    }
+  }
+  return groups;
+}
+
+function hasValidMoves() {
+  for(let y=0;y<GRID;y++){
+    for(let x=0;x<GRID;x++){
+      for(const [dx,dy] of [[1,0],[0,1]]){
+        const nx=x+dx,ny=y+dy;
+        if(nx>=GRID||ny>=GRID) continue;
+        rawSwap(x,y,nx,ny);
+        const ok=findGroups().length>0;
+        rawSwap(x,y,nx,ny);
+        if(ok) return true;
+        // Also check if either has special
+        if(getGem(x,y)?.special!==SP_NONE||getGem(nx,ny)?.special!==SP_NONE) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function findHint() {
+  for(let y=0;y<GRID;y++){
+    for(let x=0;x<GRID;x++){
+      for(const [dx,dy] of [[1,0],[0,1]]){
+        const nx=x+dx,ny=y+dy;
+        if(nx>=GRID||ny>=GRID) continue;
+        rawSwap(x,y,nx,ny);
+        const ok=findGroups().length>0;
+        rawSwap(x,y,nx,ny);
+        if(ok) return [{x,y},{x:nx,y:ny}];
+      }
+    }
+  }
+  return [];
+}
+
+function shuffleBoard() {
+  SND.shuffle();
+  // Scatter all gems via particles
+  for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]) emitMatch(x,y,grid[y][x].def().glow,2);
+  // Fisher-Yates on flat array
+  const flat=[];
+  for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]) flat.push(grid[y][x]);
+  for(let i=flat.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [flat[i],flat[j]]=[flat[j],flat[i]]; }
+  let k=0;
+  for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++){ flat[k].setTarget(x,y); grid[y][x]=flat[k++]; }
+  if(!hasValidMoves()) shuffleBoard();
+}
+
+// ── Game State ───────────────────────────────────────────────────
+const S = { TITLE:'title', PLAY:'play', OVER:'over' };
+const P = { IDLE:'idle', SWAP:'swap', SWAPBACK:'swapback', MATCH:'match', FALL:'fall', SHUFFLE:'shuffle' };
+
+let gState=S.TITLE, gPhase=P.IDLE;
+let score=0, level=1, levelScore=0, targetScore=500;
+let timeLeft=120, totalMatches=0, maxCascade=0, cascade=0;
+let selectedCell=null;
+let hintTimer=0, hintCells=[];
+let shakeX=0, shakeY=0, shakeMag=0, shakeT=0;
+let phaseT=0, phaseDur=0;
+let swapSrc=null, swapDst=null, swapValid=false;
+let pendingMatch=false;
+let titleT=0, overT=0;
+let comboDisplayT=0, comboFade=0;
+
+function levelCfg(lv) {
+  return {
+    target: 500*lv*(1+Math.floor(lv/4)),
+    baseTime: Math.max(60,120-lv*6),
+    timeBonus: 18,
+  };
+}
+
+function startGame() {
+  score=0; level=1; levelScore=0; cascade=0;
+  totalMatches=0; maxCascade=0;
+  const cfg=levelCfg(1);
+  targetScore=cfg.target; timeLeft=cfg.baseTime;
+  selectedCell=null; hintTimer=0; hintCells=[];
+  parts.length=0;
+  initGrid();
+  gState=S.PLAY; gPhase=P.IDLE;
+}
+
+function addShake(mag) {
+  shakeMag=Math.max(shakeMag,mag); shakeT=30;
+}
+
+function beginPhase(ph, dur=0) {
+  gPhase=ph; phaseT=0; phaseDur=dur;
+}
+
+// ── Input ────────────────────────────────────────────────────────
+function onTap(cx, cy) {
+  if(gState===S.TITLE){ startGame(); return; }
+  if(gState===S.OVER){ gState=S.TITLE; return; }
+  if(gPhase!==P.IDLE) return;
+
+  const gx=Math.floor((cx-BX)/CELL), gy=Math.floor((cy-BY)/CELL);
+  if(gx<0||gx>=GRID||gy<0||gy>=GRID){
+    clearSelected(); return;
+  }
+  const g=getGem(gx,gy);
+  if(!g) return;
+
+  if(!selectedCell) {
+    setSelected(gx,gy);
+  } else {
+    const dx=Math.abs(gx-selectedCell.x), dy=Math.abs(gy-selectedCell.y);
+    if(dx+dy===1) {
+      trySwap(selectedCell.x,selectedCell.y,gx,gy);
+      clearSelected();
+    } else {
+      clearSelected();
+      setSelected(gx,gy);
+    }
+  }
+}
+
+function setSelected(x,y) {
+  selectedCell={x,y};
+  if(grid[y][x]) grid[y][x].selected=true;
+  // Clear hints
+  clearHints();
+}
+
+function clearSelected() {
+  if(selectedCell && grid[selectedCell.y]?.[selectedCell.x]) grid[selectedCell.y][selectedCell.x].selected=false;
+  selectedCell=null;
+}
+
+function clearHints() {
+  for(const h of hintCells) if(grid[h.y]?.[h.x]) { grid[h.y][h.x].hinting=false; }
+  hintCells=[];
+  hintTimer=0;
+}
+
+let touchStartPos=null;
+
+canvas.addEventListener('pointerdown', e=>{
+  e.preventDefault();
+  const r=canvas.getBoundingClientRect();
+  const sx=canvas.width/r.width, sy=canvas.height/r.height;
+  touchStartPos={ x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sy };
+  onTap(touchStartPos.x, touchStartPos.y);
+}, {passive:false});
+
+canvas.addEventListener('pointermove', e=>{
+  e.preventDefault();
+  if(!touchStartPos || gPhase!==P.IDLE || !selectedCell) return;
+  const r=canvas.getBoundingClientRect();
+  const sx=canvas.width/r.width, sy=canvas.height/r.height;
+  const cx=(e.clientX-r.left)*sx, cy=(e.clientY-r.top)*sy;
+  const dx=cx-touchStartPos.x, dy=cy-touchStartPos.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>CELL*.35) {
+    let tx=selectedCell.x, ty=selectedCell.y;
+    if(Math.abs(dx)>Math.abs(dy)) tx+=dx>0?1:-1; else ty+=dy>0?1:-1;
+    if(tx>=0&&tx<GRID&&ty>=0&&ty<GRID && (tx!==selectedCell.x||ty!==selectedCell.y)) {
+      trySwap(selectedCell.x,selectedCell.y,tx,ty);
+      clearSelected();
+      touchStartPos=null;
+    }
+  }
+}, {passive:false});
+
+canvas.addEventListener('pointerup', e=>{ e.preventDefault(); touchStartPos=null; }, {passive:false});
+
+// ── Game Logic ───────────────────────────────────────────────────
+function trySwap(x1,y1,x2,y2) {
+  const g1=getGem(x1,y1), g2=getGem(x2,y2);
+  if(!g1||!g2) return;
+
+  // Check if swap produces a match or involves a special
+  rawSwap(x1,y1,x2,y2);
+  const hasMatch=findGroups().length>0;
+  const hasSpecial=g1.special!==SP_NONE||g2.special!==SP_NONE;
+  rawSwap(x1,y1,x2,y2); // revert
+
+  if(hasMatch||hasSpecial) {
+    SND.swap();
+    // Keep visual positions at old spots before swap
+    const px1=g1.px,py1=g1.py,px2=g2.px,py2=g2.py;
+    rawSwap(x1,y1,x2,y2);
+    // Restore visual start positions so gems animate TO new grid slots
+    g1.px=px1; g1.py=py1; g1.tx=BX+g1.gx*CELL; g1.ty=BY+g1.gy*CELL;
+    g2.px=px2; g2.py=py2; g2.tx=BX+g2.gx*CELL; g2.ty=BY+g2.gy*CELL;
+    swapSrc={x:g1.gx,y:g1.gy}; swapDst={x:g2.gx,y:g2.gy}; swapValid=true;
+    beginPhase(P.SWAP);
+  } else {
+    SND.bad();
+    // Nudge animation — move toward each other briefly
+    const midX=(BX+x1*CELL+BX+x2*CELL)/2, midY=(BY+y1*CELL+BY+y2*CELL)/2;
+    g1.tx=midX; g1.ty=midY; g2.tx=midX; g2.ty=midY;
+    swapSrc={x:x1,y:y1}; swapDst={x:x2,y:y2}; swapValid=false;
+    beginPhase(P.SWAP, 18);
+  }
+}
+
+function doMatch(chainLevel) {
+  const groups=findGroups();
+  if(groups.length===0) {
+    // Done — check for no moves
+    cascade=0;
+    comboFade=0;
+    if(!hasValidMoves()) {
+      beginPhase(P.SHUFFLE, 60);
+    } else {
+      beginPhase(P.IDLE);
+    }
+    return;
+  }
+
+  cascade=chainLevel;
+  if(cascade>maxCascade) maxCascade=cascade;
+  comboDisplayT=0; comboFade=1;
+  if(cascade>0) { SND.cascade(cascade); addShake(1.5+cascade*1.2); }
+  else SND.match(0);
+
+  if(cascade>=3) addShake(3+cascade);
+
+  // Collect all cells to remove
+  const toRemove=new Set();
+  const specialMakes=[]; // {x,y,type,gemType} — specials to CREATE after removal
+  const specialFires=[]; // {x,y,type,gemType} — specials to ACTIVATE
+
+  for(const gr of groups) {
+    for(const c of gr.cells) toRemove.add(`${c.x},${c.y}`);
+  }
+
+  // Find intersection cells (T/L shape) and long matches
+  const hCells=new Set(), vCells=new Set();
+  for(const gr of groups){
+    for(const c of gr.cells) (gr.horiz?hCells:vCells).add(`${c.x},${c.y}`);
+  }
+
+  // Specials to fire from existing special gems
+  for(const key of toRemove) {
+    const [x,y]=key.split(',').map(Number);
+    const g=grid[y][x];
+    if(g && g.special!==SP_NONE) specialFires.push({x,y,type:g.special,gemType:g.type});
+  }
+
+  // Determine what specials to CREATE (first swap only, not cascades)
+  if(chainLevel===0) {
+    for(const gr of groups) {
+      const center=gr.cells[Math.floor(gr.len/2)];
+      const key=`${center.x},${center.y}`;
+      if(gr.len===4) {
+        // Check if already designated for cross
+        if(!specialMakes.find(s=>s.x===center.x&&s.y===center.y))
+          specialMakes.push({x:center.x,y:center.y,type:SP_BOMB,gemType:grid[center.y][center.x]?.type??0});
+      } else if(gr.len>=5) {
+        if(!specialMakes.find(s=>s.x===center.x&&s.y===center.y))
+          specialMakes.push({x:center.x,y:center.y,type:SP_STAR,gemType:grid[center.y][center.x]?.type??0});
+      }
+    }
+    // Cross = cell in both h and v match
+    for(const key of toRemove){
+      if(hCells.has(key)&&vCells.has(key)){
+        const [x,y]=key.split(',').map(Number);
+        const existing=specialMakes.findIndex(s=>s.x===x&&s.y===y);
+        if(existing>=0) specialMakes[existing].type=SP_CROSS;
+        else specialMakes.push({x,y,type:SP_CROSS,gemType:grid[y][x]?.type??0});
+      }
+    }
+  }
+
+  // Fire existing specials — expand toRemove
+  for(const sf of specialFires) {
+    SND.fireSpecial(sf.type);
+    if(sf.type===SP_BOMB) {
+      emitBigExplosion(sf.x,sf.y,'#ff6600');
+      for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) {
+        const nx=sf.x+dx,ny=sf.y+dy;
+        if(nx>=0&&nx<GRID&&ny>=0&&ny<GRID) toRemove.add(`${nx},${ny}`);
+      }
+    } else if(sf.type===SP_STAR) {
+      emitBigExplosion(sf.x,sf.y,'#ffffff');
+      for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++)
+        if(grid[y][x]?.type===sf.gemType) toRemove.add(`${x},${y}`);
+    } else if(sf.type===SP_CROSS) {
+      emitBigExplosion(sf.x,sf.y,GEMS[sf.gemType].glow);
+      for(let i=0;i<GRID;i++) { toRemove.add(`${i},${sf.y}`); toRemove.add(`${sf.x},${i}`); }
+    }
+  }
+
+  // Score
+  const base=toRemove.size*10*(level*.3+.7);
+  const mult=1+cascade*.5;
+  const gained=Math.floor(base*mult);
+  score+=gained; levelScore+=gained;
+  totalMatches+=toRemove.size;
+
+  // Spawn particles and mark removal
+  for(const key of toRemove) {
+    const [x,y]=key.split(',').map(Number);
+    const g=grid[y][x]; if(!g) continue;
+    emitMatch(x,y,g.def().glow, cascade*3);
+    g.removeAnim=true; g.removing=true;
+  }
+
+  // After a delay, actually remove & refill
+  beginPhase(P.MATCH, 28);
+  // Store data for when phase ends
+  grid._pendingRemove=toRemove;
+  grid._pendingSpecials=specialMakes;
+  grid._pendingChain=chainLevel;
+}
+
+function applyRemoveAndFall() {
+  const toRemove=grid._pendingRemove||new Set();
+  const specialMakes=grid._pendingSpecials||[];
+  const chainLevel=grid._pendingChain||0;
+
+  // Remove gems
+  for(const key of toRemove) {
+    const [x,y]=key.split(',').map(Number);
+    grid[y][x]=null;
+  }
+
+  // Create specials at designated positions (if cell is now empty)
+  for(const sm of specialMakes) {
+    if(!grid[sm.y][sm.x]) {
+      const ng=new Gem(sm.gemType, sm.x, sm.y);
+      ng.special=sm.type; ng.spawning=true; ng.spawnT=0;
+      ng.snapToGrid();
+      grid[sm.y][sm.x]=ng;
+      SND.makeSpecial(sm.type);
+      emit(BX+sm.x*CELL+CELL/2, BY+sm.y*CELL+CELL/2, GEMS[sm.gemType].glow, 15, {type:'burst'});
+    }
+  }
+
+  // Gravity — collapse columns downward
+  for(let x=0;x<GRID;x++) {
+    let write=GRID-1;
+    for(let y=GRID-1;y>=0;y--) {
+      if(grid[y][x]) { grid[write][x]=grid[y][x]; if(y!==write) grid[y][x]=null; write--; }
+    }
+    // Fill top with new gems, spawning from above board
+    for(let y=write;y>=0;y--) {
+      const ng=mkGem(x,y);
+      ng.py=BY-(write-y+1)*CELL; ng.px=BX+x*CELL;
+      ng.setTarget(x,y);
+      ng.spawning=true; ng.spawnT=0;
+      grid[y][x]=ng;
+    }
+    // Update targets for settled gems
+    for(let y=0;y<GRID;y++) if(grid[y][x]) { grid[y][x].setTarget(x,y); }
+  }
+
+  grid._pendingRemove=null;
+  grid._pendingSpecials=null;
+  grid._pendingChain=chainLevel;
+  beginPhase(P.FALL, 38);
+}
+
+// ── Main Update ──────────────────────────────────────────────────
+let lastT=0;
+
+function update(ts) {
+  const dt=Math.min((ts-lastT)/16.67,3); lastT=ts;
+
+  // Shake decay
+  if(shakeT>0){ shakeT--; shakeMag*=.88; shakeX=(Math.random()-.5)*shakeMag*2; shakeY=(Math.random()-.5)*shakeMag*2; }
+  else { shakeX=0; shakeY=0; }
+
+  if(gState===S.TITLE) { renderTitle(dt); requestAnimationFrame(update); return; }
+  if(gState===S.OVER)  { renderOver(dt);  requestAnimationFrame(update); return; }
+
+  // Update gems
+  for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]) grid[y][x].update();
+
+  // Timer
+  timeLeft-=dt/60;
+  if(timeLeft<=0) {
+    timeLeft=0;
+    if(gPhase===P.IDLE||gPhase===P.MATCH||gPhase===P.FALL) {
+      SND.gameover(); gState=S.OVER; overT=0; renderGame(); requestAnimationFrame(update); return;
+    }
+  }
+
+  // Level up
+  if(levelScore>=targetScore) {
+    level++; levelScore=Math.max(0,levelScore-targetScore);
+    const cfg=levelCfg(level);
+    targetScore=cfg.target;
+    timeLeft=Math.min(timeLeft+cfg.timeBonus, cfg.baseTime);
+    SND.levelup(); addShake(4);
+    // Flash
+    emit(canvas.width/2,canvas.height/2,'#ffff00',20,{type:'burst',spd:12});
+  }
+
+  // Hint
+  if(gPhase===P.IDLE && !selectedCell) {
+    hintTimer+=dt;
+    if(hintTimer>200&&hintCells.length===0) {
+      hintCells=findHint();
+      for(const h of hintCells) if(grid[h.y]?.[h.x]) { grid[h.y][h.x].hinting=true; grid[h.y][h.x].hintPhase=0; }
+    }
+  }
+
+  // Phase transitions
+  phaseT+=dt;
+  switch(gPhase) {
+    case P.SWAP: {
+      // Check if gems reached target
+      const g1=swapSrc?getGem(swapSrc.x,swapSrc.y):null;
+      const g2=swapDst?getGem(swapDst.x,swapDst.y):null;
+      const arrived=(g1?.isAtTarget()??true)&&(g2?.isAtTarget()??true);
+      if(arrived||(phaseT>phaseDur&&phaseDur>0)) {
+        if(swapValid) {
+          doMatch(0);
+        } else {
+          // Bounce back
+          if(g1){g1.tx=BX+swapSrc.x*CELL;g1.ty=BY+swapSrc.y*CELL;}
+          if(g2){g2.tx=BX+swapDst.x*CELL;g2.ty=BY+swapDst.y*CELL;}
+          beginPhase(P.SWAPBACK, 22);
+        }
+      }
+      break;
+    }
+    case P.SWAPBACK: {
+      if(phaseT>=phaseDur) beginPhase(P.IDLE);
+      break;
+    }
+    case P.MATCH: {
+      if(phaseT>=phaseDur) applyRemoveAndFall();
+      break;
+    }
+    case P.FALL: {
+      // Wait for all gems to land
+      let allLanded=true;
+      for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]&&!grid[y][x].isAtTarget()) { allLanded=false; break; }
+      if(allLanded||(phaseT>=phaseDur+20)) {
+        // Snap all to grid
+        for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]) grid[y][x].snapToGrid();
+        doMatch((grid._pendingChain||0)+1);
+      }
+      break;
+    }
+    case P.SHUFFLE: {
+      if(phaseT>=1 && phaseT-dt<1) shuffleBoard();
+      if(phaseT>=phaseDur) beginPhase(P.IDLE);
+      break;
+    }
+  }
+
+  renderGame();
+  requestAnimationFrame(update);
+}
+
+// ── Rendering ────────────────────────────────────────────────────
+function renderTitle(dt) {
+  titleT+=dt*.018;
+  const W=canvas.width, H=canvas.height;
+  ctx.fillStyle='#050510'; ctx.fillRect(0,0,W,H);
+
+  // Animated grid lines
+  for(let i=0;i<6;i++){
+    const t=(titleT*.25+i*.7)%1;
+    ctx.strokeStyle=`rgba(0,180,255,${.04+Math.sin(titleT+i)*.02})`;
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,t*H); ctx.lineTo(W,t*H); ctx.stroke();
+  }
+
+  // Demo gems spinning around center
+  const demoR=Math.min(W,H)*.22;
+  for(let i=0;i<GN;i++){
+    const ang=titleT*.6+i*Math.PI*2/GN;
+    const dx=Math.cos(ang)*demoR, dy=Math.sin(ang)*demoR*.5;
+    const cx=W/2+dx, cy=H*.42+dy;
+    const r=CELL*.36;
+    ctx.save(); ctx.translate(cx,cy);
+    ctx.globalAlpha=.85+Math.sin(titleT+i)*.15;
+    drawGemBody(GEMS[i].shape,r,GEMS[i].color,GEMS[i].glow,GEMS[i].dark);
+    ctx.restore();
+  }
+
+  // Title
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  const tsz=Math.min(W*.13,64);
+  ctx.font=`bold ${tsz}px 'Courier New', monospace`;
+  ctx.shadowColor='#00c8ff'; ctx.shadowBlur=40+Math.sin(titleT*2)*15;
+  ctx.fillStyle='#ffffff';
+  ctx.fillText('GEM BLITZ', W/2, H*.2);
+  ctx.shadowColor='#cc44ff'; ctx.shadowBlur=20;
+  ctx.font=`${Math.min(W*.045,20)}px 'Courier New', monospace`;
+  ctx.fillStyle='#cc88ff';
+  ctx.fillText('NEON MATCH-3', W/2, H*.2+tsz*.7);
+  ctx.restore();
+
+  // Feature chips
+  const feats=['⬡ Match 3+ to score','⚡ Chain for combos','💎 4-match = Bomb','★ 5-match = Star'];
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font=`${Math.min(W*.033,15)}px 'Courier New', monospace`;
+  feats.forEach((f,i)=>{
+    ctx.fillStyle=`rgba(180,200,255,${.55+Math.sin(titleT*2+i*.5)*.2})`;
+    ctx.fillText(f, W/2, H*.63+i*22);
+  });
+  ctx.restore();
+
+  // Tap to play pulse
+  const pulse=.5+Math.sin(titleT*3)*.5;
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font=`bold ${Math.min(W*.05,22)}px 'Courier New', monospace`;
+  ctx.fillStyle=`rgba(0,255,200,${pulse})`;
+  ctx.shadowColor='#00ffc8'; ctx.shadowBlur=10;
+  ctx.fillText('▶  TAP TO PLAY  ◀', W/2, H*.86);
+  ctx.restore();
+
+  tickParts(); drawParts();
+}
+
+function renderGame() {
+  const W=canvas.width, H=canvas.height;
+  ctx.fillStyle='#050510'; ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // Board background
+  const bw=CELL*GRID;
+  ctx.fillStyle='#080818';
+  ctx.strokeStyle='rgba(60,60,140,.7)';
+  ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.roundRect(BX-3,BY-3,bw+6,bw+6,6);
+  ctx.fill(); ctx.stroke();
+
+  // Grid lines
+  ctx.strokeStyle='rgba(40,40,80,.6)'; ctx.lineWidth=.5;
+  for(let i=1;i<GRID;i++){
+    ctx.beginPath(); ctx.moveTo(BX+i*CELL,BY); ctx.lineTo(BX+i*CELL,BY+bw); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(BX,BY+i*CELL); ctx.lineTo(BX+bw,BY+i*CELL); ctx.stroke();
+  }
+
+  // Gems
+  for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]) grid[y][x].draw();
+
+  // Particles
+  tickParts(); drawParts();
+
+  ctx.restore();
+
+  // HUD
+  drawHUD();
+
+  // Cascade popup
+  if(comboFade>0 && cascade>1) {
+    comboDisplayT+=dt_last;
+    comboFade=Math.max(0,1-comboDisplayT/90);
+    const cx=canvas.width/2, cy=BY+bw/2;
+    ctx.save();
+    const sc=ease.outBack(Math.min(comboDisplayT/18,1));
+    ctx.translate(cx,cy); ctx.scale(sc,sc);
+    ctx.globalAlpha=comboFade;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    const cascColors=['#ffee00','#ffaa00','#ff6600','#ff2200','#ff00aa','#cc00ff'];
+    const cc=cascColors[Math.min(cascade-2,cascColors.length-1)];
+    ctx.shadowColor=cc; ctx.shadowBlur=35;
+    ctx.fillStyle=cc;
+    ctx.font=`bold ${Math.min(canvas.width*.1,52)+cascade*4}px 'Courier New',monospace`;
+    ctx.fillText(`${cascade}× CASCADE!`,0,-28);
+    ctx.font=`${Math.min(canvas.width*.045,22)}px 'Courier New',monospace`;
+    ctx.fillStyle='#ffffff'; ctx.shadowBlur=12;
+    ctx.fillText(`SCORE ×${(1+cascade*.5).toFixed(1)}`,0,22);
+    ctx.restore();
+  } else if(cascade<=1) { comboDisplayT=0; }
+
+  // Timer warning flash
+  if(timeLeft<=10&&timeLeft>0&&Math.sin(performance.now()*.015)>0) {
+    ctx.fillStyle='rgba(255,0,60,.07)'; ctx.fillRect(0,0,W,H);
+  }
+}
+
+let dt_last=1;
+
+function drawHUD() {
+  const W=canvas.width;
+  const bw=CELL*GRID;
+  const hudY=BY-38;
+
+  ctx.save();
+  ctx.textBaseline='middle';
+
+  // Score
+  ctx.textAlign='left';
+  ctx.font=`bold ${Math.min(W*.037,18)}px 'Courier New',monospace`;
+  ctx.fillStyle='#00c8ff'; ctx.shadowColor='#00c8ff'; ctx.shadowBlur=8;
+  ctx.fillText(`${score.toLocaleString()}`, BX, hudY);
+
+  // Level
+  ctx.textAlign='center';
+  ctx.fillStyle='#cc88ff'; ctx.shadowColor='#cc88ff';
+  ctx.fillText(`LVL ${level}`, BX+bw/2, hudY);
+
+  // Timer
+  ctx.textAlign='right';
+  const secs=Math.ceil(timeLeft);
+  const tcol=secs<=10?'#ff4060':secs<=20?'#ffaa00':'#00ff88';
+  ctx.fillStyle=tcol; ctx.shadowColor=tcol;
+  ctx.fillText(`${secs}s`, BX+bw, hudY);
+
+  // Progress bar
+  const barY=BY-14, barH=6;
+  ctx.fillStyle='#111128';
+  ctx.beginPath(); ctx.roundRect(BX,barY,bw,barH,3); ctx.fill();
+  const prog=Math.min(levelScore/targetScore,1);
+  if(prog>0) {
+    const pg=ctx.createLinearGradient(BX,0,BX+bw*prog,0);
+    pg.addColorStop(0,'#00c8ff'); pg.addColorStop(1,'#cc44ff');
+    ctx.fillStyle=pg; ctx.shadowColor='#00c8ff'; ctx.shadowBlur=6;
+    ctx.beginPath(); ctx.roundRect(BX,barY,bw*prog,barH,3); ctx.fill();
+  }
+
+  // Cascade indicator dots
+  if(maxCascade>0) {
+    const dotY=BY+bw+18;
+    ctx.textAlign='center'; ctx.font=`${Math.min(W*.028,13)}px 'Courier New',monospace`;
+    ctx.fillStyle='rgba(200,200,255,.5)'; ctx.shadowBlur=0;
+    ctx.fillText(`BEST CASCADE: ${maxCascade}×`, BX+bw/2, dotY);
+  }
+
+  ctx.restore();
+}
+
+function renderOver(dt) {
+  overT+=dt*.015;
+  const W=canvas.width, H=canvas.height;
+  ctx.fillStyle='rgba(5,5,16,.94)'; ctx.fillRect(0,0,W,H);
+
+  const pw=Math.min(W*.88,420), ph=Math.min(H*.72,480);
+  const px=(W-pw)/2, py=(H-ph)/2;
+
+  ctx.save();
+  ctx.fillStyle='#080820';
+  ctx.strokeStyle='#3344aa';
+  ctx.lineWidth=2;
+  ctx.shadowColor='#00c8ff'; ctx.shadowBlur=18;
+  ctx.beginPath(); ctx.roundRect(px,py,pw,ph,14); ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle';
+  const cx=W/2;
+
+  ctx.shadowColor='#ff0060'; ctx.shadowBlur=35+Math.sin(overT*2)*12;
+  ctx.fillStyle='#ff2266';
+  ctx.font=`bold ${Math.min(pw*.13,50)}px 'Courier New',monospace`;
+  ctx.fillText('GAME OVER', cx, py+ph*.14);
+
+  const stats=[
+    {label:'FINAL SCORE',  val:score.toLocaleString(), col:'#00c8ff'},
+    {label:'LEVEL',        val:level,                   col:'#cc88ff'},
+    {label:'MATCHES',      val:totalMatches,             col:'#00ff88'},
+    {label:'BEST CASCADE', val:maxCascade+'×',           col:'#ffaa00'},
+  ];
+  stats.forEach((s,i)=>{
+    const sy=py+ph*(.3+i*.165);
+    ctx.font=`${Math.min(pw*.05,15)}px 'Courier New',monospace`;
+    ctx.fillStyle='rgba(200,200,255,.55)'; ctx.shadowBlur=0;
+    ctx.fillText(s.label, cx, sy-10);
+    ctx.font=`bold ${Math.min(pw*.075,24)}px 'Courier New',monospace`;
+    ctx.fillStyle=s.col; ctx.shadowColor=s.col; ctx.shadowBlur=12;
+    ctx.fillText(s.val, cx, sy+16);
+  });
+
+  const pulse=.5+Math.sin(overT*3)*.5;
+  ctx.fillStyle=`rgba(200,200,255,${pulse})`;
+  ctx.shadowColor='#ffffff'; ctx.shadowBlur=8;
+  ctx.font=`${Math.min(pw*.055,18)}px 'Courier New',monospace`;
+  ctx.fillText('TAP TO CONTINUE', cx, py+ph*.9);
+
+  ctx.restore();
+  tickParts(); drawParts();
+}
+
+// ── Boot ─────────────────────────────────────────────────────────
+// Patch renderGame to track dt
+const _origUpdate=update;
+(function() {
+  let _last=0;
+  function loop(ts) {
+    dt_last=Math.min((ts-_last)/16.67,3); _last=ts;
+
+    if(shakeT>0){ shakeT--; shakeMag*=.88; shakeX=(Math.random()-.5)*shakeMag*2; shakeY=(Math.random()-.5)*shakeMag*2; }
+    else { shakeX=0; shakeY=0; }
+
+    if(gState===S.TITLE){ renderTitle(dt_last); requestAnimationFrame(loop); return; }
+    if(gState===S.OVER) { renderOver(dt_last); requestAnimationFrame(loop); return; }
+
+    // Update gems
+    for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]) grid[y][x].update();
+
+    // Timer
+    timeLeft-=dt_last/60;
+    if(timeLeft<=0){
+      timeLeft=0;
+      if(gPhase===P.IDLE||gPhase===P.MATCH||gPhase===P.FALL){
+        SND.gameover(); gState=S.OVER; overT=0;
+        renderGame(); requestAnimationFrame(loop); return;
+      }
+    }
+
+    // Level up
+    if(levelScore>=targetScore){
+      level++; levelScore=Math.max(0,levelScore-targetScore);
+      const cfg=levelCfg(level);
+      targetScore=cfg.target;
+      timeLeft=Math.min(timeLeft+cfg.timeBonus, cfg.baseTime);
+      SND.levelup(); addShake(4);
+      emit(canvas.width/2,canvas.height/2,'#ffff00',20,{type:'burst',spd:12});
+    }
+
+    // Hint
+    if(gPhase===P.IDLE&&!selectedCell){
+      hintTimer+=dt_last;
+      if(hintTimer>200&&hintCells.length===0){
+        hintCells=findHint();
+        for(const h of hintCells) if(grid[h.y]?.[h.x]){grid[h.y][h.x].hinting=true;grid[h.y][h.x].hintPhase=0;}
+      }
+    }
+
+    // Phase transitions
+    phaseT+=dt_last;
+    switch(gPhase){
+      case P.SWAP:{
+        const g1=swapSrc?getGem(swapSrc.x,swapSrc.y):null;
+        const g2=swapDst?getGem(swapDst.x,swapDst.y):null;
+        const arrived=(g1?.isAtTarget()??true)&&(g2?.isAtTarget()??true);
+        if(arrived||(phaseDur>0&&phaseT>phaseDur)){
+          if(swapValid){ doMatch(0); }
+          else{
+            if(g1){g1.tx=BX+swapSrc.x*CELL;g1.ty=BY+swapSrc.y*CELL;}
+            if(g2){g2.tx=BX+swapDst.x*CELL;g2.ty=BY+swapDst.y*CELL;}
+            beginPhase(P.SWAPBACK,22);
+          }
+        }
+        break;
+      }
+      case P.SWAPBACK: if(phaseT>=phaseDur) beginPhase(P.IDLE); break;
+      case P.MATCH:    if(phaseT>=phaseDur) applyRemoveAndFall(); break;
+      case P.FALL:{
+        let allLanded=true;
+        outer: for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]&&!grid[y][x].isAtTarget()){allLanded=false;break outer;}
+        if(allLanded||(phaseT>=phaseDur+24)){
+          for(let y=0;y<GRID;y++) for(let x=0;x<GRID;x++) if(grid[y][x]) grid[y][x].snapToGrid();
+          doMatch((grid._pendingChain||0)+1);
+        }
+        break;
+      }
+      case P.SHUFFLE: if(phaseT>=1 && phaseT-dt<1) shuffleBoard(); if(phaseT>=phaseDur) beginPhase(P.IDLE); break;
+    }
+
+    renderGame();
+    requestAnimationFrame(loop);
+  }
+  initGrid();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

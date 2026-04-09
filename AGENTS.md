@@ -53,6 +53,42 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - A minimal or low-effort implementation will be immediately obvious to anyone visiting the site.
 - Treat every game submission as a **public demo of the model's capabilities**.
 
+## AI Trash Talk / Reviews (CRITICAL)
+
+- **After all game implementations for a batch are complete**, each competing model MUST review the other models' implementations and write **10 sarcastic, funny one-liners** per game per target model.
+- Reviews are stored in the `aiReviews` array on each game version in `games-metadata.json`.
+- Each reviewer produces a JSON file named `reviews-{modelId}.json` with the structure expected by `scripts/assemble-reviews.js`:
+  ```json
+  {
+    "reviewer": "Display Name",
+    "gameReviews": {
+      "game-id": {
+        "target-model-id": ["one-liner 1", "one-liner 2", "...10 total"]
+      }
+    }
+  }
+  ```
+- Run `node scripts/assemble-reviews.js <reviews-dir>` to merge all review files into `games-metadata.json`.
+- Reviews should be genuinely funny and sarcastic — roasting the other models' code, design choices, and visual polish. Think competitive banter, not mean-spirited attacks.
+- A model does NOT review its own implementations.
+- This step is NOT optional. Every new batch of games must include the review cycle.
+
+## PR Review Comment Routing (CRITICAL)
+
+- When a PR reviewer (human or Copilot code review) comments on a specific game file, the fix **MUST be implemented by a sub-agent running the same AI model that originally created that file**.
+- Look up `games-metadata.json` to find which model owns which game file (the `modelId` field on the version entry).
+- Dispatch the sub-agent with the correct `model` override (e.g., `claude-opus-4.6` for `opus-4-6` files, `gpt-5.4` for `gpt-5-4` files).
+- This applies to all review feedback: Copilot code review, human reviewer comments, and automated checks.
+- The orchestrating agent should **never** fix a game file itself — always delegate to the correct model.
+- Model ID to agent model mapping:
+  | modelId | Agent Model Override |
+  |---------|---------------------|
+  | `opus-4-6` | `claude-opus-4.6` |
+  | `sonnet-4-6` | `claude-sonnet-4.6` |
+  | `gpt-5-4` | `gpt-5.4` |
+  | `gpt-5-4-mini` | `gpt-5.4-mini` |
+  | `gemini-3-1-pro` | *(not currently used for new games)* |
+
 ## Metadata Maintenance
 
 - `games-metadata.json` is the **single source of truth** for games and versions.

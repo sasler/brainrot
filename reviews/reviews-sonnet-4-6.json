@@ -1,0 +1,81 @@
+{
+  "reviewer": "Claude Sonnet 4.6",
+  "gameReviews": {
+    "tile-matching": {
+      "opus-4-6": [
+        "Those `═══════════════════════` section banners dividing every function block make this look less like source code and more like an annotated manuscript submitted for academic peer review.",
+        "Gem color palettes are stored as `{ m: '#ff1177', g: '#ff4499', l: '#ff88bb' }` — m for 'main,' g for 'glow,' l for 'light,' in a codebase where readability was apparently considered a stretch goal.",
+        "Manually polyfilling `roundRect` in 2024 is noble, unless you're targeting browsers from 2021, in which case you're just ahead of the JavaScript standardization committee's timeline by a few years.",
+        "Six distinct game phases — `PH_IDLE`, `PH_SWAP`, `PH_SWAP_BACK`, `PH_REMOVE`, `PH_FALL`, `PH_SHUFFLE` — is the kind of state machine architecture typically deployed for international airport runway management, not gem swapping.",
+        "A 4.5-second hint delay means the game waits longer before pointing at a valid move than most players spend actually thinking about one — a generous vote of confidence in human spatial reasoning.",
+        "`sfxShuffle` generates 10 random tones between 200 and 700 Hz using `Math.random() * 500` — technically 'procedural audio,' practically 'what happens when birds discover synthesizers.'",
+        "`easeOutBounce` with four nested conditional branches is a physics engine that snuck into a match-3 game file while nobody was watching and decided to stay.",
+        "`wouldMatchInit` validates every tile placement during board generation to prevent accidental starting matches — the precautionary principle applied to recreational gem placement.",
+        "`sfxBadSwap` fires two descending square waves at 200 and 160 Hz — the algorithmically correct sound of 'no, that was wrong, please try again,' rendered in raw oscillators.",
+        "A solo mute emoji button floating in the top-right corner with no styling, no animation, and no friends — doing its best in an otherwise all-canvas world with zero other DOM elements."
+      ],
+      "gpt-5-4": [
+        "Over 600 lines of CSS for the HUD wrapper around a canvas game board that occupies maybe 40% of the screen — architecture as therapy.",
+        "The title screen is a product brochure: four bullet-point feature callouts, two named mode descriptions, and a third card called 'Control Deck' that exists only to fill the grid layout with the controls explanation.",
+        "Tile shapes are defined as diamond, hex, square, triangle, teardrop, circle, and star in `TILE_KINDS` — visually ambitious properties that presumably render differently somewhere in the canvas draw code.",
+        "Every tile gets a `tileIdCounter` ID so each gem has a unique identifier — one step away from issuing them social security numbers and filing quarterly tax returns.",
+        "The `buildMatchPlan` function returns a `clearSet` and a `created` map after computing cross-group special tile intersections — this game has a query planner.",
+        "`ambientRibbons` are six slowly drifting background light elements that add atmosphere approximately zero players will consciously notice but that GPT-5.4 definitely spent time on.",
+        "The introDrone plays three stacked oscillators at 55, 82.4, and 110 Hz on the title screen, fading in over 1.2 seconds — the most elaborate lobby music ever written for a match-3 game.",
+        "The restart button says 'Run It Back' — GPT-5.4 is inexplicably cool about the fact that you just lost.",
+        "The brand pill permanently displays 'BrainRot Games // GPT-5.4' in the top-left HUD during gameplay — in case you needed a reminder mid-match of who spent 600 lines on CSS.",
+        "`movePendingGameOver` and `timerPendingGameOver` are tracked as separate boolean flags, because GPT-5.4 wants to know the precise manner of your impending failure before it processes the loss."
+      ],
+      "gpt-5-4-mini": [
+        "Named the game 'Neon Shard' and set the game over message to 'The reactor went dark' — every failed match-3 session now carries the narrative weight of a nuclear incident.",
+        "Gem types named Astra, Nova, Ion, Volt, Pulse, Ray, Ember, and Cryo appear in the source code `GEM_STYLES` array and in exactly zero places in the visible UI.",
+        "The title screen features three ghost buttons at the bottom — 'Touch Friendly,' 'Sound On,' 'Neon Canvas' — decorative feature badges that assert capabilities rather than activating them.",
+        "The game tracks `totalMatches`, `totalSpecials`, `totalCascades`, and `totalShuffles` on the game over screen, giving players four statistical lenses through which to understand why they lost.",
+        "`placeAmbientSparkles()` scatters 52 randomly positioned sparkles before gameplay begins — like setting up atmospheric lighting for a competitive tile-matching event.",
+        "The `boardFlash` and `boardSpin` variables are initialized to 0 and presumably referenced somewhere, suggesting a spectacular board-wipe animation existing primarily as theoretical potential energy.",
+        "The HUD simultaneously shows 'Multiplier' and 'Chain' in separate chips — two distinct readouts of the same 'you're doing well' signal, for players who appreciate redundancy.",
+        "Timer mode is called 'Chrono' rather than 'Timed' — a single syllable upgrade that makes the game feel 23% more competitive and inexplicably more French.",
+        "The start button says 'Start Run' — every match-3 session is a speedrun when you brand it that way.",
+        "`Sound.ambient(true)` is called in both `showTitle()` and `startGame()`, meaning the ambient drone greets you on the menu, vanishes when you click start, and immediately returns — a drone that misses you the moment you leave."
+      ]
+    },
+    "space-invaders": {
+      "opus-4-6": [
+        "The opening comment describes it as 'A premium arcade experience with procedural audio, particles, neon aesthetics, boss waves, combos, and full touch support' — Opus opened a game file with a press release.",
+        "All three alien types are drawn entirely with `fillRect` calls using `s = Math.min(w, h) / 28` as the base unit — pixel art rendered in coordinate arithmetic, which is either elegantly efficient or slightly unhinged.",
+        "The boss's three shooting phases are encoded in a single inline ternary expression, because fitting a multi-phase escalating difficulty system on one line is the kind of flex that requires no comment block.",
+        "Variable names include `pl`, `gs`, `sx`, `sy`, `aBullets`, `updABounds`, and `drwCrab` — a naming scheme that treats every character as a finite, precious resource that must not be wasted.",
+        "The player spaceship is five canvas path points with swept wings, a thruster triangle, and an ellipse cockpit — more structural geometry than most sprites get across an entire spritesheet.",
+        "`sndBossEntry` fires 10 setTimeout callbacks at 100ms intervals, stacking sawtooth oscillators and noise bursts — a boss entrance theme reverse-engineered from first principles using nothing but raw Web Audio API.",
+        "`spawnPowerUp` drops items with a 15% chance and produces zero feedback when the roll fails — 85% of alien deaths are silent, missed opportunities the universe quietly declines to mention.",
+        "The UFO draws four colored circles from an inline array `['#ff0', '#0ff', '#f0f', '#0f0']` — tiny running lights suggesting the pilot has eclectic taste in onboard illumination choices.",
+        "`alienStepInterval = Math.max(0.15, 0.6 - wave * 0.04)` encodes the entire difficulty curve as a single line of arithmetic — the game becomes genuinely unplayable around wave 11, which the math knew all along.",
+        "Invincibility flicker uses `Math.floor(pl.inv / 5) % 2 === 0` — the mathematically correct blink-on-hit implementation, deployed with the quiet confidence of someone who has written this exact expression in a previous life."
+      ],
+      "gpt-5-4": [
+        "`LOGICAL_WIDTH = 1080, LOGICAL_HEIGHT = 1620` for a Space Invaders game — a canvas 1.5 times taller than it is wide, designed either for vertical phones or a monument to the alien threat.",
+        "The touch movement control is a draggable thumb slider called 'Drift' rather than two buttons, because GPT-5.4 felt Space Invaders needed smoother lateral motion semantics.",
+        "The fire button is labeled 'PULSE' — not 'FIRE,' not 'SHOOT,' but 'PULSE,' which is the one word that makes a shooting button feel like a mindfulness app.",
+        "There's a 'Warm Up Loop' demo button that plays the game automatically so you can observe before committing — the Space Invaders equivalent of a film trailer, for people who need to evaluate the vibe first.",
+        "The game over screen is titled 'Orbital Debrief' with 'Mission Ended' as the subheader — losing in Space Invaders now constitutes a military incident requiring formal after-action documentation.",
+        "Enemy types are named drone, striker, brute, and specter, each with unique HP, fire bias, and shoot speed — GPT-5.4 didn't make Space Invaders, it wrote a military tactical dossier.",
+        "The `statusRibbon` and `tickerLine` are two separate live-text elements providing simultaneous narrative commentary — a dual-channel information feed for a game where you shoot aliens.",
+        "Power-ups are named 'Tri-Shot,' 'Rapid Fire,' 'Aegis Shield,' and 'Vector Boost' — each temporary power-up branded with the gravity of a defense procurement specification.",
+        "The `.touch-thumb` has a gradient with a specular highlight and the `touch-track` has a `::before` center line — this is more design work than I've seen in some commercial mobile game interfaces.",
+        "`transform: skewX(-6deg)` on the title text makes 'SPACE INVADERS' lean forward by six degrees — a choice that says 'this is an action game and even the typography is in motion.'"
+      ],
+      "gpt-5-4-mini": [
+        "The entire CSS is 32 lines with `background: #000` — a stark testament to the philosophy that if the game is good enough, nobody notices the backdrop is just the void.",
+        "Variable names include `C`, `W`, `H`, `sx`, `sy`, `gs`, `GS`, `pl`, `LW`, `LH`, and `pbullets` — navigating this code requires the same skills as reading a personal cipher.",
+        "Alien shapes `drwCrab`, `drwSquid`, and `drwBug` are drawn with the same fillRect coordinate system as Opus 4.6's implementation — two AI models independently converging on identical pixel-art aliens is either convergent evolution or one very good Space Invaders tutorial.",
+        "Power-up labels are '3×', 'RR', 'SH', and 'SP' — abbreviations so compressed they require the source code as a Rosetta Stone to decode what RR and SP actually do.",
+        "`pl.pTimer = 540` hard-codes power-up duration in frames, meaning power-ups last exactly 9 seconds at 60fps and increasingly fewer seconds at any frame rate below that.",
+        "`STARS` is declared in ALL_CAPS as if it's a physical constant on par with the speed of light, when it's really 130 randomly generated background rectangles.",
+        "The UFO draws four colored dots from `['#ff0', '#0ff', '#f0f', '#0f0'].forEach(...)` — the exact same rainbow light array as Opus 4.6's UFO, suggesting the intergalactic fleet runs on shared hardware specs.",
+        "`aMoveInt = Math.max(8, 60 - (wave - 1) * 4)` encodes alien speed as a formula that matches the Opus 4.6 difficulty curve almost exactly — a coincidence so precise it deserves its own investigation.",
+        "Touch controls are three plain HTML circle buttons for left, right, and fire — approximately 90 lines of CSS less than what GPT-5.4 built for functionally equivalent input handling.",
+        "Shooting is gated by `frameN - pl.fTimer < rate` — frame-counting instead of delta time, meaning your fire rate is directly tied to CPU performance, which is the most retro design decision in the whole file."
+      ]
+    }
+  }
+}

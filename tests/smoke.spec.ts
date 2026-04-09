@@ -11,10 +11,10 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     // Tagline
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
-    // Arena section with 10 game cards
+    // Arena section with 12 game cards
     const arena = page.locator("#arena");
     const gameCards = arena.locator('a[href^="/games/"]');
-    await expect(gameCards).toHaveCount(10);
+    await expect(gameCards).toHaveCount(12);
 
     // Game names present in arena section
     await expect(arena.getByText("Snake")).toBeVisible();
@@ -27,6 +27,8 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     await expect(arena.getByText("Marble Madness")).toBeVisible();
     await expect(arena.getByText("3D Maze")).toBeVisible();
     await expect(arena.getByText("Mini Golf 3D")).toBeVisible();
+    await expect(arena.getByText("Tile Matching")).toBeVisible();
+    await expect(arena.getByText("Space Invaders")).toBeVisible();
   });
 
   test("navbar has correct links", async ({ page }) => {
@@ -45,7 +47,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
   });
 
   test("game detail page loads for each game with versions", async ({ page }) => {
-    const games = ["snake", "minesweeper", "tetris", "reversi", "breakout", "2048", "endless-runner", "marble-madness", "maze-3d", "mini-golf"];
+    const games = ["snake", "minesweeper", "tetris", "reversi", "breakout", "2048", "endless-runner", "marble-madness", "maze-3d", "mini-golf", "tile-matching", "space-invaders"];
 
     for (const game of games) {
       await page.goto(`/games/${game}`);
@@ -86,7 +88,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.games).toHaveLength(10);
+    expect(data.games).toHaveLength(12);
     expect(data.games.map((g: { id: string }) => g.id)).toEqual([
       "snake",
       "minesweeper",
@@ -98,6 +100,8 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "marble-madness",
       "maze-3d",
       "mini-golf",
+      "tile-matching",
+      "space-invaders",
     ]);
   });
 

@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tile Matching · BrainRot Games</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100vw;height:100vh;overflow:hidden;background:#050510;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none}
+  canvas{display:block;image-rendering:auto}
+  #muteBtn{position:fixed;top:12px;right:12px;z-index:10;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;width:40px;height:40px;font-size:20px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:background .2s}
+  #muteBtn:hover{background:rgba(255,255,255,0.15)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="muteBtn" title="Toggle sound">🔊</button>
+<script>
+(() => {
+'use strict';
+
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = [r, r, r, r];
+    else if (!Array.isArray(r)) r = [0, 0, 0, 0];
+    const [tl, tr, br, bl] = r;
+    this.moveTo(x + tl, y);
+    this.lineTo(x + w - tr, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + tr);
+    this.lineTo(x + w, y + h - br);
+    this.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+    this.lineTo(x + bl, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - bl);
+    this.lineTo(x, y + tl);
+    this.quadraticCurveTo(x, y, x + tl, y);
+    this.closePath();
+    return this;
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const ROWS = 8, COLS = 8, NUM_TYPES = 7;
+const SWAP_DUR = 0.22, REMOVE_DUR = 0.35, SHUFFLE_DUR = 1.2;
+const HINT_DELAY = 4.5;
+
+const COLORS = [
+  { m: '#ff1177', g: '#ff4499', l: '#ff88bb' },
+  { m: '#00ddff', g: '#33eeff', l: '#88f4ff' },
+  { m: '#00ff77', g: '#44ff99', l: '#88ffbb' },
+  { m: '#ffdd00', g: '#ffee33', l: '#fff088' },
+  { m: '#bb44ff', g: '#cc66ff', l: '#dd99ff' },
+  { m: '#ff7700', g: '#ff9933', l: '#ffbb66' },
+  { m: '#eeeeff', g: '#ddeeff', l: '#ffffff' },
+];
+
+const ST_TITLE = 0, ST_PLAY = 1, ST_OVER = 2;
+const PH_IDLE = 0, PH_SWAP = 1, PH_SWAP_BACK = 2, PH_REMOVE = 3;
+const PH_FALL = 4, PH_SHUFFLE = 5;
+const MODE_TIMED = 0, MODE_MOVES = 1;
+
+// ═══════════════════════════════════════════════════════════════
+//  AUDIO SYSTEM
+// ═══════════════════════════════════════════════════════════════
+let actx = null, muted = false;
+
+function initAudio() {
+  if (actx) {
+    if (actx.state === 'suspended') actx.resume().catch(() => {});
+    return;
+  }
+  try {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') {
+      const r = () => { actx.resume().catch(() => {}); window.removeEventListener('click', r); window.removeEventListener('pointerdown', r); };
+      window.addEventListener('click', r);
+      window.addEventListener('pointerdown', r);
+    }
+  } catch (e) {}
+}
+
+function tone(freq, dur, type, vol, delay) {
+  if (!actx || muted) return;
+  const t = actx.currentTime + (delay || 0);
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(Math.min(vol || 0.12, 0.3), t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g);
+  g.connect(actx.destination);
+  o.start(t);
+  o.stop(t + dur);
+}
+
+function sfxMatch(combo) {
+  const b = 400 + Math.min(combo, 8) * 90;
+  tone(b, 0.18, 'sine', 0.13);
+  tone(b * 1.25, 0.14, 'sine', 0.10, 0.04);
+  tone(b * 1.5, 0.11, 'triangle', 0.08, 0.08);
+  if (combo >= 3) tone(b * 2, 0.1, 'sine', 0.06, 0.12);
+}
+
+function sfxSwap() { tone(330, 0.07, 'sine', 0.08); tone(500, 0.07, 'sine', 0.08, 0.03); }
+function sfxBadSwap() { tone(200, 0.12, 'square', 0.05); tone(160, 0.15, 'square', 0.04, 0.06); }
+
+function sfxSpecial() {
+  for (let i = 0; i < 5; i++) tone(700 + i * 180, 0.12, 'sine', 0.06, i * 0.03);
+}
+
+function sfxBomb() {
+  tone(90, 0.5, 'sawtooth', 0.14);
+  tone(65, 0.55, 'square', 0.08, 0.03);
+  tone(120, 0.3, 'triangle', 0.06, 0.1);
+}
+
+function sfxRainbow() {
+  for (let i = 0; i < 7; i++) tone(300 + i * 110, 0.22, 'sine', 0.055, i * 0.035);
+}
+
+function sfxLightning() {
+  tone(800, 0.05, 'sawtooth', 0.1);
+  tone(1200, 0.04, 'sawtooth', 0.08, 0.03);
+  tone(600, 0.15, 'sine', 0.06, 0.06);
+  tone(1600, 0.03, 'sawtooth', 0.06, 0.08);
+}
+
+function sfxGameOver() {
+  for (let i = 0; i < 5; i++) tone(440 - i * 55, 0.35, 'sine', 0.09, i * 0.2);
+}
+
+function sfxLevelUp() {
+  for (let i = 0; i < 6; i++) tone(400 + i * 130, 0.16, 'sine', 0.09, i * 0.06);
+  tone(1200, 0.4, 'triangle', 0.07, 0.4);
+}
+
+function sfxHint() { tone(900, 0.08, 'sine', 0.04); tone(1100, 0.08, 'sine', 0.04, 0.1); }
+function sfxShuffle() { for (let i = 0; i < 10; i++) tone(200 + Math.random() * 500, 0.08, 'sine', 0.03, i * 0.03); }
+function sfxSelect() { tone(600, 0.05, 'sine', 0.06); }
+
+function sfxStart() {
+  for (let i = 0; i < 4; i++) tone(300 + i * 150, 0.15, 'sine', 0.08, i * 0.08);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CANVAS & LAYOUT
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cellSz, boardX, boardY, boardW, boardH, topBarH, gemR;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  topBarH = Math.max(56, Math.min(80, H * 0.09));
+  const availW = W - 16, availH = H - topBarH - 16;
+  cellSz = Math.floor(Math.min(availW / COLS, availH / ROWS));
+  if (cellSz < 28) cellSz = 28;
+  boardW = cellSz * COLS;
+  boardH = cellSz * ROWS;
+  boardX = Math.floor((W - boardW) / 2);
+  boardY = Math.floor(topBarH + (availH - boardH) / 2 + 8);
+  gemR = cellSz * 0.36;
+}
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════════════════════
+//  EASING & UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function easeOutQuad(t) { return t * (2 - t); }
+function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+function easeOutBack(t) { const c = 1.7; return 1 + (--t) * t * ((c + 1) * t + c); }
+function easeOutBounce(t) {
+  if (t < 1 / 2.75) return 7.5625 * t * t;
+  if (t < 2 / 2.75) return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75;
+  if (t < 2.5 / 2.75) return 7.5625 * (t -= 2.25 / 2.75) * t + 0.9375;
+  return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375;
+}
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
+}
+function rgbStr(c, a) { return `rgba(${c.r},${c.g},${c.b},${a})`; }
+
+// ═══════════════════════════════════════════════════════════════
+//  PARTICLE SYSTEM
+// ═══════════════════════════════════════════════════════════════
+const particles = [];
+const MAX_PARTICLES = 600;
+
+function emit(x, y, color, count, speed) {
+  count = count || 12;
+  speed = speed || 4;
+  for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 0.5 + Math.random() * speed;
+    particles.push({
+      x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+      life: 1, decay: 0.012 + Math.random() * 0.018,
+      sz: 1.5 + Math.random() * 4, color
+    });
+  }
+}
+
+function emitRing(x, y, color, count, radius) {
+  for (let i = 0; i < count && particles.length < MAX_PARTICLES; i++) {
+    const a = (Math.PI * 2 / count) * i;
+    const s = radius || 3;
+    particles.push({
+      x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+      life: 1, decay: 0.02 + Math.random() * 0.01,
+      sz: 2 + Math.random() * 3, color
+    });
+  }
+}
+
+function emitSparkle(x, y, color) {
+  if (particles.length >= MAX_PARTICLES) return;
+  particles.push({
+    x: x + (Math.random() - 0.5) * cellSz * 0.5,
+    y: y + (Math.random() - 0.5) * cellSz * 0.5,
+    vx: (Math.random() - 0.5) * 0.4, vy: -0.2 - Math.random() * 0.6,
+    life: 1, decay: 0.025, sz: 0.8 + Math.random() * 1.5, color
+  });
+}
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.06;
+    p.vx *= 0.99;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  ctx.save();
+  for (const p of particles) {
+    ctx.globalAlpha = p.life * 0.85;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = p.color;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.sz * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FLOATING TEXT
+// ═══════════════════════════════════════════════════════════════
+const floatingTexts = [];
+
+function addFloatingText(x, y, text, color, size) {
+  floatingTexts.push({ x, y, text, color, size: size || 18, life: 1, vy: -1.5 });
+}
+
+function updateFloatingTexts(dt) {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const f = floatingTexts[i];
+    f.y += f.vy;
+    f.life -= 0.015;
+    if (f.life <= 0) floatingTexts.splice(i, 1);
+  }
+}
+
+function drawFloatingTexts() {
+  ctx.save();
+  for (const f of floatingTexts) {
+    ctx.globalAlpha = f.life;
+    ctx.font = `bold ${Math.round(f.size)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = f.color;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = f.color;
+    ctx.fillText(f.text, f.x, f.y);
+  }
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════════
+let state = ST_TITLE;
+let phase = PH_IDLE;
+let gameMode = MODE_TIMED;
+let board = [];
+let score = 0, highScore = 0, level = 1, combo = 0, maxCombo = 0, totalMatches = 0;
+let timer = 90, timerMax = 90, movesLeft = 30, movesMax = 30;
+let selected = null;
+let swapA = null, swapB = null, swapProgress = 0;
+let hintTimer = 0, hintTarget = null;
+let shakeX = 0, shakeY = 0, shakeAmount = 0;
+let comboDisplay = 0, comboDisplayTimer = 0;
+let titleTime = 0, gameOverTime = 0;
+let shuffleTimer = 0, shufflePhase = 0;
+let levelUpTimer = 0;
+let dragStart = null, isDragging = false;
+let scoreDisplay = 0;
+let bgStars = [];
+let titleHoverMode = -1;
+
+function getLevelThreshold(lvl) { return Math.floor(1000 * lvl * lvl); }
+
+// ═══════════════════════════════════════════════════════════════
+//  GEM
+// ═══════════════════════════════════════════════════════════════
+function createGem(type, r, c) {
+  return {
+    type: type,
+    special: null,
+    r: r, c: c,
+    x: c, y: r,
+    targetX: c, targetY: r,
+    scale: 1, alpha: 1,
+    removing: false, removeT: 0,
+    sparkleT: Math.random() * 6,
+    bounceT: 0,
+    flashT: 0,
+    newT: 0,
+  };
+}
+
+function gemPx(gem) { return boardX + gem.x * cellSz + cellSz / 2; }
+function gemPy(gem) { return boardY + gem.y * cellSz + cellSz / 2; }
+
+function updateGem(gem, dt) {
+  const spd = 0.14;
+  gem.x += (gem.targetX - gem.x) * spd;
+  gem.y += (gem.targetY - gem.y) * spd;
+  if (Math.abs(gem.x - gem.targetX) < 0.01) gem.x = gem.targetX;
+  if (Math.abs(gem.y - gem.targetY) < 0.01) gem.y = gem.targetY;
+  gem.sparkleT += dt;
+  if (gem.bounceT > 0) gem.bounceT -= dt * 3;
+  if (gem.flashT > 0) gem.flashT -= dt * 4;
+  if (gem.newT > 0) gem.newT -= dt * 2;
+  if (gem.removing) {
+    gem.removeT += dt / REMOVE_DUR;
+    gem.scale = Math.max(0, 1 - gem.removeT);
+    gem.alpha = gem.scale;
+  }
+}
+
+function gemSettled(gem) {
+  return Math.abs(gem.x - gem.targetX) < 0.02 && Math.abs(gem.y - gem.targetY) < 0.02;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BOARD MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function randType() { return Math.floor(Math.random() * NUM_TYPES); }
+
+function wouldMatchInit(r, c, type) {
+  if (c >= 2 && board[r][c - 1] && board[r][c - 2] &&
+      board[r][c - 1].type === type && board[r][c - 2].type === type) return true;
+  if (r >= 2 && board[r - 1] && board[r - 2] &&
+      board[r - 1][c] && board[r - 2][c] &&
+      board[r - 1][c].type === type && board[r - 2][c].type === type) return true;
+  return false;
+}
+
+function initBoard() {
+  board = [];
+  for (let r = 0; r < ROWS; r++) {
+    board[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      let type;
+      let tries = 0;
+      do { type = randType(); tries++; } while (wouldMatchInit(r, c, type) && tries < 50);
+      board[r][c] = createGem(type, r, c);
+    }
+  }
+}
+
+function startGame(mode) {
+  initAudio();
+  sfxStart();
+  gameMode = mode;
+  score = 0;
+  scoreDisplay = 0;
+  level = 1;
+  combo = 0;
+  maxCombo = 0;
+  totalMatches = 0;
+  timer = timerMax;
+  movesLeft = movesMax;
+  selected = null;
+  hintTimer = 0;
+  hintTarget = null;
+  shakeAmount = 0;
+  comboDisplay = 0;
+  comboDisplayTimer = 0;
+  levelUpTimer = 0;
+  phase = PH_IDLE;
+  state = ST_PLAY;
+  initBoard();
+  while (!hasValidMoves()) initBoard();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MATCH DETECTION
+// ═══════════════════════════════════════════════════════════════
+function findMatchGroups() {
+  const groups = [];
+
+  for (let r = 0; r < ROWS; r++) {
+    let start = 0;
+    for (let c = 1; c <= COLS; c++) {
+      const same = c < COLS && board[r][c] && board[r][start] &&
+        !board[r][c].removing && !board[r][start].removing &&
+        board[r][c].type === board[r][start].type && board[r][c].type >= 0;
+      if (!same) {
+        if (c - start >= 3) {
+          const cells = [];
+          for (let k = start; k < c; k++) cells.push({ r, c: k });
+          groups.push({ cells, dir: 'h', type: board[r][start].type, len: c - start });
+        }
+        start = c;
+      }
+    }
+  }
+
+  for (let c = 0; c < COLS; c++) {
+    let start = 0;
+    for (let r = 1; r <= ROWS; r++) {
+      const same = r < ROWS && board[r][c] && board[start][c] &&
+        !board[r][c].removing && !board[start][c].removing &&
+        board[r][c].type === board[start][c].type && board[r][c].type >= 0;
+      if (!same) {
+        if (r - start >= 3) {
+          const cells = [];
+          for (let k = start; k < r; k++) cells.push({ r: k, c });
+          groups.push({ cells, dir: 'v', type: board[start][c].type, len: r - start });
+        }
+        start = r;
+      }
+    }
+  }
+  return groups;
+}
+
+function getAllMatchedCells(groups) {
+  const s = new Set();
+  for (const g of groups) for (const cell of g.cells) s.add(cell.r * COLS + cell.c);
+  return s;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SPECIAL TILE LOGIC
+// ═══════════════════════════════════════════════════════════════
+function determineSpecials(groups, swappedPos) {
+  const specials = [];
+  const cellGrp = {};
+  for (let gi = 0; gi < groups.length; gi++) {
+    for (const cell of groups[gi].cells) {
+      const k = cell.r * COLS + cell.c;
+      if (!cellGrp[k]) cellGrp[k] = [];
+      cellGrp[k].push(gi);
+    }
+  }
+
+  const usedGrp = new Set();
+
+  // Intersections → lightning
+  for (const [k, gis] of Object.entries(cellGrp)) {
+    if (gis.length >= 2) {
+      const idx = parseInt(k);
+      const r = Math.floor(idx / COLS), c = idx % COLS;
+      if (!usedGrp.has(gis[0]) && !usedGrp.has(gis[1])) {
+        specials.push({ r, c, type: groups[gis[0]].type, special: 'lightning' });
+        for (const gi of gis) usedGrp.add(gi);
+      }
+    }
+  }
+
+  for (let gi = 0; gi < groups.length; gi++) {
+    if (usedGrp.has(gi)) continue;
+    const g = groups[gi];
+    if (g.len >= 5) {
+      const pos = pickSpecialPos(g, swappedPos);
+      specials.push({ r: pos.r, c: pos.c, type: g.type, special: 'rainbow' });
+    } else if (g.len >= 4) {
+      const pos = pickSpecialPos(g, swappedPos);
+      specials.push({ r: pos.r, c: pos.c, type: g.type, special: 'bomb' });
+    }
+  }
+  return specials;
+}
+
+function pickSpecialPos(group, swappedPos) {
+  if (swappedPos) {
+    for (const c of group.cells) {
+      if (c.r === swappedPos.r && c.c === swappedPos.c) return swappedPos;
+    }
+  }
+  return group.cells[Math.floor(group.len / 2)];
+}
+
+function activateSpecial(gem, matchedSet) {
+  const r = gem.r, c = gem.c;
+  if (gem.special === 'bomb') {
+    sfxBomb();
+    for (let dr = -2; dr <= 2; dr++) {
+      for (let dc = -2; dc <= 2; dc++) {
+        if (Math.abs(dr) + Math.abs(dc) > 3) continue;
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+          matchedSet.add(nr * COLS + nc);
+          const g = board[nr][nc];
+          if (g) emit(gemPx(g), gemPy(g), COLORS[g.type >= 0 ? g.type : 0].m, 6, 4);
+        }
+      }
+    }
+    shakeAmount = Math.max(shakeAmount, 10);
+    emit(gemPx(gem), gemPy(gem), '#ff8800', 30, 7);
+  }
+
+  if (gem.special === 'rainbow') {
+    sfxRainbow();
+    const tgt = gem.type;
+    for (let er = 0; er < ROWS; er++) {
+      for (let ec = 0; ec < COLS; ec++) {
+        if (board[er][ec] && board[er][ec].type === tgt && !board[er][ec].removing) {
+          matchedSet.add(er * COLS + ec);
+          emit(gemPx(board[er][ec]), gemPy(board[er][ec]), COLORS[tgt].m, 5, 3);
+        }
+      }
+    }
+    shakeAmount = Math.max(shakeAmount, 12);
+    emit(gemPx(gem), gemPy(gem), '#ffffff', 35, 9);
+  }
+
+  if (gem.special === 'lightning') {
+    sfxLightning();
+    for (let ec = 0; ec < COLS; ec++) {
+      matchedSet.add(r * COLS + ec);
+      if (board[r][ec]) emit(gemPx(board[r][ec]), gemPy(board[r][ec]), '#00ddff', 3, 3);
+    }
+    for (let er = 0; er < ROWS; er++) {
+      matchedSet.add(er * COLS + c);
+      if (board[er][c]) emit(gemPx(board[er][c]), gemPy(board[er][c]), '#00ddff', 3, 3);
+    }
+    shakeAmount = Math.max(shakeAmount, 10);
+    emit(gemPx(gem), gemPy(gem), '#44eeff', 25, 7);
+  }
+}
+
+function expandWithSpecials(matchedSet) {
+  let iter = 0, changed = true;
+  while (changed && iter < 10) {
+    changed = false;
+    iter++;
+    for (const idx of [...matchedSet]) {
+      const r = Math.floor(idx / COLS), c = idx % COLS;
+      const gem = board[r][c];
+      if (gem && gem.special && !gem._actv) {
+        gem._actv = true;
+        const before = matchedSet.size;
+        activateSpecial(gem, matchedSet);
+        if (matchedSet.size > before) changed = true;
+      }
+    }
+  }
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (board[r][c]) delete board[r][c]._actv;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GRAVITY & FILL
+// ═══════════════════════════════════════════════════════════════
+function applyGravity() {
+  for (let c = 0; c < COLS; c++) {
+    let writeRow = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][c] && !board[r][c].removing) {
+        if (r !== writeRow) {
+          board[writeRow][c] = board[r][c];
+          board[writeRow][c].r = writeRow;
+          board[writeRow][c].targetY = writeRow;
+          board[writeRow][c].targetX = c;
+          board[writeRow][c].bounceT = 1;
+          board[r][c] = null;
+        }
+        writeRow--;
+      }
+    }
+    for (let r = writeRow; r >= 0; r--) {
+      const gem = createGem(randType(), r, c);
+      gem.y = r - (writeRow - r + 1) * 1.2 - 1;
+      gem.x = c;
+      gem.newT = 1;
+      board[r][c] = gem;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PHASE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function startSwap(a, b) {
+  swapA = { r: a.r, c: a.c };
+  swapB = { r: b.r, c: b.c };
+  swapProgress = 0;
+  phase = PH_SWAP;
+  sfxSwap();
+  hintTimer = 0;
+  hintTarget = null;
+  selected = null;
+}
+
+function updateSwapAnim(dt) {
+  swapProgress += dt / SWAP_DUR;
+  const gemA = board[swapA.r][swapA.c];
+  const gemB = board[swapB.r][swapB.c];
+  if (!gemA || !gemB) { phase = PH_IDLE; return; }
+
+  if (swapProgress >= 1) {
+    swapProgress = 1;
+    board[swapA.r][swapA.c] = gemB;
+    board[swapB.r][swapB.c] = gemA;
+    gemA.r = swapB.r; gemA.c = swapB.c;
+    gemA.targetX = swapB.c; gemA.targetY = swapB.r;
+    gemA.x = swapB.c; gemA.y = swapB.r;
+    gemB.r = swapA.r; gemB.c = swapA.c;
+    gemB.targetX = swapA.c; gemB.targetY = swapA.r;
+    gemB.x = swapA.c; gemB.y = swapA.r;
+    handleSwapComplete();
+  } else {
+    const t = easeInOutCubic(swapProgress);
+    gemA.x = lerp(swapA.c, swapB.c, t);
+    gemA.y = lerp(swapA.r, swapB.r, t);
+    gemB.x = lerp(swapB.c, swapA.c, t);
+    gemB.y = lerp(swapB.r, swapA.r, t);
+  }
+}
+
+function handleSwapComplete() {
+  const gemA = board[swapA.r][swapA.c];
+  const gemB = board[swapB.r][swapB.c];
+
+  // Rainbow swap special case
+  if (gemA && gemA.special === 'rainbow' && gemB) {
+    activateRainbowSwap(gemA, gemB);
+    return;
+  }
+  if (gemB && gemB.special === 'rainbow' && gemA) {
+    activateRainbowSwap(gemB, gemA);
+    return;
+  }
+
+  const groups = findMatchGroups();
+  if (groups.length > 0) {
+    if (gameMode === MODE_MOVES) movesLeft--;
+    combo = 0;
+    startRemovePhase(groups, swapB);
+  } else {
+    sfxBadSwap();
+    startSwapBack();
+  }
+}
+
+function activateRainbowSwap(rainbow, other) {
+  sfxRainbow();
+  if (gameMode === MODE_MOVES) movesLeft--;
+  const matched = new Set();
+  matched.add(rainbow.r * COLS + rainbow.c);
+  matched.add(other.r * COLS + other.c);
+
+  if (other.special === 'rainbow') {
+    // Rainbow + Rainbow = clear entire board
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (board[r][c] && !board[r][c].removing) matched.add(r * COLS + c);
+      }
+    }
+    shakeAmount = 20;
+    emit(gemPx(rainbow), gemPy(rainbow), '#ffffff', 50, 12);
+    for (let i = 0; i < 7; i++) emitRing(gemPx(rainbow), gemPy(rainbow), COLORS[i].m, 8, 6 + i * 2);
+  } else {
+    const targetType = other.type;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (board[r][c] && board[r][c].type === targetType && !board[r][c].removing) {
+          matched.add(r * COLS + c);
+        }
+      }
+    }
+    shakeAmount = 12;
+  }
+
+  expandWithSpecials(matched);
+
+  const pts = matched.size * 25 * level;
+  score += pts;
+  totalMatches += matched.size;
+  addFloatingText(gemPx(rainbow), gemPy(rainbow), '+' + pts, '#ffffff', 22);
+
+  if (gameMode === MODE_TIMED) timer = Math.min(timerMax, timer + matched.size * 0.3);
+
+  for (const idx of matched) {
+    const r = Math.floor(idx / COLS), c = idx % COLS;
+    const g = board[r][c];
+    if (g) {
+      g.removing = true;
+      g.flashT = 1;
+      emit(gemPx(g), gemPy(g), COLORS[g.type >= 0 ? g.type : 0].m, 10, 5);
+    }
+  }
+
+  shakeAmount = Math.max(shakeAmount, 12);
+  combo = 1;
+  comboDisplay = 1;
+  comboDisplayTimer = 2;
+  phase = PH_REMOVE;
+}
+
+function startSwapBack() {
+  // Simply reverse the swap direction and replay the animation
+  [swapA, swapB] = [swapB, swapA];
+  swapProgress = 0;
+  phase = PH_SWAP_BACK;
+}
+
+function updateSwapBack(dt) {
+  swapProgress += dt / SWAP_DUR;
+  const gemA = board[swapA.r][swapA.c];
+  const gemB = board[swapB.r][swapB.c];
+  if (!gemA || !gemB) { phase = PH_IDLE; return; }
+
+  if (swapProgress >= 1) {
+    // Physically swap the board back to original positions
+    board[swapA.r][swapA.c] = gemB;
+    board[swapB.r][swapB.c] = gemA;
+    gemA.r = swapB.r; gemA.c = swapB.c;
+    gemA.targetX = swapB.c; gemA.targetY = swapB.r;
+    gemA.x = swapB.c; gemA.y = swapB.r;
+    gemB.r = swapA.r; gemB.c = swapA.c;
+    gemB.targetX = swapA.c; gemB.targetY = swapA.r;
+    gemB.x = swapA.c; gemB.y = swapA.r;
+    phase = PH_IDLE;
+  } else {
+    const t = easeInOutCubic(swapProgress);
+    gemA.x = lerp(swapA.c, swapB.c, t);
+    gemA.y = lerp(swapA.r, swapB.r, t);
+    gemB.x = lerp(swapB.c, swapA.c, t);
+    gemB.y = lerp(swapB.r, swapA.r, t);
+  }
+}
+
+function startRemovePhase(groups, swappedPos) {
+  const specials = determineSpecials(groups, swappedPos);
+  const matched = getAllMatchedCells(groups);
+  const specialPos = new Set();
+  for (const sp of specials) specialPos.add(sp.r * COLS + sp.c);
+
+  expandWithSpecials(matched);
+
+  // Don't remove cells where new specials will be created
+  for (const idx of specialPos) matched.delete(idx);
+
+  const matchCount = matched.size;
+  const comboMult = 1 + combo * 0.5;
+  const lvlMult = 1 + (level - 1) * 0.15;
+  const pts = Math.floor(matchCount * 15 * comboMult * lvlMult);
+  score += pts;
+  totalMatches += matchCount;
+
+  if (gameMode === MODE_TIMED) {
+    timer = Math.min(timerMax, timer + matchCount * 0.25 + combo * 0.3);
+  }
+
+  const cx = boardX + boardW / 2, cy = boardY + boardH / 2;
+  let avgX = 0, avgY = 0, count = 0;
+
+  for (const idx of matched) {
+    const r = Math.floor(idx / COLS), c = idx % COLS;
+    const gem = board[r][c];
+    if (gem) {
+      gem.removing = true;
+      gem.flashT = 1;
+      const px = gemPx(gem), py = gemPy(gem);
+      emit(px, py, COLORS[gem.type >= 0 ? gem.type : 0].m, 10, 4);
+      avgX += px; avgY += py; count++;
+    }
+  }
+
+  if (count > 0) {
+    avgX /= count; avgY /= count;
+    addFloatingText(avgX, avgY - cellSz * 0.3, '+' + pts, '#ffffff', Math.min(26, 16 + combo * 2));
+  }
+
+  for (const sp of specials) {
+    const gem = createGem(sp.type, sp.r, sp.c);
+    gem.special = sp.special;
+    gem.newT = 1.5;
+    gem.scale = 0.1;
+    board[sp.r][sp.c] = gem;
+    sfxSpecial();
+    emitRing(gemPx(gem), gemPy(gem), '#ffffff', 16, 4);
+  }
+
+  sfxMatch(combo);
+  combo++;
+  if (combo > maxCombo) maxCombo = combo;
+  comboDisplay = combo;
+  comboDisplayTimer = 2.5;
+  if (combo >= 2) shakeAmount = Math.max(shakeAmount, Math.min(15, combo * 3));
+
+  phase = PH_REMOVE;
+}
+
+function updateRemove(dt) {
+  let allDone = true;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const gem = board[r][c];
+      if (gem && gem.removing && gem.scale > 0) allDone = false;
+    }
+  }
+
+  if (allDone) {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (board[r][c] && board[r][c].removing) board[r][c] = null;
+      }
+    }
+    applyGravity();
+    phase = PH_FALL;
+  }
+}
+
+function updateFall(dt) {
+  let allSettled = true;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c] && !gemSettled(board[r][c])) allSettled = false;
+    }
+  }
+
+  if (allSettled) {
+    // Scale up new specials
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const g = board[r][c];
+        if (g && g.scale < 0.5) g.scale = 1;
+      }
+    }
+
+    const groups = findMatchGroups();
+    if (groups.length > 0) {
+      startRemovePhase(groups, null);
+    } else {
+      combo = 0;
+      checkLevelUp();
+      if (!hasValidMoves()) {
+        startShuffle();
+      } else {
+        phase = PH_IDLE;
+        checkGameOver();
+      }
+    }
+  }
+}
+
+function checkLevelUp() {
+  const threshold = getLevelThreshold(level);
+  if (score >= threshold) {
+    level++;
+    levelUpTimer = 2;
+    sfxLevelUp();
+    if (gameMode === MODE_TIMED) timer = Math.min(timerMax, timer + 10);
+    if (gameMode === MODE_MOVES) movesLeft = Math.min(movesMax, movesLeft + 5);
+    emitRing(W / 2, H / 2, '#ffdd00', 30, 8);
+  }
+}
+
+function checkGameOver() {
+  if (gameMode === MODE_TIMED && timer <= 0) {
+    gameOver();
+  } else if (gameMode === MODE_MOVES && movesLeft <= 0 && phase === PH_IDLE) {
+    gameOver();
+  }
+}
+
+function gameOver() {
+  sfxGameOver();
+  if (score > highScore) highScore = score;
+  state = ST_OVER;
+  gameOverTime = 0;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VALID MOVES, HINTS, SHUFFLE
+// ═══════════════════════════════════════════════════════════════
+function checkMatchAt(r, c) {
+  if (!board[r][c]) return false;
+  const type = board[r][c].type;
+  if (type < 0) return false;
+
+  let cnt = 1;
+  for (let i = c - 1; i >= 0 && board[r][i] && board[r][i].type === type; i--) cnt++;
+  for (let i = c + 1; i < COLS && board[r][i] && board[r][i].type === type; i++) cnt++;
+  if (cnt >= 3) return true;
+
+  cnt = 1;
+  for (let i = r - 1; i >= 0 && board[i][c] && board[i][c].type === type; i--) cnt++;
+  for (let i = r + 1; i < ROWS && board[i][c] && board[i][c].type === type; i++) cnt++;
+  return cnt >= 3;
+}
+
+function wouldMatch(r1, c1, r2, c2) {
+  if (!board[r1][c1] || !board[r2][c2]) return false;
+  // Rainbow always matches
+  if (board[r1][c1].special === 'rainbow' || board[r2][c2].special === 'rainbow') return true;
+
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+  const match = checkMatchAt(r1, c1) || checkMatchAt(r2, c2);
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+  return match;
+}
+
+function hasValidMoves() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (c < COLS - 1 && wouldMatch(r, c, r, c + 1)) return true;
+      if (r < ROWS - 1 && wouldMatch(r, c, r + 1, c)) return true;
+    }
+  }
+  return false;
+}
+
+function findHint() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (c < COLS - 1 && wouldMatch(r, c, r, c + 1)) {
+        hintTarget = { r1: r, c1: c, r2: r, c2: c + 1 };
+        sfxHint();
+        return;
+      }
+      if (r < ROWS - 1 && wouldMatch(r, c, r + 1, c)) {
+        hintTarget = { r1: r, c1: c, r2: r + 1, c2: c };
+        sfxHint();
+        return;
+      }
+    }
+  }
+}
+
+function startShuffle() {
+  sfxShuffle();
+  phase = PH_SHUFFLE;
+  shuffleTimer = SHUFFLE_DUR;
+  shufflePhase = 0;
+  addFloatingText(W / 2, boardY + boardH / 2, 'NO MOVES!', '#ff4444', 28);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c]) {
+        board[r][c].targetX = COLS / 2 - 0.5;
+        board[r][c].targetY = ROWS / 2 - 0.5;
+      }
+    }
+  }
+}
+
+function updateShuffle(dt) {
+  shuffleTimer -= dt;
+  if (shuffleTimer <= SHUFFLE_DUR * 0.4 && shufflePhase === 0) {
+    shufflePhase = 1;
+    initBoard();
+    while (!hasValidMoves()) initBoard();
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (board[r][c]) {
+          board[r][c].x = COLS / 2 - 0.5;
+          board[r][c].y = ROWS / 2 - 0.5;
+        }
+      }
+    }
+  }
+  if (shuffleTimer <= 0) {
+    phase = PH_IDLE;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INPUT HANDLING
+// ═══════════════════════════════════════════════════════════════
+function getCellFromPos(px, py) {
+  const c = Math.floor((px - boardX) / cellSz);
+  const r = Math.floor((py - boardY) / cellSz);
+  if (r >= 0 && r < ROWS && c >= 0 && c < COLS) return { r, c };
+  return null;
+}
+
+function isAdjacent(a, b) {
+  return (Math.abs(a.r - b.r) + Math.abs(a.c - b.c)) === 1;
+}
+
+function handleBoardInput(px, py) {
+  if (phase !== PH_IDLE) return;
+  const cell = getCellFromPos(px, py);
+  if (!cell) { selected = null; return; }
+
+  initAudio();
+
+  if (selected) {
+    if (cell.r === selected.r && cell.c === selected.c) {
+      selected = null;
+      return;
+    }
+    if (isAdjacent(selected, cell)) {
+      startSwap(selected, cell);
+      return;
+    }
+  }
+  selected = { r: cell.r, c: cell.c };
+  sfxSelect();
+  hintTimer = 0;
+  hintTarget = null;
+}
+
+function handleSwipe(fromPx, fromPy, toPx, toPy) {
+  if (phase !== PH_IDLE) return;
+  const cell = getCellFromPos(fromPx, fromPy);
+  if (!cell) return;
+
+  const dx = toPx - fromPx, dy = toPy - fromPy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < cellSz * 0.3) return;
+
+  let dr = 0, dc = 0;
+  if (Math.abs(dx) > Math.abs(dy)) dc = dx > 0 ? 1 : -1;
+  else dr = dy > 0 ? 1 : -1;
+
+  const nr = cell.r + dr, nc = cell.c + dc;
+  if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+    selected = null;
+    startSwap(cell, { r: nr, c: nc });
+  }
+}
+
+// Pointer events for mouse and touch
+let pointerDown = false, pointerStartX = 0, pointerStartY = 0;
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+  pointerDown = true;
+  pointerStartX = px;
+  pointerStartY = py;
+  isDragging = false;
+
+  if (state === ST_TITLE) {
+    handleTitleInput(px, py);
+    return;
+  }
+  if (state === ST_OVER) {
+    if (gameOverTime > 0.8) startGame(gameMode);
+    return;
+  }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  e.preventDefault();
+  if (!pointerDown || state !== ST_PLAY) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+  const dx = px - pointerStartX, dy = py - pointerStartY;
+  if (Math.sqrt(dx * dx + dy * dy) > cellSz * 0.35) {
+    isDragging = true;
+  }
+
+  // Title hover
+  if (state === ST_TITLE) {
+    handleTitleHover(px, py);
+  }
+});
+
+canvas.addEventListener('pointerup', (e) => {
+  e.preventDefault();
+  if (!pointerDown) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+  pointerDown = false;
+
+  if (state !== ST_PLAY) return;
+
+  if (isDragging) {
+    handleSwipe(pointerStartX, pointerStartY, px, py);
+  } else {
+    handleBoardInput(px, py);
+  }
+});
+
+canvas.addEventListener('pointercancel', () => { pointerDown = false; });
+
+// ═══════════════════════════════════════════════════════════════
+//  TITLE SCREEN INPUT
+// ═══════════════════════════════════════════════════════════════
+function handleTitleInput(px, py) {
+  initAudio();
+  const cx = W / 2;
+  const btnY = H * 0.55;
+  const btnW = Math.min(220, W * 0.45);
+  const btnH = 50;
+  const gap = 16;
+
+  // Timed button
+  if (px > cx - btnW - gap / 2 && px < cx - gap / 2 && py > btnY && py < btnY + btnH) {
+    startGame(MODE_TIMED);
+    return;
+  }
+  // Moves button
+  if (px > cx + gap / 2 && px < cx + btnW + gap / 2 && py > btnY && py < btnY + btnH) {
+    startGame(MODE_MOVES);
+    return;
+  }
+}
+
+function handleTitleHover(px, py) {
+  const cx = W / 2;
+  const btnY = H * 0.55;
+  const btnW = Math.min(220, W * 0.45);
+  const btnH = 50;
+  const gap = 16;
+  titleHoverMode = -1;
+  if (px > cx - btnW - gap / 2 && px < cx - gap / 2 && py > btnY && py < btnY + btnH) titleHoverMode = 0;
+  if (px > cx + gap / 2 && px < cx + btnW + gap / 2 && py > btnY && py < btnY + btnH) titleHoverMode = 1;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GEM RENDERING
+// ═══════════════════════════════════════════════════════════════
+function gemPath(type, sz) {
+  const r = sz;
+  ctx.beginPath();
+  switch (type) {
+    case 0: // Diamond
+      ctx.moveTo(0, -r);
+      ctx.lineTo(r * 0.75, 0);
+      ctx.lineTo(0, r);
+      ctx.lineTo(-r * 0.75, 0);
+      ctx.closePath();
+      break;
+    case 1: // Circle
+      ctx.arc(0, 0, r * 0.82, 0, Math.PI * 2);
+      break;
+    case 2: // Hexagon
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 3 * i - Math.PI / 6;
+        i === 0 ? ctx.moveTo(Math.cos(a) * r * 0.82, Math.sin(a) * r * 0.82)
+                 : ctx.lineTo(Math.cos(a) * r * 0.82, Math.sin(a) * r * 0.82);
+      }
+      ctx.closePath();
+      break;
+    case 3: // Star
+      for (let i = 0; i < 10; i++) {
+        const a = Math.PI / 5 * i - Math.PI / 2;
+        const rad = i % 2 === 0 ? r * 0.85 : r * 0.4;
+        i === 0 ? ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad)
+                 : ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+      }
+      ctx.closePath();
+      break;
+    case 4: // Pentagon
+      for (let i = 0; i < 5; i++) {
+        const a = Math.PI * 2 / 5 * i - Math.PI / 2;
+        i === 0 ? ctx.moveTo(Math.cos(a) * r * 0.82, Math.sin(a) * r * 0.82)
+                 : ctx.lineTo(Math.cos(a) * r * 0.82, Math.sin(a) * r * 0.82);
+      }
+      ctx.closePath();
+      break;
+    case 5: // Triangle
+      ctx.moveTo(0, -r * 0.85);
+      ctx.lineTo(r * 0.8, r * 0.55);
+      ctx.lineTo(-r * 0.8, r * 0.55);
+      ctx.closePath();
+      break;
+    case 6: // Cross
+      const w = r * 0.3, h = r * 0.8;
+      ctx.moveTo(-w, -h); ctx.lineTo(w, -h); ctx.lineTo(w, -w);
+      ctx.lineTo(h, -w); ctx.lineTo(h, w); ctx.lineTo(w, w);
+      ctx.lineTo(w, h); ctx.lineTo(-w, h); ctx.lineTo(-w, w);
+      ctx.lineTo(-h, w); ctx.lineTo(-h, -w); ctx.lineTo(-w, -w);
+      ctx.closePath();
+      break;
+  }
+}
+
+function drawGemAt(gem, extraGlow) {
+  if (!gem || gem.alpha <= 0) return;
+  const px = gemPx(gem), py = gemPy(gem);
+  const sz = gemR * gem.scale;
+  const col = COLORS[gem.type >= 0 ? gem.type : 0];
+
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.globalAlpha = gem.alpha;
+
+  // Bounce effect
+  let bScale = 1;
+  if (gem.bounceT > 0) bScale = 1 + Math.sin(gem.bounceT * Math.PI) * 0.12;
+  if (gem.newT > 0) bScale *= 0.5 + 0.5 * easeOutBack(1 - gem.newT);
+  ctx.scale(bScale, bScale);
+
+  // Flash overlay
+  if (gem.flashT > 0) {
+    ctx.shadowBlur = 20 + gem.flashT * 15;
+    ctx.shadowColor = '#ffffff';
+  } else {
+    ctx.shadowBlur = 10 + (extraGlow || 0);
+    ctx.shadowColor = col.m;
+  }
+
+  // Draw shape
+  gemPath(gem.type, sz);
+  const grad = ctx.createRadialGradient(-sz * 0.2, -sz * 0.3, 0, 0, 0, sz);
+  grad.addColorStop(0, col.l);
+  grad.addColorStop(0.5, col.g);
+  grad.addColorStop(1, col.m);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Inner highlight
+  ctx.globalAlpha = gem.alpha * 0.35;
+  gemPath(gem.type, sz * 0.5);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  ctx.globalAlpha = gem.alpha;
+
+  // Special indicators
+  if (gem.special === 'bomb') {
+    const pulse = 0.7 + Math.sin(Date.now() * 0.006) * 0.3;
+    ctx.strokeStyle = '#ff8800';
+    ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#ff8800';
+    ctx.globalAlpha = gem.alpha * pulse;
+    ctx.beginPath();
+    ctx.arc(0, 0, sz * 1.05, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = gem.alpha * pulse * 0.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, sz * 1.2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  if (gem.special === 'rainbow') {
+    const hue = (Date.now() * 0.2) % 360;
+    ctx.strokeStyle = `hsl(${hue}, 100%, 70%)`;
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
+    ctx.globalAlpha = gem.alpha * 0.9;
+    ctx.beginPath();
+    ctx.arc(0, 0, sz * 1.1, 0, Math.PI * 2);
+    ctx.stroke();
+    // Inner rainbow ring
+    ctx.strokeStyle = `hsl(${(hue + 120) % 360}, 100%, 70%)`;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = gem.alpha * 0.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, sz * 0.7, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  if (gem.special === 'lightning') {
+    const t = Date.now() * 0.008;
+    ctx.strokeStyle = '#44eeff';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#00ddff';
+    ctx.globalAlpha = gem.alpha * (0.6 + Math.sin(t * 3) * 0.4);
+    // Draw small lightning bolts
+    for (let i = 0; i < 4; i++) {
+      const a = t + Math.PI * 0.5 * i;
+      const x1 = Math.cos(a) * sz * 0.4, y1 = Math.sin(a) * sz * 0.4;
+      const x2 = Math.cos(a) * sz * 1.2, y2 = Math.sin(a) * sz * 1.2;
+      const mx = (x1 + x2) / 2 + Math.sin(t * 5 + i) * 3;
+      const my = (y1 + y2) / 2 + Math.cos(t * 5 + i) * 3;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(mx, my);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BOARD RENDERING
+// ═══════════════════════════════════════════════════════════════
+function drawBoard() {
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // Board background
+  ctx.fillStyle = 'rgba(10, 10, 30, 0.85)';
+  ctx.strokeStyle = 'rgba(100, 120, 255, 0.15)';
+  ctx.lineWidth = 1;
+  const pad = 4;
+  ctx.beginPath();
+  ctx.roundRect(boardX - pad, boardY - pad, boardW + pad * 2, boardH + pad * 2, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(60, 70, 120, 0.12)';
+  ctx.lineWidth = 0.5;
+  for (let r = 1; r < ROWS; r++) {
+    ctx.beginPath();
+    ctx.moveTo(boardX, boardY + r * cellSz);
+    ctx.lineTo(boardX + boardW, boardY + r * cellSz);
+    ctx.stroke();
+  }
+  for (let c = 1; c < COLS; c++) {
+    ctx.beginPath();
+    ctx.moveTo(boardX + c * cellSz, boardY);
+    ctx.lineTo(boardX + c * cellSz, boardY + boardH);
+    ctx.stroke();
+  }
+
+  // Selected cell highlight
+  if (selected && phase === PH_IDLE) {
+    const sx = boardX + selected.c * cellSz, sy = boardY + selected.r * cellSz;
+    const pulse = 0.5 + Math.sin(Date.now() * 0.005) * 0.3;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${pulse})`;
+    ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+    ctx.beginPath();
+    ctx.roundRect(sx + 2, sy + 2, cellSz - 4, cellSz - 4, 6);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // Hint glow
+  if (hintTarget && phase === PH_IDLE) {
+    const pulse = 0.3 + Math.sin(Date.now() * 0.004) * 0.25;
+    ctx.fillStyle = `rgba(255, 220, 50, ${pulse * 0.3})`;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = 'rgba(255, 220, 50, 0.5)';
+    const h1x = boardX + hintTarget.c1 * cellSz, h1y = boardY + hintTarget.r1 * cellSz;
+    const h2x = boardX + hintTarget.c2 * cellSz, h2y = boardY + hintTarget.r2 * cellSz;
+    ctx.beginPath();
+    ctx.roundRect(h1x + 1, h1y + 1, cellSz - 2, cellSz - 2, 5);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(h2x + 1, h2y + 1, cellSz - 2, cellSz - 2, 5);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Draw gems
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const gem = board[r][c];
+      if (gem) {
+        const isSelected = selected && selected.r === r && selected.c === c;
+        drawGemAt(gem, isSelected ? 15 : 0);
+
+        // Ambient sparkle
+        if (!gem.removing && gem.sparkleT > 2.5 + Math.random() * 0.5 && phase === PH_IDLE) {
+          gem.sparkleT = 0;
+          emitSparkle(gemPx(gem), gemPy(gem), COLORS[gem.type].l);
+        }
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  HUD RENDERING
+// ═══════════════════════════════════════════════════════════════
+function drawHUD() {
+  ctx.save();
+
+  // Score
+  scoreDisplay += (score - scoreDisplay) * 0.1;
+  if (Math.abs(scoreDisplay - score) < 1) scoreDisplay = score;
+
+  ctx.font = `bold ${Math.round(topBarH * 0.38)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = '#00ddff';
+  ctx.fillText(`SCORE: ${Math.round(scoreDisplay)}`, 14, topBarH * 0.52);
+
+  // Level
+  ctx.font = `bold ${Math.round(topBarH * 0.28)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#bbddff';
+  ctx.shadowColor = '#4488ff';
+  ctx.fillText(`LEVEL ${level}`, 14, topBarH * 0.85);
+
+  // Timer or moves
+  ctx.textAlign = 'right';
+  if (gameMode === MODE_TIMED) {
+    const sec = Math.ceil(timer);
+    const timerColor = timer < 10 ? '#ff4444' : timer < 20 ? '#ffaa00' : '#44ff88';
+    ctx.font = `bold ${Math.round(topBarH * 0.38)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = timerColor;
+    ctx.shadowColor = timerColor;
+    ctx.fillText(`⏱ ${sec}s`, W - 14, topBarH * 0.52);
+
+    // Timer bar
+    const barW = Math.min(180, W * 0.25);
+    const barH = 6;
+    const barX = W - 14 - barW, barY = topBarH * 0.7;
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, barW, barH, 3);
+    ctx.fill();
+    const frac = clamp(timer / timerMax, 0, 1);
+    const barCol = timer < 10 ? '#ff4444' : timer < 20 ? '#ffaa00' : '#44ff88';
+    ctx.fillStyle = barCol;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = barCol;
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, barW * frac, barH, 3);
+    ctx.fill();
+  } else {
+    ctx.font = `bold ${Math.round(topBarH * 0.38)}px 'Segoe UI', system-ui, sans-serif`;
+    const movesColor = movesLeft <= 5 ? '#ff4444' : movesLeft <= 10 ? '#ffaa00' : '#44ff88';
+    ctx.fillStyle = movesColor;
+    ctx.shadowColor = movesColor;
+    ctx.fillText(`🎯 ${movesLeft}`, W - 14, topBarH * 0.52);
+  }
+
+  ctx.shadowBlur = 0;
+
+  // Combo display
+  if (comboDisplayTimer > 0 && comboDisplay >= 2) {
+    const alpha = Math.min(1, comboDisplayTimer);
+    const scale = 1 + (comboDisplay - 1) * 0.1;
+    const sz = Math.round(28 * scale);
+    ctx.font = `bold ${sz}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    const comboColor = comboDisplay >= 5 ? '#ff44ff' : comboDisplay >= 3 ? '#ffaa00' : '#44ddff';
+    ctx.fillStyle = comboColor;
+    ctx.globalAlpha = alpha;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = comboColor;
+    ctx.fillText(`${comboDisplay}x COMBO!`, W / 2, boardY - 8);
+    ctx.globalAlpha = 1;
+  }
+
+  // Level up display
+  if (levelUpTimer > 0) {
+    const alpha = Math.min(1, levelUpTimer);
+    ctx.font = `bold 32px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffdd00';
+    ctx.globalAlpha = alpha;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#ffdd00';
+    ctx.fillText(`⬆ LEVEL ${level}!`, W / 2, H / 2);
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TITLE SCREEN
+// ═══════════════════════════════════════════════════════════════
+function initBgStars() {
+  bgStars = [];
+  for (let i = 0; i < 80; i++) {
+    bgStars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      sz: 0.5 + Math.random() * 2,
+      speed: 0.1 + Math.random() * 0.3,
+      hue: Math.random() * 360,
+    });
+  }
+}
+
+function drawBgStars(dt) {
+  for (const s of bgStars) {
+    s.y += s.speed;
+    if (s.y > H) { s.y = -5; s.x = Math.random() * W; }
+    const alpha = 0.3 + Math.sin(titleTime * 2 + s.x * 0.01) * 0.2;
+    ctx.fillStyle = `hsla(${s.hue}, 80%, 70%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.sz, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawTitleScreen(dt) {
+  titleTime += dt;
+
+  // Background
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, W, H);
+  drawBgStars(dt);
+
+  // Floating gems
+  const gemTypes = [0, 1, 2, 3, 4, 5, 6];
+  for (let i = 0; i < 7; i++) {
+    const t = titleTime + i * 1.3;
+    const fx = W * 0.15 + (i / 6) * W * 0.7 + Math.sin(t * 0.7 + i) * 20;
+    const fy = H * 0.2 + Math.sin(t * 0.5 + i * 0.5) * 30;
+    const a = 0.3 + Math.sin(t) * 0.15;
+    ctx.globalAlpha = a;
+    const fakeGem = createGem(gemTypes[i], 0, 0);
+    fakeGem.x = 0; fakeGem.y = 0;
+    ctx.save();
+    ctx.translate(fx, fy);
+    const sz = gemR * 0.6;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = COLORS[gemTypes[i]].m;
+    gemPath(gemTypes[i], sz);
+    const grad = ctx.createRadialGradient(-sz * 0.2, -sz * 0.3, 0, 0, 0, sz);
+    grad.addColorStop(0, COLORS[gemTypes[i]].l);
+    grad.addColorStop(1, COLORS[gemTypes[i]].m);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  // Title
+  const titleSz = Math.min(52, W * 0.1);
+  ctx.font = `bold ${titleSz}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+
+  const glow = 0.6 + Math.sin(titleTime * 2) * 0.3;
+  ctx.shadowBlur = 25 + glow * 15;
+  ctx.shadowColor = `rgba(255, 68, 204, ${glow})`;
+  ctx.fillStyle = '#ff44cc';
+  ctx.fillText('💎 TILE MATCH', W / 2, H * 0.4);
+
+  // Subtitle
+  ctx.font = `${Math.round(titleSz * 0.35)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = 'rgba(200, 200, 255, 0.6)';
+  ctx.shadowBlur = 0;
+  ctx.fillText('Match gems · Chain combos · Beat the clock', W / 2, H * 0.4 + titleSz * 0.7);
+
+  // Mode buttons
+  const cx = W / 2;
+  const btnY = H * 0.55;
+  const btnW = Math.min(200, W * 0.4);
+  const btnH = 48;
+  const gap = 12;
+
+  // Timed button
+  drawButton(cx - btnW - gap / 2, btnY, btnW, btnH, '⏱ TIMED', '#00ddff', titleHoverMode === 0);
+
+  // Moves button
+  drawButton(cx + gap / 2, btnY, btnW, btnH, '🎯 MOVES', '#ff7700', titleHoverMode === 1);
+
+  // Description
+  ctx.font = `${Math.round(13)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = 'rgba(180, 180, 220, 0.5)';
+  ctx.shadowBlur = 0;
+  ctx.fillText('90 seconds', cx - btnW / 2 - gap / 2, btnY + btnH + 22);
+  ctx.fillText('30 moves', cx + btnW / 2 + gap / 2, btnY + btnH + 22);
+
+  // High score
+  if (highScore > 0) {
+    ctx.font = `bold 16px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = '#ffdd00';
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = '#ffdd00';
+    ctx.fillText(`HIGH SCORE: ${highScore}`, cx, H * 0.75);
+  }
+
+  // Instructions
+  ctx.font = `${Math.round(12)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = 'rgba(160, 160, 200, 0.45)';
+  ctx.shadowBlur = 0;
+  ctx.fillText('Tap a gem, then tap an adjacent gem to swap', cx, H * 0.85);
+  ctx.fillText('Or swipe/drag to swap in a direction', cx, H * 0.89);
+}
+
+function drawButton(x, y, w, h, text, color, hover) {
+  ctx.save();
+  const rgb = hexToRgb(color);
+  ctx.fillStyle = hover ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.25)` : `rgba(${rgb.r},${rgb.g},${rgb.b},0.12)`;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = hover ? 2.5 : 1.5;
+  ctx.shadowBlur = hover ? 15 : 8;
+  ctx.shadowColor = color;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 10);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.font = `bold 18px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = color;
+  ctx.fillText(text, x + w / 2, y + h / 2 + 6);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GAME OVER SCREEN
+// ═══════════════════════════════════════════════════════════════
+function drawGameOverScreen(dt) {
+  gameOverTime += dt;
+
+  // Dim background
+  ctx.fillStyle = `rgba(5, 5, 16, ${Math.min(0.8, gameOverTime * 1.5)})`;
+  ctx.fillRect(0, 0, W, H);
+
+  if (gameOverTime < 0.3) return;
+
+  const fade = clamp((gameOverTime - 0.3) * 2, 0, 1);
+  ctx.globalAlpha = fade;
+
+  const cx = W / 2;
+  const sz = Math.min(42, W * 0.08);
+
+  // Title
+  ctx.font = `bold ${sz}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ff4466';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = '#ff4466';
+  ctx.fillText('GAME OVER', cx, H * 0.28);
+
+  // Stats
+  ctx.shadowBlur = 0;
+  ctx.font = `bold ${Math.round(sz * 0.55)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(`SCORE: ${score}`, cx, H * 0.40);
+
+  ctx.font = `${Math.round(sz * 0.4)}px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = '#aabbdd';
+  ctx.fillText(`Level ${level}  ·  Max Combo ${maxCombo}x  ·  ${totalMatches} Gems Matched`, cx, H * 0.47);
+
+  // High score
+  if (score >= highScore && highScore > 0) {
+    ctx.font = `bold ${Math.round(sz * 0.5)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = '#ffdd00';
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#ffdd00';
+    ctx.fillText('🏆 NEW HIGH SCORE! 🏆', cx, H * 0.55);
+    ctx.shadowBlur = 0;
+  }
+
+  // Restart prompt
+  if (gameOverTime > 0.8) {
+    const blink = 0.5 + Math.sin(gameOverTime * 3) * 0.3;
+    ctx.globalAlpha = blink;
+    ctx.font = `bold 18px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = '#88aaff';
+    ctx.fillText('TAP ANYWHERE TO PLAY AGAIN', cx, H * 0.68);
+  }
+
+  ctx.globalAlpha = 1;
+
+  // Background particles
+  if (Math.random() < 0.15) {
+    const hue = Math.random() * 360;
+    emit(
+      Math.random() * W,
+      H + 10,
+      `hsl(${hue}, 80%, 60%)`,
+      2, 2
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN UPDATE & RENDER
+// ═══════════════════════════════════════════════════════════════
+function update(dt) {
+  updateParticles(dt);
+  updateFloatingTexts(dt);
+
+  if (state !== ST_PLAY) return;
+
+  // Update all gems
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c]) updateGem(board[r][c], dt);
+    }
+  }
+
+  // Shake decay
+  if (shakeAmount > 0.1) {
+    shakeX = (Math.random() - 0.5) * shakeAmount;
+    shakeY = (Math.random() - 0.5) * shakeAmount;
+    shakeAmount *= 0.88;
+  } else {
+    shakeX = shakeY = shakeAmount = 0;
+  }
+
+  // Level up timer
+  if (levelUpTimer > 0) levelUpTimer -= dt;
+
+  // Combo display timer
+  if (comboDisplayTimer > 0) comboDisplayTimer -= dt;
+
+  // Phase-specific updates
+  switch (phase) {
+    case PH_SWAP:
+      updateSwapAnim(dt);
+      break;
+    case PH_SWAP_BACK:
+      updateSwapBack(dt);
+      break;
+    case PH_REMOVE:
+      updateRemove(dt);
+      break;
+    case PH_FALL:
+      updateFall(dt);
+      break;
+    case PH_SHUFFLE:
+      updateShuffle(dt);
+      break;
+    case PH_IDLE:
+      // Timer countdown
+      if (gameMode === MODE_TIMED) {
+        timer -= dt;
+        if (timer <= 0) { timer = 0; gameOver(); return; }
+      }
+
+      // Hint
+      hintTimer += dt;
+      if (hintTimer > HINT_DELAY && !hintTarget) {
+        findHint();
+      }
+
+      // Check for game over (moves)
+      if (gameMode === MODE_MOVES && movesLeft <= 0) {
+        gameOver();
+      }
+      break;
+  }
+}
+
+function render(dt) {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, W, H);
+
+  if (state === ST_TITLE) {
+    drawTitleScreen(dt);
+    drawParticles();
+    return;
+  }
+
+  if (state === ST_PLAY) {
+    drawBoard();
+    drawParticles();
+    drawFloatingTexts();
+    drawHUD();
+  }
+
+  if (state === ST_OVER) {
+    drawBoard();
+    drawParticles();
+    drawFloatingTexts();
+    drawHUD();
+    drawGameOverScreen(dt);
+  }
+}
+
+let prevTime = 0;
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - prevTime) / 1000, 0.05);
+  prevTime = timestamp;
+
+  update(dt);
+  render(dt);
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MUTE BUTTON
+// ═══════════════════════════════════════════════════════════════
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  initAudio();
+  muted = !muted;
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  INITIALIZATION
+// ═══════════════════════════════════════════════════════════════
+resize();
+initBgStars();
+requestAnimationFrame(gameLoop);
+
+})();
+</script>
+</body>
+</html>
