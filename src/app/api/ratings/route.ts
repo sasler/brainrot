@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getGame, getGames } from "@/lib/games";
-
-function kvAvailable() {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-}
-
-async function getRedis() {
-  if (!kvAvailable()) return null;
-  const { Redis } = await import("@upstash/redis");
-  return new Redis({
-    url: process.env.KV_REST_API_URL!,
-    token: process.env.KV_REST_API_TOKEN!,
-  });
-}
+import {
+  getRatingsRedisClient,
+  getRatingsStorageState,
+  withRatingsStorageFailure,
+} from "@/lib/ratings";
+import type { RatingsStorageState } from "@/lib/ratings-types";
 
 async function getOrCreateVoterId(): Promise<string> {
   const cookieStore = await cookies();
@@ -32,8 +25,17 @@ async function getOrCreateVoterId(): Promise<string> {
 }
 
 export async function GET(request: NextRequest) {
-  const redis = await getRedis();
-  if (!redis) return NextResponse.json({ ratings: {} });
+  const storage: RatingsStorageState = getRatingsStorageState();
+  const redis = await getRatingsRedisClient("read");
+  if (!redis) {
+    return NextResponse.json({
+      ratings: {},
+      storage: withRatingsStorageFailure(
+        storage,
+        "Ratings storage is temporarily unavailable.",
+      ),
+    });
+  }
 
   try {
     const { searchParams } = request.nextUrl;
@@ -55,20 +57,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (keys.length === 0) return NextResponse.json({ ratings: {} });
+    if (keys.length === 0) return NextResponse.json({ ratings: {}, storage });
 
-    const pipeline = redis.pipeline();
-    for (const key of keys) {
-      pipeline.hgetall(key);
-    }
-    const results = await pipeline.exec();
+    const results = await redis.hgetallMany<{
+      totalStars?: number;
+      voteCount?: number;
+    }>(keys);
 
     const ratings: Record<string, { average: number; count: number }> = {};
     for (let i = 0; i < keys.length; i++) {
-      const data = results[i] as {
-        totalStars?: number;
-        voteCount?: number;
-      } | null;
+      const data = results[i];
       if (data && data.voteCount && data.voteCount > 0) {
         ratings[keyMap[i]] = {
           average:
@@ -78,17 +76,34 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ratings });
+    return NextResponse.json({ ratings, storage });
   } catch {
-    return NextResponse.json({ ratings: {} });
+    return NextResponse.json(
+      {
+        ratings: {},
+        storage: withRatingsStorageFailure(
+          storage,
+          "Failed to load ratings from storage.",
+        ),
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
-  const redis = await getRedis();
+  const storage: RatingsStorageState = getRatingsStorageState();
+  const redis = await getRatingsRedisClient("write");
   if (!redis) {
     return NextResponse.json(
-      { error: "Ratings not configured" },
+      {
+        error:
+          storage.reason ?? "Ratings storage is temporarily unavailable.",
+        storage: withRatingsStorageFailure(
+          storage,
+          "Ratings storage is temporarily unavailable.",
+        ),
+      },
       { status: 503 },
     );
   }
@@ -98,11 +113,14 @@ export async function POST(request: NextRequest) {
     const { gameId, modelId, stars } = body;
 
     if (!gameId || !modelId || stars === undefined) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing fields", storage },
+        { status: 400 },
+      );
     }
     if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
       return NextResponse.json(
-        { error: "Stars must be integer 1-5" },
+        { error: "Stars must be integer 1-5", storage },
         { status: 400 },
       );
     }
@@ -110,7 +128,7 @@ export async function POST(request: NextRequest) {
     const game = getGame(gameId);
     if (!game || !game.versions.find((v) => v.modelId === modelId)) {
       return NextResponse.json(
-        { error: "Invalid game or model" },
+        { error: "Invalid game or model", storage },
         { status: 400 },
       );
     }
@@ -119,7 +137,7 @@ export async function POST(request: NextRequest) {
     const voteKey = `vote:${voterId}:${gameId}:${modelId}`;
     const ratingKey = `rating:${gameId}:${modelId}`;
 
-    const existingStars = await redis.get<number>(voteKey);
+    const existingStars = await redis.get(voteKey);
 
     if (existingStars !== null) {
       const delta = stars - existingStars;
@@ -145,10 +163,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       rating: { average, count: data?.voteCount ?? 0 },
       userVote: stars,
+      storage,
     });
   } catch {
     return NextResponse.json(
-      { error: "Failed to submit rating" },
+      {
+        error: "Failed to submit rating",
+        storage: withRatingsStorageFailure(storage, "Failed to submit rating."),
+      },
       { status: 500 },
     );
   }

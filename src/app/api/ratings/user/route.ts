@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getGame, getGames } from "@/lib/games";
-
-function kvAvailable() {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-}
-
-async function getRedis() {
-  if (!kvAvailable()) return null;
-  const { Redis } = await import("@upstash/redis");
-  return new Redis({
-    url: process.env.KV_REST_API_URL!,
-    token: process.env.KV_REST_API_TOKEN!,
-  });
-}
+import {
+  getRatingsRedisClient,
+  getRatingsStorageState,
+  withRatingsStorageFailure,
+} from "@/lib/ratings";
+import type { RatingsStorageState } from "@/lib/ratings-types";
 
 export async function GET(request: NextRequest) {
-  const redis = await getRedis();
-  if (!redis) return NextResponse.json({ votes: {} });
+  const storage: RatingsStorageState = getRatingsStorageState();
+  const redis = await getRatingsRedisClient("read");
+  if (!redis) {
+    return NextResponse.json({
+      votes: {},
+      storage: withRatingsStorageFailure(
+        storage,
+        "Ratings storage is temporarily unavailable.",
+      ),
+    });
+  }
 
   try {
     const cookieStore = await cookies();
     const voterCookie = cookieStore.get("brainrot_voter");
-    if (!voterCookie) return NextResponse.json({ votes: {} });
+    if (!voterCookie) return NextResponse.json({ votes: {}, storage });
 
     const voterId = voterCookie.value;
     const { searchParams } = request.nextUrl;
@@ -44,24 +46,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (keys.length === 0) return NextResponse.json({ votes: {} });
+    if (keys.length === 0) return NextResponse.json({ votes: {}, storage });
 
-    const pipeline = redis.pipeline();
-    for (const key of keys) {
-      pipeline.get(key);
-    }
-    const results = await pipeline.exec();
+    const results = await redis.getMany(keys);
 
     const votes: Record<string, number> = {};
     for (let i = 0; i < keys.length; i++) {
-      const stars = results[i] as number | null;
+      const stars = results[i];
       if (stars !== null) {
         votes[keyMap[i]] = stars;
       }
     }
 
-    return NextResponse.json({ votes });
+    return NextResponse.json({ votes, storage });
   } catch {
-    return NextResponse.json({ votes: {} });
+    return NextResponse.json(
+      {
+        votes: {},
+        storage: withRatingsStorageFailure(
+          storage,
+          "Failed to load user votes from storage.",
+        ),
+      },
+      { status: 500 },
+    );
   }
 }
