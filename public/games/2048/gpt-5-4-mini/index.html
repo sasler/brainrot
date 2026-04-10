@@ -475,6 +475,7 @@ function showOverlay(text, isWin) {
 }
 
 function render() {
+  if (!grid) return;
   document.getElementById('score-display').textContent = score;
   const layer = document.getElementById('tile-layer');
   layer.innerHTML = '';
@@ -533,7 +534,7 @@ document.addEventListener('touchend', e => {
 });
 
 // Re-render on resize
-window.addEventListener('resize', () => { if (!gameOver || won) render(); });
+window.addEventListener('resize', () => { if (grid && (!gameOver || won)) render(); });
 </script>
 </body>
 </html>

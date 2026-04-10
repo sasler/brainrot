@@ -14,7 +14,7 @@ export default function RatingInput({
   modelId,
   accentColor = "var(--neon-amber)",
 }: RatingInputProps) {
-  const { rating, userVote, loading, submit } = useVersionRating(
+  const { rating, userVote, storage, loading, submitError, submit } = useVersionRating(
     gameId,
     modelId,
   );
@@ -30,9 +30,10 @@ export default function RatingInput({
   }
 
   const displayStars = hovered || userVote || 0;
+  const ratingDisabled = submitting || (storage !== null && !storage.writable);
 
   async function handleClick(stars: number) {
-    if (submitting) return;
+    if (ratingDisabled) return;
     setSubmitting(true);
     await submit(stars);
     setSubmitting(false);
@@ -46,8 +47,8 @@ export default function RatingInput({
           <button
             key={star}
             type="button"
-            disabled={submitting}
-            className="cursor-pointer p-0.5 transition-transform hover:scale-110 disabled:cursor-wait"
+            disabled={ratingDisabled}
+            className="cursor-pointer p-0.5 transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-60"
             onMouseEnter={() => setHovered(star)}
             onMouseLeave={() => setHovered(0)}
             onClick={() => handleClick(star)}
@@ -74,9 +75,13 @@ export default function RatingInput({
             </svg>
           </button>
         ))}
-      </div>
+        </div>
 
-      {rating && (
+      {storage && !storage.writable ? (
+        <span className="font-mono text-[11px] text-foreground/45">
+          {storage.reason}
+        </span>
+      ) : rating ? (
         <span className="font-mono text-[11px] text-foreground/40">
           {rating.average.toFixed(1)} avg · {rating.count}{" "}
           {rating.count === 1 ? "vote" : "votes"}
@@ -86,11 +91,15 @@ export default function RatingInput({
             </span>
           )}
         </span>
-      )}
-
-      {!rating && userVote && (
+      ) : !rating && userVote ? (
         <span className="font-mono text-[11px]" style={{ color: accentColor }}>
           You rated: {userVote}★
+        </span>
+      ) : null}
+
+      {submitError && (
+        <span className="font-mono text-[11px] text-rose-300/90">
+          {submitError}
         </span>
       )}
     </div>

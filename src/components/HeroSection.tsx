@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function HeroSection() {
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time post-hydration animation flag
   useEffect(() => setMounted(true), []);
 
   return (

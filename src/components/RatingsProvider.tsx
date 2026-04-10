@@ -14,10 +14,19 @@ export interface RatingData {
   count: number;
 }
 
+export interface RatingsStorageState {
+  available: boolean;
+  writable: boolean;
+  reason: string | null;
+  missingEnvVars: string[];
+}
+
 interface RatingsContextValue {
   ratings: Record<string, RatingData>;
   userVotes: Record<string, number>;
+  storage: RatingsStorageState | null;
   loading: boolean;
+  submitError: string | null;
   submitRating: (
     gameId: string,
     modelId: string,
@@ -28,7 +37,9 @@ interface RatingsContextValue {
 const RatingsContext = createContext<RatingsContextValue>({
   ratings: {},
   userVotes: {},
+  storage: null,
   loading: true,
+  submitError: null,
   submitRating: async () => {},
 });
 
@@ -37,12 +48,15 @@ export function useRatings() {
 }
 
 export function useVersionRating(gameId: string, modelId: string) {
-  const { ratings, userVotes, loading, submitRating } = useRatings();
+  const { ratings, userVotes, storage, loading, submitError, submitRating } =
+    useRatings();
   const key = `${gameId}:${modelId}`;
   return {
     rating: ratings[key] ?? null,
     userVote: userVotes[key] ?? null,
+    storage,
     loading,
+    submitError,
     submit: (stars: number) => submitRating(gameId, modelId, stars),
   };
 }
@@ -68,29 +82,69 @@ export default function RatingsProvider({
   children,
   gameId,
 }: RatingsProviderProps) {
+  const scopeKey = gameId ?? "__all__";
   const [ratings, setRatings] = useState<Record<string, RatingData>>({});
   const [userVotes, setUserVotes] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
+  const [storage, setStorage] = useState<RatingsStorageState | null>(null);
+  const [loadedScope, setLoadedScope] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const loading = loadedScope !== scopeKey;
 
   useEffect(() => {
     const qs = gameId ? `?gameId=${gameId}` : "";
     Promise.all([
       fetch(`/api/ratings${qs}`)
         .then((r) => r.json())
-        .catch(() => ({ ratings: {} })),
+        .catch(
+          () =>
+            ({
+              ratings: {},
+              storage: {
+                available: false,
+                writable: false,
+                reason: "Ratings API is unavailable right now.",
+                missingEnvVars: [],
+              },
+            }) as {
+              ratings: Record<string, RatingData>;
+              storage: RatingsStorageState;
+            },
+        ),
       fetch(`/api/ratings/user${qs}`)
         .then((r) => r.json())
-        .catch(() => ({ votes: {} })),
+        .catch(
+          () =>
+            ({
+              votes: {},
+              storage: {
+                available: false,
+                writable: false,
+                reason: "Ratings API is unavailable right now.",
+                missingEnvVars: [],
+              },
+            }) as {
+              votes: Record<string, number>;
+              storage: RatingsStorageState;
+            },
+        ),
     ]).then(([ratingsRes, votesRes]) => {
       setRatings(ratingsRes.ratings ?? {});
       setUserVotes(votesRes.votes ?? {});
-      setLoading(false);
+      setStorage(ratingsRes.storage ?? votesRes.storage ?? null);
+      setSubmitError(null);
+      setLoadedScope(scopeKey);
     });
-  }, [gameId]);
+  }, [gameId, scopeKey]);
 
   const submitRating = useCallback(
     async (gId: string, modelId: string, stars: number) => {
       const key = `${gId}:${modelId}`;
+      setSubmitError(null);
+
+      if (storage && !storage.writable) {
+        setSubmitError(storage.reason ?? "Ratings are unavailable right now.");
+        return;
+      }
 
       // Snapshot previous state for rollback
       const prevVote = userVotes[key];
@@ -130,7 +184,13 @@ export default function RatingsProvider({
             ...prev,
             [key]: data.rating,
           }));
+          setStorage(data.storage ?? storage);
         } else {
+          const data = (await res.json().catch(() => null)) as
+            | { error?: string; storage?: RatingsStorageState }
+            | null;
+          setStorage(data?.storage ?? storage);
+          setSubmitError(data?.error ?? "Failed to submit rating.");
           // Revert optimistic update on server error
           setUserVotes((prev) => {
             const next = { ...prev };
@@ -149,6 +209,7 @@ export default function RatingsProvider({
           }
         }
       } catch {
+        setSubmitError("Failed to submit rating.");
         // Revert on network failure
         setUserVotes((prev) => {
           const next = { ...prev };
@@ -167,11 +228,20 @@ export default function RatingsProvider({
         }
       }
     },
-    [gameId, userVotes, ratings],
+    [ratings, storage, userVotes],
   );
 
   return (
-    <RatingsContext value={{ ratings, userVotes, loading, submitRating }}>
+    <RatingsContext
+      value={{
+        ratings,
+        userVotes,
+        storage,
+        loading,
+        submitError,
+        submitRating,
+      }}
+    >
       {children}
     </RatingsContext>
   );

@@ -16,19 +16,55 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     const gameCards = arena.locator('a[href^="/games/"]');
     await expect(gameCards).toHaveCount(12);
 
-    // Game names present in arena section
-    await expect(arena.getByText("Snake")).toBeVisible();
-    await expect(arena.getByText("Minesweeper")).toBeVisible();
-    await expect(arena.getByText("Tetris")).toBeVisible();
-    await expect(arena.getByText("Reversi")).toBeVisible();
-    await expect(arena.getByText("Breakout")).toBeVisible();
-    await expect(arena.getByText("2048", { exact: true }).first()).toBeVisible();
-    await expect(arena.getByText("Endless Runner")).toBeVisible();
-    await expect(arena.getByText("Marble Madness")).toBeVisible();
-    await expect(arena.getByText("3D Maze")).toBeVisible();
-    await expect(arena.getByText("Mini Golf 3D")).toBeVisible();
-    await expect(arena.getByText("Tile Matching")).toBeVisible();
-    await expect(arena.getByText("Space Invaders")).toBeVisible();
+    // Game card titles present in arena section
+    await expect(
+      arena.locator('a[href="/games/snake"]').getByRole("heading", { name: "Snake" }),
+    ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/minesweeper"]')
+        .getByRole("heading", { name: "Minesweeper" }),
+    ).toBeVisible();
+    await expect(
+      arena.locator('a[href="/games/tetris"]').getByRole("heading", { name: "Tetris" }),
+    ).toBeVisible();
+    await expect(
+      arena.locator('a[href="/games/reversi"]').getByRole("heading", { name: "Reversi" }),
+    ).toBeVisible();
+    await expect(
+      arena.locator('a[href="/games/breakout"]').getByRole("heading", { name: "Breakout" }),
+    ).toBeVisible();
+    await expect(
+      arena.locator('a[href="/games/2048"]').getByRole("heading", { name: "2048" }),
+    ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/endless-runner"]')
+        .getByRole("heading", { name: "Endless Runner" }),
+    ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/marble-madness"]')
+        .getByRole("heading", { name: "Marble Madness" }),
+    ).toBeVisible();
+    await expect(
+      arena.locator('a[href="/games/maze-3d"]').getByRole("heading", { name: "3D Maze" }),
+    ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/mini-golf"]')
+        .getByRole("heading", { name: "Mini Golf 3D" }),
+    ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/tile-matching"]')
+        .getByRole("heading", { name: "Tile Matching" }),
+    ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/space-invaders"]')
+        .getByRole("heading", { name: "Space Invaders" }),
+    ).toBeVisible();
   });
 
   test("navbar has correct links", async ({ page }) => {

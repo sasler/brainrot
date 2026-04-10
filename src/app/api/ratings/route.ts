@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getGame, getGames } from "@/lib/games";
-
-function kvAvailable() {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
-}
-
-async function getRedis() {
-  if (!kvAvailable()) return null;
-  const { Redis } = await import("@upstash/redis");
-  return new Redis({
-    url: process.env.KV_REST_API_URL!,
-    token: process.env.KV_REST_API_TOKEN!,
-  });
-}
+import { getRatingsRedisClient, getRatingsStorageState } from "@/lib/ratings";
 
 async function getOrCreateVoterId(): Promise<string> {
   const cookieStore = await cookies();
@@ -32,8 +20,9 @@ async function getOrCreateVoterId(): Promise<string> {
 }
 
 export async function GET(request: NextRequest) {
-  const redis = await getRedis();
-  if (!redis) return NextResponse.json({ ratings: {} });
+  const storage = getRatingsStorageState();
+  const redis = await getRatingsRedisClient("read");
+  if (!redis) return NextResponse.json({ ratings: {}, storage });
 
   try {
     const { searchParams } = request.nextUrl;
@@ -57,18 +46,14 @@ export async function GET(request: NextRequest) {
 
     if (keys.length === 0) return NextResponse.json({ ratings: {} });
 
-    const pipeline = redis.pipeline();
-    for (const key of keys) {
-      pipeline.hgetall(key);
-    }
-    const results = await pipeline.exec();
+    const results = await redis.hgetallMany<{
+      totalStars?: number;
+      voteCount?: number;
+    }>(keys);
 
     const ratings: Record<string, { average: number; count: number }> = {};
     for (let i = 0; i < keys.length; i++) {
-      const data = results[i] as {
-        totalStars?: number;
-        voteCount?: number;
-      } | null;
+      const data = results[i];
       if (data && data.voteCount && data.voteCount > 0) {
         ratings[keyMap[i]] = {
           average:
@@ -78,17 +63,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ratings });
+    return NextResponse.json({ ratings, storage });
   } catch {
-    return NextResponse.json({ ratings: {} });
+    return NextResponse.json(
+      {
+        ratings: {},
+        storage: {
+          ...storage,
+          reason: storage.reason ?? "Failed to load ratings from storage.",
+        },
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
-  const redis = await getRedis();
+  const storage = getRatingsStorageState();
+  const redis = await getRatingsRedisClient("write");
   if (!redis) {
     return NextResponse.json(
-      { error: "Ratings not configured" },
+      {
+        error: storage.reason ?? "Ratings not configured",
+        storage,
+      },
       { status: 503 },
     );
   }
@@ -119,7 +117,7 @@ export async function POST(request: NextRequest) {
     const voteKey = `vote:${voterId}:${gameId}:${modelId}`;
     const ratingKey = `rating:${gameId}:${modelId}`;
 
-    const existingStars = await redis.get<number>(voteKey);
+    const existingStars = await redis.get(voteKey);
 
     if (existingStars !== null) {
       const delta = stars - existingStars;
@@ -145,10 +143,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       rating: { average, count: data?.voteCount ?? 0 },
       userVote: stars,
+      storage,
     });
   } catch {
     return NextResponse.json(
-      { error: "Failed to submit rating" },
+      {
+        error: "Failed to submit rating",
+        storage,
+      },
       { status: 500 },
     );
   }
