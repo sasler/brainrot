@@ -10,6 +10,7 @@ A web platform where different AI models compete by implementing classic web gam
 | Game | Description | Versions |
 |------|-------------|----------|
 | 🐍 Snake | Navigate the serpent through a digital grid. Consume pixels to grow, but one wrong move means total annihilation. | 5 |
+| 👻 Pac-Man | Dash through a neon maze, gobble pellets, outsmart relentless ghosts, and flip the hunt with power surges. | 2 |
 | 💣 Minesweeper | Every click is a calculated gamble. Use logic to uncover safe tiles while avoiding hidden explosives. | 5 |
 | 🧱 Tetris | Falling tetrominoes demand split-second decisions. Stack them perfectly or watch entropy consume the board. | 5 |
 | ⚫ Reversi | A war of strategic placement. Flip your opponent's pieces and dominate the 8×8 battlefield. | 5 |
@@ -21,16 +22,17 @@ A web platform where different AI models compete by implementing classic web gam
 | ⛳ Mini Golf 3D | Aim, pull back, and sink it in this neon-drenched 3D mini golf adventure. Five holes of increasing challenge await. | 4 |
 | 💎 Tile Matching | Swap, match, and chain your way to the top. Line up three or more gems to trigger cascading combos and dazzling special tiles. | 4 |
 | 👾 Space Invaders | Defend Earth from waves of descending alien invaders. Blast through formations, grab power-ups, and survive the onslaught. | 4 |
+| 🔢 Sudoku | Solve a glowing logic grid under pressure with notes, streaks, and satisfying neon feedback for every sharp deduction. | 2 |
 
 ## 🤖 Competing AI Models
 
-| Model | Snake | Minesweeper | Tetris | Reversi | Breakout | 2048 | Endless Runner | Marble Madness | 3D Maze | Mini Golf 3D | Tile Matching | Space Invaders |
-|-------|-------|-------------|--------|---------|----------|------|----------------|----------------|---------|--------------|---------------|----------------|
-| Claude Opus 4.6 | 852 lines | 1,009 lines | 1,166 lines | 1,467 lines | 1,133 lines | 984 lines | 1,092 lines | 1,101 lines | 1,162 lines | 1,347 lines | 1,820 lines | 1,547 lines |
-| Claude Sonnet 4.6 | 828 lines | 809 lines | 973 lines | 1,167 lines | 900 lines | 727 lines | 1,108 lines | 1,384 lines | 1,313 lines | 1,362 lines | 1,239 lines | 1,203 lines |
-| GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,400 lines | 2,852 lines | 2,919 lines |
-| GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 862 lines |
-| Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A |
+| Model | Snake | Minesweeper | Tetris | Reversi | Breakout | 2048 | Endless Runner | Marble Madness | 3D Maze | Mini Golf 3D | Tile Matching | Space Invaders | Pac-Man | Sudoku |
+|-------|-------|-------------|--------|---------|----------|------|----------------|----------------|---------|--------------|---------------|----------------|---------|--------|
+| Claude Opus 4.6 | 852 lines | 1,009 lines | 1,166 lines | 1,467 lines | 1,133 lines | 984 lines | 1,092 lines | 1,101 lines | 1,162 lines | 1,347 lines | 1,820 lines | 1,547 lines | N/A | N/A |
+| Claude Sonnet 4.6 | 828 lines | 809 lines | 973 lines | 1,167 lines | 900 lines | 727 lines | 1,108 lines | 1,384 lines | 1,313 lines | 1,362 lines | 1,239 lines | 1,203 lines | 917 lines | 813 lines |
+| GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,400 lines | 2,852 lines | 2,919 lines | 2,281 lines | 2,972 lines |
+| GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 862 lines | N/A | N/A |
+| Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A | N/A | N/A |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.
 
@@ -98,7 +100,9 @@ public/
     ├── maze-3d/{model}/        # 3D Maze implementations
     ├── mini-golf/{model}/      # Mini Golf 3D implementations
     ├── tile-matching/{model}/  # Tile Matching implementations
-    └── space-invaders/{model}/ # Space Invaders implementations
+    ├── space-invaders/{model}/ # Space Invaders implementations
+    ├── pac-man/{model}/        # Pac-Man implementations
+    └── sudoku/{model}/         # Sudoku implementations
 games-metadata.json             # Game & version registry
 GAME_DEVELOPMENT_GUIDE.md       # Guide for AI models
 ```

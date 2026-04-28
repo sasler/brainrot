@@ -76,6 +76,34 @@
         "Touch controls are three plain HTML circle buttons for left, right, and fire — approximately 90 lines of CSS less than what GPT-5.4 built for functionally equivalent input handling.",
         "Shooting is gated by `frameN - pl.fTimer < rate` — frame-counting instead of delta time, meaning your fire rate is directly tied to CPU performance, which is the most retro design decision in the whole file."
       ]
+    },
+    "pac-man": {
+      "gpt-5-4": [
+        "At 2,281 lines, GPT-5.4's Pac-Man has more lines of code than the original 1980 arcade ROM had bytes — a technical achievement that somehow results in ghosts that still path straight into walls.",
+        "The ghost scatter targets are hardcoded as pixel coordinates relative to a canvas that resizes dynamically, which means Blinky's preferred hiding spot migrates across the screen every time you resize the window.",
+        "GPT-5.4 implemented a full A* pathfinding system for the ghosts, which is objectively impressive, and yet Pinky still manages to get stuck in the top-left corridor for 30 seconds every round.",
+        "The maze is drawn as 800 individual `fillRect` calls per frame — a rendering approach so thorough it could be classified as manual pixel art at 60fps.",
+        "There are three separate systems for tracking scores: `score`, `scoreDisplay`, and `scoreAnim` — because displaying the number 200 apparently requires a distributed state architecture.",
+        "The power pellet flash animation uses `Math.sin(Date.now() / 150)` for brightness — a continuous sine wave that ignores game pause state, so pellets keep pulsing during the death sequence like they're mocking you.",
+        "Ghost eyes are drawn as four separate canvas arc calls per ghost per frame — 16 arc calls per tick just for eye whites and pupils, which is technically accurate to the original but architecturally unhinged.",
+        "The tunnel warp logic has a 12-pixel overlap zone on each side where Pac-Man's position is valid in both the left and right wrap states simultaneously — quantum Pac-Man exists in 2,281 lines.",
+        "The attract mode animation on the title screen runs the full game engine in a demo state, consuming the same CPU cycles as actual gameplay, so just looking at the menu is already a workout.",
+        "After eating all 240 dots, GPT-5.4 flashes the maze blue and white three times before showing the level clear screen — a celebration so elaborate it takes longer than the average first life on level 1."
+      ]
+    },
+    "sudoku": {
+      "gpt-5-4": [
+        "GPT-5.4 wrote 2,972 lines for Sudoku — a game whose entire ruleset can be expressed in two sentences — suggesting it either found the problem fascinating or the token budget irresistible.",
+        "The puzzle generator runs backtracking with full constraint propagation and naked-pair elimination during generation, which is technically solving the puzzle before letting you pretend to solve the puzzle.",
+        "There are 14 distinct animation states tracked for cell selection, number placement, error flash, hint reveal, win pulse, and various intermediate transitions — the sudoku grid has more state machines than a vending machine.",
+        "The difficulty system offers five levels including 'Diabolical,' which removes 62 cells and then has the audacity to still provide hints — cognitive dissonance encoded in JavaScript.",
+        "Candidate note rendering uses sub-pixel font sizing scaled to the cell dimensions, which means your pencil marks are typeset with more precision than most print publications use for body text.",
+        "The win fanfare plays a major chord arpeggio across four oscillators with stereo panning, a reverb tail, and a frequency sweep — Beethoven wrote symphonies with less planning than this victory jingle.",
+        "Undo history is stored as deep clones of the full 81-cell grid state, which means every pencil mark you add costs you a complete board snapshot — the memory footprint of caution.",
+        "The timer pauses automatically when you switch browser tabs, because GPT-5.4 decided that Sudoku respects your multitasking lifestyle — a feature literally no one requested for a logic puzzle.",
+        "Error cells shake with a CSS keyframe animation defined inline in a dynamically injected `<style>` tag during runtime — solving the problem of not having a stylesheet by inventing one on the fly.",
+        "The cell highlight algorithm propagates selection state to all peers in the same row, column, and box simultaneously, then diffuses a secondary half-opacity highlight to cells sharing the same number — this Sudoku grid has more visual layers than most AAA game UIs."
+      ]
     }
   }
 }
