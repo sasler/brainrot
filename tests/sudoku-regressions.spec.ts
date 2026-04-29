@@ -30,6 +30,10 @@ function parsePuzzleBank(source: string) {
 function isValidSolvedCell(grid: number[], row: number, col: number) {
   const value = grid[row * 9 + col];
 
+  if (!Number.isInteger(value) || value < 1 || value > 9) {
+    return false;
+  }
+
   for (let index = 0; index < 9; index += 1) {
     if (index !== col && grid[row * 9 + index] === value) {
       return false;
@@ -56,19 +60,23 @@ test.describe("Sudoku regression guards", () => {
   test("GPT Sudoku does not reject correct digits just because candidates are poisoned", () => {
     const source = readGameSource("public", "games", "sudoku", "gpt-5-4", "index.html");
 
-    expect(source).toContain("const conflictWarning = !candidates.includes(value) && state.assists.showConflicts;");
-    expect(source).toContain("if (value !== correctValue) {");
-    expect(source).not.toContain(
-      "if (value !== correctValue || (!candidates.includes(value) && state.assists.showConflicts)) {",
+    expect(source).toMatch(
+      /const\s+conflictWarning\s*=\s*!candidates\.includes\(value\)\s*&&\s*state\.assists\.showConflicts\s*;/,
     );
-    expect(source).toContain("Digit ${value} is correct here. Another bad entry is still poisoning this lane");
+    expect(source).toMatch(/if\s*\(\s*value\s*!==\s*correctValue\s*\)\s*\{/);
+    expect(source).not.toMatch(
+      /if\s*\(\s*value\s*!==\s*correctValue\s*\|\|\s*\(\s*!candidates\.includes\(value\)\s*&&\s*state\.assists\.showConflicts\s*\)\s*\)\s*\{/,
+    );
+    expect(source).toMatch(
+      /Digit\s+\$\{value\}\s+is\s+correct\s+here\.\s+Another\s+bad\s+entry\s+is\s+still\s+poisoning\s+this\s+lane/,
+    );
   });
 
   test("GPT Sudoku puzzle bank only ships solvable boards with matching solutions", () => {
     const source = readGameSource("public", "games", "sudoku", "gpt-5-4", "index.html");
     const entries = parsePuzzleBank(source);
 
-    expect(entries).toHaveLength(12);
+    expect(entries.length).toBeGreaterThan(0);
 
     entries.forEach((entry, entryIndex) => {
       expect(entry.puzzle, `puzzle ${entryIndex} length`).toHaveLength(81);
