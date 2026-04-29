@@ -85,11 +85,6 @@
       50% { box-shadow: 0 0 38px rgba(69, 224, 255, 0.3); }
     }
 
-    @keyframes marquee {
-      from { transform: translateX(0); }
-      to { transform: translateX(-50%); }
-    }
-
     canvas {
       position: fixed;
       inset: 0;
@@ -142,10 +137,7 @@
     .stat-card,
     .chip,
     .audio-toggle,
-    .touch-button,
-    .screen-panel,
-    .marquee,
-    .touch-pad {
+    .screen-panel {
       border: 1px solid var(--line);
       background: linear-gradient(180deg, rgba(8, 14, 28, 0.9), rgba(7, 10, 20, 0.76));
       box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -162,8 +154,7 @@
 
     .eyebrow,
     .label,
-    .screen-kicker,
-    .touch-label {
+    .screen-kicker {
       color: var(--muted);
       font-size: 10px;
       line-height: 1.3;
@@ -244,30 +235,6 @@
       color: #fff3bf;
       border-color: rgba(255, 232, 112, 0.24);
       box-shadow: 0 0 24px rgba(255, 232, 112, 0.12), inset 0 0 18px rgba(255, 232, 112, 0.08);
-    }
-
-    .marquee {
-      position: absolute;
-      left: 50%;
-      bottom: clamp(126px, 16vh, 142px);
-      transform: translateX(-50%);
-      width: min(92vw, 760px);
-      overflow: hidden;
-      border-radius: 999px;
-      pointer-events: none;
-      padding: 10px 0;
-    }
-
-    .marquee-track {
-      width: 200%;
-      display: flex;
-      gap: 22px;
-      color: #abd3e5;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 0.24em;
-      white-space: nowrap;
-      animation: marquee 18s linear infinite;
     }
 
     .audio-toggle {
@@ -498,66 +465,6 @@
       box-shadow: 0 0 14px currentColor;
     }
 
-    .touch-wrap {
-      position: fixed;
-      left: 50%;
-      bottom: max(14px, env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      z-index: 6;
-      pointer-events: none;
-      width: min(92vw, 360px);
-      display: flex;
-      justify-content: center;
-    }
-
-    .touch-pad {
-      pointer-events: auto;
-      padding: 10px;
-      border-radius: 28px;
-      display: grid;
-      gap: 6px;
-      grid-template-columns: repeat(3, 72px);
-      grid-template-rows: repeat(3, 56px);
-      align-items: center;
-      justify-items: center;
-    }
-
-    .touch-button {
-      width: 68px;
-      height: 52px;
-      border-radius: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #ecf8ff;
-      font-size: 22px;
-      pointer-events: auto;
-      cursor: pointer;
-      transition: transform 100ms ease, border-color 100ms ease, background 100ms ease;
-    }
-
-    .touch-button:active,
-    .touch-button.active {
-      transform: scale(0.96);
-      border-color: var(--line-strong);
-      background: linear-gradient(180deg, rgba(16, 28, 46, 0.96), rgba(10, 16, 28, 0.82));
-    }
-
-    .touch-spacer {
-      width: 68px;
-      height: 52px;
-      opacity: 0;
-    }
-
-    .touch-label {
-      position: absolute;
-      left: 50%;
-      top: -18px;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      color: #accde2;
-    }
-
     @media (max-width: 900px) {
       .screen-grid {
         grid-template-columns: 1fr;
@@ -565,10 +472,6 @@
 
       .screen-side {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .marquee {
-        bottom: 122px;
       }
     }
 
@@ -601,21 +504,6 @@
       .screen-title {
         font-size: clamp(34px, 14vw, 66px);
       }
-
-      .touch-pad {
-        grid-template-columns: repeat(3, 64px);
-        grid-template-rows: repeat(3, 48px);
-      }
-
-      .touch-button,
-      .touch-spacer {
-        width: 60px;
-        height: 44px;
-      }
-
-      .marquee {
-        bottom: 110px;
-      }
     }
 
     @media (max-width: 520px) {
@@ -625,10 +513,6 @@
 
       .brand-title {
         font-size: 26px;
-      }
-
-      .marquee {
-        display: none;
       }
     }
   </style>
@@ -671,22 +555,10 @@
         <div class="chip" id="powerChip">Power pellets dormant</div>
       </div>
       <div class="chip-row">
-        <div class="chip hot" id="tipChip">Arrow keys / swipe / touch pad</div>
+        <div class="chip hot" id="tipChip">Arrow keys / WASD / swipe anywhere</div>
       </div>
     </div>
 
-    <div class="marquee">
-      <div class="marquee-track">
-        <span>consume pellets</span>
-        <span>flip frightened ghosts</span>
-        <span>chain ghost scores 200 400 800 1600</span>
-        <span>survive 3 escalating sectors to purge the maze</span>
-        <span>consume pellets</span>
-        <span>flip frightened ghosts</span>
-        <span>chain ghost scores 200 400 800 1600</span>
-        <span>survive 3 escalating sectors to purge the maze</span>
-      </div>
-    </div>
   </div>
 
   <button class="audio-toggle muted" id="audioToggle" aria-label="Toggle audio">♫</button>
@@ -712,7 +584,7 @@
             <h3>Control matrix</h3>
             <ul>
               <li>Arrow keys or WASD steer instantly at lane centers.</li>
-              <li>Swipe anywhere on mobile or hammer the touch pad.</li>
+              <li>Swipe anywhere on mobile to steer without covering the maze.</li>
               <li>Tap or press space to launch, pause, or restart screens.</li>
             </ul>
           </div>
@@ -731,21 +603,6 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="touch-wrap">
-    <div class="touch-pad" aria-label="Touch controls">
-      <div class="touch-label">Touch pad</div>
-      <div class="touch-spacer"></div>
-      <button class="touch-button" data-dir="up" aria-label="Move up">▲</button>
-      <div class="touch-spacer"></div>
-      <button class="touch-button" data-dir="left" aria-label="Move left">◀</button>
-      <div class="touch-spacer"></div>
-      <button class="touch-button" data-dir="right" aria-label="Move right">▶</button>
-      <div class="touch-spacer"></div>
-      <button class="touch-button" data-dir="down" aria-label="Move down">▼</button>
-      <div class="touch-spacer"></div>
     </div>
   </div>
 
@@ -772,7 +629,6 @@
       const modeChip = document.getElementById("modeChip");
       const powerChip = document.getElementById("powerChip");
       const tipChip = document.getElementById("tipChip");
-      const touchButtons = Array.from(document.querySelectorAll(".touch-button"));
 
       const MAP_TEMPLATE = [
         "#######################",
@@ -875,8 +731,7 @@
       };
 
       const input = {
-        swipeStart: null,
-        touchActive: false
+        swipeStart: null
       };
 
       const audio = {
@@ -1081,7 +936,7 @@
           y: 17.5,
           dir: "left",
           nextDir: "left",
-          speed: 5.2,
+          speed: 4.85,
           mouth: 0,
           flicker: 0,
           dead: false
@@ -1099,7 +954,7 @@
           x: spec.start.x,
           y: spec.start.y,
           homeX: 11.5,
-          homeY: 10.5,
+          homeY: 9.5,
           dir: spec.id === "crimson" ? "left" : spec.id === "amber" ? "up" : "right",
           nextDir: spec.id === "crimson" ? "left" : spec.id === "amber" ? "up" : "right",
           speedBias: spec.speedBias,
@@ -1194,12 +1049,15 @@
         state.flash = Math.max(state.flash, amount);
       }
 
-      function ensureAudio() {
+      function ensureAudio(enableOutput = false) {
         const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextCtor) return false;
         if (audio.context) {
           if (audio.context.state === "suspended") {
             audio.context.resume();
+          }
+          if (enableOutput && !audio.enabled) {
+            audio.enabled = true;
           }
           audio.ready = true;
           updateAudioToggle();
@@ -1241,6 +1099,9 @@
         audio.padOscB.start();
         audio.pulseLfo.start();
 
+        if (enableOutput) {
+          audio.enabled = true;
+        }
         audio.ready = true;
         if (audio.context.state === "suspended") {
           audio.context.resume();
@@ -1385,7 +1246,7 @@
         }
 
         const dir = DIRS[player.dir];
-        const speed = player.speed + (state.frightenedTimer > 0 ? 0.2 : 0) + (state.level - 1) * 0.12;
+        const speed = player.speed + (state.frightenedTimer > 0 ? 0.14 : 0) + (state.level - 1) * 0.09;
         player.x += dir.x * speed * dt;
         player.y += dir.y * speed * dt;
         player.mouth += dt * (state.frightenedTimer > 0 ? 16 : 12);
@@ -1407,7 +1268,7 @@
         const crimson = state.ghosts[0];
 
         if (ghost.eyes) {
-          return { x: 11, y: 10 };
+          return { x: ghost.homeX, y: ghost.homeY };
         }
 
         if (state.mode === "scatter") {
@@ -1488,7 +1349,7 @@
           }
 
           const dir = DIRS[ghost.dir];
-          const baseSpeed = 4.35 + ghost.speedBias + (state.level - 1) * 0.18;
+          const baseSpeed = 4.02 + ghost.speedBias + (state.level - 1) * 0.12;
           let speed = baseSpeed;
           if (ghost.frightened && !ghost.eyes) speed *= 0.72;
           if (ghost.eyes) speed *= 1.46;
@@ -1504,10 +1365,13 @@
           }
 
           if (ghost.eyes && Math.hypot(ghost.x - ghost.homeX, ghost.y - ghost.homeY) < 0.55) {
+            ghost.x = ghost.homeX;
+            ghost.y = ghost.homeY;
             ghost.eyes = false;
             ghost.frightened = false;
             ghost.dir = "up";
             ghost.nextDir = "up";
+            ghost.blinkClock = 0;
           }
 
           const distanceToPlayer = dist(ghost, player);
@@ -1665,7 +1529,7 @@
       }
 
       function beginNewGame() {
-        ensureAudio();
+        ensureAudio(true);
         resetRound(false);
         state.screen = "playing";
         state.phaseText = "Scatter pattern";
@@ -1687,7 +1551,7 @@
           primary: "Start run",
           primaryAction: () => beginNewGame(),
           secondary: "Wake audio",
-          secondaryAction: () => ensureAudio(),
+          secondaryAction: () => ensureAudio(true),
           showSecondary: true
         });
       }
@@ -1745,7 +1609,7 @@
         if (state.screen === "playing") {
           tipChip.textContent = state.frightenedTimer > 0 ? "Ghosts are edible — chain the combo" : "Clean the maze and stay ahead of the turn";
         } else if (state.screen === "title") {
-          tipChip.textContent = "Arrow keys / swipe / touch pad";
+          tipChip.textContent = "Arrow keys / WASD / swipe anywhere";
         } else if (state.screen === "respawn") {
           tipChip.textContent = `Auto resume in ${Math.max(0, state.respawnTimer).toFixed(1)}s • tap Resume now to skip`;
         } else {
@@ -1810,25 +1674,6 @@
       }
 
       function setupTouchControls() {
-        touchButtons.forEach((button) => {
-          const activate = (event) => {
-            event.preventDefault();
-            ensureAudio();
-            const dirName = button.dataset.dir;
-            touchButtons.forEach((node) => node.classList.remove("active"));
-            button.classList.add("active");
-            setDirection(dirName);
-            if (state.screen === "title") beginNewGame();
-            if (state.screen === "respawn") resumeAfterHit();
-          };
-          const release = () => button.classList.remove("active");
-          button.addEventListener("pointerdown", activate);
-          button.addEventListener("touchstart", activate, { passive: false });
-          button.addEventListener("pointerup", release);
-          button.addEventListener("pointerleave", release);
-          button.addEventListener("touchend", release, { passive: true });
-        });
-
         const swipeStart = (x, y) => {
           input.swipeStart = { x, y };
         };
@@ -1842,7 +1687,7 @@
             if (state.screen === "title") beginNewGame();
             return;
           }
-          ensureAudio();
+          ensureAudio(true);
           if (Math.abs(dx) > Math.abs(dy)) setDirection(dx > 0 ? "right" : "left");
           else setDirection(dy > 0 ? "down" : "up");
           input.swipeStart = null;
@@ -2263,8 +2108,8 @@
         updateAudioToggle();
       });
 
-      primaryButton.addEventListener("pointerdown", () => ensureAudio());
-      secondaryButton.addEventListener("pointerdown", () => ensureAudio());
+      primaryButton.addEventListener("pointerdown", () => ensureAudio(true));
+      secondaryButton.addEventListener("pointerdown", () => ensureAudio(true));
       window.addEventListener("keydown", onKeyDown, { passive: false });
       window.addEventListener("resize", resize);
       document.addEventListener("visibilitychange", () => {

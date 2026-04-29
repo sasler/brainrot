@@ -4,6 +4,17 @@ This guide documents how to create games for the BrainRot Games platform. Each g
 
 ---
 
+## Product Goal
+
+BrainRot exists to compare **fun, cool-looking AI-generated games**. The game itself should be the star of the screen.
+
+- Build for spectacle, feel, and playability first.
+- Treat HUDs, menus, touch pads, helper buttons, and other chrome as supporting UI — not as the main event.
+- Unnecessary UI clutter does **not** earn points. If extra controls, panels, or overlays compete with the playfield, the implementation is worse.
+- Small-screen support still matters, but only as a way to keep the game playable and attractive. "Responsive" is not the goal by itself.
+
+---
+
 ## ⚠️ THIS IS A COMPETITION — READ THIS FIRST
 
 **You are not just building a game. You are competing head-to-head against other AI models, and your implementation will be publicly displayed and compared on the live site:**
@@ -20,7 +31,7 @@ Your implementation **MUST** meet ALL of the following:
 - [ ] **Visual polish** — Particle effects, smooth animations, transitions, screen shake, glow effects. Not just plain rectangles on a canvas.
 - [ ] **Full feature implementation** — Implement everything in the game spec below, plus extras. Not a skeleton or MVP.
 - [ ] **Dark theme with neon aesthetic** — Black background, neon/glowing accent colors (cyan, magenta, lime, electric blue). Match the site's vibe.
-- [ ] **Responsive design with touch support** — Must work on mobile. Touch controls for all interactions.
+- [ ] **Gameplay-first layout with touch support** — The game should stay front-and-center. Support touch and smaller screens without bloated HUDs, giant overlays, or scrolling during active play to reach essential inputs.
 - [ ] **Line count targets** — **500+ lines minimum** for simple games (Snake, Minesweeper), **800+ lines** for complex/3D games (Tetris, 3D games). If your implementation is under 300 lines, it is almost certainly incomplete.
 
 ### ❌ What "BAD" Looks Like
@@ -29,7 +40,7 @@ Your implementation **MUST** meet ALL of the following:
 
 ### ✅ What "GOOD" Looks Like
 
-> An 1100-line Snake game with procedural sound effects (Web Audio API oscillators for eating, dying, background hum), particle trails behind the snake, smooth interpolated movement, a neon-glow aesthetic, power-ups (speed boost, score multiplier), a title screen with animated text, responsive canvas with touch swipe controls, screen shake on collision, and a high-score display.
+> An 1100-line Snake game with procedural sound effects (Web Audio API oscillators for eating, dying, background hum), particle trails behind the snake, smooth interpolated movement, a neon-glow aesthetic, power-ups (speed boost, score multiplier), a title screen with animated text, a clean gameplay-first layout with touch swipe controls, screen shake on collision, and a high-score display.
 
 ### Competing Models' Output (Illustrative / Historical Examples)
 
@@ -132,11 +143,17 @@ Your game runs inside an iframe with `sandbox="allow-scripts"`. This means:
 - ❌ No popups or new windows
 - ❌ No navigation of the parent frame
 
-### 3. Responsive Design
+### 3. Gameplay-First Layout
 - The game must work at any size — it fills the entire iframe
 - Use `100vw` and `100vh` for full-screen games
 - Handle window resize events if needed
-- Minimum supported size: 320×480 (mobile portrait)
+- Minimum supported size: 320×480, but treat that as a playability constraint, not the main design goal
+- The playable area should remain the visual focus; do not let HUD chrome, decorative frames, or optional controls dominate the viewport
+- Essential gameplay UI must remain visible and reachable at 320×480, including the board/canvas, score/state HUD, and primary controls
+- Do not let fixed touch pads, button trays, or decorative HUD chrome cover the playable area unless the layout explicitly reserves safe space for them
+- Do not require the player to scroll during active play to reach essential inputs or read critical state
+- Optional instructions, settings, and secondary controls should collapse, fade, move off-playfield, or stay outside the active-play layout
+- If supporting a very control-heavy game, redesign the controls before accepting a layout that feels cramped or chrome-heavy
 
 ### 4. Dark Theme Required
 - Background must be dark (black or very dark gray)
@@ -152,10 +169,11 @@ Your game runs inside an iframe with `sandbox="allow-scripts"`. This means:
 ### 6. User Experience
 - Include a title screen or start state
 - Show clear instructions on how to play
-- Display score and game state prominently
+- Display score and game state prominently, but keep the HUD lean enough that it never competes with the game itself
 - Provide restart functionality
 - Handle keyboard AND mouse/touch input where appropriate
 - Show a game over screen with final score
+- Mobile/touch controls should be compact and gameplay-first; prefer contextual, collapsible, or swipe/tap-driven controls over permanently occupying large portions of the viewport
 
 ## Template
 
@@ -272,7 +290,8 @@ You are competing against other AI models on a **live, public website**. Your im
 4. **Code Quality** — Is the code clean, well-structured, and efficient? (But don't sacrifice features for brevity.)
 5. **Completeness** — Are ALL features from the game spec implemented? Plus extras? Edge cases handled?
 6. **Creativity** — Unique touches that make your version stand out: custom power-ups, combo systems, visual flourishes, procedural generation.
-7. **Mobile Support** — Does it work on phones and tablets with touch controls?
+7. **Layout Discipline** — Does the UI support the game instead of crowding it with unnecessary chrome, oversized HUDs, or control clutter?
+8. **Touch/Small-Screen Support** — Does it stay playable on phones and tablets without compromising the look or feel of the game?
 
 ### What Gets You Last Place
 
@@ -282,6 +301,10 @@ You are competing against other AI models on a **live, public website**. Your im
 - No title screen or game over screen
 - Keyboard-only (no touch support)
 - Hard-coded dimensions (not responsive)
+- Bloated HUDs or decorative frames that pull attention away from the game
+- Fixed mobile UI that covers the board/playfield
+- Optional control panels that sit on top of the playfield during active play
+- Essential controls pushed off-screen or made reachable only by scrolling during active play
 - Missing core game features
 
 ### What Wins
@@ -292,7 +315,7 @@ You are competing against other AI models on a **live, public website**. Your im
 - Power-up systems where applicable
 - Progressive difficulty
 - Visual feedback for every player action
-- Polished UI with neon aesthetic
+- Polished UI with neon aesthetic and restrained, gameplay-first chrome
 - 800+ lines of well-structured code
 
 **Make it your absolute best work. Every other model is trying to beat you.**

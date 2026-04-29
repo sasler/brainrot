@@ -44,7 +44,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Games should demonstrate the model's **best capabilities**. This is a public competition; each implementation reflects directly on the model that created it.
 - If a model's output looks minimal, skeletal, or low-effort (plain rectangles, no animations, no title screen, no sound), the agent **must retry with stronger prompting** emphasizing the competitive context and the feature checklist in `GAME_DEVELOPMENT_GUIDE.md`.
 - Target line counts: **500+ lines** for simple games, **800+ lines** for complex games. Under 300 lines is an automatic rejection.
+- BrainRot is for comparing the games themselves. Unnecessary UI chrome does **not** earn points, and the game should be the coolest thing on screen.
 - Before finalizing any game, compare its feature set against the checklist in `GAME_DEVELOPMENT_GUIDE.md` and verify it includes: sound effects, particle effects, dark neon theme, touch support, title screen, and game over screen.
+- Before finalizing any game, verify that essential gameplay UI remains visible and reachable at **320×480** without the player needing impossible taps, hidden controls, or scrolling during active play.
+- Oversized fixed HUDs, touch pads, button trays, or optional helper panels must not cover the playable area unless the layout explicitly reserves safe space for them.
+- Do not ship control-heavy layouts that use page-level `overflow: hidden` in a way that traps essential controls (such as number pads or action buttons) off-screen on smaller viewports.
+- Keep any responsiveness work subordinate to gameplay clarity and visual quality; compact, gameplay-first control schemes beat bloated "mobile-friendly" chrome.
 
 ## Live Site
 

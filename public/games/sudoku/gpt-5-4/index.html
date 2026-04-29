@@ -85,6 +85,7 @@
       position: relative;
       z-index: 1;
       min-height: 100vh;
+      min-height: 100dvh;
       display: grid;
       place-items: center;
       padding: clamp(14px, 2.8vw, 28px);
@@ -92,11 +93,13 @@
     }
 
     .shell {
-      width: min(1440px, 100%);
-      min-height: min(900px, 100vh - 28px);
+      width: min(1480px, 100%);
+      height: min(960px, calc(100vh - 28px));
+      height: min(960px, calc(100dvh - 28px));
+      min-height: 0;
       display: grid;
-      grid-template-columns: minmax(290px, 380px) minmax(320px, 1fr) minmax(250px, 320px);
-      gap: clamp(12px, 1.6vw, 22px);
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
       align-items: stretch;
     }
 
@@ -363,17 +366,36 @@
     }
 
     .center-panel {
+      min-height: 0;
       display: flex;
       flex-direction: column;
       gap: clamp(12px, 1.8vw, 18px);
+    }
+
+    .top-brand {
+      display: grid;
+      gap: 4px;
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+    }
+
+    .top-brand .brand-logo {
+      font-size: clamp(22px, 2.5vw, 30px);
+      letter-spacing: 0.08em;
+    }
+
+    .top-brand .eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.22em;
     }
 
     .top-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
-      padding: 14px clamp(14px, 2vw, 20px);
+      gap: 12px;
+      padding: 12px clamp(14px, 2vw, 20px);
       border-radius: 24px;
       background: rgba(7, 10, 24, 0.84);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -395,14 +417,20 @@
     .top-group {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       position: relative;
       z-index: 1;
       flex-wrap: wrap;
     }
 
+    .status-strip {
+      justify-content: flex-end;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
     .status-pill {
-      padding: 10px 14px;
+      padding: 9px 13px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -411,6 +439,18 @@
       gap: 10px;
       min-height: 44px;
       backdrop-filter: blur(10px);
+    }
+
+    .play-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+      gap: clamp(12px, 1.6vw, 18px);
+      flex: 1 1 auto;
+    }
+
+    .board-stage {
+      min-height: 0;
     }
 
     .status-pill strong {
@@ -448,6 +488,8 @@
 
     .board-frame {
       position: relative;
+      height: 100%;
+      display: grid;
       padding: clamp(16px, 2vw, 22px);
       border-radius: 34px;
       background:
@@ -476,10 +518,12 @@
 
     .board-wrap {
       position: relative;
-      width: min(100%, 100%);
+      width: 100%;
       display: grid;
       place-items: center;
-      gap: 16px;
+      align-content: center;
+      gap: 12px;
+      min-height: 100%;
     }
 
     .board {
@@ -647,12 +691,12 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       width: min(100%, var(--board-size));
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.12em;
     }
 
     .board-legend strong {
@@ -661,10 +705,40 @@
       letter-spacing: 0.06em;
     }
 
-    .action-grid {
+    .command-panel {
+      min-height: 0;
+    }
+
+    .command-inner {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 12px;
+      height: 100%;
+    }
+
+    .compact-metrics {
+      gap: 10px;
+    }
+
+    .compact-metrics .metric-card {
+      padding: 12px 13px;
+      border-radius: 18px;
+    }
+
+    .compact-metrics .metric-value {
+      font-size: clamp(20px, 2vw, 28px);
+    }
+
+    .play-controls {
       display: grid;
       gap: 12px;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-content: start;
+    }
+
+    .action-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .action-btn,
@@ -772,10 +846,38 @@
       border-radius: 20px;
       font-size: clamp(22px, 2.8vw, 30px);
       font-weight: 800;
+      display: grid;
+      place-items: center;
+      padding: 10px;
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02)),
         rgba(255, 255, 255, 0.035);
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .number-value {
+      position: relative;
+      z-index: 1;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .number-remaining {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      min-width: 22px;
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      z-index: 1;
+      pointer-events: none;
     }
 
     .number-btn.active {
@@ -784,6 +886,26 @@
         0 0 0 1px rgba(255, 215, 102, 0.18),
         0 0 20px rgba(255, 215, 102, 0.18);
       color: var(--gold);
+    }
+
+    .number-btn.active .number-remaining,
+    .number-btn.scarce .number-remaining {
+      background: rgba(255, 215, 102, 0.16);
+      border-color: rgba(255, 215, 102, 0.22);
+      color: var(--gold);
+    }
+
+    .number-btn.depleted {
+      border-color: rgba(255, 85, 124, 0.28);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 85, 124, 0.12),
+        0 0 20px rgba(255, 85, 124, 0.08);
+    }
+
+    .number-btn.depleted .number-remaining {
+      background: rgba(255, 85, 124, 0.16);
+      border-color: rgba(255, 85, 124, 0.24);
+      color: #ffc2d0;
     }
 
     .mini-panel {
@@ -837,8 +959,8 @@
     }
 
     .message-bar {
-      min-height: 56px;
-      padding: 14px 16px;
+      min-height: 52px;
+      padding: 12px 14px;
       border-radius: 18px;
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
@@ -870,8 +992,64 @@
     .message-text {
       position: relative;
       z-index: 1;
-      font-size: 14px;
-      line-height: 1.45;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .utility-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .utility-drawer {
+      min-height: 0;
+      align-self: end;
+    }
+
+    .utility-drawer summary {
+      position: relative;
+      z-index: 1;
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text);
+      user-select: none;
+    }
+
+    .utility-drawer summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .utility-drawer summary::after {
+      content: "+";
+      font-size: 18px;
+      line-height: 1;
+      color: var(--cyan);
+      transition: transform 0.2s ease;
+    }
+
+    .utility-drawer[open] summary::after {
+      transform: rotate(45deg);
+    }
+
+    .utility-drawer .panel-inner {
+      height: auto;
+      padding-top: 0;
+      max-height: min(32vh, 280px);
+      overflow: auto;
+    }
+
+    .utility-drawer .brand-line,
+    .utility-drawer .hero-copy {
+      display: none;
     }
 
     .overlay-root {
@@ -1069,52 +1247,26 @@
     }
 
     @media (max-width: 1180px) {
-      .shell {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas:
-          "left"
-          "center"
-          "right";
+      :root {
+        --cell-size: min(7.8vw, 7.6dvh, 46px);
       }
 
-      .left-panel {
-        grid-area: left;
-      }
-
-      .center-panel {
-        grid-area: center;
-      }
-
-      .right-panel {
-        grid-area: right;
+      .play-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
       }
 
       .board-legend {
-        font-size: 11px;
-        gap: 8px;
         flex-wrap: wrap;
       }
     }
 
-    @media (max-width: 760px) {
+    @media (max-width: 900px) {
       :root {
-        --cell-size: min(10vw, 44px);
-      }
-
-      html,
-      body {
-        overflow: auto;
+        --cell-size: min(8.2vw, 7.1dvh, 42px);
       }
 
       .app {
-        display: block;
-        min-height: auto;
         padding: 12px;
-      }
-
-      .shell {
-        min-height: auto;
-        gap: 12px;
       }
 
       .panel-inner {
@@ -1122,16 +1274,60 @@
       }
 
       .top-bar {
-        flex-direction: column;
+        padding: 10px 12px;
+      }
+
+      .top-brand .brand-logo {
+        font-size: 22px;
+      }
+
+      .status-pill {
+        padding: 8px 11px;
+        min-height: 40px;
+      }
+
+      .play-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .command-inner {
+        grid-template-rows: auto auto auto;
+      }
+
+      .play-controls {
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
         align-items: stretch;
       }
 
-      .top-group {
-        width: 100%;
-        justify-content: space-between;
+      .board-frame {
+        padding: 14px;
+        border-radius: 28px;
+      }
+
+      .number-pad {
+        height: 100%;
       }
 
       .action-grid {
+        height: 100%;
+        align-content: stretch;
+      }
+
+      .action-btn {
+        min-height: 0;
+        padding: 10px 11px;
+      }
+
+      .action-btn strong {
+        font-size: 14px;
+        margin-bottom: 0;
+      }
+
+      .action-btn span {
+        display: none;
+      }
+
+      .utility-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
@@ -1147,31 +1343,170 @@
 
     @media (max-width: 520px) {
       :root {
-        --cell-size: min(10vw, 38px);
+        --cell-size: min(7.35vw, 5.05dvh, 30px);
       }
 
-      .metrics {
-        grid-template-columns: 1fr 1fr;
+      .app {
+        padding: 8px;
+      }
+
+      .shell {
+        height: calc(100dvh - 16px);
+      }
+
+      .panel-inner {
+        padding: 12px;
+      }
+
+      .top-bar {
+        gap: 8px;
+        padding: 8px 10px;
+      }
+
+      .top-brand .eyebrow {
+        display: none;
+      }
+
+      .top-brand .brand-logo {
+        font-size: 20px;
+      }
+
+      .play-grid {
+        grid-template-columns: minmax(0, 1fr) 104px;
+        gap: 8px;
+      }
+
+      .board-frame {
+        padding: 12px;
+      }
+
+      .status-strip {
+        gap: 8px;
+      }
+
+      .status-strip .status-pill:nth-child(-n+2) {
+        display: none;
+      }
+
+      .status-pill {
+        flex: 1 1 calc(50% - 4px);
+        min-height: 34px;
+        padding: 7px 10px;
+      }
+
+      .status-pill span {
+        font-size: 10px;
+      }
+
+      .status-pill strong {
+        font-size: 14px;
+      }
+
+      .command-inner {
+        grid-template-rows: minmax(0, 1fr);
+        padding: 10px;
+      }
+
+      .compact-metrics,
+      .message-bar {
+        display: none;
+      }
+
+      .play-controls {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        height: 100%;
       }
 
       .action-grid {
-        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .action-btn {
+        min-height: 0;
+        aspect-ratio: 1.1;
+        padding: 0;
+        text-align: center;
+        display: grid;
+        place-items: center;
+      }
+
+      .action-btn strong {
+        font-size: 12px;
+        line-height: 1.1;
       }
 
       .number-pad {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
       }
 
-      .brand-logo {
-        font-size: 22px;
+      .number-btn {
+        min-height: 0;
+        aspect-ratio: 1.02;
+        border-radius: 16px;
+        font-size: clamp(18px, 6.4vw, 24px);
+        padding: 8px;
       }
 
-      .hero-btn {
+      .number-btn:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .number-remaining {
+        top: 5px;
+        right: 5px;
+        min-width: 18px;
+        padding: 2px 4px;
+        font-size: 9px;
+      }
+
+      .board-legend {
         width: 100%;
+        gap: 4px;
+        flex-direction: column;
+        align-items: flex-start;
+        font-size: 10px;
+      }
+
+      .utility-row {
+        gap: 8px;
+      }
+
+      .utility-drawer summary {
+        padding: 10px 12px;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+      }
+
+      .utility-drawer .panel-inner {
+        max-height: min(30dvh, 220px);
       }
 
       .overlay {
         min-height: auto;
+      }
+    }
+
+    @media (max-width: 360px) {
+      :root {
+        --cell-size: min(6.45vw, 4.45dvh, 24px);
+      }
+
+      .top-brand .brand-logo {
+        font-size: 18px;
+      }
+
+      .play-grid {
+        grid-template-columns: minmax(0, 1fr) 94px;
+      }
+
+      .action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .action-btn strong {
+        font-size: 11px;
       }
     }
 
@@ -1248,103 +1583,13 @@
   <canvas id="fx"></canvas>
   <div class="app">
     <div class="shell">
-      <section class="panel left-panel" aria-label="Mission control panel">
-        <div class="panel-inner">
-          <div class="brand-line">
-            <div class="eyebrow">BrainRot // Logic Arena</div>
-            <div class="brand-logo"><span class="pulse-dot"></span> Rift</div>
-          </div>
-
-          <div class="hero-copy">
-            <h1>
-              Neon
-              <span class="title-accent">Sudoku</span>
-            </h1>
-            <p>
-              Slip into a luminous logic chamber where every move hums, every mistake scars the neon,
-              and perfect grids detonate into sparks. Precision, rhythm, and nerves decide the run.
-            </p>
-          </div>
-
-          <div class="chips" id="difficultyChips" aria-label="Difficulty selector">
-            <button class="chip active" data-difficulty="easy">Easy Drift</button>
-            <button class="chip" data-difficulty="medium">Medium Surge</button>
-            <button class="chip" data-difficulty="hard">Hard Static</button>
-            <button class="chip" data-difficulty="expert">Expert Void</button>
-          </div>
-
-          <div class="metrics">
-            <div class="metric-card">
-              <div class="metric-label">Timer</div>
-              <div class="metric-value" id="timerValue">00:00</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Score</div>
-              <div class="metric-value" id="scoreValue">0 <small>pts</small></div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Streak</div>
-              <div class="metric-value" id="streakValue">0 <small>x</small></div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Hints</div>
-              <div class="metric-value" id="hintsValue">3 <small>left</small></div>
-            </div>
-          </div>
-
-          <div class="subgrid" id="assistList">
-            <div class="assist-row">
-              <div class="assist-meta">
-                <strong>Conflict Vision</strong>
-                <span>Flag rule clashes instantly when a row, column, or box breaks.</span>
-              </div>
-              <button class="toggle active" data-toggle="showConflicts" aria-pressed="true"></button>
-            </div>
-            <div class="assist-row">
-              <div class="assist-meta">
-                <strong>Peer Glow</strong>
-                <span>Illuminate row, column, and box relationships for the active cell.</span>
-              </div>
-              <button class="toggle active" data-toggle="highlightPeers" aria-pressed="true"></button>
-            </div>
-            <div class="assist-row">
-              <div class="assist-meta">
-                <strong>Echo Numbers</strong>
-                <span>Highlight every matching digit to accelerate scans and patterns.</span>
-              </div>
-              <button class="toggle active" data-toggle="highlightMatches" aria-pressed="true"></button>
-            </div>
-            <div class="assist-row">
-              <div class="assist-meta">
-                <strong>Auto-Clean Notes</strong>
-                <span>Strip pencil marks from peers when a confirmed digit lands.</span>
-              </div>
-              <button class="toggle active" data-toggle="autoCleanNotes" aria-pressed="true"></button>
-            </div>
-            <div class="assist-row">
-              <div class="assist-meta">
-                <strong>Ambient Audio</strong>
-                <span>Low procedural pulses, UI chirps, mistake stabs, and win arpeggios.</span>
-              </div>
-              <button class="toggle active" data-toggle="audioEnabled" aria-pressed="true"></button>
-            </div>
-          </div>
-
-          <div class="message-bar" id="messageBar">
-            <div class="message-text" id="messageText">
-              Lock onto a cell, punch digits from the pad or keyboard, and keep the fault count under five.
-            </div>
-          </div>
-
-          <div class="footer-note">
-            Touch-ready, keyboard-fast, fully standalone. Built for sandboxed iframes with nothing but scripts and audacity.
-          </div>
-        </div>
-      </section>
-
       <main class="center-panel" aria-label="Sudoku board and main controls">
         <div class="top-bar">
-          <div class="top-group">
+          <div class="top-brand">
+            <div class="eyebrow">BrainRot // Logic Arena</div>
+            <div class="brand-logo"><span class="pulse-dot"></span> Neon Rift Sudoku</div>
+          </div>
+          <div class="top-group status-strip">
             <div class="status-pill">
               <div>
                 <span>Difficulty</span>
@@ -1357,8 +1602,6 @@
                 <strong id="modeValue">Digit</strong>
               </div>
             </div>
-          </div>
-          <div class="top-group">
             <div class="status-pill">
               <div>
                 <span>Mistakes</span>
@@ -1375,101 +1618,178 @@
           </div>
         </div>
 
-        <section class="board-frame panel" aria-label="Sudoku board frame">
-          <div class="board-wrap">
-            <div class="board-legend">
-              <strong id="selectionSummary">No cell selected</strong>
-              <div id="candidateSummary">Select a cell to inspect candidates and pencil marks.</div>
+        <div class="play-grid">
+          <section class="board-frame panel board-stage" aria-label="Sudoku board frame">
+            <div class="board-wrap">
+              <div class="board-legend">
+                <strong id="selectionSummary">No cell selected</strong>
+                <div id="candidateSummary">Select a cell to inspect candidates and pencil marks.</div>
+              </div>
+              <div class="board" id="board" role="grid" aria-label="Sudoku board"></div>
+              <div class="board-legend">
+                <div>Tap / click cells or use arrows / WASD</div>
+                <div>Numbers 1-9 place digits • N toggles notes • H spends a hint</div>
+              </div>
             </div>
-            <div class="board" id="board" role="grid" aria-label="Sudoku board"></div>
-            <div class="board-legend">
-              <div>Tap / click cells or use arrows / WASD</div>
-              <div>Numbers 1-9 place digits • N toggles notes • H spends a hint</div>
+          </section>
+
+          <section class="panel command-panel" aria-label="Action controls">
+            <div class="panel-inner command-inner">
+              <div class="metrics compact-metrics">
+                <div class="metric-card">
+                  <div class="metric-label">Timer</div>
+                  <div class="metric-value" id="timerValue">00:00</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">Score</div>
+                  <div class="metric-value" id="scoreValue">0 <small>pts</small></div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">Streak</div>
+                  <div class="metric-value" id="streakValue">0 <small>x</small></div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-label">Hints</div>
+                  <div class="metric-value" id="hintsValue">3 <small>left</small></div>
+                </div>
+              </div>
+
+              <div class="message-bar" id="messageBar">
+                <div class="message-text" id="messageText">
+                  Lock onto a cell, punch digits from the pad or keyboard, and keep the fault count under five.
+                </div>
+              </div>
+
+              <div class="play-controls">
+                <div class="numpad-panel">
+                  <div class="number-pad" id="numberPad" aria-label="Number pad"></div>
+                </div>
+                <div class="action-grid">
+                  <button class="action-btn" id="newRunBtn">
+                    <strong>New Run</strong>
+                    <span>Spin a fresh puzzle in the currently armed difficulty.</span>
+                  </button>
+                  <button class="action-btn" id="notesBtn">
+                    <strong>Notes Mode</strong>
+                    <span>Layer pencil marks instead of placing committed digits.</span>
+                  </button>
+                  <button class="action-btn" id="eraseBtn">
+                    <strong>Erase</strong>
+                    <span>Clear a selected non-given cell and reset its streak pressure.</span>
+                  </button>
+                  <button class="action-btn" id="hintBtn">
+                    <strong>Hint</strong>
+                    <span>Reveal one correct digit and flash its cell with golden guidance.</span>
+                  </button>
+                  <button class="action-btn" id="validateBtn">
+                    <strong>Scan Grid</strong>
+                    <span>Audit current placement health and surface unresolved collisions.</span>
+                  </button>
+                  <button class="action-btn" id="revealPeersBtn">
+                    <strong>Reveal Peers</strong>
+                    <span>Force a temporary relationship glow on the active row, column, and box.</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
-
-        <section class="panel" aria-label="Action controls">
-          <div class="panel-inner">
-            <div class="action-grid">
-              <button class="action-btn" id="newRunBtn">
-                <strong>New Run</strong>
-                <span>Spin a fresh puzzle in the currently armed difficulty.</span>
-              </button>
-              <button class="action-btn" id="notesBtn">
-                <strong>Notes Mode</strong>
-                <span>Layer pencil marks instead of placing committed digits.</span>
-              </button>
-              <button class="action-btn" id="eraseBtn">
-                <strong>Erase</strong>
-                <span>Clear a selected non-given cell and reset its streak pressure.</span>
-              </button>
-              <button class="action-btn" id="hintBtn">
-                <strong>Hint</strong>
-                <span>Reveal one correct digit and flash its cell with golden guidance.</span>
-              </button>
-              <button class="action-btn" id="validateBtn">
-                <strong>Scan Grid</strong>
-                <span>Audit current placement health and surface unresolved collisions.</span>
-              </button>
-              <button class="action-btn" id="revealPeersBtn">
-                <strong>Reveal Peers</strong>
-                <span>Force a temporary relationship glow on the active row, column, and box.</span>
-              </button>
-            </div>
-
-            <div class="numpad-panel">
-              <div class="number-pad" id="numberPad" aria-label="Number pad"></div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <aside class="panel right-panel" aria-label="Intel panel">
-        <div class="panel-inner">
-          <div class="mini-panel">
-            <h3>Run Intel</h3>
-            <p id="intelText">
-              The chamber is dormant. Start the run, pick clean lines, and the grid will reward momentum.
-            </p>
-          </div>
-
-          <div class="mini-panel">
-            <h3>Selected Cell</h3>
-            <p id="selectedMeta">
-              No lock. Tap any editable tile to inspect coordinates, candidate count, and stored notes.
-            </p>
-          </div>
-
-          <div class="mini-panel">
-            <h3>Hotkeys</h3>
-            <div class="hotkeys">
-              <div class="hotkey-row"><span>Move selection</span><span class="kbd">Arrows / WASD</span></div>
-              <div class="hotkey-row"><span>Place digit</span><span class="kbd">1 - 9</span></div>
-              <div class="hotkey-row"><span>Erase selected</span><span class="kbd">0 / Del / Backspace</span></div>
-              <div class="hotkey-row"><span>Toggle notes</span><span class="kbd">N</span></div>
-              <div class="hotkey-row"><span>Use hint</span><span class="kbd">H</span></div>
-              <div class="hotkey-row"><span>Start / restart</span><span class="kbd">Space</span></div>
-            </div>
-          </div>
-
-          <div class="mini-panel">
-            <h3>Scoring Matrix</h3>
-            <p>
-              Correct digit: +100 plus streak bonus. Notes: +4. Hint: -90. Wrong digit: -40 and streak reset.
-              Finish fast, finish clean, and the neon crowns you properly.
-            </p>
-          </div>
-
-          <div class="mini-panel">
-            <h3>Mobile Ops</h3>
-            <p>
-              Every control uses explicit pointer events. Tap cells, use the giant number pad, and long glances at your notes
-              without leaving the frame.
-            </p>
-          </div>
+          </section>
         </div>
-      </aside>
+
+        <div class="utility-row">
+          <details class="panel utility-drawer left-panel" aria-label="Mission control panel">
+            <summary>Run Setup &amp; Assist</summary>
+            <div class="panel-inner">
+              <div class="chips" id="difficultyChips" aria-label="Difficulty selector">
+                <button class="chip active" data-difficulty="easy">Easy Drift</button>
+                <button class="chip" data-difficulty="medium">Medium Surge</button>
+                <button class="chip" data-difficulty="hard">Hard Static</button>
+                <button class="chip" data-difficulty="expert">Expert Void</button>
+              </div>
+
+              <div class="subgrid" id="assistList">
+                <div class="assist-row">
+                  <div class="assist-meta">
+                    <strong>Conflict Vision</strong>
+                    <span>Flag rule clashes instantly when a row, column, or box breaks.</span>
+                  </div>
+                  <button class="toggle active" data-toggle="showConflicts" aria-pressed="true"></button>
+                </div>
+                <div class="assist-row">
+                  <div class="assist-meta">
+                    <strong>Peer Glow</strong>
+                    <span>Illuminate row, column, and box relationships for the active cell.</span>
+                  </div>
+                  <button class="toggle active" data-toggle="highlightPeers" aria-pressed="true"></button>
+                </div>
+                <div class="assist-row">
+                  <div class="assist-meta">
+                    <strong>Echo Numbers</strong>
+                    <span>Highlight every matching digit to accelerate scans and patterns.</span>
+                  </div>
+                  <button class="toggle active" data-toggle="highlightMatches" aria-pressed="true"></button>
+                </div>
+                <div class="assist-row">
+                  <div class="assist-meta">
+                    <strong>Auto-Clean Notes</strong>
+                    <span>Strip pencil marks from peers when a confirmed digit lands.</span>
+                  </div>
+                  <button class="toggle active" data-toggle="autoCleanNotes" aria-pressed="true"></button>
+                </div>
+                <div class="assist-row">
+                  <div class="assist-meta">
+                    <strong>Ambient Audio</strong>
+                    <span>Low procedural pulses, UI chirps, mistake stabs, and win arpeggios.</span>
+                  </div>
+                  <button class="toggle active" data-toggle="audioEnabled" aria-pressed="true"></button>
+                </div>
+              </div>
+
+              <div class="footer-note">
+                Touch-ready, keyboard-fast, fully standalone. Built for sandboxed iframes with nothing but scripts and audacity.
+              </div>
+            </div>
+          </details>
+
+          <details class="panel utility-drawer right-panel" aria-label="Intel panel">
+            <summary>Intel &amp; Shortcuts</summary>
+            <div class="panel-inner">
+              <div class="mini-panel">
+                <h3>Run Intel</h3>
+                <p id="intelText">
+                  The chamber is dormant. Start the run, pick clean lines, and the grid will reward momentum.
+                </p>
+              </div>
+
+              <div class="mini-panel">
+                <h3>Selected Cell</h3>
+                <p id="selectedMeta">
+                  No lock. Tap any editable tile to inspect coordinates, candidate count, and stored notes.
+                </p>
+              </div>
+
+              <div class="mini-panel">
+                <h3>Hotkeys</h3>
+                <div class="hotkeys">
+                  <div class="hotkey-row"><span>Move selection</span><span class="kbd">Arrows / WASD</span></div>
+                  <div class="hotkey-row"><span>Place digit</span><span class="kbd">1 - 9</span></div>
+                  <div class="hotkey-row"><span>Erase selected</span><span class="kbd">0 / Del / Backspace</span></div>
+                  <div class="hotkey-row"><span>Toggle notes</span><span class="kbd">N</span></div>
+                  <div class="hotkey-row"><span>Use hint</span><span class="kbd">H</span></div>
+                  <div class="hotkey-row"><span>Start / restart</span><span class="kbd">Space</span></div>
+                </div>
+              </div>
+
+              <div class="mini-panel">
+                <h3>Scoring Matrix</h3>
+                <p>
+                  Correct digit: +100 plus streak bonus. Notes: +4. Hint: -90. Wrong digit: -40 and streak reset.
+                  Finish fast, finish clean, and the neon crowns you properly.
+                </p>
+              </div>
+            </div>
+          </details>
+        </div>
+      </main>
     </div>
   </div>
 
@@ -1608,7 +1928,7 @@
           },
           {
             puzzle: "200080300060070084030500209000105408000000000402706000301007040720040060004010003",
-            solution: "245986371169273584837514269673125498918364725452796138391657842726843915584219673"
+            solution: "245981376169273584837564219976125438513498627482736951391657842728349165654812793"
           },
           {
             puzzle: "000260701680070090190004500820100040004602900050003028009300074040050036703018000",
@@ -1618,43 +1938,43 @@
         medium: [
           {
             puzzle: "000000907000420180000705026100904000050000040000507009920108000034059000507000000",
-            solution: "483651927659423187271795326168934752795812643342567819926178534834259671517346298"
+            solution: "462831957795426183381795426173984265659312748248567319926178534834259671517643892"
           },
           {
             puzzle: "030050040008010500460000012070502080000603000040109030250000098001020600080060020",
-            solution: "137256849928314576465897312673542981819673254542189637256431798391728465784965123"
+            solution: "137256849928314567465897312673542981819673254542189736256731498391428675784965123"
           },
           {
             puzzle: "020810740700003100090002805009040087400208003160030200302700060005600008076051090",
-            solution: "523819746784563129691472835239145687457268913168937254312794568945686371876351492"
+            solution: "523816749784593126691472835239145687457268913168937254342789561915624378876351492"
           }
         ],
         hard: [
           {
             puzzle: "000900002050123400030000160908000000070000090000000205091000050007439020400007000",
-            solution: "416958732859123476732674168948215367275346891163897245391782654687439521524561983"
+            solution: "814976532659123478732854169948265317275341896163798245391682754587439621426517983"
           },
           {
             puzzle: "300200000000107000706030500070009080900020004010800050009040301000702000000008006",
-            solution: "351286497492157638786934512274569183935421764618873259869645321143792856527318946"
+            solution: "351286497492157638786934512275469183938521764614873259829645371163792845547318926"
           },
           {
             puzzle: "000125400008400000420800000030000095060902010510000060000003049000007200001298000",
-            solution: "976125438158436927423879651237614895864952713519783264782563149345791286691298375"
+            solution: "976125438158436927423879156234761895867952314519384762782513649395647281641298573"
           }
         ],
         expert: [
           {
             puzzle: "100007090030020008009600500005300900010080002600004000300000010040000007007000300",
-            solution: "162857493534129768789643521475312986913586472628794135356478219241935687897261354"
+            solution: "162857493534129678789643521475312986913586742628794135356478219241935867897261354"
           },
           {
             puzzle: "000000012006000000000801040080000000000030700040000000000005030900040000700000000",
-            solution: "874563912126497385395821647583176294269438751741952863412685739938247156657319428"
+            solution: "473596812816324579295871346387952164162438795549617283624185937951743628738269451"
           },
           {
             puzzle: "005300000800000020070010500400005300010070006003200080060500009004000030000009700",
-            solution: "145327698839654127672918543486195372217873456953246981761532849594781236328469715"
+            solution: "145327698839654127672918543496185372218473956753296481367542819984761235521839764"
           }
         ]
       };
@@ -1762,7 +2082,8 @@
       const audio = {
         ctx: null,
         master: null,
-        ambientTimer: 0
+        ambientTimer: 0,
+        unlockPromise: null
       };
 
       function clamp(value, min, max) {
@@ -1858,6 +2179,16 @@
           }
         }
         return candidates;
+      }
+
+      function remainingDigitCounts(board = state.board) {
+        const remaining = Array(10).fill(9);
+        board.forEach((value) => {
+          if (value >= 1 && value <= 9) {
+            remaining[value] = Math.max(0, remaining[value] - 1);
+          }
+        });
+        return remaining;
       }
 
       function findConflicts(board = state.board) {
@@ -2045,8 +2376,19 @@
           const button = document.createElement("button");
           button.type = "button";
           button.className = "number-btn";
-          button.textContent = String(value);
           button.dataset.value = String(value);
+          button.setAttribute("aria-label", `Digit ${value}, 9 remaining`);
+
+          const valueNode = document.createElement("span");
+          valueNode.className = "number-value";
+          valueNode.textContent = String(value);
+          button.appendChild(valueNode);
+
+          const remainingNode = document.createElement("span");
+          remainingNode.className = "number-remaining";
+          remainingNode.textContent = "9";
+          button.appendChild(remainingNode);
+
           button.addEventListener("pointerdown", (event) => {
             event.preventDefault();
             unlockAudio();
@@ -2081,6 +2423,7 @@
       }
 
       function updateHud() {
+        const remaining = remainingDigitCounts();
         dom.timerValue.textContent = formatTime(state.timerSeconds);
         dom.scoreValue.innerHTML = `${state.score} <small>pts</small>`;
         dom.streakValue.innerHTML = `${state.streak} <small>x</small>`;
@@ -2093,7 +2436,15 @@
         visual.numberButtons.forEach((button) => {
           const value = Number(button.dataset.value);
           const isMatch = state.selected >= 0 && state.board[state.selected] === value;
+          const remainingCount = remaining[value];
+          const remainingNode = button.querySelector(".number-remaining");
           button.classList.toggle("active", isMatch);
+          button.classList.toggle("depleted", remainingCount === 0);
+          button.classList.toggle("scarce", remainingCount > 0 && remainingCount <= 2);
+          button.setAttribute("aria-label", `Digit ${value}, ${remainingCount} remaining`);
+          if (remainingNode) {
+            remainingNode.textContent = String(remainingCount);
+          }
         });
 
         const dots = Array.from(dom.mistakeDots.children);
@@ -2222,8 +2573,9 @@
 
         const candidates = candidateSet(index);
         const correctValue = state.solution[index];
+        const conflictWarning = !candidates.includes(value) && state.assists.showConflicts;
 
-        if (value !== correctValue || (!candidates.includes(value) && state.assists.showConflicts)) {
+        if (value !== correctValue) {
           state.mistakes += 1;
           state.streak = 0;
           state.score = Math.max(0, state.score - 40);
@@ -2248,7 +2600,11 @@
         if (state.assists.autoCleanNotes) {
           clearPeerNotes(index, value);
         }
-        setMessage(`Digit ${value} locked in. Streak x${state.streak}.`);
+        if (conflictWarning) {
+          setMessage(`Digit ${value} is correct here. Another bad entry is still poisoning this lane, so keep hunting the real conflict.`, "warning");
+        } else {
+          setMessage(`Digit ${value} locked in. Streak x${state.streak}.`);
+        }
         playUiTone("place");
         spawnBurstFromCell(index, 10 + state.streak, "#6ff7ff");
         drawBoard();
@@ -2566,30 +2922,59 @@
         }
       }
 
-      function unlockAudio() {
-        if (!state.assists.audioEnabled || state.audioReady) {
-          return;
+      function ensureAudioReady() {
+        if (!state.assists.audioEnabled) {
+          state.audioReady = false;
+          return Promise.resolve(false);
         }
 
         try {
           const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
           if (!AudioContextCtor) {
             state.audioReady = false;
-            return;
+            return Promise.resolve(false);
           }
 
-          audio.ctx = new AudioContextCtor();
-          audio.master = audio.ctx.createGain();
-          audio.master.gain.value = 0.12;
-          audio.master.connect(audio.ctx.destination);
-          state.audioReady = true;
-          if (audio.ctx.state === "suspended") {
-            audio.ctx.resume().catch(() => {});
+          if (!audio.ctx || audio.ctx.state === "closed") {
+            audio.ctx = new AudioContextCtor();
+            audio.master = audio.ctx.createGain();
+            audio.master.gain.value = 0.2;
+            audio.master.connect(audio.ctx.destination);
           }
-          scheduleAmbientPulse();
+
+          if (audio.ctx.state === "running") {
+            state.audioReady = true;
+            scheduleAmbientPulse();
+            return Promise.resolve(true);
+          }
+
+          if (!audio.unlockPromise) {
+            audio.unlockPromise = audio.ctx.resume()
+              .then(() => {
+                state.audioReady = audio.ctx?.state === "running";
+                if (state.audioReady) {
+                  scheduleAmbientPulse();
+                }
+                return state.audioReady;
+              })
+              .catch(() => {
+                state.audioReady = false;
+                return false;
+              })
+              .finally(() => {
+                audio.unlockPromise = null;
+              });
+          }
+
+          return audio.unlockPromise;
         } catch (error) {
           state.audioReady = false;
+          return Promise.resolve(false);
         }
+      }
+
+      function unlockAudio() {
+        void ensureAudioReady();
       }
 
       function scheduleAmbientPulse() {
@@ -2623,7 +3008,16 @@
       }
 
       function synthTone(options) {
-        if (!state.audioReady || !audio.ctx || !audio.master || !state.assists.audioEnabled) {
+        if (!audio.ctx || !audio.master || !state.assists.audioEnabled) {
+          return;
+        }
+
+        if (audio.ctx.state !== "running") {
+          void ensureAudioReady().then((ready) => {
+            if (ready) {
+              synthTone(options);
+            }
+          });
           return;
         }
 
@@ -2653,7 +3047,7 @@
       }
 
       function playUiTone(type) {
-        if (!state.audioReady || !state.assists.audioEnabled) {
+        if (!state.assists.audioEnabled) {
           return;
         }
 
@@ -2712,7 +3106,12 @@
           ]
         };
 
-        (patterns[type] || []).forEach((note) => synthTone(note));
+        void ensureAudioReady().then((ready) => {
+          if (!ready) {
+            return;
+          }
+          (patterns[type] || []).forEach((note) => synthTone(note));
+        });
       }
 
       function resizeFx() {

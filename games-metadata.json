@@ -3564,7 +3564,7 @@
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-04-28",
-          "linesOfCode": 2290,
+          "linesOfCode": 2135,
           "path": "/games/pac-man/gpt-5-4/index.html",
           "features": [
             "sound",
@@ -3601,7 +3601,7 @@
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-04-28",
-          "linesOfCode": 813,
+          "linesOfCode": 814,
           "path": "/games/sudoku/sonnet-4-6/index.html",
           "features": [
             "sound",
@@ -3629,7 +3629,7 @@
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-04-28",
-          "linesOfCode": 2972,
+          "linesOfCode": 3371,
           "path": "/games/sudoku/gpt-5-4/index.html",
           "features": [
             "sound",
