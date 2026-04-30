@@ -14,7 +14,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 💣 Minesweeper | Every click is a calculated gamble. Use logic to uncover safe tiles while avoiding hidden explosives. | 5 |
 | 🧱 Tetris | Falling tetrominoes demand split-second decisions. Stack them perfectly or watch entropy consume the board. | 5 |
 | ⚫ Reversi | A war of strategic placement. Flip your opponent's pieces and dominate the 8×8 battlefield. | 5 |
-| 🏓 Breakout | Shatter neon bricks with a blazing ball. Catch power-ups, chain combos, and clear every level before your lives run out. | 5 |
+| 🏓 Breakout | Shatter neon bricks with a blazing ball. Catch power-ups, chain combos, and clear every level before your lives run out. | 6 |
 | 🔢 2048 | Slide, merge, and strategize on a 4×4 grid. Chase the elusive 2048 tile before the board fills up. | 5 |
 | 🏃 Endless Runner 3D | A neon-soaked 3D sprint through an endless cyberpunk corridor with obstacles, collectibles, and power-ups. | 5 |
 | 🔮 Marble Madness | Roll a glowing marble across neon platforms suspended in space. Master physics, dodge hazards, and race the clock. | 5 |
@@ -33,6 +33,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,400 lines | 2,852 lines | 2,919 lines | 2,135 lines | 3,371 lines |
 | GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 862 lines | N/A | N/A |
 | Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A | N/A | N/A |
+| Minimax M2.7 | N/A | N/A | N/A | N/A | 1030 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.
 

@@ -1546,6 +1546,19 @@
               ]
             }
           ]
+        },
+        {
+          "model": "Minimax M2.7",
+          "modelId": "minimax-m2-7",
+          "date": "2026-04-30",
+          "linesOfCode": 1030,
+          "path": "/games/breakout/minimax-m2-7/index.html",
+          "features": [
+            "sound",
+            "particles",
+            "powerups"
+          ],
+          "aiReviews": []
         }
       ]
     },
