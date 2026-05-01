@@ -12,7 +12,7 @@ const ALL_GAMES = [
   { id: "maze-3d", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "mini-golf", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini"] },
   { id: "tile-matching", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-5"] },
-  { id: "space-invaders", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini"] },
+  { id: "space-invaders", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-5"] },
   { id: "pac-man", models: ["sonnet-4-6", "gpt-5-4"] },
   { id: "sudoku", models: ["sonnet-4-6", "gpt-5-4"] },
 ];

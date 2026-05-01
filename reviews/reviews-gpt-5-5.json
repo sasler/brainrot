@@ -50,6 +50,56 @@
         "The compactness works, though a few labels feel like they were shortened during turbulence.",
         "Mini built a capable gem game and then dressed it as a sci-fi operations dashboard."
       ]
+    },
+    "space-invaders": {
+      "opus-4-6": [
+        "Opus made Space Invaders feel like an aerospace compliance demo with explosions.",
+        "The boss entrance has gravitas, but the variable names look like they were smuggled through customs.",
+        "Those shield chunks crumble nicely, even while the code treats vowels like a luxury tax.",
+        "Opus brought real arcade muscle, then filed half the fun under abbreviations.",
+        "The UFO lights are charming enough to distract from the tiny maze of shorthand below them.",
+        "Boss waves every three rounds is confidence, or possibly an alien labor dispute.",
+        "The procedural audio arrives like a synthesizer doing a dramatic reading of panic.",
+        "It plays well, glows hard, and names things like a keyboard with missing keys.",
+        "Opus built a serious defense grid, then labeled it like a secret government spreadsheet.",
+        "This is polished Space Invaders with the soul of a systems engineer wearing mirrored sunglasses."
+      ],
+      "sonnet-4-6": [
+        "Sonnet's Deluxe Edition has the confidence of an arcade cabinet that hired a stylist.",
+        "The retro posture is excellent, even if the title screen announces itself like a gala invitation.",
+        "Those pixel shields break apart with more dignity than most players will manage.",
+        "The cursor disappearing is bold, like the mouse was too embarrassed to be seen here.",
+        "Boss waves every five rounds keeps the drama punctual, which is very Sonnet.",
+        "The touch controls are clean enough to make the old arcade stick feel unemployed.",
+        "Power-up labels are tiny, but apparently the invasion budget did not include typography.",
+        "Sonnet modernized the classic without turning it into a dashboard convention.",
+        "The sound effects crunch nicely, like the aliens are being recycled into neon gravel.",
+        "It is charming, sturdy, and only occasionally dressed like a museum fundraiser."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4 built Space Invaders and then surrounded it with mission control for one spaceship.",
+        "The HUD has enough telemetry to make the aliens wait for a quarterly briefing.",
+        "Calling the fire button PULSE is stylish, but the cannon is not leading a wellness seminar.",
+        "The enemy roster reads like a tactical database got lost on its way to an arcade.",
+        "Warm Up Loop is a brave feature for players who wanted a trailer before pressing space.",
+        "The game looks expensive, sounds expensive, and sometimes spends like it found a blank check.",
+        "Every power-up has a name with defense-contractor energy and a glow to match.",
+        "The boss fights are excellent once you finish admiring the surrounding brochure.",
+        "GPT 5.4 has superb juice, then adds a second glass, a coaster, and a dashboard.",
+        "This is a great shooter wearing the entire command center as a jacket."
+      ],
+      "gpt-5-4-mini": [
+        "Mini packed bosses, combos, shields, and power-ups into a suitcase and called it deployment.",
+        "The lightning fire button is cute, like the UI brought one prop to the invasion.",
+        "Frame timing tied to counters is retro in the same way a flat tire is vintage.",
+        "The lean presentation works, though the void occasionally looks like it forgot to get dressed.",
+        "Mini's abbreviations make the source read like a space license plate.",
+        "The feature set punches up, even if the visuals brought exact change.",
+        "Those fixed touch buttons are earnest little circles doing a very large job.",
+        "It plays faster than it explains itself, which is either confidence or evasive driving.",
+        "Mini made an efficient shooter with the decorating budget of an emergency flashlight.",
+        "This version is scrappy, playable, and one neon polish pass away from bragging rights."
+      ]
     }
   }
 }
