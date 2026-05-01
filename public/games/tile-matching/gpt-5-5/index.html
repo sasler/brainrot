@@ -1,0 +1,2386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Prism Crush - GPT 5.5 Match-3</title>
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #03040b;
+  color: #f4f7ff;
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  cursor: pointer;
+  background: #03040b;
+  touch-action: none;
+}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Prism Crush tile matching game"></canvas>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d", { alpha: false });
+
+  const GRID = 8;
+  const START_MOVES = 36;
+  const IDLE_HINT_MS = 4800;
+  const SHUFFLE_PENALTY = 2;
+  const TILE_NONE = 0;
+  const TILE_ROW = 1;
+  const TILE_COL = 2;
+  const TILE_BOMB = 3;
+  const TILE_PRISM = 4;
+
+  const gems = [
+    {
+      name: "Pulse Ruby",
+      fill: "#ff2b68",
+      rim: "#ff75a1",
+      deep: "#5a0623",
+      glow: "#ff1762",
+      shape: "diamond",
+      pitch: 392
+    },
+    {
+      name: "Ion Sapphire",
+      fill: "#2e8cff",
+      rim: "#8cc4ff",
+      deep: "#073463",
+      glow: "#26c6ff",
+      shape: "circle",
+      pitch: 440
+    },
+    {
+      name: "Neon Citrine",
+      fill: "#ffd241",
+      rim: "#fff29b",
+      deep: "#6d4b08",
+      glow: "#ffea55",
+      shape: "hex",
+      pitch: 494
+    },
+    {
+      name: "Vapor Jade",
+      fill: "#20f28a",
+      rim: "#91ffd0",
+      deep: "#075734",
+      glow: "#4dff9f",
+      shape: "leaf",
+      pitch: 523
+    },
+    {
+      name: "Plasma Violet",
+      fill: "#b45cff",
+      rim: "#e1b3ff",
+      deep: "#43106d",
+      glow: "#d35cff",
+      shape: "star",
+      pitch: 587
+    },
+    {
+      name: "Solar Coral",
+      fill: "#ff7b38",
+      rim: "#ffc197",
+      deep: "#65300e",
+      glow: "#ff8a32",
+      shape: "kite",
+      pitch: 659
+    },
+    {
+      name: "Arc Mint",
+      fill: "#37f6e7",
+      rim: "#b8fff9",
+      deep: "#0b5550",
+      glow: "#00fff0",
+      shape: "square",
+      pitch: 740
+    }
+  ];
+
+  const state = {
+    mode: "title",
+    width: 1,
+    height: 1,
+    dpr: 1,
+    boardX: 0,
+    boardY: 0,
+    boardSize: 0,
+    cell: 1,
+    topHud: 68,
+    bottomHud: 62,
+    board: [],
+    particles: [],
+    floaters: [],
+    beams: [],
+    ripples: [],
+    sparks: [],
+    buttons: [],
+    score: 0,
+    best: 0,
+    level: 1,
+    moves: START_MOVES,
+    target: 6500,
+    combo: 0,
+    maxCombo: 0,
+    cascades: 0,
+    selected: null,
+    dragFrom: null,
+    pointerDown: null,
+    hover: null,
+    cursor: { r: 0, c: 0 },
+    keyboardPick: null,
+    hint: null,
+    hintAge: 0,
+    idleMs: 0,
+    message: "Match three or more prisms",
+    resolving: false,
+    inputLocked: false,
+    shake: 0,
+    shakeX: 0,
+    shakeY: 0,
+    time: 0,
+    levelFlash: 0,
+    finalReason: "",
+    muted: false,
+    shuffleQueued: false,
+    reducedMotion: false,
+    runId: 0
+  };
+
+  let audio = null;
+  let lastFrame = 0;
+  let tileSerial = 1;
+  let animationFrame = 0;
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function easeOutCubic(t) {
+    const p = 1 - t;
+    return 1 - p * p * p;
+  }
+
+  function easeInOutCubic(t) {
+    if (t < 0.5) {
+      return 4 * t * t * t;
+    }
+    const p = -2 * t + 2;
+    return 1 - p * p * p / 2;
+  }
+
+  function easeOutBack(t) {
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  }
+
+  function rand(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  function choice(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function nowSeconds() {
+    return performance.now() / 1000;
+  }
+
+  function tileAt(r, c) {
+    if (r < 0 || r >= GRID || c < 0 || c >= GRID) {
+      return null;
+    }
+    if (!state.board[r]) {
+      return null;
+    }
+    return state.board[r][c];
+  }
+
+  function isAdjacent(a, b) {
+    if (!a || !b) {
+      return false;
+    }
+    return Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
+  }
+
+  function boardToPixel(r, c) {
+    return {
+      x: state.boardX + c * state.cell + state.cell / 2,
+      y: state.boardY + r * state.cell + state.cell / 2
+    };
+  }
+
+  function pixelToCell(x, y) {
+    const c = Math.floor((x - state.boardX) / state.cell);
+    const r = Math.floor((y - state.boardY) / state.cell);
+    if (r < 0 || r >= GRID || c < 0 || c >= GRID) {
+      return null;
+    }
+    return { r, c };
+  }
+
+  function makeTile(type, r, c, special = TILE_NONE, above = 0) {
+    const p = boardToPixel(r, c);
+    return {
+      id: tileSerial++,
+      type,
+      special,
+      r,
+      c,
+      x: p.x,
+      y: p.y - above,
+      tx: p.x,
+      ty: p.y,
+      sx: p.x,
+      sy: p.y - above,
+      moveTime: 0,
+      moveDuration: 0,
+      scale: 1,
+      alpha: 1,
+      rotation: rand(-0.08, 0.08),
+      pop: 0,
+      glow: 0,
+      wobble: rand(0, Math.PI * 2),
+      vanish: false,
+      spawn: above > 0 ? 1 : 0
+    };
+  }
+
+  function setTilePosition(tile, r, c, snap = false) {
+    tile.r = r;
+    tile.c = c;
+    const p = boardToPixel(r, c);
+    tile.tx = p.x;
+    tile.ty = p.y;
+    if (snap) {
+      tile.x = p.x;
+      tile.y = p.y;
+      tile.sx = p.x;
+      tile.sy = p.y;
+      tile.moveTime = 0;
+      tile.moveDuration = 0;
+    }
+  }
+
+  function animateTileTo(tile, r, c, duration = 0.22, fromCurrent = true) {
+    tile.r = r;
+    tile.c = c;
+    const p = boardToPixel(r, c);
+    tile.sx = fromCurrent ? tile.x : tile.tx;
+    tile.sy = fromCurrent ? tile.y : tile.ty;
+    tile.tx = p.x;
+    tile.ty = p.y;
+    tile.moveTime = 0;
+    tile.moveDuration = duration;
+  }
+
+  function createAudio() {
+    if (audio) {
+      return audio;
+    }
+    const AudioCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtor) {
+      return null;
+    }
+    const ac = new AudioCtor();
+    const master = ac.createGain();
+    const compressor = ac.createDynamicsCompressor();
+    master.gain.value = 0.55;
+    master.connect(compressor);
+    compressor.connect(ac.destination);
+    audio = {
+      ac,
+      master,
+      humGain: null,
+      humOsc: null,
+      sparkleTimer: 0
+    };
+    startAmbientHum();
+    return audio;
+  }
+
+  function resumeAudio() {
+    const a = createAudio();
+    if (!a) {
+      return;
+    }
+    if (a.ac.state === "suspended") {
+      a.ac.resume();
+    }
+  }
+
+  function envGain(time, attack, hold, release, peak) {
+    const a = createAudio();
+    if (!a || state.muted) {
+      return null;
+    }
+    const gain = a.ac.createGain();
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), time + attack);
+    gain.gain.setValueAtTime(Math.max(0.0002, peak), time + attack + hold);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + attack + hold + release);
+    return gain;
+  }
+
+  function tone(freq, duration, type = "sine", volume = 0.16, delay = 0, bend = 0) {
+    const a = createAudio();
+    if (!a || state.muted) {
+      return;
+    }
+    const t = a.ac.currentTime + delay;
+    const osc = a.ac.createOscillator();
+    const gain = envGain(t, 0.012, duration * 0.25, duration * 0.75, volume);
+    if (!gain) {
+      return;
+    }
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (bend !== 0) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(30, freq + bend), t + duration);
+    }
+    osc.connect(gain);
+    gain.connect(a.master);
+    osc.start(t);
+    osc.stop(t + duration + 0.05);
+  }
+
+  function noiseBurst(duration, volume, delay = 0, color = "high") {
+    const a = createAudio();
+    if (!a || state.muted) {
+      return;
+    }
+    const t = a.ac.currentTime + delay;
+    const bufferSize = Math.max(1, Math.floor(a.ac.sampleRate * duration));
+    const buffer = a.ac.createBuffer(1, bufferSize, a.ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const decay = 1 - i / bufferSize;
+      data[i] = (Math.random() * 2 - 1) * decay;
+    }
+    const source = a.ac.createBufferSource();
+    const filter = a.ac.createBiquadFilter();
+    const gain = envGain(t, 0.006, duration * 0.1, duration * 0.9, volume);
+    if (!gain) {
+      return;
+    }
+    filter.type = color === "low" ? "lowpass" : "highpass";
+    filter.frequency.value = color === "low" ? 420 : 1800;
+    source.buffer = buffer;
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(a.master);
+    source.start(t);
+    source.stop(t + duration + 0.03);
+  }
+
+  function startAmbientHum() {
+    if (!audio || state.muted || audio.humOsc) {
+      return;
+    }
+    const t = audio.ac.currentTime;
+    const osc = audio.ac.createOscillator();
+    const gain = audio.ac.createGain();
+    const filter = audio.ac.createBiquadFilter();
+    osc.type = "sine";
+    osc.frequency.value = 58;
+    filter.type = "lowpass";
+    filter.frequency.value = 180;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.035, t + 0.35);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(audio.master);
+    osc.start(t);
+    audio.humOsc = osc;
+    audio.humGain = gain;
+  }
+
+  function stopAmbientHum() {
+    if (!audio || !audio.humOsc) {
+      return;
+    }
+    const t = audio.ac.currentTime;
+    audio.humGain.gain.cancelScheduledValues(t);
+    audio.humGain.gain.setValueAtTime(Math.max(0.0001, audio.humGain.gain.value), t);
+    audio.humGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+    audio.humOsc.stop(t + 0.3);
+    audio.humOsc = null;
+    audio.humGain = null;
+  }
+
+  const sound = {
+    ui() {
+      tone(740, 0.07, "triangle", 0.11);
+      tone(980, 0.08, "sine", 0.08, 0.04);
+    },
+    select(tile) {
+      const base = gems[tile.type].pitch;
+      tone(base, 0.06, "sine", 0.11);
+      tone(base * 1.5, 0.05, "triangle", 0.07, 0.035);
+    },
+    swap() {
+      tone(520, 0.075, "triangle", 0.12);
+      tone(690, 0.075, "triangle", 0.1, 0.045);
+      noiseBurst(0.05, 0.025, 0.02);
+    },
+    reject() {
+      tone(190, 0.11, "sawtooth", 0.12, 0, -35);
+      tone(145, 0.13, "sawtooth", 0.09, 0.07, -28);
+    },
+    match(combo, size) {
+      const base = 300 + combo * 38 + size * 14;
+      tone(base, 0.14, "sine", 0.15);
+      tone(base * 1.25, 0.15, "triangle", 0.12, 0.045);
+      tone(base * 1.5, 0.12, "sine", 0.095, 0.095);
+      noiseBurst(0.08, 0.035, 0.02);
+    },
+    cascade(combo) {
+      const base = 420 + combo * 45;
+      for (let i = 0; i < 5; i++) {
+        tone(base + i * 90, 0.1, i % 2 ? "triangle" : "sine", 0.08, i * 0.045);
+      }
+    },
+    special(kind) {
+      if (kind === TILE_PRISM) {
+        [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, 0.2, "sine", 0.13, i * 0.045));
+        noiseBurst(0.18, 0.04, 0.05);
+        return;
+      }
+      if (kind === TILE_BOMB) {
+        tone(150, 0.24, "sawtooth", 0.18, 0, -40);
+        tone(600, 0.12, "square", 0.08, 0.04);
+        noiseBurst(0.18, 0.08, 0.02, "low");
+        return;
+      }
+      tone(720, 0.13, "triangle", 0.14);
+      tone(960, 0.14, "triangle", 0.11, 0.055);
+    },
+    specialFire(kind) {
+      if (kind === TILE_PRISM) {
+        [1350, 1200, 1050, 900, 760, 620].forEach((f, i) => tone(f, 0.18, "sine", 0.12, i * 0.035));
+        noiseBurst(0.22, 0.07, 0.02);
+        return;
+      }
+      if (kind === TILE_BOMB) {
+        tone(96, 0.35, "sawtooth", 0.2, 0, -38);
+        tone(180, 0.22, "square", 0.13, 0.045, -40);
+        noiseBurst(0.28, 0.12, 0.01, "low");
+        return;
+      }
+      tone(340, 0.16, "sawtooth", 0.14);
+      tone(780, 0.16, "triangle", 0.12, 0.03);
+      noiseBurst(0.13, 0.06, 0.01);
+    },
+    shuffle() {
+      for (let i = 0; i < 9; i++) {
+        tone(230 + i * 72, 0.11, "triangle", 0.08, i * 0.035);
+      }
+      noiseBurst(0.2, 0.045, 0.08);
+    },
+    levelUp() {
+      [392, 494, 587, 784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.2, "sine", 0.15, i * 0.055));
+    },
+    gameOver() {
+      [659, 587, 494, 392, 330, 247, 196].forEach((f, i) => tone(f, 0.26, "sawtooth", 0.12, i * 0.075, -10));
+      noiseBurst(0.32, 0.05, 0.22, "low");
+    },
+    hint() {
+      tone(880, 0.12, "sine", 0.09);
+      tone(1320, 0.14, "sine", 0.06, 0.06);
+    }
+  };
+
+  function createParticle(x, y, options = {}) {
+    state.particles.push({
+      x,
+      y,
+      vx: options.vx ?? rand(-80, 80),
+      vy: options.vy ?? rand(-120, 80),
+      ax: options.ax ?? 0,
+      ay: options.ay ?? 210,
+      life: options.life ?? rand(0.35, 0.85),
+      maxLife: options.life ?? rand(0.35, 0.85),
+      size: options.size ?? rand(1.5, 4.5),
+      color: options.color ?? "#ffffff",
+      glow: options.glow ?? options.color ?? "#ffffff",
+      spin: options.spin ?? rand(-4, 4),
+      rot: options.rot ?? rand(0, Math.PI * 2),
+      shape: options.shape ?? "spark"
+    });
+  }
+
+  function burstAt(x, y, color, count = 18, power = 140) {
+    for (let i = 0; i < count; i++) {
+      const a = rand(0, Math.PI * 2);
+      const s = rand(power * 0.25, power);
+      createParticle(x, y, {
+        vx: Math.cos(a) * s,
+        vy: Math.sin(a) * s,
+        ay: rand(70, 220),
+        life: rand(0.35, 0.95),
+        size: rand(1.5, 5.5),
+        color,
+        glow: color,
+        shape: Math.random() < 0.5 ? "spark" : "diamond"
+      });
+    }
+  }
+
+  function createRing(x, y, color, radius = 20, duration = 0.42) {
+    state.ripples.push({
+      x,
+      y,
+      color,
+      radius,
+      maxRadius: radius + state.cell * rand(0.8, 1.7),
+      life: duration,
+      maxLife: duration,
+      width: rand(1.4, 3.4)
+    });
+  }
+
+  function createFloater(x, y, text, color = "#ffffff", size = 18) {
+    state.floaters.push({
+      x,
+      y,
+      text,
+      color,
+      size,
+      life: 0.85,
+      maxLife: 0.85,
+      vy: -46
+    });
+  }
+
+  function createBeam(from, to, color, width = 6, duration = 0.22) {
+    state.beams.push({
+      x1: from.x,
+      y1: from.y,
+      x2: to.x,
+      y2: to.y,
+      color,
+      width,
+      life: duration,
+      maxLife: duration
+    });
+  }
+
+  function spawnAmbientSparkle(dt) {
+    if (state.mode !== "playing") {
+      return;
+    }
+    const rate = clamp((state.width * state.height) / 250000, 0.7, 3.2);
+    if (Math.random() < dt * rate) {
+      const c = Math.floor(rand(0, GRID));
+      const r = Math.floor(rand(0, GRID));
+      const tile = tileAt(r, c);
+      if (tile) {
+        const gem = gems[tile.type];
+        createParticle(
+          tile.x + rand(-state.cell * 0.25, state.cell * 0.25),
+          tile.y + rand(-state.cell * 0.25, state.cell * 0.25),
+          {
+            vx: rand(-12, 12),
+            vy: rand(-38, -8),
+            ay: -10,
+            life: rand(0.35, 0.8),
+            size: rand(1, 2.7),
+            color: gem.rim,
+            glow: gem.glow,
+            shape: "spark"
+          }
+        );
+      }
+    }
+  }
+
+  function layout() {
+    state.dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+    state.width = Math.max(1, window.innerWidth);
+    state.height = Math.max(1, window.innerHeight);
+    canvas.width = Math.floor(state.width * state.dpr);
+    canvas.height = Math.floor(state.height * state.dpr);
+    canvas.style.width = state.width + "px";
+    canvas.style.height = state.height + "px";
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+    const narrow = state.width <= 420 || state.height <= 560;
+    state.topHud = narrow ? 62 : 78;
+    state.bottomHud = narrow ? 58 : 70;
+    const sidePad = narrow ? 8 : 18;
+    const availableH = state.height - state.topHud - state.bottomHud - 16;
+    const maxBoard = narrow ? 560 : 640;
+    state.boardSize = Math.floor(Math.min(state.width - sidePad * 2, availableH, maxBoard));
+    state.boardSize = Math.max(248, state.boardSize);
+    state.cell = state.boardSize / GRID;
+    state.boardX = Math.round((state.width - state.boardSize) / 2);
+    state.boardY = Math.round(state.topHud + Math.max(0, availableH - state.boardSize) / 2);
+
+    for (let r = 0; r < GRID; r++) {
+      for (let c = 0; c < GRID; c++) {
+        const tile = tileAt(r, c);
+        if (tile) {
+          const p = boardToPixel(r, c);
+          tile.x = p.x;
+          tile.y = p.y;
+          tile.tx = p.x;
+          tile.ty = p.y;
+          tile.sx = p.x;
+          tile.sy = p.y;
+        }
+      }
+    }
+
+    buildButtons();
+  }
+
+  function buildButtons() {
+    state.buttons = [];
+    const gap = 8;
+    const buttonH = state.width <= 360 ? 35 : 40;
+    const y = state.height - buttonH - (state.width <= 360 ? 9 : 14);
+    const center = state.width / 2;
+
+    function push(id, label, x, w, visibleModes) {
+      state.buttons.push({
+        id,
+        label,
+        x,
+        y,
+        w,
+        h: buttonH,
+        visibleModes
+      });
+    }
+
+    if (state.mode === "title") {
+      const w = Math.min(220, state.width - 36);
+      push("start", "START", center - w / 2, w, ["title"]);
+      return;
+    }
+
+    if (state.mode === "gameover") {
+      const w = Math.min(220, state.width - 36);
+      push("restart", "RESTART", center - w / 2, w, ["gameover"]);
+      return;
+    }
+
+    const small = state.width <= 360;
+    const totalW = Math.min(state.width - 16, small ? 304 : 380);
+    const w1 = Math.floor((totalW - gap * 2) * 0.34);
+    const w2 = Math.floor((totalW - gap * 2) * 0.33);
+    const w3 = totalW - gap * 2 - w1 - w2;
+    const x = center - totalW / 2;
+    push("hint", "HINT", x, w1, ["playing"]);
+    push("shuffle", "SHUFFLE", x + w1 + gap, w2, ["playing"]);
+    push("mute", state.muted ? "SOUND" : "MUTE", x + w1 + w2 + gap * 2, w3, ["playing"]);
+  }
+
+  function generateBoard() {
+    state.board = [];
+    for (let r = 0; r < GRID; r++) {
+      state.board[r] = [];
+      for (let c = 0; c < GRID; c++) {
+        let type = randomTypeFor(r, c);
+        state.board[r][c] = makeTile(type, r, c, TILE_NONE, rand(260, 520));
+      }
+    }
+    let guard = 0;
+    while (!findAnyMove() && guard < 80) {
+      shuffleBoard(false);
+      guard++;
+    }
+  }
+
+  function randomTypeFor(r, c) {
+    const avoid = new Set();
+    if (c >= 2) {
+      const a = state.board[r][c - 1];
+      const b = state.board[r][c - 2];
+      if (a && b && a.type === b.type) {
+        avoid.add(a.type);
+      }
+    }
+    if (r >= 2) {
+      const a = state.board[r - 1][c];
+      const b = state.board[r - 2][c];
+      if (a && b && a.type === b.type) {
+        avoid.add(a.type);
+      }
+    }
+    const options = [];
+    for (let i = 0; i < gems.length; i++) {
+      if (!avoid.has(i)) {
+        options.push(i);
+      }
+    }
+    return choice(options.length ? options : gems.map((_, i) => i));
+  }
+
+  function resetGame() {
+    state.runId++;
+    state.score = 0;
+    state.level = 1;
+    state.moves = START_MOVES;
+    state.target = 6500;
+    state.combo = 0;
+    state.maxCombo = 0;
+    state.cascades = 0;
+    state.selected = null;
+    state.dragFrom = null;
+    state.pointerDown = null;
+    state.hover = null;
+    state.keyboardPick = null;
+    state.hint = null;
+    state.hintAge = 0;
+    state.idleMs = 0;
+    state.message = "Match three or more prisms";
+    state.resolving = false;
+    state.inputLocked = false;
+    state.shake = 0;
+    state.levelFlash = 0;
+    state.finalReason = "";
+    state.particles.length = 0;
+    state.floaters.length = 0;
+    state.beams.length = 0;
+    state.ripples.length = 0;
+    state.sparks.length = 0;
+    generateBoard();
+    buildButtons();
+  }
+
+  function startGame() {
+    resumeAudio();
+    state.mode = "playing";
+    resetGame();
+    sound.ui();
+    buildButtons();
+  }
+
+  function endGame(reason) {
+    state.mode = "gameover";
+    state.finalReason = reason;
+    state.best = Math.max(state.best, state.score);
+    state.inputLocked = false;
+    state.resolving = false;
+    state.selected = null;
+    state.hint = null;
+    state.message = reason;
+    state.shake = 10;
+    sound.gameOver();
+    buildButtons();
+  }
+
+  function nextLevel() {
+    state.level++;
+    state.moves += 12;
+    state.target += Math.floor(5200 + state.level * 2700);
+    state.levelFlash = 1;
+    state.message = "Level " + state.level + " - target raised";
+    state.shake = 6;
+    sound.levelUp();
+    createFloater(state.width / 2, state.boardY - 16, "LEVEL " + state.level, "#37f6e7", 24);
+    for (let i = 0; i < 80; i++) {
+      createParticle(rand(state.boardX, state.boardX + state.boardSize), rand(state.boardY, state.boardY + state.boardSize), {
+        vx: rand(-120, 120),
+        vy: rand(-180, 80),
+        ay: rand(70, 180),
+        life: rand(0.5, 1.2),
+        size: rand(1.5, 4.5),
+        color: choice(gems).glow,
+        glow: "#ffffff",
+        shape: "spark"
+      });
+    }
+  }
+
+  function findMatches() {
+    const groups = [];
+    const seen = new Set();
+
+    for (let r = 0; r < GRID; r++) {
+      let start = 0;
+      for (let c = 1; c <= GRID; c++) {
+        const cur = c < GRID ? tileAt(r, c) : null;
+        const prev = tileAt(r, c - 1);
+        if (!cur || !prev || cur.type !== prev.type) {
+          const len = c - start;
+          if (prev && len >= 3) {
+            const tiles = [];
+            for (let x = start; x < c; x++) {
+              tiles.push(tileAt(r, x));
+            }
+            groups.push({
+              orientation: "row",
+              tiles,
+              r,
+              c: Math.floor((start + c - 1) / 2),
+              length: len
+            });
+          }
+          start = c;
+        }
+      }
+    }
+
+    for (let c = 0; c < GRID; c++) {
+      let start = 0;
+      for (let r = 1; r <= GRID; r++) {
+        const cur = r < GRID ? tileAt(r, c) : null;
+        const prev = tileAt(r - 1, c);
+        if (!cur || !prev || cur.type !== prev.type) {
+          const len = r - start;
+          if (prev && len >= 3) {
+            const tiles = [];
+            for (let y = start; y < r; y++) {
+              tiles.push(tileAt(y, c));
+            }
+            groups.push({
+              orientation: "col",
+              tiles,
+              r: Math.floor((start + r - 1) / 2),
+              c,
+              length: len
+            });
+          }
+          start = r;
+        }
+      }
+    }
+
+    for (const group of groups) {
+      for (const tile of group.tiles) {
+        seen.add(tile.id);
+      }
+    }
+
+    return {
+      groups,
+      tiles: allTiles().filter(tile => seen.has(tile.id))
+    };
+  }
+
+  function allTiles() {
+    const out = [];
+    for (let r = 0; r < GRID; r++) {
+      for (let c = 0; c < GRID; c++) {
+        const tile = tileAt(r, c);
+        if (tile) {
+          out.push(tile);
+        }
+      }
+    }
+    return out;
+  }
+
+  function canSwapCreateMatch(a, b) {
+    if (!isAdjacent(a, b)) {
+      return false;
+    }
+    if (a.special === TILE_PRISM || b.special === TILE_PRISM) {
+      return true;
+    }
+    swapBoardOnly(a, b);
+    const matches = findMatches();
+    swapBoardOnly(a, b);
+    return matches.groups.length > 0;
+  }
+
+  function swapBoardOnly(a, b) {
+    const ar = a.r;
+    const ac = a.c;
+    const br = b.r;
+    const bc = b.c;
+    state.board[ar][ac] = b;
+    state.board[br][bc] = a;
+    a.r = br;
+    a.c = bc;
+    b.r = ar;
+    b.c = ac;
+  }
+
+  function swapTiles(a, b, duration = 0.22) {
+    const ar = a.r;
+    const ac = a.c;
+    const br = b.r;
+    const bc = b.c;
+    state.board[ar][ac] = b;
+    state.board[br][bc] = a;
+    animateTileTo(a, br, bc, duration);
+    animateTileTo(b, ar, ac, duration);
+  }
+
+  function findAnyMove() {
+    for (let r = 0; r < GRID; r++) {
+      for (let c = 0; c < GRID; c++) {
+        const tile = tileAt(r, c);
+        const right = tileAt(r, c + 1);
+        const down = tileAt(r + 1, c);
+        if (right && canSwapCreateMatch(tile, right)) {
+          return { a: { r, c }, b: { r, c: c + 1 } };
+        }
+        if (down && canSwapCreateMatch(tile, down)) {
+          return { a: { r, c }, b: { r: r + 1, c } };
+        }
+      }
+    }
+    return null;
+  }
+
+  function requestHint(force = false) {
+    if (state.mode !== "playing" || state.inputLocked || state.resolving) {
+      return;
+    }
+    const move = findAnyMove();
+    if (!move) {
+      state.message = "No moves - prism shuffle";
+      state.shuffleQueued = true;
+      return;
+    }
+    state.hint = {
+      a: move.a,
+      b: move.b,
+      age: 0,
+      force
+    };
+    state.idleMs = 0;
+    state.message = force ? "Try the glowing swap" : "Hint ready";
+    sound.hint();
+    const pa = boardToPixel(move.a.r, move.a.c);
+    const pb = boardToPixel(move.b.r, move.b.c);
+    createBeam(pa, pb, "#37f6e7", 4, 0.45);
+  }
+
+  function shuffleBoard(chargePenalty = true) {
+    const tiles = allTiles();
+    let guard = 0;
+    do {
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tempType = tiles[i].type;
+        const tempSpecial = tiles[i].special;
+        tiles[i].type = tiles[j].type;
+        tiles[i].special = tiles[j].special;
+        tiles[j].type = tempType;
+        tiles[j].special = tempSpecial;
+      }
+      guard++;
+    } while ((findMatches().groups.length > 0 || !findAnyMove()) && guard < 120);
+
+    for (const tile of tiles) {
+      const oldX = tile.x;
+      const oldY = tile.y;
+      const p = boardToPixel(tile.r, tile.c);
+      tile.x = oldX + rand(-state.cell * 1.8, state.cell * 1.8);
+      tile.y = oldY + rand(-state.cell * 1.8, state.cell * 1.8);
+      tile.sx = tile.x;
+      tile.sy = tile.y;
+      tile.tx = p.x;
+      tile.ty = p.y;
+      tile.moveTime = 0;
+      tile.moveDuration = 0.48 + rand(0, 0.18);
+      tile.pop = 0.4;
+    }
+
+    if (chargePenalty && state.moves > SHUFFLE_PENALTY) {
+      state.moves -= SHUFFLE_PENALTY;
+    }
+    state.hint = null;
+    state.selected = null;
+    state.shake = 5;
+    state.message = chargePenalty ? "Board shuffled, -2 moves" : "Board reshuffled";
+    sound.shuffle();
+    createFloater(state.width / 2, state.boardY + state.boardSize / 2, "SHUFFLE", "#ffd241", 22);
+  }
+
+  function performPlayerSwap(a, b) {
+    if (state.inputLocked || state.resolving || state.mode !== "playing") {
+      return;
+    }
+    if (!a || !b || !isAdjacent(a, b)) {
+      sound.reject();
+      return;
+    }
+    state.inputLocked = true;
+    state.hint = null;
+    state.idleMs = 0;
+    state.selected = null;
+    state.keyboardPick = null;
+    const runId = state.runId;
+    sound.swap();
+    swapTiles(a, b, 0.19);
+
+    window.setTimeout(() => {
+      if (runId !== state.runId || state.mode !== "playing") {
+        return;
+      }
+      const specialMove = a.special === TILE_PRISM || b.special === TILE_PRISM;
+      const matches = findMatches();
+      if (specialMove) {
+        resolvePrismSwap(a, b);
+        return;
+      }
+      if (matches.groups.length > 0) {
+        state.moves--;
+        state.combo = 0;
+        resolveMatches(matches, a);
+      } else {
+        state.message = "Swap must make a match";
+        sound.reject();
+        swapTiles(a, b, 0.19);
+        state.shake = 3;
+        window.setTimeout(() => {
+          if (runId !== state.runId || state.mode !== "playing") {
+            return;
+          }
+          state.inputLocked = false;
+        }, 210);
+      }
+    }, 210);
+  }
+
+  function resolvePrismSwap(a, b) {
+    const runId = state.runId;
+    state.moves--;
+    state.combo = 0;
+    const prism = a.special === TILE_PRISM ? a : b;
+    const other = prism === a ? b : a;
+    const matched = [];
+    for (const tile of allTiles()) {
+      if (tile.type === other.type || tile.id === prism.id) {
+        matched.push(tile);
+      }
+    }
+    state.message = "Prism sweep";
+    sound.specialFire(TILE_PRISM);
+    const p0 = { x: prism.x, y: prism.y };
+    for (const tile of matched) {
+      createBeam(p0, { x: tile.x, y: tile.y }, gems[other.type].glow, 3, 0.34);
+    }
+    const fakeMatch = {
+      groups: [{
+        orientation: "prism",
+        tiles: matched,
+        r: prism.r,
+        c: prism.c,
+        length: matched.length
+      }],
+      tiles: matched
+    };
+    window.setTimeout(() => {
+      if (runId !== state.runId || state.mode !== "playing") {
+        return;
+      }
+      resolveMatches(fakeMatch, other);
+    }, 160);
+  }
+
+  function pickSpecialCreation(matches, preferredTile) {
+    if (matches.groups.some(group => group.orientation === "prism")) {
+      return null;
+    }
+    const candidates = [];
+    for (const group of matches.groups) {
+      if (group.length >= 4) {
+        candidates.push(group);
+      }
+    }
+    if (!candidates.length) {
+      return null;
+    }
+
+    candidates.sort((a, b) => b.length - a.length);
+    const group = candidates[0];
+    let tile = null;
+    if (preferredTile && group.tiles.some(t => t.id === preferredTile.id)) {
+      tile = preferredTile;
+    } else {
+      tile = tileAt(group.r, group.c) || group.tiles[Math.floor(group.tiles.length / 2)];
+    }
+
+    let special = TILE_ROW;
+    if (group.length >= 5) {
+      special = TILE_PRISM;
+    } else if (matches.groups.length >= 2 && group.length >= 4) {
+      special = TILE_BOMB;
+    } else if (group.orientation === "row") {
+      special = TILE_ROW;
+    } else if (group.orientation === "col") {
+      special = TILE_COL;
+    }
+
+    return {
+      tile,
+      special,
+      type: tile.type
+    };
+  }
+
+  function expandSpecialTiles(tiles) {
+    const out = new Map();
+    const queue = tiles.slice();
+
+    function add(tile) {
+      if (!tile) {
+        return;
+      }
+      if (!out.has(tile.id)) {
+        out.set(tile.id, tile);
+        queue.push(tile);
+      }
+    }
+
+    for (const tile of tiles) {
+      out.set(tile.id, tile);
+    }
+
+    while (queue.length) {
+      const tile = queue.shift();
+      if (!tile || tile.special === TILE_NONE) {
+        continue;
+      }
+      sound.specialFire(tile.special);
+      if (tile.special === TILE_ROW) {
+        for (let c = 0; c < GRID; c++) {
+          add(tileAt(tile.r, c));
+        }
+        const left = boardToPixel(tile.r, 0);
+        const right = boardToPixel(tile.r, GRID - 1);
+        createBeam(left, right, gems[tile.type].glow, 8, 0.38);
+      } else if (tile.special === TILE_COL) {
+        for (let r = 0; r < GRID; r++) {
+          add(tileAt(r, tile.c));
+        }
+        const top = boardToPixel(0, tile.c);
+        const bottom = boardToPixel(GRID - 1, tile.c);
+        createBeam(top, bottom, gems[tile.type].glow, 8, 0.38);
+      } else if (tile.special === TILE_BOMB) {
+        for (let rr = tile.r - 1; rr <= tile.r + 1; rr++) {
+          for (let cc = tile.c - 1; cc <= tile.c + 1; cc++) {
+            add(tileAt(rr, cc));
+          }
+        }
+        createRing(tile.x, tile.y, gems[tile.type].glow, state.cell * 0.25, 0.45);
+      } else if (tile.special === TILE_PRISM) {
+        const type = choice(gems.map((_, i) => i));
+        for (const candidate of allTiles()) {
+          if (candidate.type === type || candidate.id === tile.id) {
+            add(candidate);
+          }
+        }
+        createRing(tile.x, tile.y, "#ffffff", state.cell * 0.4, 0.55);
+      }
+    }
+
+    return Array.from(out.values());
+  }
+
+  function resolveMatches(matches, preferredTile = null) {
+    if (state.mode !== "playing") {
+      return;
+    }
+    state.resolving = true;
+    state.inputLocked = true;
+    state.combo++;
+    state.maxCombo = Math.max(state.maxCombo, state.combo);
+    state.cascades++;
+
+    const creation = pickSpecialCreation(matches, preferredTile);
+    let matchedTiles = expandSpecialTiles(matches.tiles);
+    const createId = creation && creation.tile ? creation.tile.id : -1;
+    matchedTiles = matchedTiles.filter(tile => tile && tile.id !== createId);
+
+    const basePoints = matchedTiles.length * 90;
+    const comboBonus = Math.max(0, state.combo - 1) * matchedTiles.length * 55;
+    const specialBonus = matchedTiles.filter(tile => tile.special !== TILE_NONE).length * 300;
+    const gained = Math.floor((basePoints + comboBonus + specialBonus) * (1 + state.level * 0.06));
+    state.score += gained;
+    state.best = Math.max(state.best, state.score);
+
+    const label = state.combo > 1 ? "COMBO x" + state.combo : "+" + gained;
+    createFloater(state.boardX + state.boardSize / 2, state.boardY - 10, label, state.combo > 1 ? "#ff5ce8" : "#37f6e7", 20);
+    sound.match(state.combo, matchedTiles.length);
+
+    if (state.combo > 1) {
+      state.shake = Math.min(14, 3 + state.combo * 1.6);
+      sound.cascade(state.combo);
+    } else {
+      state.shake = 2.5;
+    }
+
+    for (const tile of matchedTiles) {
+      const gem = gems[tile.type];
+      tile.vanish = true;
+      tile.pop = 1;
+      burstAt(tile.x, tile.y, gem.glow, tile.special === TILE_NONE ? 12 : 26, tile.special === TILE_NONE ? 120 : 220);
+      createRing(tile.x, tile.y, gem.glow, state.cell * 0.18, 0.36);
+    }
+
+    if (creation && creation.tile) {
+      const tile = creation.tile;
+      tile.special = creation.special;
+      tile.type = creation.type;
+      tile.pop = 1.2;
+      tile.glow = 1.4;
+      createRing(tile.x, tile.y, "#ffffff", state.cell * 0.24, 0.55);
+      burstAt(tile.x, tile.y, gems[tile.type].glow, creation.special === TILE_PRISM ? 45 : 28, 210);
+      sound.special(creation.special);
+    }
+
+    const runId = state.runId;
+    window.setTimeout(() => {
+      if (runId !== state.runId || state.mode !== "playing") {
+        return;
+      }
+      for (const tile of matchedTiles) {
+        if (state.board[tile.r] && state.board[tile.r][tile.c] && state.board[tile.r][tile.c].id === tile.id) {
+          state.board[tile.r][tile.c] = null;
+        }
+      }
+      collapseBoard();
+    }, 260);
+  }
+
+  function collapseBoard() {
+    for (let c = 0; c < GRID; c++) {
+      let write = GRID - 1;
+      for (let r = GRID - 1; r >= 0; r--) {
+        const tile = tileAt(r, c);
+        if (tile) {
+          state.board[write][c] = tile;
+          if (write !== r) {
+            state.board[r][c] = null;
+            animateTileTo(tile, write, c, 0.24 + Math.abs(write - r) * 0.035);
+          } else {
+            setTilePosition(tile, write, c);
+          }
+          write--;
+        }
+      }
+      for (let r = write; r >= 0; r--) {
+        const type = Math.floor(Math.random() * gems.length);
+        const above = state.cell * (write - r + 2 + rand(0, 1.5));
+        const tile = makeTile(type, r, c, TILE_NONE, above);
+        tile.moveDuration = 0.36 + (write - r) * 0.045 + rand(0, 0.08);
+        tile.moveTime = 0;
+        state.board[r][c] = tile;
+      }
+    }
+
+    const runId = state.runId;
+    window.setTimeout(() => {
+      if (runId !== state.runId || state.mode !== "playing") {
+        return;
+      }
+      const next = findMatches();
+      if (next.groups.length > 0) {
+        state.message = "Cascade x" + (state.combo + 1);
+        resolveMatches(next, null);
+      } else {
+        finishResolution();
+      }
+    }, 440);
+  }
+
+  function finishResolution() {
+    state.resolving = false;
+    state.inputLocked = false;
+    state.combo = 0;
+    state.cascades = 0;
+    if (state.score >= state.target) {
+      nextLevel();
+    }
+    if (state.moves <= 0) {
+      endGame(state.score >= state.target ? "Moves spent after a brilliant run" : "Out of moves before the target");
+      return;
+    }
+    if (!findAnyMove()) {
+      state.message = "No valid swaps - auto shuffle";
+      shuffleBoard(false);
+    } else {
+      state.message = "Pick a neighboring swap";
+    }
+  }
+
+  function handleBoardTap(cell) {
+    if (!cell || state.inputLocked || state.resolving || state.mode !== "playing") {
+      return;
+    }
+    const tile = tileAt(cell.r, cell.c);
+    if (!tile) {
+      return;
+    }
+    state.idleMs = 0;
+    state.hint = null;
+    state.cursor = { r: cell.r, c: cell.c };
+
+    if (!state.selected) {
+      state.selected = { r: cell.r, c: cell.c };
+      tile.pop = Math.max(tile.pop, 0.45);
+      tile.glow = Math.max(tile.glow, 0.8);
+      sound.select(tile);
+      return;
+    }
+
+    const prev = tileAt(state.selected.r, state.selected.c);
+    if (prev && prev.id === tile.id) {
+      state.selected = null;
+      sound.ui();
+      return;
+    }
+
+    if (prev && isAdjacent(prev, tile)) {
+      performPlayerSwap(prev, tile);
+      return;
+    }
+
+    state.selected = { r: cell.r, c: cell.c };
+    tile.pop = Math.max(tile.pop, 0.5);
+    tile.glow = Math.max(tile.glow, 0.8);
+    sound.select(tile);
+  }
+
+  function handleButton(id) {
+    resumeAudio();
+    if (id === "start") {
+      startGame();
+      return;
+    }
+    if (id === "restart") {
+      startGame();
+      return;
+    }
+    if (id === "hint") {
+      requestHint(true);
+      return;
+    }
+    if (id === "shuffle") {
+      if (state.mode === "playing" && !state.inputLocked && !state.resolving) {
+        shuffleBoard(true);
+      }
+      return;
+    }
+    if (id === "mute") {
+      state.muted = !state.muted;
+      if (state.muted) {
+        stopAmbientHum();
+      } else {
+        resumeAudio();
+        startAmbientHum();
+        sound.ui();
+      }
+      buildButtons();
+    }
+  }
+
+  function hitButton(x, y) {
+    for (const button of state.buttons) {
+      if (!button.visibleModes.includes(state.mode)) {
+        continue;
+      }
+      if (x >= button.x && x <= button.x + button.w && y >= button.y && y <= button.y + button.h) {
+        return button;
+      }
+    }
+    return null;
+  }
+
+  function pointerPos(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+  }
+
+  function onPointerDown(event) {
+    event.preventDefault();
+    resumeAudio();
+    const pos = pointerPos(event);
+    const button = hitButton(pos.x, pos.y);
+    if (button) {
+      handleButton(button.id);
+      return;
+    }
+    if (state.mode === "title") {
+      startGame();
+      return;
+    }
+    if (state.mode === "gameover") {
+      startGame();
+      return;
+    }
+    const cell = pixelToCell(pos.x, pos.y);
+    state.pointerDown = {
+      x: pos.x,
+      y: pos.y,
+      cell
+    };
+    state.dragFrom = cell;
+    if (cell) {
+      state.hover = cell;
+    }
+  }
+
+  function onPointerMove(event) {
+    const pos = pointerPos(event);
+    state.hover = pixelToCell(pos.x, pos.y);
+    if (!state.pointerDown || !state.dragFrom || state.inputLocked || state.resolving) {
+      return;
+    }
+    const dx = pos.x - state.pointerDown.x;
+    const dy = pos.y - state.pointerDown.y;
+    const threshold = Math.max(18, state.cell * 0.32);
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
+      return;
+    }
+    let target = { r: state.dragFrom.r, c: state.dragFrom.c };
+    if (Math.abs(dx) > Math.abs(dy)) {
+      target.c += dx > 0 ? 1 : -1;
+    } else {
+      target.r += dy > 0 ? 1 : -1;
+    }
+    const a = tileAt(state.dragFrom.r, state.dragFrom.c);
+    const b = tileAt(target.r, target.c);
+    state.pointerDown = null;
+    state.dragFrom = null;
+    if (a && b) {
+      performPlayerSwap(a, b);
+    }
+  }
+
+  function onPointerUp(event) {
+    event.preventDefault();
+    const pos = pointerPos(event);
+    const button = hitButton(pos.x, pos.y);
+    if (button) {
+      state.pointerDown = null;
+      state.dragFrom = null;
+      return;
+    }
+    const cell = pixelToCell(pos.x, pos.y);
+    if (state.pointerDown && state.dragFrom && cell && cell.r === state.dragFrom.r && cell.c === state.dragFrom.c) {
+      handleBoardTap(cell);
+    } else if (state.pointerDown && state.dragFrom && cell && isAdjacent(state.dragFrom, cell)) {
+      const a = tileAt(state.dragFrom.r, state.dragFrom.c);
+      const b = tileAt(cell.r, cell.c);
+      if (a && b) {
+        performPlayerSwap(a, b);
+      }
+    }
+    state.pointerDown = null;
+    state.dragFrom = null;
+  }
+
+  function onKeyDown(event) {
+    const key = event.key;
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Enter"].includes(key)) {
+      event.preventDefault();
+    }
+    resumeAudio();
+    if (state.mode === "title" && (key === " " || key === "Enter")) {
+      startGame();
+      return;
+    }
+    if (state.mode === "gameover" && (key === " " || key === "Enter" || key.toLowerCase() === "r")) {
+      startGame();
+      return;
+    }
+    if (state.mode !== "playing") {
+      return;
+    }
+    let moved = false;
+    if (key === "ArrowUp") {
+      state.cursor.r = clamp(state.cursor.r - 1, 0, GRID - 1);
+      moved = true;
+    } else if (key === "ArrowDown") {
+      state.cursor.r = clamp(state.cursor.r + 1, 0, GRID - 1);
+      moved = true;
+    } else if (key === "ArrowLeft") {
+      state.cursor.c = clamp(state.cursor.c - 1, 0, GRID - 1);
+      moved = true;
+    } else if (key === "ArrowRight") {
+      state.cursor.c = clamp(state.cursor.c + 1, 0, GRID - 1);
+      moved = true;
+    } else if (key === " " || key === "Enter") {
+      if (state.keyboardPick) {
+        const a = tileAt(state.keyboardPick.r, state.keyboardPick.c);
+        const b = tileAt(state.cursor.r, state.cursor.c);
+        state.keyboardPick = null;
+        state.selected = null;
+        if (a && b && a.id !== b.id) {
+          performPlayerSwap(a, b);
+        }
+      } else {
+        state.keyboardPick = { r: state.cursor.r, c: state.cursor.c };
+        state.selected = { r: state.cursor.r, c: state.cursor.c };
+        const tile = tileAt(state.cursor.r, state.cursor.c);
+        if (tile) {
+          sound.select(tile);
+          tile.pop = 0.45;
+        }
+      }
+    } else if (key.toLowerCase() === "h") {
+      requestHint(true);
+    } else if (key.toLowerCase() === "s") {
+      if (!state.inputLocked && !state.resolving) {
+        shuffleBoard(true);
+      }
+    } else if (key.toLowerCase() === "m") {
+      handleButton("mute");
+    } else if (key.toLowerCase() === "r") {
+      startGame();
+    } else if (key === "Escape") {
+      state.selected = null;
+      state.keyboardPick = null;
+    }
+    if (moved) {
+      state.idleMs = 0;
+      state.hint = null;
+      const tile = tileAt(state.cursor.r, state.cursor.c);
+      if (tile) {
+        tile.glow = Math.max(tile.glow, 0.35);
+      }
+    }
+  }
+
+  function update(dt) {
+    state.time += dt;
+    updateShake(dt);
+    updateTiles(dt);
+    updateEffects(dt);
+    spawnAmbientSparkle(dt);
+
+    if (state.levelFlash > 0) {
+      state.levelFlash = Math.max(0, state.levelFlash - dt * 0.85);
+    }
+
+    if (state.mode === "playing" && !state.inputLocked && !state.resolving) {
+      state.idleMs += dt * 1000;
+      if (!state.hint && state.idleMs > IDLE_HINT_MS) {
+        requestHint(false);
+      }
+      if (state.shuffleQueued) {
+        state.shuffleQueued = false;
+        shuffleBoard(false);
+      }
+    }
+
+    if (state.hint) {
+      state.hint.age += dt;
+      if (state.hint.age > 8 && !state.hint.force) {
+        state.hint = null;
+      }
+    }
+  }
+
+  function updateShake(dt) {
+    if (state.shake > 0) {
+      state.shake = Math.max(0, state.shake - dt * 18);
+      const p = state.shake;
+      state.shakeX = rand(-p, p);
+      state.shakeY = rand(-p, p);
+    } else {
+      state.shakeX = 0;
+      state.shakeY = 0;
+    }
+  }
+
+  function updateTiles(dt) {
+    for (const tile of allTiles()) {
+      tile.wobble += dt * 2.4;
+      tile.pop = Math.max(0, tile.pop - dt * 2.4);
+      tile.glow = Math.max(0, tile.glow - dt * 1.5);
+      tile.spawn = Math.max(0, tile.spawn - dt * 1.8);
+      if (tile.moveDuration > 0) {
+        tile.moveTime += dt;
+        const t = clamp(tile.moveTime / tile.moveDuration, 0, 1);
+        const e = easeOutCubic(t);
+        tile.x = lerp(tile.sx, tile.tx, e);
+        tile.y = lerp(tile.sy, tile.ty, easeOutBack(Math.min(1, t)));
+        if (t >= 1) {
+          tile.x = tile.tx;
+          tile.y = tile.ty;
+          tile.moveDuration = 0;
+          tile.moveTime = 0;
+          tile.pop = Math.max(tile.pop, 0.2);
+        }
+      }
+    }
+  }
+
+  function updateEffects(dt) {
+    for (let i = state.particles.length - 1; i >= 0; i--) {
+      const p = state.particles[i];
+      p.life -= dt;
+      p.vx += p.ax * dt;
+      p.vy += p.ay * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.spin * dt;
+      if (p.life <= 0) {
+        state.particles.splice(i, 1);
+      }
+    }
+
+    for (let i = state.floaters.length - 1; i >= 0; i--) {
+      const f = state.floaters[i];
+      f.life -= dt;
+      f.y += f.vy * dt;
+      if (f.life <= 0) {
+        state.floaters.splice(i, 1);
+      }
+    }
+
+    for (let i = state.beams.length - 1; i >= 0; i--) {
+      const beam = state.beams[i];
+      beam.life -= dt;
+      if (beam.life <= 0) {
+        state.beams.splice(i, 1);
+      }
+    }
+
+    for (let i = state.ripples.length - 1; i >= 0; i--) {
+      const ripple = state.ripples[i];
+      ripple.life -= dt;
+      if (ripple.life <= 0) {
+        state.ripples.splice(i, 1);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.save();
+    drawBackground();
+    ctx.translate(state.shakeX, state.shakeY);
+    drawBoardShell();
+    drawTiles();
+    drawSelection();
+    drawBeams();
+    drawRipples();
+    drawParticles();
+    ctx.restore();
+    drawHud();
+    drawFloaters();
+    drawButtons();
+    if (state.mode === "title") {
+      drawTitleScreen();
+    } else if (state.mode === "gameover") {
+      drawGameOverScreen();
+    }
+  }
+
+  function drawBackground() {
+    const g = ctx.createRadialGradient(state.width * 0.5, state.height * 0.35, 10, state.width * 0.5, state.height * 0.5, Math.max(state.width, state.height));
+    g.addColorStop(0, "#11163b");
+    g.addColorStop(0.45, "#060814");
+    g.addColorStop(1, "#02030a");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, state.width, state.height);
+
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    drawGridGlow();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const t = state.time;
+    drawSoftOrb(state.width * 0.2 + Math.sin(t * 0.3) * 40, state.height * 0.18, state.width * 0.22, "rgba(55,246,231,0.12)");
+    drawSoftOrb(state.width * 0.82 + Math.cos(t * 0.25) * 30, state.height * 0.23, state.width * 0.2, "rgba(255,43,104,0.11)");
+    drawSoftOrb(state.width * 0.55, state.height * 0.92, state.width * 0.24, "rgba(180,92,255,0.10)");
+    ctx.restore();
+  }
+
+  function drawGridGlow() {
+    const spacing = state.width <= 420 ? 32 : 44;
+    ctx.strokeStyle = "#2e8cff";
+    ctx.lineWidth = 1;
+    for (let x = -spacing; x < state.width + spacing; x += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(x + Math.sin(state.time * 0.25) * 5, 0);
+      ctx.lineTo(x - 30, state.height);
+      ctx.stroke();
+    }
+    for (let y = -spacing; y < state.height + spacing; y += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(state.width, y + Math.cos(state.time * 0.2) * 5);
+      ctx.stroke();
+    }
+  }
+
+  function drawSoftOrb(x, y, radius, color) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    g.addColorStop(0, color);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBoardShell() {
+    const x = state.boardX;
+    const y = state.boardY;
+    const s = state.boardSize;
+    const r = Math.max(14, state.cell * 0.18);
+
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 240, 255, 0.28)";
+    ctx.shadowBlur = 26;
+    roundedRect(x - 8, y - 8, s + 16, s + 16, r + 6);
+    const shell = ctx.createLinearGradient(x, y, x + s, y + s);
+    shell.addColorStop(0, "rgba(27, 36, 82, 0.82)");
+    shell.addColorStop(0.5, "rgba(8, 11, 28, 0.92)");
+    shell.addColorStop(1, "rgba(35, 14, 58, 0.84)");
+    ctx.fillStyle = shell;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    roundedRect(x - 5, y - 5, s + 10, s + 10, r + 4);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    for (let rr = 0; rr < GRID; rr++) {
+      for (let cc = 0; cc < GRID; cc++) {
+        const px = x + cc * state.cell;
+        const py = y + rr * state.cell;
+        const tileShade = (rr + cc) % 2 === 0 ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.12)";
+        roundedRect(px + 2, py + 2, state.cell - 4, state.cell - 4, Math.max(6, state.cell * 0.12));
+        ctx.fillStyle = tileShade;
+        ctx.fill();
+      }
+    }
+
+    ctx.strokeStyle = "rgba(55, 246, 231, 0.18)";
+    ctx.lineWidth = 1;
+    for (let i = 1; i < GRID; i++) {
+      ctx.beginPath();
+      ctx.moveTo(x + i * state.cell, y + 7);
+      ctx.lineTo(x + i * state.cell, y + s - 7);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + 7, y + i * state.cell);
+      ctx.lineTo(x + s - 7, y + i * state.cell);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawTiles() {
+    const tiles = allTiles().slice().sort((a, b) => a.y - b.y);
+    for (const tile of tiles) {
+      drawTile(tile);
+    }
+  }
+
+  function drawTile(tile) {
+    const gem = gems[tile.type];
+    const radius = state.cell * 0.36;
+    const pulse = Math.sin(state.time * 4 + tile.wobble) * 0.025;
+    const popScale = tile.pop > 0 ? 1 + Math.sin(tile.pop * Math.PI) * 0.18 : 1;
+    const spawnScale = tile.spawn > 0 ? lerp(1, 0.3, tile.spawn) : 1;
+    const scale = (1 + pulse) * popScale * spawnScale;
+    const alpha = tile.vanish ? 0.55 : tile.alpha;
+
+    ctx.save();
+    ctx.translate(tile.x, tile.y);
+    ctx.rotate(tile.rotation + Math.sin(tile.wobble) * 0.025);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = gem.glow;
+    ctx.shadowBlur = 14 + tile.glow * 20 + (tile.special ? 14 : 0);
+
+    drawGemShape(gem, radius, tile.special);
+
+    ctx.shadowBlur = 0;
+    drawGemHighlight(gem, radius);
+    if (tile.special !== TILE_NONE) {
+      drawSpecialMark(tile.special, radius, gem);
+    }
+    ctx.restore();
+  }
+
+  function drawGemShape(gem, radius, special) {
+    const grad = ctx.createRadialGradient(-radius * 0.25, -radius * 0.32, radius * 0.1, 0, 0, radius * 1.12);
+    grad.addColorStop(0, gem.rim);
+    grad.addColorStop(0.45, gem.fill);
+    grad.addColorStop(1, gem.deep);
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = special ? "#ffffff" : gem.rim;
+    ctx.lineWidth = special ? 2.6 : 1.4;
+
+    ctx.beginPath();
+    if (gem.shape === "circle") {
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    } else if (gem.shape === "diamond") {
+      ctx.moveTo(0, -radius * 1.05);
+      ctx.lineTo(radius * 0.88, 0);
+      ctx.lineTo(0, radius * 1.05);
+      ctx.lineTo(-radius * 0.88, 0);
+      ctx.closePath();
+    } else if (gem.shape === "hex") {
+      polygon(6, radius, Math.PI / 6);
+    } else if (gem.shape === "square") {
+      roundedRect(-radius * 0.82, -radius * 0.82, radius * 1.64, radius * 1.64, radius * 0.24);
+    } else if (gem.shape === "leaf") {
+      ctx.moveTo(0, -radius);
+      ctx.bezierCurveTo(radius * 0.9, -radius * 0.72, radius * 0.82, radius * 0.65, 0, radius);
+      ctx.bezierCurveTo(-radius * 0.82, radius * 0.65, -radius * 0.9, -radius * 0.72, 0, -radius);
+    } else if (gem.shape === "star") {
+      starPath(5, radius, radius * 0.48);
+    } else if (gem.shape === "kite") {
+      ctx.moveTo(0, -radius);
+      ctx.lineTo(radius * 0.76, -radius * 0.15);
+      ctx.lineTo(radius * 0.34, radius);
+      ctx.lineTo(-radius * 0.7, radius * 0.45);
+      ctx.lineTo(-radius * 0.76, -radius * 0.35);
+      ctx.closePath();
+    }
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  function drawGemHighlight(gem, radius) {
+    ctx.globalAlpha *= 0.8;
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = Math.max(1, radius * 0.08);
+    ctx.beginPath();
+    ctx.arc(-radius * 0.12, -radius * 0.16, radius * 0.55, Math.PI * 1.08, Math.PI * 1.72);
+    ctx.stroke();
+
+    ctx.globalAlpha *= 0.75;
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(-radius * 0.28, -radius * 0.36, radius * 0.14, radius * 0.08, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = gem.glow;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 1.12, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  function drawSpecialMark(kind, radius, gem) {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#ffffff";
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "#ffffff";
+    ctx.shadowBlur = 10;
+
+    if (kind === TILE_ROW) {
+      ctx.lineWidth = radius * 0.16;
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.62, 0);
+      ctx.lineTo(radius * 0.62, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(radius * 0.38, -radius * 0.22);
+      ctx.lineTo(radius * 0.64, 0);
+      ctx.lineTo(radius * 0.38, radius * 0.22);
+      ctx.stroke();
+    } else if (kind === TILE_COL) {
+      ctx.lineWidth = radius * 0.16;
+      ctx.beginPath();
+      ctx.moveTo(0, -radius * 0.62);
+      ctx.lineTo(0, radius * 0.62);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-radius * 0.22, radius * 0.38);
+      ctx.lineTo(0, radius * 0.64);
+      ctx.lineTo(radius * 0.22, radius * 0.38);
+      ctx.stroke();
+    } else if (kind === TILE_BOMB) {
+      ctx.lineWidth = radius * 0.12;
+      ctx.beginPath();
+      ctx.arc(0, radius * 0.1, radius * 0.35, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(radius * 0.16, -radius * 0.24);
+      ctx.quadraticCurveTo(radius * 0.28, -radius * 0.55, radius * 0.55, -radius * 0.52);
+      ctx.stroke();
+      starPath(6, radius * 0.16, radius * 0.06, radius * 0.64, -radius * 0.56);
+      ctx.fill();
+    } else if (kind === TILE_PRISM) {
+      const spin = state.time * 1.8;
+      ctx.rotate(spin);
+      ctx.lineWidth = radius * 0.08;
+      for (let i = 0; i < 3; i++) {
+        ctx.rotate(Math.PI / 3);
+        ctx.beginPath();
+        ctx.moveTo(0, -radius * 0.72);
+        ctx.lineTo(radius * 0.22, -radius * 0.18);
+        ctx.lineTo(radius * 0.72, 0);
+        ctx.lineTo(radius * 0.22, radius * 0.18);
+        ctx.lineTo(0, radius * 0.72);
+        ctx.lineTo(-radius * 0.22, radius * 0.18);
+        ctx.lineTo(-radius * 0.72, 0);
+        ctx.lineTo(-radius * 0.22, -radius * 0.18);
+        ctx.closePath();
+        ctx.strokeStyle = gems[i * 2].glow;
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 0.14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawSelection() {
+    drawCellCursor(state.cursor, "#ffffff", 0.25 + Math.sin(state.time * 5) * 0.1);
+    if (state.selected) {
+      drawCellCursor(state.selected, "#37f6e7", 0.75);
+    }
+    if (state.keyboardPick) {
+      drawCellCursor(state.keyboardPick, "#ffd241", 0.72);
+    }
+    if (state.hover && state.mode === "playing") {
+      drawCellCursor(state.hover, "#ff5ce8", 0.28);
+    }
+    if (state.hint) {
+      const pulse = 0.45 + Math.sin(state.time * 8) * 0.24;
+      drawCellCursor(state.hint.a, "#37f6e7", pulse);
+      drawCellCursor(state.hint.b, "#37f6e7", pulse);
+    }
+  }
+
+  function drawCellCursor(cell, color, alpha) {
+    if (!cell) {
+      return;
+    }
+    const x = state.boardX + cell.c * state.cell + 3;
+    const y = state.boardY + cell.r * state.cell + 3;
+    const s = state.cell - 6;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 16;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, state.cell * 0.055);
+    roundedRect(x, y, s, s, Math.max(7, state.cell * 0.13));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBeams() {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (const beam of state.beams) {
+      const t = clamp(beam.life / beam.maxLife, 0, 1);
+      ctx.globalAlpha = t;
+      ctx.strokeStyle = beam.color;
+      ctx.lineWidth = beam.width * (0.6 + t);
+      ctx.shadowColor = beam.color;
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = Math.max(1, beam.width * 0.24);
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawRipples() {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (const ripple of state.ripples) {
+      const progress = 1 - ripple.life / ripple.maxLife;
+      const radius = lerp(ripple.radius, ripple.maxRadius, easeOutCubic(progress));
+      ctx.globalAlpha = Math.max(0, ripple.life / ripple.maxLife);
+      ctx.strokeStyle = ripple.color;
+      ctx.lineWidth = ripple.width * (1 - progress * 0.65);
+      ctx.shadowColor = ripple.color;
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(ripple.x, ripple.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of state.particles) {
+      const t = Math.max(0, p.life / p.maxLife);
+      ctx.globalAlpha = t;
+      ctx.fillStyle = p.color;
+      ctx.strokeStyle = p.color;
+      ctx.shadowColor = p.glow;
+      ctx.shadowBlur = 12;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      if (p.shape === "diamond") {
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size);
+        ctx.lineTo(p.size, 0);
+        ctx.lineTo(0, p.size);
+        ctx.lineTo(-p.size, 0);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.lineWidth = Math.max(1, p.size * 0.45);
+        ctx.beginPath();
+        ctx.moveTo(-p.size, 0);
+        ctx.lineTo(p.size, 0);
+        ctx.moveTo(0, -p.size);
+        ctx.lineTo(0, p.size);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawHud() {
+    const compact = state.width <= 360;
+    const pad = compact ? 8 : 14;
+    const rowH = compact ? 22 : 27;
+    const y = compact ? 7 : 10;
+
+    drawHudPanel(pad, y, state.width - pad * 2, compact ? 48 : 56);
+
+    const scoreText = "SCORE " + state.score;
+    const targetText = "TARGET " + state.target;
+    const movesText = "MOVES " + state.moves;
+    const levelText = "LV " + state.level;
+
+    ctx.save();
+    ctx.textBaseline = "middle";
+    ctx.font = "700 " + (compact ? 12 : 14) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#f4f7ff";
+    ctx.fillText(scoreText, pad + 14, y + rowH * 0.7);
+
+    ctx.fillStyle = state.score >= state.target ? "#20f28a" : "#ffd241";
+    ctx.fillText(targetText, pad + 14, y + rowH * 1.55);
+
+    ctx.textAlign = "right";
+    ctx.fillStyle = state.moves <= 5 ? "#ff2b68" : "#37f6e7";
+    ctx.fillText(movesText, state.width - pad - 14, y + rowH * 0.7);
+
+    ctx.fillStyle = "#b45cff";
+    ctx.fillText(levelText, state.width - pad - 14, y + rowH * 1.55);
+
+    ctx.textAlign = "center";
+    ctx.font = "600 " + (compact ? 10 : 12) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#9da9d9";
+    const message = compact && state.message.length > 25 ? state.message.slice(0, 25) : state.message;
+    ctx.fillText(message, state.width / 2, y + (compact ? 48 : 54) - 8);
+    ctx.restore();
+
+    if (state.combo > 1) {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.font = "900 " + clamp(state.cell * 0.36, 16, 28) + "px Segoe UI, sans-serif";
+      ctx.fillStyle = "#ff5ce8";
+      ctx.shadowColor = "#ff5ce8";
+      ctx.shadowBlur = 18;
+      ctx.fillText("COMBO x" + state.combo, state.width / 2, state.boardY - clamp(state.cell * 0.55, 18, 34));
+      ctx.restore();
+    }
+  }
+
+  function drawHudPanel(x, y, w, h) {
+    ctx.save();
+    roundedRect(x, y, w, h, 12);
+    const g = ctx.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, "rgba(11,18,42,0.84)");
+    g.addColorStop(0.52, "rgba(7,9,24,0.75)");
+    g.addColorStop(1, "rgba(32,12,48,0.82)");
+    ctx.fillStyle = g;
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = 16;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawFloaters() {
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const f of state.floaters) {
+      const t = Math.max(0, f.life / f.maxLife);
+      ctx.globalAlpha = t;
+      ctx.font = "900 " + f.size + "px Segoe UI, sans-serif";
+      ctx.fillStyle = f.color;
+      ctx.shadowColor = f.color;
+      ctx.shadowBlur = 16;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.restore();
+  }
+
+  function drawButtons() {
+    for (const button of state.buttons) {
+      if (!button.visibleModes.includes(state.mode)) {
+        continue;
+      }
+      drawButton(button);
+    }
+  }
+
+  function drawButton(button) {
+    ctx.save();
+    const hover = false;
+    roundedRect(button.x, button.y, button.w, button.h, 8);
+    const g = ctx.createLinearGradient(button.x, button.y, button.x + button.w, button.y + button.h);
+    g.addColorStop(0, "rgba(55,246,231,0.16)");
+    g.addColorStop(0.5, "rgba(255,255,255,0.05)");
+    g.addColorStop(1, "rgba(255,92,232,0.14)");
+    ctx.fillStyle = g;
+    ctx.shadowColor = hover ? "#37f6e7" : "rgba(55,246,231,0.22)";
+    ctx.shadowBlur = hover ? 20 : 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "800 " + (state.width <= 360 ? 11 : 13) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#f4f7ff";
+    ctx.fillText(button.label, button.x + button.w / 2, button.y + button.h / 2);
+    ctx.restore();
+  }
+
+  function drawTitleScreen() {
+    drawOverlayShade();
+    const cx = state.width / 2;
+    const cy = state.height / 2 - 24;
+    const titleSize = clamp(state.width * 0.11, 32, 68);
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "900 " + titleSize + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#f4f7ff";
+    ctx.shadowColor = "#37f6e7";
+    ctx.shadowBlur = 24;
+    ctx.fillText("PRISM", cx, cy - titleSize * 0.44);
+    ctx.shadowColor = "#ff5ce8";
+    ctx.fillStyle = "#ff5ce8";
+    ctx.fillText("CRUSH", cx, cy + titleSize * 0.42);
+
+    ctx.shadowBlur = 0;
+    ctx.font = "600 " + clamp(state.width * 0.035, 12, 17) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#b9c3f4";
+    wrapText("Swap neon gems, trigger specials, and ride cascades past the score target.", cx, cy + titleSize * 1.28, Math.min(state.width - 38, 520), 20);
+    ctx.font = "600 " + clamp(state.width * 0.03, 11, 14) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#8f9ac8";
+    wrapText("Mouse or touch to swap. Arrows plus Enter work too. H hints, S shuffles, M toggles sound.", cx, cy + titleSize * 2.06, Math.min(state.width - 40, 560), 18);
+    ctx.restore();
+
+    drawDemoGems(cx, cy - titleSize * 1.65);
+  }
+
+  function drawGameOverScreen() {
+    drawOverlayShade();
+    const cx = state.width / 2;
+    const cy = state.height / 2 - 18;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "900 " + clamp(state.width * 0.095, 28, 58) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#f4f7ff";
+    ctx.shadowColor = "#ff2b68";
+    ctx.shadowBlur = 22;
+    ctx.fillText("RUN COMPLETE", cx, cy - 72);
+
+    ctx.shadowBlur = 0;
+    ctx.font = "800 " + clamp(state.width * 0.05, 18, 28) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#37f6e7";
+    ctx.fillText("Score " + state.score, cx, cy - 18);
+    ctx.fillStyle = "#ffd241";
+    ctx.fillText("Best " + state.best + "   Max combo x" + state.maxCombo, cx, cy + 18);
+
+    ctx.font = "600 " + clamp(state.width * 0.032, 12, 16) + "px Segoe UI, sans-serif";
+    ctx.fillStyle = "#b9c3f4";
+    wrapText(state.finalReason || "The prism board is waiting for another run.", cx, cy + 58, Math.min(state.width - 40, 520), 20);
+    ctx.restore();
+  }
+
+  function drawOverlayShade() {
+    ctx.save();
+    ctx.fillStyle = "rgba(2,3,10,0.72)";
+    ctx.fillRect(0, 0, state.width, state.height);
+    ctx.globalCompositeOperation = "lighter";
+    drawSoftOrb(state.width / 2, state.height / 2, Math.min(state.width, state.height) * 0.55, "rgba(55,246,231,0.12)");
+    drawSoftOrb(state.width * 0.5, state.height * 0.4, Math.min(state.width, state.height) * 0.42, "rgba(255,92,232,0.10)");
+    ctx.restore();
+  }
+
+  function drawDemoGems(cx, y) {
+    ctx.save();
+    const count = Math.min(7, gems.length);
+    const size = clamp(state.width * 0.065, 19, 34);
+    const gap = size * 1.35;
+    for (let i = 0; i < count; i++) {
+      const gem = gems[i];
+      ctx.save();
+      ctx.translate(cx + (i - (count - 1) / 2) * gap, y + Math.sin(state.time * 2 + i) * 5);
+      ctx.rotate(state.time * 0.25 + i);
+      ctx.shadowColor = gem.glow;
+      ctx.shadowBlur = 18;
+      drawGemShape(gem, size * 0.48, i === 3 ? TILE_PRISM : TILE_NONE);
+      drawGemHighlight(gem, size * 0.48);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function wrapText(text, x, y, maxWidth, lineHeight) {
+    const words = text.split(" ");
+    let line = "";
+    const lines = [];
+    for (const word of words) {
+      const test = line ? line + " " + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) {
+      lines.push(line);
+    }
+    const start = y - (lines.length - 1) * lineHeight / 2;
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], x, start + i * lineHeight);
+    }
+  }
+
+  function roundedRect(x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
+  function polygon(sides, radius, rotation = 0, cx = 0, cy = 0) {
+    for (let i = 0; i < sides; i++) {
+      const a = rotation + i / sides * Math.PI * 2;
+      const x = cx + Math.cos(a) * radius;
+      const y = cy + Math.sin(a) * radius;
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.closePath();
+  }
+
+  function starPath(points, outer, inner, cx = 0, cy = 0) {
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const radius = i % 2 === 0 ? outer : inner;
+      const a = -Math.PI / 2 + i / (points * 2) * Math.PI * 2;
+      const x = cx + Math.cos(a) * radius;
+      const y = cy + Math.sin(a) * radius;
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.closePath();
+  }
+
+  function loop(ts) {
+    if (!lastFrame) {
+      lastFrame = ts;
+    }
+    const dt = Math.min(0.05, (ts - lastFrame) / 1000);
+    lastFrame = ts;
+    update(dt);
+    draw();
+    animationFrame = requestAnimationFrame(loop);
+  }
+
+  function boot() {
+    layout();
+    generateBoard();
+    buildButtons();
+    window.addEventListener("resize", layout);
+    canvas.addEventListener("pointerdown", onPointerDown, { passive: false });
+    canvas.addEventListener("pointermove", onPointerMove, { passive: false });
+    canvas.addEventListener("pointerup", onPointerUp, { passive: false });
+    canvas.addEventListener("pointercancel", onPointerUp, { passive: false });
+    window.addEventListener("keydown", onKeyDown);
+    animationFrame = requestAnimationFrame(loop);
+  }
+
+  boot();
+
+  window.addEventListener("pagehide", () => {
+    if (animationFrame) {
+      cancelAnimationFrame(animationFrame);
+    }
+    stopAmbientHum();
+  });
+})();
+</script>
+</body>
+</html>

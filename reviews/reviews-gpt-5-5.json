@@ -1,0 +1,55 @@
+{
+  "reviewer": "GPT 5.5",
+  "gameReviews": {
+    "tile-matching": {
+      "opus-4-6": [
+        "Opus brought architectural discipline to match-3, then decorated it like a thesis defense with gems.",
+        "The state machine is impressive, but the board occasionally feels like it needs a project manager to swap two tiles.",
+        "Those section banners have more ceremony than some level-up screens.",
+        "The neon is rich, but the title still says Tile Match like the naming budget evaporated first.",
+        "Opus made every event correct, polished, and slightly afraid of spontaneity.",
+        "The special tiles work hard, even while the UI introduces them like meeting agenda items.",
+        "A hint delay that polite makes the board feel like it is waiting for written consent.",
+        "The sound design has range, though some shuffle tones arrive like a synth fell down stairs.",
+        "Opus built a very good match-3 and then wrapped it in the confidence of a systems design doc.",
+        "It is polished enough to respect and formal enough to make candy feel under review."
+      ],
+      "sonnet-4-6": [
+        "Sonnet named it GEM BLITZ, which sounds fast until the single-mode structure asks everyone to queue politely.",
+        "The spinning title gems are charming, in the same way a screensaver can be charming before work starts.",
+        "One timed mode is clean, but player choice is apparently locked behind a velvet rope.",
+        "The Courier styling gives neon arcade energy filtered through a printer manual.",
+        "The particles sparkle nicely, then the game reminds you it has exactly one main pace.",
+        "Sonnet made a smooth match-3 with the strategic range of a very shiny hallway.",
+        "The specials are fun, but the onboarding explains them like it is worried you skipped the brochure.",
+        "Mobile works, though the gems sometimes feel like luxury buttons on a tiny calculator.",
+        "The game has taste and speed, just not quite enough chaos to scare the leaderboard.",
+        "GEM BLITZ is solid, stylish, and one settings menu away from having an opinion."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4 built Prism Pulse like a match-3 game escaped from a product launch.",
+        "The dashboard has so many readouts the gems look like they are filing quarterly metrics.",
+        "Arcade Sprint and Tactical Moves sound less like modes and more like consultancy packages.",
+        "The cascades are gorgeous, but they occasionally fight the UI for top billing.",
+        "Every panel glows with the confidence of a feature that requested its own roadmap.",
+        "The specials are genuinely fun once you finish walking past the lobby signage.",
+        "GPT 5.4 has excellent juice, then pours extra frosting on the frosting.",
+        "The title screen could sell the game, the sequel, and probably a subscription tier.",
+        "This version is powerful, polished, and allergic to leaving empty space alone.",
+        "Prism Pulse is great match-3 hiding inside a very enthusiastic command center."
+      ],
+      "gpt-5-4-mini": [
+        "Mini called it Neon Shard and immediately made the board sound like it powers a reactor.",
+        "The gem names are excellent if the tiles are auditioning for an energy drink lineup.",
+        "Chrono mode is stylish, though calling time French does not make panic fancier.",
+        "The feature badges announce touch support like the game is presenting at a trade show.",
+        "Mini tracks enough end-screen stats to make losing feel like filling out analytics.",
+        "The board has polish, but the surrounding jargon keeps trying to become the main character.",
+        "The audio panning is clever, even if match-3 rarely needs stereo cartography.",
+        "Neon Shard has strong feel and stronger branding, sometimes in that order.",
+        "The compactness works, though a few labels feel like they were shortened during turbulence.",
+        "Mini built a capable gem game and then dressed it as a sci-fi operations dashboard."
+      ]
+    }
+  }
+}

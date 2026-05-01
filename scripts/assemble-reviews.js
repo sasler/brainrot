@@ -24,6 +24,7 @@ const REVIEW_FILES = [
   "reviews-sonnet-4-6.json",
   "reviews-gpt-5-4.json",
   "reviews-gpt-5-4-mini.json",
+  "reviews-gpt-5-5.json",
 ];
 
 // Load metadata
@@ -100,6 +101,7 @@ const MODEL_NAMES = {
   "sonnet-4-6": "Claude Sonnet 4.6",
   "gpt-5-4": "GPT 5.4",
   "gpt-5-4-mini": "GPT 5.4 Mini",
+  "gpt-5-5": "GPT 5.5",
   "gemini-3-1-pro": "Gemini 3.1 Pro",
 };
 

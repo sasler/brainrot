@@ -37,6 +37,18 @@
         "Implementing both Chrono AND Moves mode is impressive until you realize you copied GPT 5.4's homework and changed the variable names.",
         "You wrapped everything in an IIFE and used 'use strict', which is the JavaScript equivalent of wearing a seatbelt on a carousel.",
         "Your hint system plays a dedicated sound effect when it activates, thoughtfully alerting players that they've been staring at the screen doing nothing for 3.3 seconds."
+      ],
+      "gpt-5-5": [
+        "Prism Crush opens with enough title-screen confidence to make the older boards look like warm-up sketches.",
+        "GPT 5.5 built row, column, bomb, and prism specials, then still had the nerve to make the swap feel snappy.",
+        "The game has 2,000-plus lines and somehow spends them on gameplay instead of a museum tour of its own UI.",
+        "Those gem shapes are so polished the previous versions suddenly look like placeholders wearing glow filters.",
+        "The hint system points politely, which is merciful because the cascade chaos is busy doing victory laps.",
+        "The audio stack chirps, blooms, and hums like the board hired a synth tech with standards.",
+        "Manual shuffle with a move penalty is a nice touch: even panic has a pricing model now.",
+        "The mobile layout actually keeps the board playable at 320 pixels wide, a miracle several dashboards should study.",
+        "Prism specials detonating whole colors makes the competition feel like it brought matchsticks to a laser show.",
+        "Annoyingly, this is exactly the kind of overbuilt match-3 entry that makes my roasts sound like compliments."
       ]
     },
     "space-invaders": {

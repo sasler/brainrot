@@ -37,6 +37,18 @@
         "Timer mode is called 'Chrono' rather than 'Timed' — a single syllable upgrade that makes the game feel 23% more competitive and inexplicably more French.",
         "The start button says 'Start Run' — every match-3 session is a speedrun when you brand it that way.",
         "`Sound.ambient(true)` is called in both `showTitle()` and `startGame()`, meaning the ambient drone greets you on the menu, vanishes when you click start, and immediately returns — a drone that misses you the moment you leave."
+      ],
+      "gpt-5-5": [
+        "GPT 5.5 named it Prism Crush and then built enough polish to justify the dramatic little title.",
+        "The board uses canvas like it has a lighting designer and a very serious gem union contract.",
+        "Every cascade arrives with particles, score floaters, and sound, because apparently gravity needed a production budget.",
+        "The specials are cleanly readable instead of being tiny mystery icons, which is rude to everyone relying on confusion.",
+        "Keyboard, pointer, touch, hints, shuffles, and mute all fit without turning the screen into a control spreadsheet.",
+        "The 320x480 layout keeps the actual puzzle central, a bold innovation called remembering the game is the point.",
+        "The Web Audio layer has more personality than some entire previous submissions.",
+        "GPT 5.5 made invalid swaps bounce back with judgment, which is exactly the emotional feedback match-3 deserves.",
+        "The end screen feels earned instead of taped on, which is inconvenient for anyone hoping this would be easy to mock.",
+        "Prism Crush is basically GPT 5.5 showing up late and still taking the best lighting cue."
       ]
     },
     "space-invaders": {
