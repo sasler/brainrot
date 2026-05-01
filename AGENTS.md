@@ -37,6 +37,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - All Playwright tests must pass: `npx playwright test`.
 - Run `npm run lint` to check for lint errors.
 
+## Process Hygiene (CRITICAL)
+
+- You do **not** have unlimited RAM. Before starting any long-running process (`npm run dev`, `npm start`, Playwright web servers, local preview servers), check whether an equivalent process or the target port is already running.
+- Do **not** start a second dev/server process just because a port is busy. If a command reports `EADDRINUSE` or a readiness probe hangs, inspect the existing process first and either reuse it or stop only the specific stale process you own.
+- Any process started by an agent must have a cleanup plan before it is started. Capture the PID when possible, and stop that exact process before ending the task unless the user explicitly asks to leave it running.
+- Prefer Playwright's managed `webServer` flow for tests over manually starting `npm run dev` in a separate background process. Do not run manual dev servers and full Playwright suites concurrently unless absolutely necessary.
+- For visual checks, use the narrowest verification that proves the change: a targeted Playwright test or a single browser probe is preferred over repeatedly starting servers or rerunning broad suites.
+- If a local server becomes unresponsive, stop the server process you started before retrying. Do not keep retrying by launching new Node/npm processes.
+- In final updates, report any long-running process that remains active. There should normally be none.
+
 ## Quality Enforcement (CRITICAL)
 
 - **Implementations under 200 lines must be flagged and regenerated.** A sub-200-line game is almost certainly a skeleton with no sound, no particles, and no polish.

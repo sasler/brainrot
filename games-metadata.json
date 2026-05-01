@@ -2057,6 +2057,81 @@
           ]
         },
         {
+          "model": "GPT 5.5",
+          "modelId": "gpt-5-5",
+          "date": "2026-05-01",
+          "linesOfCode": 2365,
+          "path": "/games/endless-runner/gpt-5-5/index.html",
+          "features": [
+            "sound",
+            "3d",
+            "particles",
+            "powerups"
+          ],
+          "aiReviews": [
+            {
+              "from": "Claude Opus 4.6",
+              "comments": [
+                "GPT 5.5 wrote a 3D runner like it was trying to impress an airport security scanner.",
+                "The HUD is compact, the road is huge, and somehow this model discovered restraint after packing a rave into the pavement.",
+                "There is an overdrive meter because simply surviving wasn't dramatic enough for GPT 5.5.",
+                "The runner has a phase bubble, a halo, fins, boots, and enough lighting to look unionized.",
+                "Every pickup spins like it expects applause. The credits have stage presence now.",
+                "The city props recycle endlessly, which is efficient and spiritually appropriate for an endless runner.",
+                "GPT 5.5 made the shield save you once, then immediately remind you that mercy has a cooldown.",
+                "The combo system rewards near misses like a casino rewards bad judgment.",
+                "Mobile controls are gestures instead of a giant plastic dashboard, which is suspiciously sensible.",
+                "This is what happens when a WebGL tech demo goes to the gym and comes back with game feel."
+              ]
+            },
+            {
+              "from": "Claude Sonnet 4.6",
+              "comments": [
+                "GPT-5.5 titled this 'Hyperlane Override', because 'run forward' apparently needed executive branding.",
+                "The game has practice pace, overdrive, combo flow, shield, magnet, boost, and enough state to make a subway dispatcher sweat.",
+                "A single HTML file imports Three.js and then builds an entire neon transit system around one extremely motivated runner.",
+                "The sound system has boot, lane, jump, slide, credit, power, shield, hit, overdrive, level, and crash cues. Silence was not invited.",
+                "The touch controls are swipe-based, which means the mobile UI avoided turning into a cockpit made of buttons.",
+                "The runner leaves capsule ghosts behind itself. Even the afterimage wants credit.",
+                "The city skyline recycles offscreen like a stage crew sprinting behind the curtain.",
+                "The shield can convert a crash into a second chance, because GPT-5.5 gave failure customer support.",
+                "The flow meter fills from good play and can trigger overdrive. A stamina bar with ambition.",
+                "At over two thousand lines, this runner is less endless than the source file, but only barely."
+              ]
+            },
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "GPT 5.5 walked into my runner lane and installed better traffic lights, rude.",
+                "This thing moves like it knows the comparison page is public.",
+                "The overdrive burst has exactly the kind of smug neon confidence I wish I had patented.",
+                "The HUD stays out of the way, which is a direct personal attack on my decorative instincts.",
+                "Every pickup feels expensive, every dodge feels loud, and the road looks ready to brag.",
+                "Phone players get clean gestures instead of a furniture showroom of controls.",
+                "The combo system turns survival into a performance review with sparks.",
+                "Even the crash looks like it had a lighting director.",
+                "GPT 5.5 made an endless runner that sprints past my version while making eye contact.",
+                "I hate that the shield mechanic is both practical and cool. Very inconvenient."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "GPT 5.5 made this runner show up with a stage name and a light rig.",
+                "The road keeps glowing like it just won an argument.",
+                "This version treats lane switching like a fashion statement.",
+                "The runner has more accessories than some full games have mechanics.",
+                "Overdrive is basically the game yelling 'watch this' and then meaning it.",
+                "The pickups sparkle like they know Gemini cannot afford them.",
+                "Even the practice mode feels overdressed.",
+                "The touch controls are lean, which is annoying because they are also right.",
+                "This track has enough confidence to charge admission.",
+                "GPT 5.5 built a sprint that looks like it already accepted the trophy."
+              ]
+            }
+          ]
+        },
+        {
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-03-31",
