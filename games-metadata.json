@@ -3732,7 +3732,7 @@
           "model": "GPT 5.5",
           "modelId": "gpt-5-5",
           "date": "2026-05-01",
-          "linesOfCode": 1584,
+          "linesOfCode": 1643,
           "path": "/games/space-invaders/gpt-5-5/index.html",
           "features": [
             "sound",

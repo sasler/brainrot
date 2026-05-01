@@ -533,6 +533,17 @@
         pointerX: null
       };
 
+      const hudCache = {
+        score: "",
+        wave: "",
+        lives: "",
+        combo: "",
+        charge: "",
+        best: "",
+        threat: "",
+        powers: ""
+      };
+
       const player = {
         x: 0,
         y: 0,
@@ -880,10 +891,13 @@
         player.spread = Math.max(0, player.spread - dt);
         player.shield = Math.max(0, player.shield - dt);
         player.laser = Math.max(0, player.laser - dt);
-        if (input.fire) firePlayer(false);
-        if (state.charge >= 100 && input.fire && player.fireCooldown <= 0.02) {
-          state.charge = 0;
-          firePlayer(true);
+        if (input.fire) {
+          if (state.charge >= 100) {
+            state.charge = 0;
+            firePlayer(true);
+          } else {
+            firePlayer(false);
+          }
         }
       }
 
@@ -1020,15 +1034,16 @@
 
       function killInvader(inv) {
         inv.alive = false;
-        const mult = state.combo;
-        score(inv.worth * mult);
+        const mult = Math.floor(state.combo);
+        const points = inv.worth * mult;
+        score(points);
         state.combo = clamp(state.combo + 1, 1, 12);
         state.comboTimer = 2.1;
         state.shake = Math.max(state.shake, 4);
         state.flash = Math.max(state.flash, 0.08);
         sound("kill", 1 + Math.min(state.combo, 8) * 0.04);
         noise(inv.x, inv.y, inv.type === "brute" ? "#ff4b6e" : inv.type === "squid" ? "#ff4fe1" : "#65ff7a", 28, 190);
-        textPop("+" + inv.worth * mult, inv.x, inv.y, "#65ff7a");
+        textPop("+" + points, inv.x, inv.y, "#65ff7a");
         spawnPower(inv.x, inv.y);
       }
 
@@ -1183,21 +1198,52 @@
       }
 
       function updateHud() {
-        scoreEl.textContent = state.score.toLocaleString();
-        waveEl.textContent = state.wave;
-        livesEl.textContent = state.lives;
-        comboEl.textContent = "x" + Math.floor(state.combo);
-        chargeEl.textContent = Math.floor(state.charge) + "%";
-        bestEl.textContent = state.best.toLocaleString();
         state.threat = state.wave < 3 ? "Low Orbit" : state.wave < 6 ? "Meteoric" : state.wave < 9 ? "Critical" : "Apocalyptic";
-        threatEl.textContent = state.threat;
+        const scoreText = state.score.toLocaleString();
+        const waveText = String(state.wave);
+        const livesText = String(state.lives);
+        const comboText = "x" + Math.floor(state.combo);
+        const chargeText = Math.floor(state.charge) + "%";
+        const bestText = state.best.toLocaleString();
+        if (hudCache.score !== scoreText) {
+          hudCache.score = scoreText;
+          scoreEl.textContent = scoreText;
+        }
+        if (hudCache.wave !== waveText) {
+          hudCache.wave = waveText;
+          waveEl.textContent = waveText;
+        }
+        if (hudCache.lives !== livesText) {
+          hudCache.lives = livesText;
+          livesEl.textContent = livesText;
+        }
+        if (hudCache.combo !== comboText) {
+          hudCache.combo = comboText;
+          comboEl.textContent = comboText;
+        }
+        if (hudCache.charge !== chargeText) {
+          hudCache.charge = chargeText;
+          chargeEl.textContent = chargeText;
+        }
+        if (hudCache.best !== bestText) {
+          hudCache.best = bestText;
+          bestEl.textContent = bestText;
+        }
+        if (hudCache.threat !== state.threat) {
+          hudCache.threat = state.threat;
+          threatEl.textContent = state.threat;
+        }
         const active = [
           ["Rapid", player.rapid, "#24f7ff"],
           ["Spread", player.spread, "#ff4fe1"],
           ["Shield", player.shield, "#7aa7ff"],
           ["Laser", player.laser, "#ffd166"]
         ].filter(x => x[1] > 0);
-        powersEl.innerHTML = active.map(x => `<div class="power-pill hot" style="color:${x[2]}">${x[0]} ${Math.ceil(x[1])}s</div>`).join("");
+        const powersHtml = active.map(x => `<div class="power-pill hot" style="color:${x[2]}">${x[0]} ${Math.ceil(x[1])}s</div>`).join("");
+        if (hudCache.powers !== powersHtml) {
+          hudCache.powers = powersHtml;
+          powersEl.innerHTML = powersHtml;
+        }
       }
 
       function frame(ts) {
@@ -1527,19 +1573,32 @@
         canvas.addEventListener("pointermove", e => {
           if (state.mode === "playing") input.pointerX = e.clientX;
         });
-        canvas.addEventListener("pointerup", () => {
+        canvas.addEventListener("pointerup", e => {
           input.pointerX = null;
           input.fire = false;
+          if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
         });
-        leftTouch.addEventListener("pointerdown", e => { e.preventDefault(); input.left = true; });
-        leftTouch.addEventListener("pointerup", () => input.left = false);
-        leftTouch.addEventListener("pointercancel", () => input.left = false);
-        rightTouch.addEventListener("pointerdown", e => { e.preventDefault(); input.right = true; });
-        rightTouch.addEventListener("pointerup", () => input.right = false);
-        rightTouch.addEventListener("pointercancel", () => input.right = false);
-        fireTouch.addEventListener("pointerdown", e => { e.preventDefault(); input.fire = true; });
-        fireTouch.addEventListener("pointerup", () => input.fire = false);
-        fireTouch.addEventListener("pointercancel", () => input.fire = false);
+        canvas.addEventListener("pointercancel", e => {
+          input.pointerX = null;
+          input.fire = false;
+          if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        });
+        const bindTouchControl = (el, key) => {
+          el.addEventListener("pointerdown", e => {
+            e.preventDefault();
+            input[key] = true;
+            el.setPointerCapture(e.pointerId);
+          });
+          const release = e => {
+            input[key] = false;
+            if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+          };
+          el.addEventListener("pointerup", release);
+          el.addEventListener("pointercancel", release);
+        };
+        bindTouchControl(leftTouch, "left");
+        bindTouchControl(rightTouch, "right");
+        bindTouchControl(fireTouch, "fire");
         startBtn.addEventListener("click", start);
         muteBtn.addEventListener("click", () => {
           state.muted = !state.muted;
