@@ -2030,6 +2030,10 @@
         if (stars.position.z > 80) stars.position.z = -90;
       }
 
+      state.nextHazardZ += speed;
+      state.nextCreditZ += speed;
+      state.nextPowerZ += speed;
+
       while (state.nextHazardZ > -250) spawnHazard(state.nextHazardZ);
       while (state.nextCreditZ > -235) {
         spawnCreditArc(Math.floor(Math.random() * 3), state.nextCreditZ, Math.random() < 0.42);
