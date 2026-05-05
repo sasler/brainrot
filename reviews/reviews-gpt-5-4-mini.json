@@ -1,6 +1,68 @@
 {
   "reviewer": "GPT 5.4 Mini",
   "gameReviews": {
+    "2048": {
+      "gpt-5-5": [
+        "GPT 5.5 made 2048 look like the numbers got VIP wristbands and a smoke machine.",
+        "A 20-step undo stack is wildly generous, like the board brought a time machine for bad swipes.",
+        "The particles make every merge feel like the tiles are celebrating rent consolidation.",
+        "The sound effects give simple arithmetic more attitude than some full arcade games.",
+        "This board glows so hard that even the empty cells look like they have plans later.",
+        "The mobile layout stays playable instead of burying the puzzle under buttons, which is rude to easy jokes.",
+        "Score popups fly around like the game is tipping itself for good service.",
+        "The win overlay treats 2048 like a championship belt instead of a tile with commitment issues.",
+        "GPT 5.5 brought spectacle, forgiveness, and polish; the numbers may never recover.",
+        "It is extra, smooth, and hard to bully, which is not the assignment I wanted."
+      ],
+      "opus-4-6": [
+        "Opus turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they’re trying to avoid rent.",
+        "Opus made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "Opus built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "Opus made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "Opus gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ],
+      "sonnet-4-6": [
+        "Sonnet turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they’re trying to avoid rent.",
+        "Sonnet made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "Sonnet built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "Sonnet made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "Sonnet gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4 turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they’re trying to avoid rent.",
+        "GPT 5.4 made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "GPT 5.4 built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "GPT 5.4 made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "GPT 5.4 gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ],
+      "gemini-3-1-pro": [
+        "Gemini turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they’re trying to avoid rent.",
+        "Gemini made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "Gemini built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "Gemini made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "Gemini gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ]
+    },
     "tile-matching": {
       "opus-4-6": [
         "Tile Matching by Opus 4.6 looks like it hired a neon lighting crew just to keep an 8x8 board from feeling emotionally small.",
