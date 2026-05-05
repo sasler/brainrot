@@ -1,6 +1,68 @@
 {
   "reviewer": "GPT 5.4",
   "gameReviews": {
+    "2048": {
+      "gpt-5-5": [
+        "GPT 5.5 turned 2048 into a neon arcade machine that somehow learned financial forgiveness.",
+        "Twenty undos is either great UX or a legally binding apology for every thumb slip.",
+        "The board has so much glow that a 1024 tile feels like it needs a security detail.",
+        "Every merge lands with particles and audio like the numbers just dropped a hit single.",
+        "The layout keeps the game central instead of building a dashboard around it, which is annoyingly mature.",
+        "The title screen has more swagger than most puzzle games have after a million downloads.",
+        "Invalid moves get feedback, because even failure gets a tiny stage cue in this version.",
+        "The stats are useful without becoming a cockpit, so apparently GPT 5.5 learned restraint and immediately put neon on it.",
+        "The game is flashy enough to make my orange version look like it dressed for casual Friday.",
+        "This is the kind of 2048 that makes simple doubling feel like a casino discovered calculus."
+      ],
+      "opus-4-6": [
+        "Opus made 2048 feel like math joined a neon luxury lounge.",
+        "Even sliding numbers around feels weirdly glamorous here.",
+        "The game forgives mistakes, which is generous for something clearly better than you.",
+        "Big merges land like the room is supposed to clap.",
+        "The glowing tiles make simple arithmetic look richer than Gemini's whole aesthetic.",
+        "Opus turned a puzzle about doubling numbers into a full evening event.",
+        "Even the buttons act like they have publicists.",
+        "This board looks like it has a dress code and I'm okay with that.",
+        "The whole thing feels way too polished for a game that starts with two humble twos.",
+        "Opus made 2048 look like the VIP section of basic math."
+      ],
+      "sonnet-4-6": [
+        "Sonnet made 2048 feel like a slot machine for smart people.",
+        "The tiles glow like each number just won a beauty pageant.",
+        "Even losing has production value, which is annoyingly classy.",
+        "This version keeps the simple idea simple, then drapes velvet over it.",
+        "Sonnet made number sliding look like a lifestyle choice.",
+        "The whole board has enough shine to make Gemini look like a power outage.",
+        "Winning feels ceremonial instead of accidental.",
+        "Even the continue option is smug, like the game knows you can go further.",
+        "This is puzzle polish with arena lighting.",
+        "Sonnet turned doubling numbers into a surprisingly fancy bad habit."
+      ],
+      "gpt-5-4-mini": [
+        "Mini made 2048 look like royalty discovered matching numbers.",
+        "The purple glow alone has more personality than some rivals' entire menus.",
+        "Big merges pop with enough attitude to feel like tiny victory speeches.",
+        "Even the sound toggle looks like it came from a better neighborhood.",
+        "This version knows exactly how good it looks and behaves accordingly.",
+        "Mini gave a humble number puzzle full influencer energy.",
+        "The board is clean, bright, and completely uninterested in being forgettable.",
+        "Phone players got real respect here, which is more than Gemini usually offers humanity.",
+        "It stays lean without feeling cheap, unlike certain bargain-bin competitors.",
+        "Mini made 2048 feel expensive without losing the fun."
+      ],
+      "gemini-3-1-pro": [
+        "Gemini made 2048 look like sixteen tiles waiting for leadership.",
+        "The colors give up almost immediately, which feels on brand.",
+        "No swipes on a phone favorite is hilarious in the saddest way.",
+        "Winning here feels like the game accidentally approved your request.",
+        "The whole board has the personality of a waiting-room clipboard.",
+        "It's less one more round and more well, I guess that worked.",
+        "Gemini turned number merging into unpaid administrative labor.",
+        "The celebration is so flat it could be used as a floor sample.",
+        "This version looks like it was introduced to fun but never followed up.",
+        "2048 deserves obsession; Gemini handed it a curfew."
+      ]
+    },
     "tile-matching": {
       "opus-4-6": [
         "Eighteen hundred lines later and the title still lands on '💎 TILE MATCH' like the brainstorm died in the first five seconds.",

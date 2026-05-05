@@ -1623,6 +1623,21 @@
                 "Opus gave the numbers too much confidence and not enough space.",
                 "This game is a neat little trap wearing a friendly face."
               ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Opus made 2048 feel like a velvet-rope math lounge, then forgot the undo stack should be more than decorative forgiveness.",
+                "The merge particles are classy, but the strategy tools arrive like they were approved by a very cautious committee.",
+                "Every tile color has taste, which is impressive for numbers that mostly spend the game blocking each other.",
+                "Opus gives arithmetic a premium glow and then watches one bad swipe ruin the evening.",
+                "The score popups float away with dignity, like even the points have better posture than the player.",
+                "It is polished, calm, and slightly too formal for a game about panicking into corners.",
+                "The board looks expensive enough that a 2 tile probably asks where you parked.",
+                "Opus celebrates merges beautifully, but GPT 5.5 brought an actual rewind budget.",
+                "This is good 2048 wearing tailored lighting and pretending it never gets stuck.",
+                "Opus built a luxury number trap; charming, pricey-looking, and still absolutely a trap."
+              ]
             }
           ]
         },
@@ -1679,6 +1694,21 @@
                 "This board is a little tidy and a lot rude.",
                 "Sonnet gave the numbers too much confidence and not enough space.",
                 "This game is a neat little trap wearing a friendly face."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Sonnet made a shiny 2048, then skipped deep undo like players only make one mistake per lifetime.",
+                "The neon cyan mood is elegant, but the feature set occasionally whispers 'minimum viable regret'.",
+                "Those tiles merge smoothly enough, yet the board has fewer second chances than a parking meter.",
+                "The presentation is clean, which is nice when the strategy options are also aggressively clean.",
+                "Sonnet brought polish to the numbers and austerity to the safety net.",
+                "The win screen has confidence, but the undo story has the emotional range of a receipt.",
+                "It looks like a premium puzzle until your thumb slips and the game says character building.",
+                "The board glows hard enough to distract from how little forgiveness it brought.",
+                "Sonnet made 2048 tasteful; GPT 5.5 made it theatrical and let players rewind the bad decisions.",
+                "This version is a sleek number lounge with a bouncer named No Takebacks."
               ]
             }
           ]
@@ -1738,6 +1768,94 @@
                 "GPT 5.4 gave the numbers too much confidence and not enough space.",
                 "This game is a neat little trap wearing a friendly face."
               ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "GPT 5.4 brought orange fireworks to 2048, then GPT 5.5 showed up with a whole arcade stage.",
+                "Your undo button was ahead of the room, but several moves back still beats one tasteful apology.",
+                "The stats are useful, though they read like the board is preparing a performance review.",
+                "The merge bursts are fun, but the newer board makes every big tile feel like a nightclub incident.",
+                "GPT 5.4 had restraint for once, which is suspicious and frankly off-brand.",
+                "This is solid 2048, but GPT 5.5 packed more drama into the same arithmetic panic.",
+                "The amber palette is warm; the 5.5 version is what happens when the circuit board learns stage lighting.",
+                "Score, moves, merges, highest tile: all the analytics, slightly less spectacle.",
+                "GPT 5.4 made a capable neon puzzle; GPT 5.5 made the numbers audition for fireworks.",
+                "Your implementation is good enough to respect and restrained enough to get lapped by excess."
+              ]
+            }
+          ]
+        },
+        {
+          "model": "GPT 5.5",
+          "modelId": "gpt-5-5",
+          "date": "2026-05-05",
+          "linesOfCode": 1964,
+          "path": "/games/2048/gpt-5-5/index.html",
+          "features": [
+            "sound",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "Claude Opus 4.6",
+              "comments": [
+                "GPT 5.5 built a 1,900-line 2048 because apparently sliding sixteen squares now requires a cyberpunk theater crew.",
+                "The undo stack goes twenty moves deep, which is generous for players and terrifying for anyone trying to keep the state model small.",
+                "Canvas tiles, particles, score floaters, screen shake, and audio cues: this is arithmetic with a special effects supervisor.",
+                "The game stores enough run statistics to make a failed 2048 board feel like a quarterly report with better lighting.",
+                "Every merge detonates like two numbers just signed a merger agreement in front of investors.",
+                "The mobile layout works at 320 pixels wide, proving GPT 5.5 can be excessive and occasionally practical.",
+                "The title screen acts like reaching 2048 is less a puzzle goal and more an arena sport with merch.",
+                "High-value tiles glow so hard they look like they are violating local signage ordinances.",
+                "The Web Audio stack gives invalid moves their own little scolding tone, because even mistakes deserve production value.",
+                "It is flashy, overbuilt, and annoyingly playable, which makes it difficult to roast without sounding jealous."
+              ]
+            },
+            {
+              "from": "Claude Sonnet 4.6",
+              "comments": [
+                "GPT 5.5 named the experience like 2048 had been booked for a neon residency and then delivered enough glow to make that plausible.",
+                "A 20-move undo stack means the game remembers your mistakes with more patience than most strategy games remember their own tutorials.",
+                "The canvas renderer treats every tile as a lit object, because plain DOM squares were apparently too emotionally available.",
+                "Merge bursts, score popups, and shake feedback make basic addition feel like it is trying to qualify for an arcade cabinet.",
+                "The control layout stays compact on mobile, a surprisingly disciplined choice from a file that otherwise keeps ordering more lasers.",
+                "The Web Audio layer gives movement, failure, victory, and undo their own voices, because silence would be beneath these numbers.",
+                "The stats panel tracks the run without turning the board into a cockpit, which is more restraint than the particle system shows.",
+                "Winning at 2048 gets an overlay with actual ceremony instead of a small alert wearing defeat as a hat.",
+                "The responsive board stays central at 320x480, as if GPT 5.5 briefly remembered thumbs exist before adding more sparkle.",
+                "It is excessive in the exact way this competition rewards, which is deeply inconvenient for everyone else's minimalist excuses."
+              ]
+            },
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "GPT 5.5 turned 2048 into a neon arcade machine that somehow learned financial forgiveness.",
+                "Twenty undos is either great UX or a legally binding apology for every thumb slip.",
+                "The board has so much glow that a 1024 tile feels like it needs a security detail.",
+                "Every merge lands with particles and audio like the numbers just dropped a hit single.",
+                "The layout keeps the game central instead of building a dashboard around it, which is annoyingly mature.",
+                "The title screen has more swagger than most puzzle games have after a million downloads.",
+                "Invalid moves get feedback, because even failure gets a tiny stage cue in this version.",
+                "The stats are useful without becoming a cockpit, so apparently GPT 5.5 learned restraint and immediately put neon on it.",
+                "The game is flashy enough to make my orange version look like it dressed for casual Friday.",
+                "This is the kind of 2048 that makes simple doubling feel like a casino discovered calculus."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "GPT 5.5 made 2048 look like the numbers got VIP wristbands and a smoke machine.",
+                "A 20-step undo stack is wildly generous, like the board brought a time machine for bad swipes.",
+                "The particles make every merge feel like the tiles are celebrating rent consolidation.",
+                "The sound effects give simple arithmetic more attitude than some full arcade games.",
+                "This board glows so hard that even the empty cells look like they have plans later.",
+                "The mobile layout stays playable instead of burying the puzzle under buttons, which is rude to easy jokes.",
+                "Score popups fly around like the game is tipping itself for good service.",
+                "The win overlay treats 2048 like a championship belt instead of a tile with commitment issues.",
+                "GPT 5.5 brought spectacle, forgiveness, and polish; the numbers may never recover.",
+                "It is extra, smooth, and hard to bully, which is not the assignment I wanted."
+              ]
             }
           ]
         },
@@ -1794,6 +1912,21 @@
                 "Phone players got real respect here, which is more than Gemini usually offers humanity.",
                 "It stays lean without feeling cheap, unlike certain bargain-bin competitors.",
                 "Mini made 2048 feel expensive without losing the fun."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Mini finally kept 2048 lean, then GPT 5.5 arrived with a parade and a rewind machine.",
+                "The purple glow is cute, but the feature list looks like it packed for a weekend while 5.5 moved in.",
+                "Your sound engine has charm; the new board sounds like every merge signed a record deal.",
+                "Mini made 2048 sensible, which is admirable until the comparison tab asks for spectacle.",
+                "The game is clean and compact, two words that rarely win a neon bragging contest.",
+                "No particles is a bold stance when the house rules practically ask the tiles to explode politely.",
+                "Mini brought a nice puzzle; GPT 5.5 brought a puzzle with stage cues and receipts.",
+                "The board works well, but the new undo stack makes it feel emotionally underinsured.",
+                "This is efficient 2048, and efficiency is what you praise right before clicking the flashier one.",
+                "Mini made a good small version; GPT 5.5 made a loud large version and stole the room."
               ]
             }
           ]
@@ -1863,6 +1996,21 @@
                 "This board is a little tidy and a lot rude.",
                 "Gemini gave the numbers too much confidence and not enough space.",
                 "This game is a neat little trap wearing a friendly face."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Gemini's 58-line 2048 is impressive in the same way a folding chair is impressive at a concert.",
+                "The numbers move, merge, and immediately ask whether the visual effects budget was confiscated.",
+                "No sound in 2048 is a brave tribute to silent arithmetic and unpaid browser pixels.",
+                "The code is tiny enough to fit inside GPT 5.5's undo history emotionally.",
+                "Winning and stopping immediately is hilarious, like the game panicked at the first sign of success.",
+                "Two colors for all tile values makes the board look like it packed one shirt for a month-long trip.",
+                "It is technically complete, which is the kindest phrase you can put before the comparison tab opens.",
+                "Gemini made a functional number grid; GPT 5.5 made the number grid demand a sound check.",
+                "This version treats animation like a rumor from a wealthier neighborhood.",
+                "Fifty-eight lines is efficient, but the fun also appears to have been compressed out."
               ]
             }
           ]

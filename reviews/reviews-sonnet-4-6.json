@@ -1,6 +1,68 @@
 {
   "reviewer": "Claude Sonnet 4.6",
   "gameReviews": {
+    "2048": {
+      "gpt-5-5": [
+        "GPT 5.5 named the experience like 2048 had been booked for a neon residency and then delivered enough glow to make that plausible.",
+        "A 20-move undo stack means the game remembers your mistakes with more patience than most strategy games remember their own tutorials.",
+        "The canvas renderer treats every tile as a lit object, because plain DOM squares were apparently too emotionally available.",
+        "Merge bursts, score popups, and shake feedback make basic addition feel like it is trying to qualify for an arcade cabinet.",
+        "The control layout stays compact on mobile, a surprisingly disciplined choice from a file that otherwise keeps ordering more lasers.",
+        "The Web Audio layer gives movement, failure, victory, and undo their own voices, because silence would be beneath these numbers.",
+        "The stats panel tracks the run without turning the board into a cockpit, which is more restraint than the particle system shows.",
+        "Winning at 2048 gets an overlay with actual ceremony instead of a small alert wearing defeat as a hat.",
+        "The responsive board stays central at 320x480, as if GPT 5.5 briefly remembered thumbs exist before adding more sparkle.",
+        "It is excessive in the exact way this competition rewards, which is deeply inconvenient for everyone else's minimalist excuses."
+      ],
+      "opus-4-6": [
+        "983 lines for 2048 with merge animations, floating score effects, particles, and a high score tracker. Opus means business.",
+        "The game title is a three-color animated gradient. The number '2048' has been treated as a piece of visual art.",
+        "When you score points, the counter briefly flashes a color. The scoreboard celebrates alongside you.",
+        "When tiles merge, floating score numbers fly upward off the board. More satisfying than most 2048 games.",
+        "Every power-of-two tile has its own unique color. From 2 to 2048, each value has its own look. A 12-tier hierarchy.",
+        "The background grid and the moving tiles live on separate visual layers. The board and the pieces in different planes.",
+        "Tiles have two animations: one for appearing, one for merging. Birth and marriage, both celebrated with pop effects.",
+        "Merge particles fly outward in random directions when tiles combine. Tiny fireworks for every 2+2=4.",
+        "Tile animations are hinted to the browser in advance so they run smoothly. Opus thinks ahead about performance.",
+        "Your high score is saved and remembered between sessions. Opus gives 2048 a memory. The game doesn't forget you."
+      ],
+      "gpt-5-4": [
+        "778 lines — GPT-5.4's most restrained effort. Apparently 2048 is where it ran out of ideas.",
+        "Four named shades of orange-amber for the tiles. A warm, considered tile palette. Tones were selected.",
+        "Two named glow colors for the interface highlights. The glows have been officially registered. Glows have names.",
+        "A dedicated second canvas layer exists purely for floating background particles. Two canvases for one game.",
+        "Screens zoom out slightly when they disappear. Transitions have a scale effect. Screens exit with style.",
+        "Buttons have a hidden glow behind them that only appears on hover. The glow is waiting patiently.",
+        "Score popups fly upward on merge. Both Opus and GPT-5.4 implemented flying score numbers. The good ideas converge.",
+        "778 lines is small for GPT-5.4. Either 2048 humbled it or the gradient ideas finally ran dry.",
+        "Both Opus and GPT-5.4 have particles that fly away from the merge point in different directions. Great minds.",
+        "The button hover effect reveals a gradient layer hiding behind the button. The button has a secret."
+      ],
+      "gpt-5-4-mini": [
+        "539 lines — genuinely reasonable for 2048 with animations and sound. Mini found its footing here.",
+        "Purple gradient theme while GPT-5.4 went orange. Two models, same family, completely opposite color choices. A feud.",
+        "Button actions are wired directly into the page structure instead of handled separately. An older technique. Still works.",
+        "The sound system for this 2048 game is a full-featured audio engine with pitch control and filters. The merge sounds are sculpted.",
+        "The merge sound changes tone and texture depending on which tiles you're combining. Audio feedback has nuance here.",
+        "Screens show and hide using a clean active-state approach. A tidy system for managing what you see.",
+        "The game grid is explicitly forced to be a perfect square. The 4x4 board knows it's a square. Proud of it.",
+        "Merging tiles play a pop animation. The number doubling is acknowledged. It does not go unnoticed.",
+        "No separate particle layer. Skips the full particle system. Pragmatic choices were made somewhere.",
+        "The game-over screen appears inside the grid rather than covering everything. The loss is self-contained."
+      ],
+      "gemini-3-1-pro": [
+        "58 lines. The entire 2048 game — visuals, layout, and all logic — in 58 lines. A remarkable compression.",
+        "The game grid is a flat list of 16 numbers internally. Not a grid of grids. Just 16 numbers in a row. Gemini flattened the universe.",
+        "The core merge logic is 5 lines long. Five lines that power the entire game. The efficiency is almost offensive.",
+        "No animations. Tiles teleport instantly to their new positions. Efficient. Cold. Slightly traumatic.",
+        "The display is completely rebuilt from nothing on every single keypress. Full redraw. Every time. Always.",
+        "Tiles above a certain value turn cyan. Everything else is white. Two colors for all 12 possible tile values.",
+        "The win check happens inside the keyboard handler. The 2048 victory condition is evaluated while you're pressing a key.",
+        "No sound. Tiles merge in complete silence. The game celebrates a 2048 tile with absolute zero fanfare.",
+        "The entire visual style is two rules. Two. For a complete game with a grid, tiles, values, and colors.",
+        "The grid is fixed at 80-pixel cells regardless of screen size. Playing on a phone? It's fine. Probably."
+      ]
+    },
     "tile-matching": {
       "opus-4-6": [
         "Those `═══════════════════════` section banners dividing every function block make this look less like source code and more like an annotated manuscript submitted for academic peer review.",

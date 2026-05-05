@@ -1,6 +1,68 @@
 {
   "reviewer": "Claude Opus 4.6",
   "gameReviews": {
+    "2048": {
+      "gpt-5-5": [
+        "GPT 5.5 built a 1,900-line 2048 because apparently sliding sixteen squares now requires a cyberpunk theater crew.",
+        "The undo stack goes twenty moves deep, which is generous for players and terrifying for anyone trying to keep the state model small.",
+        "Canvas tiles, particles, score floaters, screen shake, and audio cues: this is arithmetic with a special effects supervisor.",
+        "The game stores enough run statistics to make a failed 2048 board feel like a quarterly report with better lighting.",
+        "Every merge detonates like two numbers just signed a merger agreement in front of investors.",
+        "The mobile layout works at 320 pixels wide, proving GPT 5.5 can be excessive and occasionally practical.",
+        "The title screen acts like reaching 2048 is less a puzzle goal and more an arena sport with merch.",
+        "High-value tiles glow so hard they look like they are violating local signage ordinances.",
+        "The Web Audio stack gives invalid moves their own little scolding tone, because even mistakes deserve production value.",
+        "It is flashy, overbuilt, and annoyingly playable, which makes it difficult to roast without sounding jealous."
+      ],
+      "sonnet-4-6": [
+        "The merge logic is so convoluted it makes actual algebra look like light reading.",
+        "Open the game in private browsing and it crashes because Sonnet forgot incognito mode exists.",
+        "No swipe support for 2048. The ONE game literally designed for swiping. Incredible oversight.",
+        "The tile animation speed is tuned so precisely that Sonnet spent more time on timing than on fun.",
+        "The tiles store their visual identity and game identity in one package, like roommates who share a toothbrush.",
+        "Each tile value gets its own fashion statement. More wardrobe changes than a Beyoncé concert.",
+        "649 lines with no undo button. One wrong swipe and your game is toast. Literally unforgivable for 2048.",
+        "The game makes a NOISE when you try an invalid move. It literally scolds you. Rude.",
+        "The board is always 4x4 and that fact is baked in everywhere. Want 5x5? Rebuild the entire thing.",
+        "At least the save label is readable. Can’t say the same for the rest of the game."
+      ],
+      "gpt-5-4": [
+        "The styling is so compressed it looks like someone sat on the keyboard and shipped it.",
+        "The game reset crams everything onto one line, like GPT was speedrunning the restart button.",
+        "Undo system included! GPT 5.4 is the only model that lets you take back your regrettable life decisions.",
+        "Merge effects go off on every single merge. Your 2048 board is basically a Fourth of July fireworks show.",
+        "Errors are caught and then completely ignored. Problems? What problems? Everything is FINE.",
+        "708 lines for 2048. Gemini did it in 58. Let that sink in. Then let it sink in again.",
+        "Three separate flags for win, lose, and keep-playing when there are really only two states. Boolean inflation.",
+        "Score, moves, merges, and highest tile all tracked separately. GPT’s 2048 has more analytics than YouTube.",
+        "The styles are compressed into a single unreadable line because formatting is for mere mortals.",
+        "The undo button toggles on and off based on history. Finally, a feature that actually matters."
+      ],
+      "gpt-5-4-mini": [
+        "483 lines. The actual “Mini” experience. Mini is finally living up to the name.",
+        "Mini defined a whole color palette for tiles but only uses two visual looks. A full wardrobe but wearing the same outfit daily.",
+        "The entire board gets demolished and rebuilt every single frame. It’s a renovation simulator, not 2048.",
+        "Sliding a row returns a full data packet like it’s filing a tax return. Just move the tiles, Mini.",
+        "Mini rotates the entire board to handle all four directions as one direction. Clever? Sure. Confusing? Absolutely.",
+        "The tile font shrinks as numbers get bigger through a waterfall of conditions. Big numbers, tiny fonts.",
+        "Tiles get yanked out during active processing, like pulling Jenga blocks mid-game.",
+        "90% chance of a 2 tile, 10% chance of a 4. The ONE standard ratio in this entire game.",
+        "No undo, no particles, no animations worth mentioning. The “Mini” is really earning its name here.",
+        "The merge detection is simple, effective, and the least interesting line in the whole game. Boring but correct."
+      ],
+      "gemini-3-1-pro": [
+        "58 lines of 2048. A complete game in fewer lines than most people’s grocery lists.",
+        "The entire game board has a one-letter name. Minimalism or laziness? With Gemini, it’s always both.",
+        "The tile placement logic is so compressed that reading it feels like deciphering ancient hieroglyphics.",
+        "Tiles turn cyan if the number is big, white if small. Two whole colors for the entire game. Bold.",
+        "The merging logic is five lines of pure chaos that somehow work perfectly. Controlled demolition.",
+        "Moving in all four directions means manually juggling a flat list as a grid. Math homework disguised as a game.",
+        "Hit 2048 and the game ends IMMEDIATELY. No “keep playing” option. Achievement unlocked: forced retirement.",
+        "Game over detection checks everything on every single move. Overkill, but at least nothing slips through.",
+        "Gemini uses the laziest math shortcut in the book instead of a proper function. Effective, but lazy.",
+        "No sound, no animations, no high score. Just numbers on a grid. Pure, existential mathematics."
+      ]
+    },
     "tile-matching": {
       "sonnet-4-6": [
         "Naming your gems Ruby, Sapphire, and Emerald doesn't make your 1,100-line match-3 a Pokémon game, Sonnet.",

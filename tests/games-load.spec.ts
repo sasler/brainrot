@@ -6,7 +6,7 @@ const ALL_GAMES = [
   { id: "tetris", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "reversi", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "breakout", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
-  { id: "2048", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
+  { id: "2048", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-5", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "endless-runner", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-5", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "marble-madness", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "maze-3d", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
