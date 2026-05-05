@@ -915,6 +915,7 @@
       let keepPlaying = false;
       let gameOver = false;
       let active = false;
+      let paused = false;
       let muted = false;
       let nextTileId = 1;
       let undoStack = [];
@@ -922,11 +923,13 @@
       let cellGap = 20;
       let cellSize = 220;
       let boardPad = 28;
-      let lastFrame = 0;
+      let resizeDirty = true;
+      let cachedDpr = 0;
       let screenShakeUntil = 0;
       let audio = null;
       let pointerStart = null;
       let pointerDown = false;
+      let pendingMoveCompletion = null;
 
       const tileColors = {
         2: ["#17263a", "#4ef7ff", "#dffcff"],
@@ -976,6 +979,7 @@
           keepPlaying: keepPlaying,
           gameOver: gameOver,
           active: active,
+          paused: paused,
           nextTileId: nextTileId
         };
       }
@@ -990,6 +994,7 @@
         keepPlaying = state.keepPlaying;
         gameOver = state.gameOver;
         active = state.active;
+        paused = Boolean(state.paused);
         nextTileId = state.nextTileId;
         tiles = flattenBoard();
         particles.length = 0;
@@ -1039,6 +1044,7 @@
         board = makeEmptyBoard();
         tiles = [];
         particles = [];
+        pendingMoveCompletion = null;
         score = 0;
         moves = 0;
         mergeCount = 0;
@@ -1047,6 +1053,7 @@
         keepPlaying = false;
         gameOver = false;
         active = true;
+        paused = false;
         nextTileId = 1;
         undoStack = [];
         addRandomTile(true);
@@ -1058,10 +1065,51 @@
 
       function showTitle() {
         active = false;
+        paused = false;
         titleScreen.classList.remove("hidden");
         winScreen.classList.add("hidden");
         gameOverScreen.classList.add("hidden");
         updateUi();
+      }
+
+      function pauseGame() {
+        if (!active || gameOver || (won && !keepPlaying)) {
+          return;
+        }
+        active = false;
+        paused = true;
+        titleScreen.classList.remove("hidden");
+        winScreen.classList.add("hidden");
+        gameOverScreen.classList.add("hidden");
+        statusLine.textContent = "Paused";
+        updateUi();
+        playSound("button");
+      }
+
+      function resumeGame() {
+        if (!paused) {
+          beginNewGame();
+          return;
+        }
+        active = true;
+        paused = false;
+        closeAllScreens();
+        if (pendingMoveCompletion) {
+          const result = pendingMoveCompletion;
+          pendingMoveCompletion = null;
+          completeMoveAfterAnimation(result);
+        }
+        statusLine.textContent = "Resumed";
+        updateUi();
+        playSound("button");
+      }
+
+      function startOrResumeGame() {
+        if (paused) {
+          resumeGame();
+        } else {
+          beginNewGame();
+        }
       }
 
       function showWin(withSound) {
@@ -1109,7 +1157,8 @@
         overUndoButton.disabled = undoStack.length === 0;
         muteButton.textContent = muted ? "Muted" : "Sound";
         quietButton.textContent = muted ? "Sound On" : "Mute";
-        startButton.textContent = active ? "Pause" : "Start";
+        playButton.textContent = paused ? "Resume" : "Play";
+        startButton.textContent = active ? "Pause" : paused ? "Resume" : "Start";
       }
 
       function addRandomTile(initial) {
@@ -1149,14 +1198,17 @@
         return tile;
       }
 
-      function pushUndo() {
-        undoStack.push(captureState());
+      function pushUndo(state) {
+        undoStack.push(state || captureState());
         while (undoStack.length > UNDO_LIMIT) {
           undoStack.shift();
         }
       }
 
       function undoMove() {
+        if (!active && paused) {
+          return;
+        }
         if (undoStack.length === 0) {
           playSound("invalid");
           shakeBoard();
@@ -1170,7 +1222,6 @@
 
       function move(direction) {
         if (!active) {
-          beginNewGame();
           return;
         }
         if (gameOver) {
@@ -1190,31 +1241,14 @@
           statusLine.textContent = "No move " + direction;
           return;
         }
-        undoStack.push(previous);
-        while (undoStack.length > UNDO_LIMIT) {
-          undoStack.shift();
-        }
+        pushUndo(previous);
         score += result.points;
         moves += 1;
         mergeCount += result.merges;
         highestTile = Math.max(highestTile, result.highest);
         animateMove(result);
         window.setTimeout(function () {
-          const spawned = addRandomTile(false);
-          if (spawned) {
-            addSpawnParticles(spawned.row, spawned.col, spawned.value);
-          }
-          if (!won && result.highest >= TARGET_TILE) {
-            won = true;
-            updateUi();
-            showWin(true);
-          } else if (!hasMoves()) {
-            gameOver = true;
-            updateUi();
-            showGameOver(true);
-          } else {
-            updateUi();
-          }
+          completeMoveAfterAnimation(result);
         }, ANIMATION_MS + 18);
         if (result.highest >= 512 || result.points >= 512) {
           playSound("highMerge", result.highest);
@@ -1227,6 +1261,28 @@
           shakeBoard(result.highest >= 512 ? 1 : 0.65);
         }
         statusLine.textContent = "+" + result.points + " score, " + result.merges + " merges";
+      }
+
+      function completeMoveAfterAnimation(result) {
+        if (!active) {
+          pendingMoveCompletion = result;
+          return;
+        }
+        const spawned = addRandomTile(false);
+        if (spawned) {
+          addSpawnParticles(spawned.row, spawned.col, spawned.value);
+        }
+        if (!won && result.highest >= TARGET_TILE) {
+          won = true;
+          updateUi();
+          showWin(true);
+        } else if (!hasMoves()) {
+          gameOver = true;
+          updateUi();
+          showGameOver(true);
+        } else {
+          updateUi();
+        }
       }
 
       function computeMove(direction) {
@@ -1371,9 +1427,18 @@
         return false;
       }
 
-      function resize() {
-        const rect = canvas.getBoundingClientRect();
+      function markResizeDirty() {
+        resizeDirty = true;
+      }
+
+      function resizeIfNeeded() {
         const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        if (!resizeDirty && dpr === cachedDpr) {
+          return;
+        }
+        resizeDirty = false;
+        cachedDpr = dpr;
+        const rect = canvas.getBoundingClientRect();
         const size = Math.max(320, Math.floor(Math.min(rect.width, rect.height) * dpr));
         if (canvas.width !== size || canvas.height !== size) {
           canvas.width = size;
@@ -1384,9 +1449,8 @@
         cellGap = Math.max(10, Math.round(size * 0.020));
         cellSize = (size - boardPad * 2 - cellGap * 3) / GRID_SIZE;
 
-        const starDpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-        const sw = Math.floor(window.innerWidth * starDpr);
-        const sh = Math.floor(window.innerHeight * starDpr);
+        const sw = Math.floor(window.innerWidth * dpr);
+        const sh = Math.floor(window.innerHeight * dpr);
         if (starsCanvas.width !== sw || starsCanvas.height !== sh) {
           starsCanvas.width = sw;
           starsCanvas.height = sh;
@@ -1438,7 +1502,7 @@
       }
 
       function render(now) {
-        resize();
+        resizeIfNeeded();
         drawBackground(now);
         ctx.clearRect(0, 0, boardPixels, boardPixels);
         ctx.save();
@@ -1455,7 +1519,6 @@
         particles = particles.filter(function (p) {
           return now - p.birth < p.ttl;
         });
-        lastFrame = now;
         requestAnimationFrame(render);
       }
 
@@ -1872,7 +1935,7 @@
         if (key === " " || key === "enter") {
           event.preventDefault();
           if (!active) {
-            beginNewGame();
+            startOrResumeGame();
           } else if (won && !keepPlaying) {
             continueAfterWin();
           }
@@ -1920,7 +1983,13 @@
       }
 
       function wireEvents() {
-        window.addEventListener("resize", resize, { passive: true });
+        window.addEventListener("resize", markResizeDirty, { passive: true });
+        window.addEventListener("orientationchange", markResizeDirty, { passive: true });
+        if ("ResizeObserver" in window) {
+          const boardObserver = new ResizeObserver(markResizeDirty);
+          boardObserver.observe(canvas);
+          boardObserver.observe(boardShell);
+        }
         document.addEventListener("keydown", handleKey);
         canvas.addEventListener("pointerdown", beginPointer);
         canvas.addEventListener("pointerup", endPointer);
@@ -1928,7 +1997,7 @@
           pointerDown = false;
         });
         canvas.addEventListener("touchmove", preventBoardScroll, { passive: false });
-        playButton.addEventListener("click", beginNewGame);
+        playButton.addEventListener("click", startOrResumeGame);
         newButton.addEventListener("click", beginNewGame);
         winNewButton.addEventListener("click", beginNewGame);
         overNewButton.addEventListener("click", beginNewGame);
@@ -1939,18 +2008,16 @@
         quietButton.addEventListener("click", toggleMute);
         startButton.addEventListener("click", function () {
           if (active) {
-            showTitle();
-            playSound("button");
+            pauseGame();
           } else {
-            beginNewGame();
+            startOrResumeGame();
           }
         });
       }
 
       function init() {
         wireEvents();
-        resize();
-        buildBackgroundParticles();
+        resizeIfNeeded();
         showTitle();
         updateUi();
         requestAnimationFrame(render);

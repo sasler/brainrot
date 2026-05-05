@@ -1790,7 +1790,7 @@
           "model": "GPT 5.5",
           "modelId": "gpt-5-5",
           "date": "2026-05-05",
-          "linesOfCode": 1964,
+          "linesOfCode": 2031,
           "path": "/games/2048/gpt-5-5/index.html",
           "features": [
             "sound",
