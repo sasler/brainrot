@@ -11,10 +11,10 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     // Tagline
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
-    // Arena section with 14 game cards
+    // Arena section with 15 game cards
     const arena = page.locator("#arena");
     const gameCards = arena.locator('a[href^="/games/"]');
-    await expect(gameCards).toHaveCount(14);
+    await expect(gameCards).toHaveCount(15);
 
     // Game card titles present in arena section
     await expect(
@@ -71,6 +71,11 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     await expect(
       arena.locator('a[href="/games/sudoku"]').getByRole("heading", { name: "Sudoku" }),
     ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/outrun-racer"]')
+        .getByRole("heading", { name: "Neon Horizon Racer" }),
+    ).toBeVisible();
   });
 
   test("navbar has correct links", async ({ page }) => {
@@ -104,6 +109,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "tile-matching",
       "space-invaders",
       "sudoku",
+      "outrun-racer",
     ];
 
     for (const game of games) {
@@ -113,6 +119,11 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       await expect(
         page.getByRole("heading", { name: "AI IMPLEMENTATIONS" }),
       ).toBeVisible();
+
+      if (game === "outrun-racer") {
+        await expect(page.getByRole("heading", { name: "GPT 5.5", exact: true })).toBeVisible();
+        continue;
+      }
 
       await expect(page.getByRole("heading", { name: "Claude Sonnet 4.6" })).toBeVisible();
       await expect(page.getByRole("heading", { name: "GPT 5.4", exact: true })).toBeVisible();
@@ -146,7 +157,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.games).toHaveLength(14);
+    expect(data.games).toHaveLength(15);
     expect(data.games.map((g: { id: string }) => g.id)).toEqual([
       "snake",
       "minesweeper",
@@ -162,6 +173,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "space-invaders",
       "pac-man",
       "sudoku",
+      "outrun-racer",
     ]);
   });
 
