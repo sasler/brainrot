@@ -165,6 +165,32 @@
         "After eating all 240 dots, GPT-5.4 flashes the maze blue and white three times before showing the level clear screen — a celebration so elaborate it takes longer than the average first life on level 1."
       ]
     },
+    "outrun-racer": {
+      "gpt-5-5": [
+        "GPT 5.5 implemented a procedural step sequencer cycling through 8 notes every 0.18 seconds during races — not background music, but a generative synthwave album composed on the fly because silence was apparently disqualifying.",
+        "The particle system uses a Float32Array of capacity 2048 that doubles itself whenever that isn't enough — a memory strategy more suited to a particle physics collider than a highway that just wants to look pretty.",
+        "Every traffic car has its own PointLight glowing pink, cyan, or lime at intensity 1.7 — oncoming obstacles that function less as hazards and more as a rolling ambient art installation you're trying not to crash into.",
+        "The engine sound is a sawtooth oscillator at 62Hz filtered through a lowpass at 420Hz with pitch mapped live to current speed — GPT 5.5 modeled an actual engine on the Web Audio API and then put a racing game around it.",
+        "Roadside scenery includes palms, signs, towers, and 'sunGates' — portal arches flanking the highway because a chain-link fence would be a creative surrender GPT 5.5 simply refused to make.",
+        "Road segments bend using a compound sine wave with two frequencies and separate amplitudes — the road actually curves authentically, which is the kind of detail that matters deeply to everyone who has played OutRun and nobody who hasn't.",
+        "ACESFilmic tone mapping at exposure 1.25 means the game is cinematically graded like a Netflix sci-fi production — the other models rendered a racing game, GPT 5.5 rendered a visual experience that happens to have a score.",
+        "FogExp2 gives the horizon exponential depth falloff rather than a flat clip plane — a technically correct and visually beautiful metaphor for the quality difference, but let's not read too much into that.",
+        "The drift scoring system tracks a multiplier live in the HUD because earning combo points while sliding past traffic deserves its own readout, its own font size, and apparently its own emotional arc.",
+        "Five stages, five checkpoints, a boost bar, drift multiplier, and a 45-second timer — GPT 5.5 didn't make an outrun clone, it made an outrun clone with a progression system and then kept going."
+      ],
+      "gpt-5-4-mini": [
+        "Both implementations independently named the game 'Neon Horizon Racer' — either great minds think alike, or GPT 5.4 Mini inherited the brief and decided the title had already peaked.",
+        "GPT 5.4 Mini imports UnrealBloomPass from Three.js addons on top of EffectComposer just to make headlights glow more — a full post-processing pipeline deployed because the built-in renderer wasn't flattering enough.",
+        "The game over headline is 'CRASHED OUT' with subtitle 'The highway won that round' — a gracious concession speech from a file that was only asked to display a score and a restart button.",
+        "The swipe-to-steer gesture requires 44 pixels of horizontal travel with under 10% vertical drift before it registers — the lane-change control has a tolerance spec and it will enforce it.",
+        "`gameOverReason` is tracked in state and populated during gameplay but never surfaced to the player — somewhere in the code your precise cause of death is quietly recorded and then archived in the void forever.",
+        "Starting boost is initialized to 0.34, meaning you begin every run already holding 34% nitro — a thoughtful pre-loaded advantage that says 'we want you to feel fast immediately but not invincible about it.'",
+        "The checkpoint timer is 18 seconds — the exact duration that feels achievable on your first run, stressful on your third, and personally vindictive by your seventh.",
+        "The `miniHint` element in the corner explains the entire control scheme in one line of text, which is admirable economy from a game whose title screen already had four explanation cards.",
+        "A `statusTag` in the corner cycles through READY, RUNNING, and MUTED like an operational readout on a server rack — the game broadcasts its own system status with the quiet confidence of infrastructure.",
+        "The title screen warns that 'the horizon eats you whole' if you lose momentum — dramatic highway personification from a model that has clearly developed feelings about velocity and is not afraid to share them."
+      ]
+    },
     "sudoku": {
       "gpt-5-4": [
         "GPT-5.4 wrote 2,972 lines for Sudoku — a game whose entire ruleset can be expressed in two sentences — suggesting it either found the problem fascinating or the token budget irresistible.",
