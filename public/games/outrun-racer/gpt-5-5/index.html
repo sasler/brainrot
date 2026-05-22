@@ -646,7 +646,17 @@
       constructor(scene) {
         this.scene = scene;
         this.items = [];
+        this.capacity = 2048;
+        this.positions = new Float32Array(this.capacity * 3);
+        this.colors = new Float32Array(this.capacity * 3);
         this.geometry = new THREE.BufferGeometry();
+        this.positionAttribute = new THREE.BufferAttribute(this.positions, 3);
+        this.colorAttribute = new THREE.BufferAttribute(this.colors, 3);
+        this.positionAttribute.setUsage(THREE.DynamicDrawUsage);
+        this.colorAttribute.setUsage(THREE.DynamicDrawUsage);
+        this.geometry.setAttribute("position", this.positionAttribute);
+        this.geometry.setAttribute("color", this.colorAttribute);
+        this.geometry.setDrawRange(0, 0);
         this.material = new THREE.PointsMaterial({
           size: 0.18,
           transparent: true,
@@ -658,6 +668,23 @@
         this.points = new THREE.Points(this.geometry, this.material);
         this.points.frustumCulled = false;
         scene.add(this.points);
+      }
+
+      ensureCapacity(count) {
+        if (count <= this.capacity) {
+          return;
+        }
+        while (this.capacity < count) {
+          this.capacity *= 2;
+        }
+        this.positions = new Float32Array(this.capacity * 3);
+        this.colors = new Float32Array(this.capacity * 3);
+        this.positionAttribute = new THREE.BufferAttribute(this.positions, 3);
+        this.colorAttribute = new THREE.BufferAttribute(this.colors, 3);
+        this.positionAttribute.setUsage(THREE.DynamicDrawUsage);
+        this.colorAttribute.setUsage(THREE.DynamicDrawUsage);
+        this.geometry.setAttribute("position", this.positionAttribute);
+        this.geometry.setAttribute("color", this.colorAttribute);
       }
 
       spawn(pos, count, color, spread, speed, life) {
@@ -682,9 +709,9 @@
       }
 
       update(dt, worldSpeed) {
-        const positions = [];
-        const colors = [];
+        this.ensureCapacity(this.items.length);
         const color = new THREE.Color();
+        let liveCount = 0;
         for (let i = this.items.length - 1; i >= 0; i--) {
           const p = this.items[i];
           p.life -= dt;
@@ -698,14 +725,18 @@
           p.vy -= 2.2 * dt;
           const a = clamp(p.life / p.maxLife, 0, 1);
           color.setHex(p.color);
-          positions.push(p.x, p.y, p.z);
-          colors.push(color.r * a, color.g * a, color.b * a);
+          const offset = liveCount * 3;
+          this.positions[offset] = p.x;
+          this.positions[offset + 1] = p.y;
+          this.positions[offset + 2] = p.z;
+          this.colors[offset] = color.r * a;
+          this.colors[offset + 1] = color.g * a;
+          this.colors[offset + 2] = color.b * a;
+          liveCount++;
         }
-        this.geometry.dispose();
-        this.geometry = new THREE.BufferGeometry();
-        this.geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-        this.geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-        this.points.geometry = this.geometry;
+        this.positionAttribute.needsUpdate = true;
+        this.colorAttribute.needsUpdate = true;
+        this.geometry.setDrawRange(0, liveCount);
       }
     }
 
@@ -1185,6 +1216,9 @@
             this.audio.boost();
             this.lastBoostSound = performance.now();
           }
+        } else if (!input.accel) {
+          this.targetSpeed = CONFIG.baseSpeed * 0.92;
+          this.boost = Math.min(1, this.boost + dt * 0.04);
         } else {
           this.targetSpeed = CONFIG.maxSpeed + Math.min(30, this.stage * 5);
           this.boost = Math.min(1, this.boost + dt * 0.055);
