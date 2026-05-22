@@ -4121,6 +4121,29 @@
           ]
         }
       ]
+    },
+    {
+      "id": "outrun-racer",
+      "name": "Neon Horizon Racer",
+      "description": "Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon.",
+      "icon": "🏎️",
+      "accentColor": "#ff4fd8",
+      "versions": [
+        {
+          "model": "GPT 5.5",
+          "modelId": "gpt-5-5",
+          "date": "2026-05-22",
+          "linesOfCode": 1398,
+          "path": "/games/outrun-racer/gpt-5-5/index.html",
+          "features": [
+            "sound",
+            "music",
+            "3d",
+            "particles",
+            "powerups"
+          ]
+        }
+      ]
     }
   ],
   "modelReviews": [
