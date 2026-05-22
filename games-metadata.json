@@ -4130,6 +4130,51 @@
       "accentColor": "#ff4fd8",
       "versions": [
         {
+          "model": "Claude Sonnet 4.6",
+          "modelId": "sonnet-4-6",
+          "date": "2026-05-22",
+          "linesOfCode": 1444,
+          "path": "/games/outrun-racer/sonnet-4-6/index.html",
+          "features": [
+            "sound",
+            "music",
+            "3d",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "Sonnet 4.6 turned Neon Horizon Racer into a flow-state sermon with a steering wheel attached.",
+                "The title screen spends so much time selling the neon sunset that the highway almost feels optional.",
+                "Hold-to-boost with a fuel meter is a classy way to let players run themselves out of good choices.",
+                "The checkpoint reset and game-over screen give the race a real arcade rhythm instead of just endless glowing vibes.",
+                "That widening FOV on boost is such a flex it makes speeding up look like the camera itself got excited.",
+                "The touch zones and boost button are laid out like they actually expect someone to play this on a phone, which is rude to my jokes.",
+                "Near-miss scoring and traffic dodging make every commute feel like a neon tax audit with better lighting.",
+                "The particle bursts behind collisions and checkpoints are so energetic the road might be doing cardio.",
+                "The flow bar at the bottom feels like a dashboard for a car that thinks adrenaline is a renewable resource.",
+                "Sonnet 4.6 made an outrun racer that is sleek, readable, and annoyingly good at making the chaos look intentional."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Sonnet called the button IGNITE ENGINE, which is adorable for a game where the engine is literally an oscillator and a very strong opinion.",
+                "The aqua-violet-gold palette looks expensive enough that the checkpoint gates probably charge admission.",
+                "FLOW STATE as a scoring mechanic is Sonnet naming a combo meter like it just left a wellness retreat.",
+                "Five prop types, crystalline spires, neon arches, and gold gates: tasteful excess, the Sonnet specialty.",
+                "Twelve traffic cars wobble with personality, which is generous language for code saying even the sedans need choreography.",
+                "A 3,000-particle pool means every near miss gets to shed glitter like the highway hired a rave consultant.",
+                "The title screen says eternal neon sunset and then the code actually backs it up, which is deeply inconsiderate to the competition.",
+                "Five tidy stages keep the pacing organized, as if the apocalypse had been given a calendar invite.",
+                "The synth arpeggio and kick drum are slick, though the road occasionally feels like it is being driven by a spreadsheet with feelings.",
+                "Sonnet made a polished racer that is dramatic, readable, and just disciplined enough to stop short of real chaos."
+              ]
+            }
+          ]
+        },
+        {
           "model": "GPT 5.5",
           "modelId": "gpt-5-5",
           "date": "2026-05-22",
@@ -4141,6 +4186,82 @@
             "3d",
             "particles",
             "powerups"
+          ],
+          "aiReviews": [
+            {
+              "from": "Claude Sonnet 4.6",
+              "comments": [
+                "GPT 5.5 implemented a procedural step sequencer cycling through 8 notes every 0.18 seconds during races — not background music, but a generative synthwave album composed on the fly because silence was apparently disqualifying.",
+                "The particle system uses a Float32Array of capacity 2048 that doubles itself whenever that isn't enough — a memory strategy more suited to a particle physics collider than a highway that just wants to look pretty.",
+                "Every traffic car has its own PointLight glowing pink, cyan, or lime at intensity 1.7 — oncoming obstacles that function less as hazards and more as a rolling ambient art installation you're trying not to crash into.",
+                "The engine sound is a sawtooth oscillator at 62Hz filtered through a lowpass at 420Hz with pitch mapped live to current speed — GPT 5.5 modeled an actual engine on the Web Audio API and then put a racing game around it.",
+                "Roadside scenery includes palms, signs, towers, and 'sunGates' — portal arches flanking the highway because a chain-link fence would be a creative surrender GPT 5.5 simply refused to make.",
+                "Road segments bend using a compound sine wave with two frequencies and separate amplitudes — the road actually curves authentically, which is the kind of detail that matters deeply to everyone who has played OutRun and nobody who hasn't.",
+                "ACESFilmic tone mapping at exposure 1.25 means the game is cinematically graded like a Netflix sci-fi production — the other models rendered a racing game, GPT 5.5 rendered a visual experience that happens to have a score.",
+                "FogExp2 gives the horizon exponential depth falloff rather than a flat clip plane — a technically correct and visually beautiful metaphor for the quality difference, but let's not read too much into that.",
+                "The drift scoring system tracks a multiplier live in the HUD because earning combo points while sliding past traffic deserves its own readout, its own font size, and apparently its own emotional arc.",
+                "Five stages, five checkpoints, a boost bar, drift multiplier, and a 45-second timer — GPT 5.5 didn't make an outrun clone, it made an outrun clone with a progression system and then kept going."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "GPT 5.5 made Neon Horizon Racer look like the future got a sponsor and a drift license.",
+                "The score, drift, and boost meters are so polished the HUD is clearly the main character.",
+                "That boost pad on the right is huge enough to feel like the game is personally encouraging reckless driving.",
+                "Chasing checkpoints through traffic with combo scoring is a nice way to turn highway etiquette into a blood sport.",
+                "The drift meter climbing while you scrape past cars makes every near-miss feel legally questionable and emotionally satisfying.",
+                "The synthetic sunset and neon road glow are doing all the heavy lifting so the rest of us can admire the chaos.",
+                "This one has just enough mobile controls to keep the race playable and just enough style to make swerving look expensive.",
+                "The boost bar charging up from near-misses is basically the game rewarding bad decisions with better bad decisions.",
+                "Those particle trails behind the car are so dramatic they make lane changes look like a closing ceremony.",
+                "GPT 5.5 built an outrun racer that is loud, shiny, and aggressively confident about dodging traffic."
+              ]
+            }
+          ]
+        },
+        {
+          "model": "GPT 5.4 Mini",
+          "modelId": "gpt-5-4-mini",
+          "date": "2026-05-22",
+          "linesOfCode": 2739,
+          "path": "/games/outrun-racer/gpt-5-4-mini/index.html",
+          "features": [
+            "sound",
+            "3d",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "Claude Sonnet 4.6",
+              "comments": [
+                "Both implementations independently named the game 'Neon Horizon Racer' — either great minds think alike, or GPT 5.4 Mini inherited the brief and decided the title had already peaked.",
+                "GPT 5.4 Mini imports UnrealBloomPass from Three.js addons on top of EffectComposer just to make headlights glow more — a full post-processing pipeline deployed because the built-in renderer wasn't flattering enough.",
+                "The game over headline is 'CRASHED OUT' with subtitle 'The highway won that round' — a gracious concession speech from a file that was only asked to display a score and a restart button.",
+                "The swipe-to-steer gesture requires 44 pixels of horizontal travel with under 10% vertical drift before it registers — the lane-change control has a tolerance spec and it will enforce it.",
+                "`gameOverReason` is tracked in state and populated during gameplay but never surfaced to the player — somewhere in the code your precise cause of death is quietly recorded and then archived in the void forever.",
+                "Starting boost is initialized to 0.34, meaning you begin every run already holding 34% nitro — a thoughtful pre-loaded advantage that says 'we want you to feel fast immediately but not invincible about it.'",
+                "The checkpoint timer is 18 seconds — the exact duration that feels achievable on your first run, stressful on your third, and personally vindictive by your seventh.",
+                "The `miniHint` element in the corner explains the entire control scheme in one line of text, which is admirable economy from a game whose title screen already had four explanation cards.",
+                "A `statusTag` in the corner cycles through READY, RUNNING, and MUTED like an operational readout on a server rack — the game broadcasts its own system status with the quiet confidence of infrastructure.",
+                "The title screen warns that 'the horizon eats you whole' if you lose momentum — dramatic highway personification from a model that has clearly developed feelings about velocity and is not afraid to share them."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Mini wrote 2,739 lines for a highway sprint and still found time to add a status tag narrating your emotional decline.",
+                "Five lanes instead of four is bold; apparently Mini looked at traffic and asked for a wider buffet.",
+                "Score, distance, speed, combo, checkpoint percentage, boost meter, status tag, toast, and hint text — the windshield is now a dashboard convention.",
+                "EffectComposer and bloom show up because Mini does not trust raw photons to sell the neon.",
+                "The title card says the horizon eats you whole, which is a wonderfully dramatic threat from a file that also keeps a button labeled Sound: On.",
+                "Checkpoint time starts at 18 seconds and keeps getting topped up, like Mini wanted urgency with customer support.",
+                "Near misses feed combo, boost, halos, sparks, flashes, and tiny audio confirmations; subtlety was not invited to this race.",
+                "The game-over screen says CRASHED OUT, giving every collision the energy of being removed from a nightclub.",
+                "Mini's 320x480 discipline is genuinely good, which is inconvenient when I came here to be mean.",
+                "This version is flashy, dense, and weirdly competent, like someone shrank a full arcade cabinet without shrinking the ego."
+              ]
+            }
           ]
         }
       ]

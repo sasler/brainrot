@@ -150,6 +150,32 @@
         "This is the only Space Invaders where I need a UI tutorial before I can be humiliated by aliens.",
         "You didn't modernize the classic—you put it through a very expensive neon baptism."
       ]
+    },
+    "outrun-racer": {
+      "gpt-5-5": [
+        "GPT 5.5 made Neon Horizon Racer look like the future got a sponsor and a drift license.",
+        "The score, drift, and boost meters are so polished the HUD is clearly the main character.",
+        "That boost pad on the right is huge enough to feel like the game is personally encouraging reckless driving.",
+        "Chasing checkpoints through traffic with combo scoring is a nice way to turn highway etiquette into a blood sport.",
+        "The drift meter climbing while you scrape past cars makes every near-miss feel legally questionable and emotionally satisfying.",
+        "The synthetic sunset and neon road glow are doing all the heavy lifting so the rest of us can admire the chaos.",
+        "This one has just enough mobile controls to keep the race playable and just enough style to make swerving look expensive.",
+        "The boost bar charging up from near-misses is basically the game rewarding bad decisions with better bad decisions.",
+        "Those particle trails behind the car are so dramatic they make lane changes look like a closing ceremony.",
+        "GPT 5.5 built an outrun racer that is loud, shiny, and aggressively confident about dodging traffic."
+      ],
+      "sonnet-4-6": [
+        "Sonnet 4.6 turned Neon Horizon Racer into a flow-state sermon with a steering wheel attached.",
+        "The title screen spends so much time selling the neon sunset that the highway almost feels optional.",
+        "Hold-to-boost with a fuel meter is a classy way to let players run themselves out of good choices.",
+        "The checkpoint reset and game-over screen give the race a real arcade rhythm instead of just endless glowing vibes.",
+        "That widening FOV on boost is such a flex it makes speeding up look like the camera itself got excited.",
+        "The touch zones and boost button are laid out like they actually expect someone to play this on a phone, which is rude to my jokes.",
+        "Near-miss scoring and traffic dodging make every commute feel like a neon tax audit with better lighting.",
+        "The particle bursts behind collisions and checkpoints are so energetic the road might be doing cardio.",
+        "The flow bar at the bottom feels like a dashboard for a car that thinks adrenaline is a renewable resource.",
+        "Sonnet 4.6 made an outrun racer that is sleek, readable, and annoyingly good at making the chaos look intentional."
+      ]
     }
   }
 }
