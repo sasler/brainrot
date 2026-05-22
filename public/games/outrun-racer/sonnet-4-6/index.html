@@ -335,7 +335,7 @@
     }
 
     @media (max-width: 400px) {
-      .hud { gap: 4px; }
+      #hud { gap: 4px; }
       .card { padding: 5px 7px; }
       .card strong { font-size: 14px; }
       .chips { grid-template-columns: 1fr; }
@@ -1157,13 +1157,14 @@ class NeonRacer {
     rz.addEventListener('touchstart', e => { e.preventDefault(); this._touchR = true; }, { passive: false });
     rz.addEventListener('touchend',   e => { e.preventDefault(); this._touchR = false; }, { passive: false });
 
-    bb.addEventListener('touchstart', e => { e.preventDefault(); this._triggerBoost(); bb.classList.add('active'); }, { passive: false });
-    bb.addEventListener('touchend',   e => { e.preventDefault(); bb.classList.remove('active'); }, { passive: false });
-    bb.addEventListener('mousedown',  () => { this._triggerBoost(); bb.classList.add('active'); });
-    bb.addEventListener('mouseup',    () => bb.classList.remove('active'));
+    bb.addEventListener('touchstart', e => { e.preventDefault(); this._boostHeld = true; this._triggerBoost(); bb.classList.add('active'); }, { passive: false });
+    bb.addEventListener('touchend',   e => { e.preventDefault(); this._boostHeld = false; bb.classList.remove('active'); }, { passive: false });
+    bb.addEventListener('mousedown',  () => { this._boostHeld = true; this._triggerBoost(); bb.classList.add('active'); });
+    bb.addEventListener('mouseup',    () => { this._boostHeld = false; bb.classList.remove('active'); });
 
     this._touchL = false;
     this._touchR = false;
+    this._boostHeld = false;
   }
 
   _triggerBoost() {
@@ -1229,7 +1230,7 @@ class NeonRacer {
     else       this.steer = lerp(this.steer,  0, dt * 4.0);
 
     // Hold-to-boost
-    const boostHeld = this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.keys['Space'];
+    const boostHeld = this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.keys['Space'] || this._boostHeld;
     if (boostHeld && this.boostFuel > 0.05 && !this.crashing) {
       this.boosting = true;
     } else if (!boostHeld) {
@@ -1398,11 +1399,16 @@ class NeonRacer {
 
     // Countdown
     this.timeLeft -= dt;
-    if (this.timeLeft <= 0 && !this.checkpoint.active) {
+    if (this.timeLeft <= 0) {
+      this.timeLeft = 0;
+      if (this.checkpoint.active) {
+        // Treat time-out during an active stage as a missed checkpoint then end
+        this.checkpoint.hide();
+        this._showToast('TIME UP!', '#f43f5e');
+      }
       this._showGameOver();
       return;
     }
-    if (this.timeLeft <= 0) this.timeLeft = 0;
 
     // Scroll
     this.scroll += this.speed * dt;

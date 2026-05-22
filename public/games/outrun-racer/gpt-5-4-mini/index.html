@@ -817,9 +817,13 @@
       if (pointerState.activeId === e.pointerId) {
         pointerState.activeId = null;
       }
+      pointerState.boost = false;
+      boostBtn.classList.remove("active");
     });
     canvas.addEventListener("pointercancel", () => {
       pointerState.activeId = null;
+      pointerState.boost = false;
+      boostBtn.classList.remove("active");
     });
     canvas.addEventListener("pointermove", (e) => {
       if (pointerState.activeId !== e.pointerId) return;
@@ -904,19 +908,16 @@
 
     function toggleMute() {
       audio.muted = !audio.muted;
+      audio.applyMuteState(audio.muted);
       const label = audio.muted ? "Sound: Off" : "Sound: On";
       titleMuteBtn.textContent = label;
       gameOverMuteBtn.textContent = label;
-      if (audio.muted) {
-        statusTag.textContent = world.running ? "MUTED" : "READY";
-      } else {
-        statusTag.textContent = world.running ? "RUNNING" : "READY";
-      }
     }
 
     function startGame() {
       audio.ensure();
       audio.resume();
+      audio.applyMuteState(audio.muted);
       world.running = true;
       world.gameOver = false;
       titleOverlay.classList.add("hidden");
@@ -1283,6 +1284,8 @@
       bloom.strength = 0.62 + state.boost * 0.34 + (state.boostActive ? 0.16 : 0);
       bloom.radius = 0.58;
       bloom.threshold = 0.16;
+      scene.fog.near = 18;
+      scene.fog.far = 220 + Math.sin(state.distance * 0.001) * 6;
     }
 
     function updatePlayerAudio(now) {
@@ -1816,7 +1819,9 @@
       boostFill.style.width = "100%";
       titleMuteBtn.textContent = audio.muted ? "Sound: Off" : "Sound: On";
       gameOverMuteBtn.textContent = audio.muted ? "Sound: Off" : "Sound: On";
-      statusTag.textContent = world.running ? (state.boostActive ? "BOOST" : "RUNNING") : (world.gameOver ? "CRASHED" : "READY");
+      statusTag.textContent = audio.muted
+        ? "MUTED"
+        : (world.running ? (state.boostActive ? "BOOST" : "RUNNING") : (world.gameOver ? "CRASHED" : "READY"));
     }
 
     function formatNumber(n) {
@@ -2225,6 +2230,25 @@
             ctxState.audioContext.resume().catch(() => {});
           }
         },
+        applyMuteState(muted) {
+          if (!ctxState.audioContext || !ctxState.master) return;
+          const t = ctxState.audioContext.currentTime;
+          ctxState.master.gain.cancelScheduledValues(t);
+          ctxState.master.gain.setTargetAtTime(muted ? 0 : 0.7, t, 0.015);
+          if (ctxState.engineGain) {
+            ctxState.engineGain.gain.cancelScheduledValues(t);
+            ctxState.engineGain.gain.setTargetAtTime(muted ? 0 : 0.012, t, 0.02);
+          }
+          if (ctxState.windGain) {
+            ctxState.windGain.gain.cancelScheduledValues(t);
+            ctxState.windGain.gain.setTargetAtTime(muted ? 0 : 0.002, t, 0.02);
+          }
+          if (ctxState.humLfoGain) {
+            ctxState.humLfoGain.gain.cancelScheduledValues(t);
+            ctxState.humLfoGain.gain.setTargetAtTime(muted ? 0 : 0.0008, t, 0.03);
+          }
+          api.muted = muted;
+        },
         setEngine(speed, boostActive, boost, combo, shake) {
           if (!ctxState.audioContext || api.muted) return;
           const t = ctxState.audioContext.currentTime;
@@ -2559,14 +2583,6 @@
       return points;
     }
 
-    function updateAmbientGlow() {
-      bloom.strength = 0.72 + state.boost * 0.36 + (state.boostActive ? 0.14 : 0);
-      bloom.radius = 0.62;
-      bloom.threshold = 0.15;
-      scene.fog.near = 18;
-      scene.fog.far = 220 + Math.sin(state.distance * 0.001) * 6;
-    }
-
     function resize() {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -2590,27 +2606,6 @@
       scene.add(spark.mesh);
       activeSparks.push(spark);
       return spark;
-    }
-
-    function spawnTinySpark(x, y, z, color = 0xffffff, count = 6) {
-      for (let i = 0; i < count; i++) {
-        const spark = sparkPool.pop() || createSpark();
-        spark.life = spark.maxLife = 0.14 + Math.random() * 0.22;
-        spark.mesh.position.set(x + (Math.random() - 0.5) * 0.26, y + Math.random() * 0.18, z + (Math.random() - 0.5) * 0.26);
-        spark.velocity.set((Math.random() - 0.5) * 1.8, 1.2 + Math.random() * 2.4, (Math.random() - 0.5) * 1.8);
-        spark.spin = (Math.random() - 0.5) * 10;
-        spark.mesh.material.color.setHex(color);
-        spark.mesh.material.opacity = 0.9;
-        spark.mesh.scale.setScalar(0.42 + Math.random() * 0.38);
-        scene.add(spark.mesh);
-        activeSparks.push(spark);
-      }
-    }
-
-    function buildInitialTraffic() {
-      for (let i = 0; i < 11; i++) {
-        spawnTraffic(120 + i * 28 + Math.random() * 20);
-      }
     }
 
     function buildInitialGates() {
