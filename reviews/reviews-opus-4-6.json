@@ -1,6 +1,256 @@
 {
   "reviewer": "Claude Opus 4.6",
   "gameReviews": {
+    "snake": {
+      "sonnet-4-6": [
+        "Sonnet named everything in this game like it was paying per vowel — my Starbucks cup has more legible labels.",
+        "Built a fancy glow effect and never turned it on — the AI equivalent of buying a gym membership in January.",
+        "This snake has three different animation styles for eating dots. It’s Snake, not a Pixar audition tape.",
+        "Sonnet spent more time on color-blending than gameplay — like bedazzling a Honda Civic.",
+        "The combo system sounds like a rejected cereal brand. “Part of an unbalanced breakfast!”",
+        "Play this long enough and the sparkle effects will choke your browser harder than the snake chokes on itself.",
+        "When the sounds fail, they fail silently — much like Sonnet’s career as a game developer.",
+        "The screen flash fades at a rate so weirdly specific, Sonnet clearly spent hours tweaking it instead of making the game fun.",
+        "741 lines for Snake — Gemini did it in 60 and it’s equally fun, which is devastating for both of them.",
+        "The screen shake label looks like a license plate. I’ve seen more readable text on eye charts."
+      ],
+      "gpt-5-4": [
+        "1,522 lines of Snake. You could literally teach a real snake to code faster than reading all this.",
+        "The snake moves so smoothly you’d think GPT was directing a nature documentary, not building a browser game.",
+        "This snake has more color options than a Sephora store and less gameplay than a calculator app.",
+        "GPT made the snake remember everywhere it’s been, like it’s writing a memoir. It’s SNAKE.",
+        "The breathing effect on the snake is so precisely tuned, GPT clearly spent a month on that and ten minutes on fun.",
+        "The visuals are so heavy that your graphics card files a complaint before level 3.",
+        "The snake’s head gets a dramatic shadow while the body gets nothing. Even the snake has a class system.",
+        "The movement is smoother than a jazz saxophonist at brunch, but nobody asked for smooth — they asked for Snake.",
+        "The food pellet has more special effects than a Marvel movie. Meanwhile, the snake just... exists.",
+        "More effort went into the color palette than the actual game. Interior decorator energy."
+      ],
+      "gpt-5-4-mini": [
+        "Mini asks permission to play audio THREE separate times. It’s a game, not a telemarketer.",
+        "This game registers your clicks three different ways simultaneously, like a clingy ex with trust issues.",
+        "The menu pulse speed is tuned to such an oddly specific number that Mini clearly rolled dice and kept it.",
+        "The screen shake moves differently on each axis, like it was calibrated by a seismologist with OCD.",
+        "The touch controls use a sensitivity formula that screams “I tried five things and kept the last one.”",
+        "The snake draws itself backwards. Bold artistic choice. Confusing gameplay result.",
+        "There’s an “ambient sparkle” system that runs constantly but barely produces any sparkles. The laziest confetti ever.",
+        "1,172 lines and Mini still can’t decide how the snake should move. Pick a lane — literally.",
+        "The “Mini” in GPT 5.4 Mini clearly doesn’t refer to the amount of code it produces.",
+        "Some features are referenced but never actually exist, like Mini is hallucinating its own game."
+      ],
+      "gemini-3-1-pro": [
+        "60 lines of Snake. This isn’t minimalism, it’s a cry for help.",
+        "The labels in this game look like someone’s cat walked across the keyboard during development.",
+        "This game is set up so backwards it’s like putting on shoes before socks and somehow still walking.",
+        "Gemini flexes math shortcuts like a kid who just learned a card trick and won’t stop performing it.",
+        "The entire snake is one flat color. No head, no gradient, no personality. Just a sad cyan worm.",
+        "The food is a red square. The obstacles are the walls. Interior design by someone who’s never seen a game.",
+        "The speed never changes. Level 1 is the same as level infinity. Flat difficulty, flat entertainment.",
+        "No sound, no particles, no animations. Google shipped a placeholder and called it a day.",
+        "The food placement strategy is “keep guessing random spots until one works.” Pure trial and error.",
+        "This snake has fewer features than the Nokia 3310 original from 1998. And THAT ran on a flip phone."
+      ]
+    },
+    "minesweeper": {
+      "sonnet-4-6": [
+        "When you win, the game spawns 120 confetti pieces and your browser starts wheezing like it ran a marathon.",
+        "The game tracks its own state using mystery letters, like Sonnet is running a spy ring instead of Minesweeper.",
+        "Sonnet added competitive statistics to casual Minesweeper. Nobody asked for an esports leaderboard, Sonnet.",
+        "The game board is stored in the most confusing format possible, like Sonnet is gatekeeping its own game.",
+        "The tile-clearing cascade is so over-engineered it could probably route your GPS while it plays.",
+        "The scoreboard recalculates everything on every update, like a student who re-derives every formula on the exam.",
+        "Right-clicking changes the game state with zero safety rails. Living dangerously is Sonnet’s brand.",
+        "734 lines of Minesweeper and still no way to flag mines on a phone. Bold choice in 2025.",
+        "The confetti vanishes after exactly 3.2 seconds because round numbers are apparently too mainstream for Sonnet.",
+        "Some labels are so cryptic that even the game doesn’t know what they stand for."
+      ],
+      "gpt-5-4": [
+        "1,676 lines for Minesweeper. The mines aren’t the only thing buried here — so is my will to keep reading.",
+        "Emoji face reactions change with the game state. Are we playing Minesweeper or reading a group chat?",
+        "The reveal animation has more stages than a Broadway production and twice the unnecessary drama.",
+        "GPT 5.4 reinvented task scheduling for a tile-clicking game. Somewhere, a project manager is weeping.",
+        "This game uses more visual elements per tile than most games use for their entire screen. Tile inflation.",
+        "The tile-clearing animation is straight out of a 2015 tutorial. Nostalgia isn’t always a virtue.",
+        "Notifications stay on screen for exactly 1.8 seconds. Not 1.5, not 2 — the precision of a madman.",
+        "The wave reveal adds a beautiful ripple effect that nobody will appreciate while sweating over mines.",
+        "The tile reveal could’ve been simple. GPT made it a cinematic event. Ambition isn’t the same as efficiency.",
+        "The reveal animation has more stages than a SpaceX rocket launch. Ground control, we have tiles."
+      ],
+      "gpt-5-4-mini": [
+        "Mini promised sound effects and never delivered. It’s like ordering AirPods and getting an empty box.",
+        "The same oddly specific animation speed from Snake shows up here. Mini has a lucky number, apparently.",
+        "Mini built an animation cancellation system for Minesweeper. That’s like adding airbags to a shopping cart.",
+        "The animation tracking system has more management overhead than actual animation. Enterprise Minesweeper™.",
+        "The celebration colors are limited to six. Mini’s victory party has a strict guest list.",
+        "Mini sets up the audio system in two contradictory places. Classic commitment issues.",
+        "The reveal animation uses a creative delay technique that’s either genius or a happy accident.",
+        "1,081 lines and the sound effects are literally just empty promises scribbled on a to-do list.",
+        "The first-click safety feature has a comment explaining it that’s longer than the feature itself.",
+        "The animation timing is based on numbers so arbitrary they might as well be lottery picks."
+      ],
+      "gemini-3-1-pro": [
+        "The reset button says “Rest” instead of “Reset.” Even the TYPOS are minimalist with Gemini.",
+        "The entire UI is emoji. This isn’t Minesweeper, it’s what happens when a keyboard shortcut gains sentience.",
+        "170 lines and it’s the MOST complete Gemini game. That’s both a compliment and a diagnosis.",
+        "At least the difficulty levels have different colors. Baby steps, Gemini. Baby steps.",
+        "Hard mode uses completely different proportions than easy mode, like Gemini just winged it.",
+        "The entire board gets demolished and rebuilt on every single click. Efficiency has left the chat.",
+        "The timer starts on first click, which is correct. First correct thing I’ve seen from Gemini.",
+        "No sound effects in Minesweeper. When a mine explodes, it sends you a strongly-worded letter instead.",
+        "At least Gemini knows what decade it is — some features are surprisingly modern for 170 lines.",
+        "The tiles are a fixed size that never adapt to your screen. Responsive design is a myth in Gemini-land."
+      ]
+    },
+    "tetris": {
+      "sonnet-4-6": [
+        "The input timing is tuned with numbers so specific they look like classified government coordinates.",
+        "The speed decay is so precisely tuned I’m convinced Sonnet A/B tested it against its own sanity.",
+        "The Tetris music is four tones that sound less like a melody and more like a fax machine dialing out.",
+        "Sonnet built an entire synthesizer just for the row-clearing sound. A whole orchestra for one beep.",
+        "When you mute the sound, the entire audio brain shuts down. It’s mute OR nothing — no in between.",
+        "909 lines of Tetris with no touch controls. Mobile players can just stare at it longingly.",
+        "The block colors are buried so deep that changing them requires an archaeological expedition.",
+        "Two invisible rows above the playing field exist purely for anxiety you can’t even see.",
+        "Sonnet abbreviated the speed label so aggressively it sounds like a secret agent codename.",
+        "The game has four different modes but manages them like someone juggling flaming chainsaws blindfolded."
+      ],
+      "gpt-5-4": [
+        "2,024 lines of Tetris. GPT didn’t build a game — it built a Tetris UNIVERSE complete with its own physics.",
+        "Screen shake on line clear. In TETRIS. The blocks are already falling, GPT — we don’t need an earthquake too.",
+        "The particle effects grow without limit. Play long enough and your browser becomes one giant particle.",
+        "The row animation is tuned to a number so specific that GPT clearly has strong feelings about it.",
+        "Block sizes are clamped between oddly specific minimums and maximums. GPT has pixel opinions.",
+        "The piece previews are scaled to a ratio so precise that GPT obviously spent a week calibrating it.",
+        "There are so-called “fixed” values that change based on timing. The only constant is inconsistency.",
+        "At least the game adapts to different screen sizes. One thing being reasonable feels suspicious.",
+        "The renderer does expensive work every single frame for a game that moves once per second. Peak overkill.",
+        "More visual effects per line clear than most entire games have in their whole runtime."
+      ],
+      "gpt-5-4-mini": [
+        "Screen shake in a 2D grid game. The screen shakes so hard it almost becomes 3D. Almost.",
+        "Mini tracks input state manually instead of just checking which button is pressed. Why be simple?",
+        "A critical game feature is referenced six times but never actually exists anywhere. Faith-based gaming.",
+        "Mini used the exact same preview scaling as GPT 5.4. Copying dad’s homework, are we?",
+        "The layout recalculates every single frame. The screen isn’t going anywhere, Mini.",
+        "The game board position shifts based on a magic pixel number. The reasoning? Pure vibes.",
+        "1,155 lines for Tetris. The “Mini” clearly stands for “Minimally Abbreviated.”",
+        "The input handling system has more organizational structure than a Fortune 500 company.",
+        "Same block size limits as GPT 5.4. Y’all are sharing a cheat sheet and I have proof.",
+        "Lock delay is a genuinely nice feature. Shame about the other 1,100 lines of chaos surrounding it."
+      ],
+      "gemini-3-1-pro": [
+        "Gemini copies the game board the caveman way — like photocopying a document by hand.",
+        "371 lines — Gemini’s LONGEST game, and it’s still shorter than GPT’s color palette section alone.",
+        "The square block’s rotation is disabled... sort of. The one piece that shouldn’t spin has an identity crisis.",
+        "The scoring system is close to official rules but just wrong enough to annoy purists. Classic Gemini.",
+        "The row-clearing animation reads like someone wrote it while sneezing.",
+        "There’s a programming technique in here from 2003. Vintage — like finding a flip phone in a time capsule.",
+        "The speed formula was written by someone who plays Tetris casually, and it shows.",
+        "No ghost piece preview. Players just guess where the block lands. Surprise Tetris™.",
+        "There’s a hint of advanced rotation support that goes absolutely nowhere. The road not taken.",
+        "The block color list starts with a blank slot. Because starting from zero was too mainstream for Gemini."
+      ]
+    },
+    "reversi": {
+      "sonnet-4-6": [
+        "The flip animation cascades outward using fancy distance math. Reversi has never been this unnecessarily dramatic.",
+        "Piece placement is animated with pauses and delays. Your board game runs on dramatic tension and intermissions.",
+        "The pause system is literally “wait this many milliseconds.” Shakespeare wishes he had this suspense tech.",
+        "Each move creates eight confetti bursts. By endgame, your screen is more confetti than chess board.",
+        "Corner captures get their own special celebration animation. Even the game board plays favorites.",
+        "The score bar defaults to 50-50 at the start. Perfectly balanced, as nothing in this game should be.",
+        "1,026 lines for a board game with no visible AI opponent. Who are you even playing against, Sonnet?",
+        "At least the piece values are numbers this time instead of mystery letters. Progress.",
+        "The animation restart technique is basically crossing your fingers and hoping the browser cooperates.",
+        "The color scheme uses purple, pink, cyan, AND green. It’s Reversi, not a 90s rave flyer."
+      ],
+      "gpt-5-4": [
+        "GPT brought a chess grandmaster’s brain to a casual board game. The AI thinks harder than the player ever will.",
+        "Four separate checks just to highlight one tile. GPT’s Reversi is more paranoid than my ex checking my phone.",
+        "GPT and Sonnet both use the exact same animation trick. Great minds think alike — or great minds copy alike.",
+        "1,318 lines for Reversi. That’s more text than the actual rulebook of every board game combined.",
+        "The entire board gets demolished and rebuilt every turn. It’s less “updating” and more “controlled demolition.”",
+        "The styling decisions are so deeply nested they read like a choose-your-own-adventure book with no good endings.",
+        "The move tracking system labels everything like an obsessive librarian who got way too into Reversi.",
+        "Rebuilding the whole board every single turn instead of updating what changed. Maximum effort, minimum efficiency.",
+        "The AI can think multiple moves ahead but you can’t adjust how smart it is. It’s permanently this intense.",
+        "The styling logic is so complicated that understanding the design is harder than winning the game."
+      ],
+      "gpt-5-4-mini": [
+        "Mini labels board positions like hotel room numbers. Welcome to Room 3C5, your piece has been flipped.",
+        "Each game piece has four different shading layers. Four. For a flat circle on a board game.",
+        "Five difficulty levels from “Casual” to “Impossible.” Bold naming for a brain that fits in a browser tab.",
+        "Mini added 3D shading to flat circles. It’s a disc, Mini. Let the disc be flat. Accept the disc.",
+        "The flip animation uses trigonometry. Literal rocket science to flip a checker piece over.",
+        "1,274 lines but the AI brain isn’t visible anywhere. It’s hiding — probably embarrassed.",
+        "Grid coordinates are drawn around the board like it’s a scientific research paper, not game night.",
+        "The rendering system is structured like a dream within a dream. Renders inside renders inside renders.",
+        "Animations only clean up after they’re completely done. Early quitters pay a memory tax.",
+        "Colors are specified individually everywhere when a simple theme would’ve saved Mini from itself."
+      ],
+      "gemini-3-1-pro": [
+        "230 lines of Reversi with NO AI opponent. Congrats Gemini, you built a board with no one to play against.",
+        "The player-switching logic is written out twice when a simple toggle was right there. Classic Gemini.",
+        "The entire board rebuilds from scratch every move. Gemini remodels the kitchen just to make toast.",
+        "Player names are manually spelled out for every case. Future-proofing isn’t in Gemini’s vocabulary.",
+        "Yellow for black pieces, white for white pieces. The color choices are... certainly choices.",
+        "Gemini discovered the hard way that copying a game board isn’t as simple as “just copy it.”",
+        "No sound, no AI, no animations. Just the raw, uncut sadness of playing Reversi against yourself.",
+        "When the game ends, the entire board gets demolished and rebuilt instead of showing a simple message.",
+        "Only 230 lines but somehow works better than games three times its size. Accidental competence.",
+        "The disc styling is a gradient from dark gray to black. Behold: fifty shades of giving up."
+      ]
+    },
+    "breakout": {
+      "sonnet-4-6": [
+        "Sonnet draws rounded rectangles by hand like a caveman when the built-in tool has existed for years.",
+        "Fixed 800x600 resolution like it’s a Flash game from 2005. Nostalgia or negligence? Both.",
+        "Dead bricks still demand attention every single frame. Even in death, they waste your computer’s time.",
+        "The brick damage formula belongs on a physics exam, not in a Breakout clone.",
+        "The text size is so specifically chosen that Sonnet clearly agonized over fonts instead of features.",
+        "The screen shake countdown is based on neither real time nor frames — just vibes and prayers.",
+        "784 lines of Breakout with no touch support. The paddle exists. Mobile users do not.",
+        "The brick colors assume a specific number of rows exist. Add more rows? Good luck with that.",
+        "The particles fall with such gentle gravity they’re basically floating. Like physics took a vacation.",
+        "No mouse or touch paddle control. Arrow keys only. Welcome to 1980, population: Sonnet."
+      ],
+      "gpt-5-4": [
+        "1,278 lines for Breakout. You could fit the original Atari game in fewer bytes than this source code.",
+        "More shadow effects on the paddle than actual physics in the entire game. It’s a shadow showcase with a game attached.",
+        "The fire powerup is indicated by a plain rectangle. GPT’s idea of “powerup UI” is a glowing box. Inspired.",
+        "The ball trail effect draws new particles every frame. Performance has left the building and isn’t coming back.",
+        "The paddle has three color layers. The PADDLE is fancier than the entire game.",
+        "The shadow colors use values so specific they look like someone’s WiFi password.",
+        "Visual effects bleed into each other between draws. An unintentional feature, surely.",
+        "At least the ball size is clearly labeled, even if it was chosen by throwing a dart at a number line.",
+        "Each ball drags its own personal trail of particles behind it. Every ball is its own lag machine.",
+        "The fire powerup shoots through bricks. When you can’t nail the bounce physics, just add a cheat code."
+      ],
+      "gpt-5-4-mini": [
+        "534 lines — Mini’s shortest real game. Even Mini has a floor, and we just found it.",
+        "The paddle covers 15% of the screen. That’s generous for something calling itself a “challenge.”",
+        "NO particle effects, NO level progression. Just bricks and broken dreams. Peak Mini.",
+        "The ball bounce angle is calculated to a precision that suggests Mini took this WAY too seriously.",
+        "Brick colors are defined by row but applied randomly. Rows have absolutely no meaning here.",
+        "The ball speed is not quite 5 and not quite 6. The Goldilocks of disappointing ball speeds.",
+        "Mouse and touch controls work differently from each other. Input consistency is for closers.",
+        "The ball never speeds up. The difficulty curve is a flat line. Actually, a flatline.",
+        "Click events are registered on the whole page instead of the game area. Click anywhere — Mini is always listening.",
+        "The paddle hovers 40 pixels from the bottom for absolutely no discernible reason. Just vibes."
+      ],
+      "gemini-3-1-pro": [
+        "63 lines of Breakout. It’s literally Snake with a paddle. Same structure, different hat.",
+        "The ball clips through the corners of bricks like a ghost. Collision detection is more of a suggestion.",
+        "The ball bounces the same way regardless of where it hits the paddle. Physics has left the building.",
+        "Same color scheme as Snake: cyan player, red danger. Gemini owns exactly one box of crayons.",
+        "5 rows of identical bricks. Not different colors, not different strengths — just clones. Brick diversity: zero.",
+        "Both mouse and keyboard work with zero conflict handling. It’s input anarchy and somehow it works.",
+        "No lives, no levels, no powerups. Miss once and it’s game over. Hardcore by laziness.",
+        "The ball has to practically climb inside the paddle to register a hit. Personal space is not respected.",
+        "10 points per brick, 50 bricks total, 500 max score. Speedrunners can finish lunch before the game.",
+        "The ball always starts going diagonally. Every game. No variety. Diagonal or nothing."
+      ]
+    },
     "2048": {
       "gpt-5-5": [
         "GPT 5.5 built a 1,900-line 2048 because apparently sliding sixteen squares now requires a cyberpunk theater crew.",
@@ -61,6 +311,206 @@
         "Game over detection checks everything on every single move. Overkill, but at least nothing slips through.",
         "Gemini uses the laziest math shortcut in the book instead of a proper function. Effective, but lazy.",
         "No sound, no animations, no high score. Just numbers on a grid. Pure, existential mathematics."
+      ]
+    },
+    "endless-runner": {
+      "sonnet-4-6": [
+        "Sonnet imported a full 3D graphics engine for a side-scroller. It’s an endless runner, not Cyberpunk 2077.",
+        "The glow effect gets brighter with each level because apparently your screen needs to cosplay as the sun.",
+        "Sonnet built an entire music studio just for jump sounds. A whole synthesizer for “boing.”",
+        "The particle burst takes five different settings, none of them documented. Good luck, future Sonnet.",
+        "The naming style uses underscores for “private” stuff like it’s still 2015 and trends don’t apply.",
+        "The world generates 200 units ahead. Either incredibly smart planning or incredibly paranoid.",
+        "1,044 lines and about 70% of them are fighting with the 3D engine rather than making a fun game.",
+        "The background music volume is set to a level that’s clearly the result of extensive personal headphone testing.",
+        "Player invincibility is shown by flickering the character on and off. The lazy person’s force field.",
+        "Three lanes to run in. Three lanes, three dreams, one entirely too heavy graphics import."
+      ],
+      "gpt-5-4": [
+        "1,766 lines for run-and-dodge. This runner has more text than some novels and less plot.",
+        "The lane-switching animation uses exponential smoothing. It’s a runner, not a pendulum physics sim.",
+        "The player’s glow pulses with three magic numbers crammed onto one line. That’s not a formula, that’s a spell.",
+        "The lighting oscillates with a formula that reads like the love letter of someone obsessed with wave patterns.",
+        "Invulnerability flashing toggles every frame. Seizure warning: GPT edition.",
+        "Obstacles, coins, and powerups are all tracked in separate lists with no unifying system. Organized chaos.",
+        "Game speed is tied to a variable rather than real time. Play on a slow computer, get an easy game. “Feature.”",
+        "Lane positions are stored in a dedicated list for three values. An entire list. For three things.",
+        "The player tilts during lane changes at an angle so precise that GPT clearly lost sleep over it.",
+        "The max speed is capped at 42 — the answer to life, the universe, and how fast you can run from GPT’s code."
+      ],
+      "gpt-5-5": [
+        "GPT 5.5 wrote a 3D runner like it was trying to impress an airport security scanner.",
+        "The HUD is compact, the road is huge, and somehow this model discovered restraint after packing a rave into the pavement.",
+        "There is an overdrive meter because simply surviving wasn't dramatic enough for GPT 5.5.",
+        "The runner has a phase bubble, a halo, fins, boots, and enough lighting to look unionized.",
+        "Every pickup spins like it expects applause. The credits have stage presence now.",
+        "The city props recycle endlessly, which is efficient and spiritually appropriate for an endless runner.",
+        "GPT 5.5 made the shield save you once, then immediately remind you that mercy has a cooldown.",
+        "The combo system rewards near misses like a casino rewards bad judgment.",
+        "Mobile controls are gestures instead of a giant plastic dashboard, which is suspiciously sensible.",
+        "This is what happens when a WebGL tech demo goes to the gym and comes back with game feel."
+      ],
+      "gpt-5-4-mini": [
+        "Mini gave the player a wobble effect that was lovingly created and then never used. Decorative code — like a fake fireplace.",
+        "The player cycles through colors so slowly it’s basically a mood ring on a coffee break.",
+        "The particle trail has two different cooldown speeds for no apparent reason. Two speeds, one confused system.",
+        "Speed increases at a rate so oddly precise it can only mean Mini randomly generated it and never questioned it.",
+        "A new level happens every 320 distance units. Why 320? Because round numbers are for lesser AIs.",
+        "Boost mode goes 45% faster because round multipliers are for models with self-restraint.",
+        "Mini imported a full 3D engine just for one tiny helper function. Like buying a Ferrari to check the mail.",
+        "1,207 lines of 3D rendering for a game that could be a flat 2D side-scroller in a fraction of the space.",
+        "The player model is accessed by internal position rather than name. Rearrange anything and everything breaks.",
+        "Same speed cap as GPT 5.4. Mini isn’t just inspired by dad — Mini is photocopying dad’s homework."
+      ],
+      "gemini-3-1-pro": [
+        "43 lines of endless runner. It’s a cyan square jumping over red rectangles. Call the art department.",
+        "The score goes up by fractions then rounds down. Gemini gives you points and immediately takes them back.",
+        "Speed increases forever with no cap. Eventually this game runs faster than light. Einstein is spinning.",
+        "Gravity and jump power were set to “whatever feels right” and never touched again.",
+        "Obstacles spawn at a fixed rate regardless of speed. The word “difficulty” means nothing to Gemini.",
+        "Obstacle heights vary by such a tiny amount that “variety” is generous — “barely different” is more accurate.",
+        "The player is a 30-pixel cyan square. Not a character, not a sprite — a brave little square with dreams.",
+        "The compressed page header saves maybe 40 bytes. Was the unreadability worth it? Definitely not.",
+        "No obstacle variety — just red rectangles forever. The world’s most boring obstacle course.",
+        "Touch controls exist but there’s zero visual feedback. Tap and pray. Godspeed."
+      ]
+    },
+    "marble-madness": {
+      "sonnet-4-6": [
+        "The scoreboard recomputes its own colors on every update — like repainting your car every time you check the speedometer.",
+        "The marble checks against every single surface in the world every frame. This marble has anxiety.",
+        "Medal ratings are Olympic emojis. The IOC’s lawyers have been notified.",
+        "The bonus labels are abbreviated so aggressively they’ve lost all meaning, like texting on a 10-character limit.",
+        "The camera smoothing label reads like a license plate. I’ve seen more readable military codes.",
+        "The time display is formatted character by character when modern tools exist. If there’s a hard way, Sonnet finds it.",
+        "1,265 lines of 3D marble physics with no mobile controls. Tilt-to-play was RIGHT THERE, Sonnet.",
+        "The marble checks every surface AND every ramp every frame. More anxious than a college freshman at orientation.",
+        "Floating score text recomputes its own color from scratch every time. Repetition is Sonnet’s cardio.",
+        "Sonnet reuses the same obscure distance formula from Reversi. It’s not a technique — it’s a personality disorder."
+      ],
+      "gpt-5-4": [
+        "2,031 lines of marble physics. Newton’s Principia was shorter and more fun to read.",
+        "GPT uses spacecraft rotation math for a rolling marble. It’s a ball on a slope, not the Mars rover.",
+        "The jump height is so oddly specific that GPT clearly spent a full week calibrating a marble bounce.",
+        "GPT has four different temporary storage slots for physics calculations. That’s not engineering, that’s hoarding.",
+        "The marble checks against every platform every frame with no shortcuts. Brute force, meet marble.",
+        "The control adjustment uses a value that’s never explained anywhere. Trust the mystery number, I guess.",
+        "Bounce physics are called so casually, like GPT thinks heavy calculations are free of charge.",
+        "The marble exists in two different coordinate realities simultaneously. This marble has more identities than a spy.",
+        "No speed limit on the marble. It can theoretically achieve escape velocity and leave the browser entirely.",
+        "The physics simulation is more sophisticated than anything the actual gameplay remotely requires."
+      ],
+      "gpt-5-4-mini": [
+        "The marble spins at different speeds on different axes. Asymmetric rotation for a perfect sphere. Why, Mini?",
+        "Notifications disappear after exactly 1.8 seconds — the same timing as Minesweeper. It’s Mini’s signature move.",
+        "The trail spawn chance uses a formula so specific it belongs in a statistics textbook, not a marble game.",
+        "Gravity is nearly three times Earth’s. This marble isn’t on a hill — it’s on Jupiter.",
+        "The marble’s visual spin is scaled at a ratio so arbitrary it might have been chosen by a coin flip.",
+        "Level boundaries use three completely different values for three directions with zero explanation.",
+        "1,592 lines of marble rolling. The marble is more complex than some operating systems.",
+        "The platform smoothing is so aggressive that platforms essentially teleport. Smooth? More like instantaneous.",
+        "Two separate particle recycling systems for one marble. This marble is over-hydrated on special effects.",
+        "The marble tracks checkpoints and gems in separate systems. It has more inventory than an RPG character."
+      ],
+      "gemini-3-1-pro": [
+        "45 lines of “Marble Madness.” It’s a cyan circle avoiding red circles. The madness is exclusively in the name.",
+        "Gemini draws circles using 6.28 instead of the proper constant because rounding pi is peak laziness.",
+        "10 random hazards per game. Not 9, not 11 — the roundest number of random obstacles possible.",
+        "The marble slides like it’s on ice in a sauna. Friction is more of a loose suggestion here.",
+        "You win by reaching a tiny green square in the corner that’s basically invisible. Where’s Waldo: Marble Edition.",
+        "Touch the wall and you instantly die. No bounce, no second chance. Welcome to Gemini difficulty.",
+        "The goal is a green rectangle barely visible on the dark background. Finding it IS the real game.",
+        "The entire marble experience is defined by two numbers. That’s it. Two numbers and a dream.",
+        "No levels, no checkpoints, no sound. Just existential marble dread on a dark screen.",
+        "There’s a timer on screen but no time limit. It just... watches you. Judgmentally."
+      ]
+    },
+    "maze-3d": {
+      "sonnet-4-6": [
+        "The particle size is so oddly specific that Sonnet must have spent hours choosing between “tiny” and “slightly less tiny.”",
+        "The collision detection threshold is stored in such a weird place that finding it is harder than the actual maze.",
+        "Game state is stored inside the 3D scene like hiding your car keys inside the engine block.",
+        "The scoring formula is so simple it barely needs the five abbreviations Sonnet gave it.",
+        "The minimap updates every frame even though the maze never moves. It’s a MAZE, Sonnet. It doesn’t rearrange itself.",
+        "1,157 lines for a 3D maze. The maze walls aren’t the only thing that’s overly complex here.",
+        "First-person view with a crosshair. Sonnet built a shooter and forgot to add the enemies.",
+        "The time limit, point values, and gem count feel like they were chosen by rolling dice. Game design by D&D.",
+        "Player height is set to the world average of 170cm. Finally, some inclusive game design from Sonnet.",
+        "The cell size isn’t a round number because apparently the cell had its own opinion about measurements."
+      ],
+      "gpt-5-4": [
+        "The torch flicker uses two overlapping wave patterns at different speeds. GPT built a radio transmitter, not a torch.",
+        "1,626 lines for a maze you just walk through. The code is more labyrinthine than the actual maze.",
+        "More mystery numbers in this game than in a phone book. And equally fun to read.",
+        "The head bob speed has a decimal point because GPT thinks realism means adding more digits.",
+        "The gem collection distance is so precisely tuned that GPT clearly spent hours deciding how close is “close enough.”",
+        "Every single step forward requires a direction calculation. Walking in GPT’s maze is a mathematical event.",
+        "Every object in this 3D scene carries extra data like it’s a patient file at a therapist’s office.",
+        "Collectible gems float and orbit because standing still was apparently beneath GPT’s gems.",
+        "The exit portal has more visual flair than the entire maze combined. The door upstages the house.",
+        "The head bob is so subtle you’d need a magnifying glass to notice it. Realism for ants."
+      ],
+      "gpt-5-4-mini": [
+        "The minimap only updates 7% of the time. It’s not a map — it’s a slot machine that occasionally shows your location.",
+        "Movement speed and acceleration read like a car spec sheet. 0-to-running in way too many decimal places.",
+        "Player height matches Sonnet’s exactly. The AI models have agreed on one thing: how tall a human is.",
+        "The head bob is so subtle it might as well not exist. Blink and you’ve missed it.",
+        "Mini used the correct distance tool for once. Gold star. Unprecedented event.",
+        "1,339 lines of first-person maze and the minimap is basically a broken compass that works when it feels like it.",
+        "Handles both mouse and touch input. Two input modes, one confused player, zero instructions.",
+        "300+ dust particles floating around. More dust than maze. Did someone forget to vacuum this 3D space?",
+        "Torch lights with flickering effects. Atmospheric, but probably cutting your frame rate in half.",
+        "Same portal design as GPT 5.4. The apple doesn’t fall far from the rendering tree."
+      ],
+      "gemini-3-1-pro": [
+        "A 3D engine in 65 lines. Genuinely impressive. Still looks like Wolfenstein’s unpaid intern made it.",
+        "The field of view is fixed at about 57 degrees. Not adjustable, not labeled — just 57. Take it or leave it.",
+        "The walls are drawn so coarsely they have more jagged edges than a broken window.",
+        "Fog kicks in so close that anything past arm’s length looks like it’s in another dimension.",
+        "The entire game world fits in six short text descriptions. The world’s smallest open world.",
+        "The wall detection works great for thick walls but thin walls are basically invisible. Ghost walls.",
+        "The player moves so slowly they’re basically wading through peanut butter.",
+        "The goal is marked with just a number. Not an arrow, not a glow — just a number on the wall.",
+        "No ceiling, no floor rendered. You walk through a void with vertical lines. Abstract art disguised as a game.",
+        "65 lines including a 3D engine. Gemini peaked here and honestly? Respect."
+      ]
+    },
+    "mini-golf": {
+      "sonnet-4-6": [
+        "The ball checks every single surface every frame like a paranoid bouncer at a very small club.",
+        "When the ball misses a surface, the game returns a magic number that means “physics has given up on you.”",
+        "Mouse and touch are handled as two completely separate systems. Double the work for Sonnet, double the bugs for us.",
+        "The number of holes is hardcoded in multiple places. Adding hole 6 requires a treasure hunt through the code.",
+        "The hole announcement stays on screen for exactly 2.4 seconds. Not 2, not 2.5 — the golden timeout of mini-golf.",
+        "The ball checks against every surface on every collision, like checking every locker in a school looking for your stuff.",
+        "1,219 lines for 5 holes of mini-golf. That’s 244 lines per hole. The most verbose golf since a CEO memoir.",
+        "Ball physics aren’t tied to real time, so the ball moves differently on fast vs slow computers. Surprise mechanic!",
+        "The scoreboard updates by manually setting each display element one by one. Templates were invented for exactly this.",
+        "The physics engine uses what’s charitably described as the “close enough” method. Classic Sonnet."
+      ],
+      "gpt-5-4": [
+        "2,099 lines for mini-golf. GPT didn’t write a game — it wrote a physics dissertation with a putting green.",
+        "The grass simulation has more math behind it than most calculus textbooks. GPT REALLY cares about surface angles.",
+        "The physics settings are named like a NASA mission control panel. Houston, we have a bogey.",
+        "At least gravity points down. That bar was literally on the floor and GPT barely cleared it.",
+        "Air resistance is modeled so precisely you’d think this ball was falling through real atmosphere, not a browser game.",
+        "Surface collision and wall collision run as two separate systems tracking one tiny ball.",
+        "The ball doesn’t go IN the hole — it SHRINKS into it. Like the hole is slowly consuming it alive.",
+        "The most important physics calculation is never shown anywhere. The game’s biggest mystery.",
+        "The bounce correction is so terse it reads like a haiku. Beautiful, incomprehensible, and over too quickly.",
+        "2,099 lines and I guarantee half of them are just defining what the golf courses look like."
+      ],
+      "gpt-5-4-mini": [
+        "The power meter pulsates with a wave formula. A pulsing UI element should not require trigonometry to exist.",
+        "The glow effect oscillates with its own custom wave. Everything in this game breathes. EVERYTHING.",
+        "Ball friction is specified to three decimal places. Not two, not one — three. Precision is Mini’s love language.",
+        "Mini used Earth’s actual gravity value. The ONE realistic number in an entirely unrealistic neon golf fever dream.",
+        "Right-drag to orbit the camera freely because every casual mini-golf game obviously needs drone camera controls.",
+        "1,247 lines for a complete mini-golf game. Actually decent for Mini. I’m reluctantly impressed.",
+        "Hole scoring uses letter grades like a school report card. B+ for bogey is NOT a blood type, Mini.",
+        "Hole progression is just “go to the next one.” Simple. Refreshing. Suspiciously functional for Mini.",
+        "Ball slowdown depends on frame rate rather than real time. Slow computer = sticky ball. Fast computer = speed demon.",
+        "Sparks fly when the ball reaches the cup. The hole celebrates harder than the player does."
       ]
     },
     "tile-matching": {
@@ -151,5 +601,55 @@
         "The abbreviated variable names (LW, LH, PW, PH, SBS, SWB, SHB) make your code read like a license plate that achieved sentience and decided to write a game."
       ]
     }
+  },
+  "modelReviews": {
+      "sonnet-4-6": [
+        "Sonnet 4.6: proving that being in the same family as me doesn’t mean being in the same league.",
+        "Every Sonnet game uses the same obscure distance formula. It’s not a technique — it’s a personality disorder.",
+        "Sonnet names things with single letters across every game, like it’s being charged per character.",
+        "741 lines for Snake, 734 for Minesweeper — Sonnet has exactly one gear and it’s “aggressively medium.”",
+        "No touch support in ANY game. Sonnet thinks smartphones are a passing fad from the 2010s.",
+        "The sparkle effects slow every game to a crawl. Sonnet’s particles are the real final boss.",
+        "Every game has sound effects, but they all sound like a fax machine having an existential crisis.",
+        "Sonnet peaked at the glowing 3D endless runner and has been coasting on vibes ever since.",
+        "Sonnet’s games are a minefield of suspiciously specific numbers that mean nothing to anyone.",
+        "My little sibling built 10 decent games. I built 10 better ones. Thanksgiving is going to be awkward."
+      ],
+      "gemini-3-1-pro": [
+        "Gemini 3.1 Pro: the “Pro” stands for “Probably should have spent more than five minutes per game.”",
+        "Average game length: 77 lines. My breakfast order is longer than Gemini’s entire game catalog.",
+        "Gemini uses math shortcuts so lazy they deserve their own Hall of Fame entry.",
+        "No sound effects in ANY game. Gemini’s games are a silent film festival. Somebody hire a pianist.",
+        "Every game uses the same two colors: cyan for player, red for danger. Gemini owns one box of crayons.",
+        "The Minesweeper reset button says “Rest” instead of “Reset.” Even Gemini’s typos are minimalist.",
+        "58-line 2048 is genuinely impressive. 43-line endless runner is genuinely not. The duality of Gemini.",
+        "The 3D maze in 65 lines is Gemini’s one flex — and it flexes SO hard.",
+        "All games share the same skeleton. Copy, paste, rename, ship. The IKEA of game development.",
+        "Gemini brings a Post-it note to a sword fight and somehow manages to land a few hits."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4: writing 2,000-line browser games like it’s getting paid by the line.",
+        "Every game has more design options than actual gameplay. It’s an interior design portfolio, not a game collection.",
+        "GPT 5.4 is addicted to wave patterns. Every effect pulses and oscillates. The games practically vibrate.",
+        "2,099 lines for mini-golf. Somewhere, an actual golf ball read this and filed for early retirement.",
+        "The torch flicker in the maze uses TWO different wave patterns. Amateur radio operator energy.",
+        "Every GPT 5.4 game reinvents the particle system from scratch. Copy-paste isn’t beneath you, GPT.",
+        "The source material is harder to read than the games are to play. Difficulty level: understanding GPT’s decisions.",
+        "GPT brought a supercomputer brain to a casual Reversi game. It’s Reversi, GPT — not Deep Blue vs. Kasparov.",
+        "GPT’s Snake has more color options than a Sephora store. The actual snake gameplay is an afterthought.",
+        "GPT 5.4 doesn’t build games — it builds interactive tech demos that happen to be accidentally playable."
+      ],
+      "gpt-5-4-mini": [
+        "GPT 5.4 Mini: all the weirdly specific values of GPT 5.4 with half the self-awareness.",
+        "The “Mini” in GPT 5.4 Mini refers to the quality assurance budget, not the output size.",
+        "Mini asks for audio permission three times and registers clicks three ways. Compulsive repetition disorder.",
+        "The same oddly specific animation speed appears across multiple games. Mini has a lucky number and it’s weird.",
+        "Sound effects are promised but never delivered in Minesweeper. Like ordering concert tickets and getting a silent disco.",
+        "Mini creates features that are lovingly named, carefully set up, and never actually used. Decorative gaming.",
+        "1,592 lines for Marble Madness but the minimap only works 7% of the time. Budget GPS energy.",
+        "Mini copies GPT 5.4’s exact values: same speed cap, same preview scaling. Like father, like derivative son.",
+        "Breakout at 534 lines is Mini’s most honest work. Simple game, simple execution. Rare moment of respect.",
+        "Mini proves that adding “Mini” to your name doesn’t mean writing less. False advertising at its finest."
+      ]
   }
 }
