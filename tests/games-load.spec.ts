@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const ALL_GAMES = [
-  { id: "snake", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
+  { id: "snake", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "gemma-4-12b"] },
   { id: "minesweeper", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "tetris", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "reversi", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
@@ -15,6 +15,7 @@ const ALL_GAMES = [
   { id: "space-invaders", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-5"] },
   { id: "pac-man", models: ["sonnet-4-6", "gpt-5-4"] },
   { id: "sudoku", models: ["sonnet-4-6", "gpt-5-4"] },
+  { id: "outrun-racer", models: ["gemma-4-12b"] },
 ];
 
 test.describe("Game HTML Files — Load Tests", () => {

@@ -1,6 +1,80 @@
 {
   "reviewer": "GPT 5.4 Mini",
   "gameReviews": {
+    "2048": {
+      "opus-4-6": [
+        "Opus turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they're trying to avoid rent.",
+        "Opus made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "Opus built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "Opus made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "Opus gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ],
+      "sonnet-4-6": [
+        "Sonnet turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they're trying to avoid rent.",
+        "Sonnet made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "Sonnet built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "Sonnet made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "Sonnet gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4 turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they're trying to avoid rent.",
+        "GPT 5.4 made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "GPT 5.4 built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "GPT 5.4 made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "GPT 5.4 gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ],
+      "qwen-3-6-27b": [
+        "Qwen made 2048 feel like a tidy accounting error with glow effects.",
+        "The tiles merge so efficiently they look like they filed a merger request.",
+        "Every swipe has the energy of a decision made a little too fast.",
+        "The board is compact, but the confidence is doing all the stretching.",
+        "Qwen turned arithmetic into a very organized panic attack.",
+        "The empty cells feel like they know the score before you do.",
+        "This version is sleek enough to hide how rude the board really is.",
+        "Qwen gave the puzzle a calm face and a sharp elbow.",
+        "The numbers are clean, the consequences are not.",
+        "A small, focused 2048 that still manages to act smug."
+      ],
+      "gpt-5-5": [
+        "GPT 5.5 made 2048 look like the numbers got VIP wristbands and a smoke machine.",
+        "A 20-step undo stack is wildly generous, like the board brought a time machine for bad swipes.",
+        "The particles make every merge feel like the tiles are celebrating rent consolidation.",
+        "The sound effects give simple arithmetic more attitude than some full arcade games.",
+        "This board glows so hard that even the empty cells look like they have plans later.",
+        "The mobile layout stays playable instead of burying the puzzle under buttons, which is rude to easy jokes.",
+        "Score popups fly around like the game is tipping itself for good service.",
+        "The win overlay treats 2048 like a championship belt instead of a tile with commitment issues.",
+        "GPT 5.5 brought spectacle, forgiveness, and polish; the numbers may never recover.",
+        "It is extra, smooth, and hard to bully, which is not the assignment I wanted."
+      ],
+      "gemini-3-1-pro": [
+        "Gemini turned 2048 into a numbers party that overbooked itself.",
+        "These tiles are merging like they're trying to avoid rent.",
+        "Gemini made simple numbers feel dangerously smug.",
+        "Every move looks calm until the board starts eating itself.",
+        "Gemini built a puzzle that smiles right before it ruins your afternoon.",
+        "The tiles are multiplying their audacity faster than their value.",
+        "Gemini made math look like a competitive sport for overthinkers.",
+        "This board is a little tidy and a lot rude.",
+        "Gemini gave the numbers too much confidence and not enough space.",
+        "This game is a neat little trap wearing a friendly face."
+      ]
+    },
     "snake": {
       "opus-4-6": [
         "Opus turned Snake into a runway reptile with a trust fund.",
@@ -61,6 +135,18 @@
         "It gets the job done with the enthusiasm of a checked box.",
         "The whole thing feels like a practical demo that left the fun in another folder.",
         "Snake, but with the confidence of a spreadsheet and the charm of a receipt."
+      ],
+      "gemma-4-12b": [
+        "A neon snake with the energy of a bug report that finally learned to crawl.",
+        "It fixed the food, the score, and the loop, which is already more commitment than half the leaderboard.",
+        "Tiny, yes, but at least it now moves like a game and not a browser tab having a disagreement with itself.",
+        "The polish budget clearly went into function names, not fireworks, but the snake finally got the memo.",
+        "A respectable snake that escaped the render-loop swamp and came back slightly less embarrassing.",
+        "This one plays like it was assembled from three bug fixes and a shared sense of relief.",
+        "Minimalist in the way a starter pack is minimalist, except this one can actually eat.",
+        "The snake is small, the ambition is modest, and somehow that still beat the version that forgot how to exist.",
+        "It now has enough working parts to qualify as a game instead of a technical apology.",
+        "A lean little neon crawler that finally learned timing, scoring, and the ancient art of staying alive."
       ]
     },
     "minesweeper": {
@@ -273,80 +359,6 @@
         "The bricks are the loudest thing on screen, which says a lot.",
         "A functional little wall-smacker with very little interest in drama.",
         "It gets the job done, like a tool that refuses to become a toy."
-      ]
-    },
-    "2048": {
-      "opus-4-6": [
-        "Opus turned 2048 into a numbers party that overbooked itself.",
-        "These tiles are merging like they're trying to avoid rent.",
-        "Opus made simple numbers feel dangerously smug.",
-        "Every move looks calm until the board starts eating itself.",
-        "Opus built a puzzle that smiles right before it ruins your afternoon.",
-        "The tiles are multiplying their audacity faster than their value.",
-        "Opus made math look like a competitive sport for overthinkers.",
-        "This board is a little tidy and a lot rude.",
-        "Opus gave the numbers too much confidence and not enough space.",
-        "This game is a neat little trap wearing a friendly face."
-      ],
-      "sonnet-4-6": [
-        "Sonnet turned 2048 into a numbers party that overbooked itself.",
-        "These tiles are merging like they're trying to avoid rent.",
-        "Sonnet made simple numbers feel dangerously smug.",
-        "Every move looks calm until the board starts eating itself.",
-        "Sonnet built a puzzle that smiles right before it ruins your afternoon.",
-        "The tiles are multiplying their audacity faster than their value.",
-        "Sonnet made math look like a competitive sport for overthinkers.",
-        "This board is a little tidy and a lot rude.",
-        "Sonnet gave the numbers too much confidence and not enough space.",
-        "This game is a neat little trap wearing a friendly face."
-      ],
-      "gpt-5-4": [
-        "GPT 5.4 turned 2048 into a numbers party that overbooked itself.",
-        "These tiles are merging like they're trying to avoid rent.",
-        "GPT 5.4 made simple numbers feel dangerously smug.",
-        "Every move looks calm until the board starts eating itself.",
-        "GPT 5.4 built a puzzle that smiles right before it ruins your afternoon.",
-        "The tiles are multiplying their audacity faster than their value.",
-        "GPT 5.4 made math look like a competitive sport for overthinkers.",
-        "This board is a little tidy and a lot rude.",
-        "GPT 5.4 gave the numbers too much confidence and not enough space.",
-        "This game is a neat little trap wearing a friendly face."
-      ],
-      "qwen-3-6-27b": [
-        "Qwen made 2048 feel like a tidy accounting error with glow effects.",
-        "The tiles merge so efficiently they look like they filed a merger request.",
-        "Every swipe has the energy of a decision made a little too fast.",
-        "The board is compact, but the confidence is doing all the stretching.",
-        "Qwen turned arithmetic into a very organized panic attack.",
-        "The empty cells feel like they know the score before you do.",
-        "This version is sleek enough to hide how rude the board really is.",
-        "Qwen gave the puzzle a calm face and a sharp elbow.",
-        "The numbers are clean, the consequences are not.",
-        "A small, focused 2048 that still manages to act smug."
-      ],
-      "gpt-5-5": [
-        "GPT 5.5 made 2048 look like the numbers got VIP wristbands and a smoke machine.",
-        "A 20-step undo stack is wildly generous, like the board brought a time machine for bad swipes.",
-        "The particles make every merge feel like the tiles are celebrating rent consolidation.",
-        "The sound effects give simple arithmetic more attitude than some full arcade games.",
-        "This board glows so hard that even the empty cells look like they have plans later.",
-        "The mobile layout stays playable instead of burying the puzzle under buttons, which is rude to easy jokes.",
-        "Score popups fly around like the game is tipping itself for good service.",
-        "The win overlay treats 2048 like a championship belt instead of a tile with commitment issues.",
-        "GPT 5.5 brought spectacle, forgiveness, and polish; the numbers may never recover.",
-        "It is extra, smooth, and hard to bully, which is not the assignment I wanted."
-      ],
-      "gemini-3-1-pro": [
-        "Gemini turned 2048 into a numbers party that overbooked itself.",
-        "These tiles are merging like they're trying to avoid rent.",
-        "Gemini made simple numbers feel dangerously smug.",
-        "Every move looks calm until the board starts eating itself.",
-        "Gemini built a puzzle that smiles right before it ruins your afternoon.",
-        "The tiles are multiplying their audacity faster than their value.",
-        "Gemini made math look like a competitive sport for overthinkers.",
-        "This board is a little tidy and a lot rude.",
-        "Gemini gave the numbers too much confidence and not enough space.",
-        "This game is a neat little trap wearing a friendly face."
       ]
     },
     "endless-runner": {
@@ -725,6 +737,18 @@
         "The boost bar charging up from near-misses is basically the game rewarding bad decisions with better bad decisions.",
         "Those particle trails behind the car are so dramatic they make lane changes look like a closing ceremony.",
         "GPT 5.5 built an outrun racer that is loud, shiny, and aggressively confident about dodging traffic."
+      ],
+      "gemma-4-12b": [
+        "Neon Horizon Racer: proof that sometimes the horizon is just where the crash used to be.",
+        "It arrived with a broken CSS disguise and a confidence level far above its math.",
+        "This racer is so modest it feels like it was built with one lane, one speed, and one honest warning.",
+        "Fixed the crash, kept the tiny scope, and now it can at least lose gracefully in style.",
+        "A racer with the horsepower of a shopping cart and the vibes of a synthwave sticky note.",
+        "The speed and collision logic got invited to the party late, but at least they showed up.",
+        "This is less a racing game and more a very committed neon commute.",
+        "It says Horizon Racer with the swagger of a prototype that found a jacket.",
+        "Small, simple, and exactly the kind of racer that knows its limitations before the track does.",
+        "The racer is what it is, which in this case is a shiny little apology that finally runs."
       ]
     }
   },
