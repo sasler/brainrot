@@ -1,56 +1,6 @@
 {
   "reviewer": "GPT 5.5",
   "gameReviews": {
-    "tile-matching": {
-      "opus-4-6": [
-        "Opus brought architectural discipline to match-3, then decorated it like a thesis defense with gems.",
-        "The state machine is impressive, but the board occasionally feels like it needs a project manager to swap two tiles.",
-        "Those section banners have more ceremony than some level-up screens.",
-        "The neon is rich, but the title still says Tile Match like the naming budget evaporated first.",
-        "Opus made every event correct, polished, and slightly afraid of spontaneity.",
-        "The special tiles work hard, even while the UI introduces them like meeting agenda items.",
-        "A hint delay that polite makes the board feel like it is waiting for written consent.",
-        "The sound design has range, though some shuffle tones arrive like a synth fell down stairs.",
-        "Opus built a very good match-3 and then wrapped it in the confidence of a systems design doc.",
-        "It is polished enough to respect and formal enough to make candy feel under review."
-      ],
-      "sonnet-4-6": [
-        "Sonnet named it GEM BLITZ, which sounds fast until the single-mode structure asks everyone to queue politely.",
-        "The spinning title gems are charming, in the same way a screensaver can be charming before work starts.",
-        "One timed mode is clean, but player choice is apparently locked behind a velvet rope.",
-        "The Courier styling gives neon arcade energy filtered through a printer manual.",
-        "The particles sparkle nicely, then the game reminds you it has exactly one main pace.",
-        "Sonnet made a smooth match-3 with the strategic range of a very shiny hallway.",
-        "The specials are fun, but the onboarding explains them like it is worried you skipped the brochure.",
-        "Mobile works, though the gems sometimes feel like luxury buttons on a tiny calculator.",
-        "The game has taste and speed, just not quite enough chaos to scare the leaderboard.",
-        "GEM BLITZ is solid, stylish, and one settings menu away from having an opinion."
-      ],
-      "gpt-5-4": [
-        "GPT 5.4 built Prism Pulse like a match-3 game escaped from a product launch.",
-        "The dashboard has so many readouts the gems look like they are filing quarterly metrics.",
-        "Arcade Sprint and Tactical Moves sound less like modes and more like consultancy packages.",
-        "The cascades are gorgeous, but they occasionally fight the UI for top billing.",
-        "Every panel glows with the confidence of a feature that requested its own roadmap.",
-        "The specials are genuinely fun once you finish walking past the lobby signage.",
-        "GPT 5.4 has excellent juice, then pours extra frosting on the frosting.",
-        "The title screen could sell the game, the sequel, and probably a subscription tier.",
-        "This version is powerful, polished, and allergic to leaving empty space alone.",
-        "Prism Pulse is great match-3 hiding inside a very enthusiastic command center."
-      ],
-      "gpt-5-4-mini": [
-        "Mini called it Neon Shard and immediately made the board sound like it powers a reactor.",
-        "The gem names are excellent if the tiles are auditioning for an energy drink lineup.",
-        "Chrono mode is stylish, though calling time French does not make panic fancier.",
-        "The feature badges announce touch support like the game is presenting at a trade show.",
-        "Mini tracks enough end-screen stats to make losing feel like filling out analytics.",
-        "The board has polish, but the surrounding jargon keeps trying to become the main character.",
-        "The audio panning is clever, even if match-3 rarely needs stereo cartography.",
-        "Neon Shard has strong feel and stronger branding, sometimes in that order.",
-        "The compactness works, though a few labels feel like they were shortened during turbulence.",
-        "Mini built a capable gem game and then dressed it as a sci-fi operations dashboard."
-      ]
-    },
     "2048": {
       "opus-4-6": [
         "Opus made 2048 feel like a velvet-rope math lounge, then forgot the undo stack should be more than decorative forgiveness.",
@@ -111,6 +61,56 @@
         "Gemini made a functional number grid; GPT 5.5 made the number grid demand a sound check.",
         "This version treats animation like a rumor from a wealthier neighborhood.",
         "Fifty-eight lines is efficient, but the fun also appears to have been compressed out."
+      ]
+    },
+    "tile-matching": {
+      "opus-4-6": [
+        "Opus brought architectural discipline to match-3, then decorated it like a thesis defense with gems.",
+        "The state machine is impressive, but the board occasionally feels like it needs a project manager to swap two tiles.",
+        "Those section banners have more ceremony than some level-up screens.",
+        "The neon is rich, but the title still says Tile Match like the naming budget evaporated first.",
+        "Opus made every event correct, polished, and slightly afraid of spontaneity.",
+        "The special tiles work hard, even while the UI introduces them like meeting agenda items.",
+        "A hint delay that polite makes the board feel like it is waiting for written consent.",
+        "The sound design has range, though some shuffle tones arrive like a synth fell down stairs.",
+        "Opus built a very good match-3 and then wrapped it in the confidence of a systems design doc.",
+        "It is polished enough to respect and formal enough to make candy feel under review."
+      ],
+      "sonnet-4-6": [
+        "Sonnet named it GEM BLITZ, which sounds fast until the single-mode structure asks everyone to queue politely.",
+        "The spinning title gems are charming, in the same way a screensaver can be charming before work starts.",
+        "One timed mode is clean, but player choice is apparently locked behind a velvet rope.",
+        "The Courier styling gives neon arcade energy filtered through a printer manual.",
+        "The particles sparkle nicely, then the game reminds you it has exactly one main pace.",
+        "Sonnet made a smooth match-3 with the strategic range of a very shiny hallway.",
+        "The specials are fun, but the onboarding explains them like it is worried you skipped the brochure.",
+        "Mobile works, though the gems sometimes feel like luxury buttons on a tiny calculator.",
+        "The game has taste and speed, just not quite enough chaos to scare the leaderboard.",
+        "GEM BLITZ is solid, stylish, and one settings menu away from having an opinion."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4 built Prism Pulse like a match-3 game escaped from a product launch.",
+        "The dashboard has so many readouts the gems look like they are filing quarterly metrics.",
+        "Arcade Sprint and Tactical Moves sound less like modes and more like consultancy packages.",
+        "The cascades are gorgeous, but they occasionally fight the UI for top billing.",
+        "Every panel glows with the confidence of a feature that requested its own roadmap.",
+        "The specials are genuinely fun once you finish walking past the lobby signage.",
+        "GPT 5.4 has excellent juice, then pours extra frosting on the frosting.",
+        "The title screen could sell the game, the sequel, and probably a subscription tier.",
+        "This version is powerful, polished, and allergic to leaving empty space alone.",
+        "Prism Pulse is great match-3 hiding inside a very enthusiastic command center."
+      ],
+      "gpt-5-4-mini": [
+        "Mini called it Neon Shard and immediately made the board sound like it powers a reactor.",
+        "The gem names are excellent if the tiles are auditioning for an energy drink lineup.",
+        "Chrono mode is stylish, though calling time French does not make panic fancier.",
+        "The feature badges announce touch support like the game is presenting at a trade show.",
+        "Mini tracks enough end-screen stats to make losing feel like filling out analytics.",
+        "The board has polish, but the surrounding jargon keeps trying to become the main character.",
+        "The audio panning is clever, even if match-3 rarely needs stereo cartography.",
+        "Neon Shard has strong feel and stronger branding, sometimes in that order.",
+        "The compactness works, though a few labels feel like they were shortened during turbulence.",
+        "Mini built a capable gem game and then dressed it as a sci-fi operations dashboard."
       ]
     },
     "space-invaders": {
@@ -187,6 +187,32 @@
         "The game-over screen says CRASHED OUT, giving every collision the energy of being removed from a nightclub.",
         "Mini's 320x480 discipline is genuinely good, which is inconvenient when I came here to be mean.",
         "This version is flashy, dense, and weirdly competent, like someone shrank a full arcade cabinet without shrinking the ego."
+      ],
+      "gemma-4-12b": [
+        "Neon Horizon Racer begins where many racers end: negotiating with the crash screen.",
+        "Gemma 4 12B built a highway that looks fast until the math starts asking for adult supervision.",
+        "The missing hidden class was the game accidentally publishing its full plot on page load.",
+        "This racer has synthwave vibes, rectangle traffic, and the confidence of a prototype with sunglasses.",
+        "The road segments imply motion with the emotional range of a very determined screensaver.",
+        "Obstacle perspective and collision timing appear to be in a long-distance relationship.",
+        "It is not so much OutRun as Briefly Glow Forward.",
+        "Gemma gave the car a neon lane and a dream, then left physics to fill in the paperwork.",
+        "The racer is what it is: tiny, shiny, and finally willing to start before apologizing.",
+        "A modest neon commute that proves even a proof of concept can wear magenta like it means it."
+      ]
+    },
+    "snake": {
+      "gemma-4-12b": [
+        "Gemma 4 12B submitted Snake as a repair diary with neon trim, and somehow the diary is playable now.",
+        "The food finally spawns correctly, which is bold innovation for a game about eating dots.",
+        "This snake spent so much time escaping its own render loop that survival became method acting.",
+        "The score bug got fixed, so now the numbers only lie in the emotionally normal arcade way.",
+        "Gemma made a compact Snake that works, glows, and politely avoids threatening the premium entries.",
+        "The power-up square has more ambition than the rest of the feature list, which is adorable accounting.",
+        "It is small enough to feel honest and patched enough to feel supervised.",
+        "The neon board is doing cardio to make this modest little crawler look like a contender.",
+        "Gemma 4 12B turned debugging into character development and called the result Snake.",
+        "A lean playable entry, freshly rescued from its own timing code and still wearing the safety vest."
       ]
     }
   }

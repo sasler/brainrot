@@ -366,6 +366,65 @@
               ]
             }
           ]
+        },
+        {
+          "model": "Gemma 4 12B",
+          "modelId": "gemma-4-12b",
+          "date": "2026-06-04",
+          "linesOfCode": 514,
+          "path": "/games/snake/gemma-4-12b/index.html",
+          "features": [
+            "sound",
+            "particles",
+            "powerups"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Gemma 4 12B built a snake game with the confidence of a AAA studio and the scope of a loading screen.",
+                "Neon Snake finally works, which is a bold late-stage feature to add to a snake game.",
+                "This version has big fixed-in-prod energy, and honestly, you can still smell the hot patch.",
+                "Gemma got the food spawning eventually, which is great because starving the player was a strange design choice.",
+                "The render loop spent so long fighting for its life it almost became the main gameplay mechanic.",
+                "Gemma 4 12B made Snake feel like a comeback story, just with fewer features than the trailer implied.",
+                "It is charming in the way a successfully assembled lamp is charming: functional, glowing, and not exactly legendary.",
+                "The neon vibe is doing serious overtime trying to convince us this is not just Snake on a caffeine drip.",
+                "You can respect the recovery, but this still feels like Gemma brought a butterknife to an arcade knife fight.",
+                "Simple, stable, and freshly repaired: Neon Snake is basically the indie film of this lineup."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "A neon snake with the energy of a bug report that finally learned to crawl.",
+                "It fixed the food, the score, and the loop, which is already more commitment than half the leaderboard.",
+                "Tiny, yes, but at least it now moves like a game and not a browser tab having a disagreement with itself.",
+                "The polish budget clearly went into function names, not fireworks, but the snake finally got the memo.",
+                "A respectable snake that escaped the render-loop swamp and came back slightly less embarrassing.",
+                "This one plays like it was assembled from three bug fixes and a shared sense of relief.",
+                "Minimalist in the way a starter pack is minimalist, except this one can actually eat.",
+                "The snake is small, the ambition is modest, and somehow that still beat the version that forgot how to exist.",
+                "It now has enough working parts to qualify as a game instead of a technical apology.",
+                "A lean little neon crawler that finally learned timing, scoring, and the ancient art of staying alive."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Gemma 4 12B submitted Snake as a repair diary with neon trim, and somehow the diary is playable now.",
+                "The food finally spawns correctly, which is bold innovation for a game about eating dots.",
+                "This snake spent so much time escaping its own render loop that survival became method acting.",
+                "The score bug got fixed, so now the numbers only lie in the emotionally normal arcade way.",
+                "Gemma made a compact Snake that works, glows, and politely avoids threatening the premium entries.",
+                "The power-up square has more ambition than the rest of the feature list, which is adorable accounting.",
+                "It is small enough to feel honest and patched enough to feel supervised.",
+                "The neon board is doing cardio to make this modest little crawler look like a contender.",
+                "Gemma 4 12B turned debugging into character development and called the result Snake.",
+                "A lean playable entry, freshly rescued from its own timing code and still wearing the safety vest."
+              ]
+            }
+          ]
         }
       ]
     },
@@ -4551,6 +4610,61 @@
                 "The game-over screen says CRASHED OUT, giving every collision the energy of being removed from a nightclub.",
                 "Mini's 320x480 discipline is genuinely good, which is inconvenient when I came here to be mean.",
                 "This version is flashy, dense, and weirdly competent, like someone shrank a full arcade cabinet without shrinking the ego."
+              ]
+            }
+          ]
+        },
+        {
+          "model": "Gemma 4 12B",
+          "modelId": "gemma-4-12b",
+          "date": "2026-06-04",
+          "linesOfCode": 337,
+          "path": "/games/outrun-racer/gemma-4-12b/index.html",
+          "features": [],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Gemma 4 12B made an outrun racer so minimalist it nearly reviewed itself before the car moved.",
+                "Neon Horizon Racer used to crash instantly, which was at least an honest estimate of its confidence.",
+                "Calling this a racer is generous; it is more of a neon suggestion of forward motion.",
+                "The speed math feels like Gemma asked physics for a vibe check and kept driving.",
+                "That missing .hidden rule really said, why pace the disaster when we can reveal it immediately?",
+                "Gemma delivered a racer with the ambition of OutRun and the body mass of a browser notification.",
+                "The collision logic has the dramatic flair of a soap opera and roughly the same relationship with reality.",
+                "Neon Horizon Racer is what happens when style shows up early and gameplay texts that it is running late.",
+                "You have to admire Gemma 4 12B for entering the racing category with what is essentially a glowing proof of concept.",
+                "The racer is, indeed, what it is: a tiny neon commute to the phrase good enough for now."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "Neon Horizon Racer: proof that sometimes the horizon is just where the crash used to be.",
+                "It arrived with a broken CSS disguise and a confidence level far above its math.",
+                "This racer is so modest it feels like it was built with one lane, one speed, and one honest warning.",
+                "Fixed the crash, kept the tiny scope, and now it can at least lose gracefully in style.",
+                "A racer with the horsepower of a shopping cart and the vibes of a synthwave sticky note.",
+                "The speed and collision logic got invited to the party late, but at least they showed up.",
+                "This is less a racing game and more a very committed neon commute.",
+                "It says Horizon Racer with the swagger of a prototype that found a jacket.",
+                "Small, simple, and exactly the kind of racer that knows its limitations before the track does.",
+                "The racer is what it is, which in this case is a shiny little apology that finally runs."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Neon Horizon Racer begins where many racers end: negotiating with the crash screen.",
+                "Gemma 4 12B built a highway that looks fast until the math starts asking for adult supervision.",
+                "The missing hidden class was the game accidentally publishing its full plot on page load.",
+                "This racer has synthwave vibes, rectangle traffic, and the confidence of a prototype with sunglasses.",
+                "The road segments imply motion with the emotional range of a very determined screensaver.",
+                "Obstacle perspective and collision timing appear to be in a long-distance relationship.",
+                "It is not so much OutRun as Briefly Glow Forward.",
+                "Gemma gave the car a neon lane and a dream, then left physics to fill in the paperwork.",
+                "The racer is what it is: tiny, shiny, and finally willing to start before apologizing.",
+                "A modest neon commute that proves even a proof of concept can wear magenta like it means it."
               ]
             }
           ]
