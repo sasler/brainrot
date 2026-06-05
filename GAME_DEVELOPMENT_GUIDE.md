@@ -86,6 +86,8 @@ Your implementation **MUST** meet ALL of the following:
 
 **Space Invaders**: Bullet firing sounds (rapid oscillator bursts), alien death explosions with particles, shield destruction chunks, wave-clear fanfare, power-up pickup chimes, boss health bar with dramatic entry, screen shake on player hit, alien formation movement sounds, UFO flyby audio, progressive difficulty with visual intensity increase.
 
+**Coastal Rush '86**: Polished retro pseudo-3D road rendering, a warm natural 1980s palette, responsive steering and speed control, traffic and off-road hazards, timed branching checkpoints, route forks, multiple endings, varied roadside scenery, engine/music/effect audio, and compact touch controls that preserve the playable road at 320×480.
+
 ---
 
 ## Architecture
@@ -277,6 +279,15 @@ Add this to the `versions` array of the appropriate game.
 - Multiple alien types with different point values and behaviors
 - Classic formation movement (step down when hitting edge)
 - UFO/bonus ship that flies across the top periodically
+
+### Coastal Rush '86
+- Polished pseudo-3D arcade road rendering with a warm, natural 1980s palette rather than a neon synthwave look
+- Original unbadged red convertible with passenger, roadside traffic, and varied coast, countryside, mountain, desert, and city scenery
+- Timed branching checkpoint tour with route-selection forks, multiple endings, and increasing difficulty
+- Steering, acceleration, braking, off-road slowdown, collisions/spins, traffic passing, score, timer, and session high score
+- Keyboard and compact touch controls that remain visible and usable at 320×480 without scrolling
+- Title screen, route map, checkpoint transitions, finish and game-over screens, particles, screen shake, and procedural Web Audio engine, music, and effects
+- Inspired branding only: do not use Sega, OutRun, Ferrari, Testarossa, logos, or badges
 
 ## Quality Expectations (CRITICAL)
 

@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Coastal Rush '86 — GPT 5.5</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      touch-action: none;
+      user-select: none;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #17130e;
+      color: #fff4d5;
+      font-family: "Courier New", monospace;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    #touch {
+      position: fixed;
+      z-index: 4;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 72px;
+      display: none;
+      justify-content: space-between;
+      align-items: end;
+      padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
+      pointer-events: none;
+    }
+
+    #touch .cluster {
+      display: flex;
+      gap: 7px;
+      pointer-events: auto;
+    }
+
+    #touch button {
+      width: 54px;
+      height: 54px;
+      border: 2px solid rgba(255, 239, 196, 0.55);
+      border-radius: 50%;
+      color: #fff4d5;
+      background: rgba(34, 25, 17, 0.64);
+      box-shadow:
+        inset 0 2px rgba(255, 255, 255, 0.13),
+        0 3px 0 rgba(0, 0, 0, 0.35);
+      font: bold 19px "Courier New", monospace;
+      backdrop-filter: blur(2px);
+    }
+
+    #touch button.on {
+      color: #2d1b13;
+      background: rgba(240, 190, 92, 0.85);
+      transform: translateY(2px);
+      box-shadow: inset 0 2px rgba(80, 35, 15, 0.3);
+    }
+
+    #touch .pedal {
+      width: 58px;
+      height: 58px;
+      border-radius: 13px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+    }
+
+    @media (pointer: coarse), (max-width: 700px) {
+      #touch {
+        display: flex;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game" aria-label="Coastal Rush 86 arcade racing game"></canvas>
+  <div id="touch" aria-label="Touch controls">
+    <div class="cluster">
+      <button data-key="left" aria-label="Steer left">◀</button>
+      <button data-key="right" aria-label="Steer right">▶</button>
+    </div>
+    <div class="cluster">
+      <button class="pedal" data-key="brake" aria-label="Brake">BRAKE</button>
+      <button class="pedal" data-key="gas" aria-label="Accelerate">GAS</button>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    // ------------------------------------------------------------
+    // Canvas, constants, helpers
+    // ------------------------------------------------------------
+
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const touchBar = document.getElementById("touch");
+    const TAU = Math.PI * 2;
+    const SEGMENT_LENGTH = 190;
+    const ROAD_WIDTH = 1900;
+    const CAMERA_HEIGHT = 920;
+    const DRAW_DISTANCE = 190;
+    const FOV = 92;
+    const CAMERA_DEPTH = 1 / Math.tan((FOV / 2) * Math.PI / 180);
+    const MAX_SPEED = SEGMENT_LENGTH * 58;
+    const ACCEL = MAX_SPEED / 5.5;
+    const BRAKE = -MAX_SPEED / 2.25;
+    const DECEL = -MAX_SPEED / 8;
+    const OFFROAD_DECEL = -MAX_SPEED / 2.6;
+    const OFFROAD_LIMIT = MAX_SPEED / 3.3;
+    const PLAYER_Z = CAMERA_HEIGHT * CAMERA_DEPTH;
+    const COLORS = {
+      cream: "#fff0c2",
+      pale: "#ffe2a2",
+      amber: "#e5a84f",
+      orange: "#d66b33",
+      red: "#b7352f",
+      deepRed: "#702723",
+      brown: "#4e3323",
+      dark: "#20170f",
+      ink: "#16100d",
+      road: "#5b554d",
+      roadDark: "#49453f",
+      sand: "#cc9a5b",
+      sandDark: "#b67e44",
+      grass: "#7d8b4d",
+      grassDark: "#60713e",
+      sea: "#427f87",
+      seaLight: "#75a8a2",
+      sky: "#e69d62",
+      skyTop: "#6e8790",
+      white: "#fff8dd",
+      black: "#17120f"
+    };
+
+    let W = 0;
+    let H = 0;
+    let DPR = 1;
+    let horizon = 0;
+    let playableBottom = 0;
+    let lastTime = performance.now();
+    let frame = 0;
+    let shake = 0;
+    let flash = 0;
+    let state = "title";
+    let stateClock = 0;
+    let runClock = 0;
+    let position = 0;
+    let playerX = 0;
+    let speed = 0;
+    let score = 0;
+    let displayedScore = 0;
+    let highScore = 0;
+    let timeLeft = 72;
+    let checkpoint = 0;
+    let stageDistance = 0;
+    let stageLength = 0;
+    let currentStage = null;
+    let routePrompt = null;
+    let routeChoice = 0;
+    let routeHistory = [];
+    let ending = "";
+    let spin = 0;
+    let collisionCooldown = 0;
+    let passCombo = 0;
+    let passClock = 0;
+    let closeCallText = "";
+    let closeCallClock = 0;
+    let bannerText = "";
+    let bannerSub = "";
+    let bannerClock = 0;
+    let titleCar = 0;
+    let sunPhase = 0;
+    let trafficId = 1;
+    let musicStep = 0;
+    let musicClock = 0;
+    let engineClock = 0;
+    let audioReady = false;
+    let audio = null;
+    let master = null;
+    let engineGain = null;
+    let engineOsc = null;
+    let noiseBuffer = null;
+    let particles = [];
+    let traffic = [];
+    let roadside = [];
+    let projected = [];
+    let stars = [];
+
+    const input = {
+      left: false,
+      right: false,
+      gas: false,
+      brake: false
+    };
+
+    const keyboardMap = {
+      ArrowLeft: "left",
+      KeyA: "left",
+      ArrowRight: "right",
+      KeyD: "right",
+      ArrowUp: "gas",
+      KeyW: "gas",
+      ArrowDown: "brake",
+      KeyS: "brake"
+    };
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function easeIn(a, b, t) {
+      return a + (b - a) * t * t;
+    }
+
+    function easeOut(a, b, t) {
+      return a + (b - a) * (1 - (1 - t) * (1 - t));
+    }
+
+    function easeInOut(a, b, t) {
+      return a + (b - a) * ((-Math.cos(Math.PI * t) / 2) + 0.5);
+    }
+
+    function percentRemaining(n, total) {
+      return (n % total) / total;
+    }
+
+    function increase(start, increment, max) {
+      let result = start + increment;
+      while (result >= max) result -= max;
+      while (result < 0) result += max;
+      return result;
+    }
+
+    function random(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function pick(list) {
+      return list[(Math.random() * list.length) | 0];
+    }
+
+    function formatScore(value) {
+      return String(Math.max(0, value | 0)).padStart(7, "0");
+    }
+
+    function formatTime(value) {
+      const safe = Math.max(0, value);
+      const seconds = Math.floor(safe);
+      const tenths = Math.floor((safe - seconds) * 10);
+      return `${String(seconds).padStart(2, "0")}.${tenths}`;
+    }
+
+    function roundedRect(x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function text(value, x, y, size, color, align = "center", weight = "bold") {
+      ctx.font = `${weight} ${size}px "Courier New", monospace`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = color;
+      ctx.fillText(value, x, y);
+    }
+
+    function shadowText(value, x, y, size, color, align = "center") {
+      text(value, x + 2, y + 3, size, "rgba(38,20,11,.7)", align);
+      text(value, x, y, size, color, align);
+    }
+
+    function resize() {
+      DPR = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.round(W * DPR);
+      canvas.height = Math.round(H * DPR);
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      playableBottom = matchMedia("(pointer: coarse)").matches || W < 700 ? H - 62 : H;
+      horizon = Math.round(playableBottom * 0.39);
+      buildStars();
+    }
+
+    function buildStars() {
+      stars = [];
+      for (let i = 0; i < 50; i += 1) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * horizon * 0.75,
+          s: random(0.5, 1.8),
+          a: random(0.15, 0.8)
+        });
+      }
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    // ------------------------------------------------------------
+    // World definitions and route network
+    // ------------------------------------------------------------
+
+    const STAGES = {
+      coast: {
+        id: "coast",
+        name: "AZURE COAST",
+        subtitle: "Salt air and cliff roads",
+        theme: "coast",
+        length: 176,
+        curves: [0, 0.25, 0.8, -0.6, -1.15, 0.35, 0.85, 0],
+        hills: [0, 10, 28, 5, -18, 12, 30, 0],
+        traffic: 0.56,
+        time: 45,
+        forks: [
+          {
+            left: "country",
+            right: "mountain",
+            leftLabel: "VINEYARD WAY",
+            rightLabel: "SUMMIT PASS"
+          }
+        ]
+      },
+      country: {
+        id: "country",
+        name: "GOLDEN COUNTY",
+        subtitle: "Orchards, barns, open bends",
+        theme: "country",
+        length: 196,
+        curves: [0.2, -0.55, 0, 0.75, 1.2, -0.9, -0.4, 0.55],
+        hills: [4, 20, -8, 12, -16, 22, 7, 0],
+        traffic: 0.72,
+        time: 42,
+        forks: [
+          {
+            left: "desert",
+            right: "city",
+            leftLabel: "DESERT CUT",
+            rightLabel: "HARBOR CITY"
+          }
+        ]
+      },
+      mountain: {
+        id: "mountain",
+        name: "SIERRA ASCENT",
+        subtitle: "Hairpins above the clouds",
+        theme: "mountain",
+        length: 214,
+        curves: [0.4, 1.25, -1.45, 0.6, -1.3, 1.55, -0.8, 0.25],
+        hills: [10, 42, 72, 28, 86, 38, 14, 0],
+        traffic: 0.69,
+        time: 46,
+        forks: [
+          {
+            left: "city",
+            right: "desert",
+            leftLabel: "CITY DESCENT",
+            rightLabel: "CANYON ROAD"
+          }
+        ]
+      },
+      desert: {
+        id: "desert",
+        name: "SUNFIRE FLATS",
+        subtitle: "Heat haze and high speed",
+        theme: "desert",
+        length: 228,
+        curves: [0, 0.18, -0.25, 0.55, 0.1, -0.62, 0, 0.35],
+        hills: [0, 4, 2, 11, -5, 7, 3, 0],
+        traffic: 0.86,
+        time: 43,
+        forks: [
+          {
+            left: "city",
+            right: "finale",
+            leftLabel: "NIGHT MARKET",
+            rightLabel: "OCEAN RETURN"
+          }
+        ]
+      },
+      city: {
+        id: "city",
+        name: "PORT MERIDIAN",
+        subtitle: "Boulevards after sunset",
+        theme: "city",
+        length: 204,
+        curves: [0, -0.45, 0.35, 0.85, -0.75, 0.15, 0.5, 0],
+        hills: [0, 6, -4, 8, 2, -8, 5, 0],
+        traffic: 1.05,
+        time: 42,
+        forks: [
+          {
+            left: "finale",
+            right: "finale",
+            leftLabel: "BOARDWALK",
+            rightLabel: "MARINA TUNNEL"
+          }
+        ]
+      },
+      finale: {
+        id: "finale",
+        name: "LAST LIGHT RUN",
+        subtitle: "Race the sunset home",
+        theme: "finale",
+        length: 244,
+        curves: [0.2, 0.8, -0.6, -1.05, 1.2, 0.35, -0.45, 0],
+        hills: [0, 18, 36, 5, -12, 26, 9, 0],
+        traffic: 1.15,
+        time: 48,
+        forks: []
+      }
+    };
+
+    const THEMES = {
+      coast: {
+        skyTop: "#718a91",
+        skyBottom: "#e7aa72",
+        groundA: "#c89b62",
+        groundB: "#b88956",
+        roadA: "#5f5a53",
+        roadB: "#514c47",
+        rumbleA: "#f3d39b",
+        rumbleB: "#b7563f",
+        lane: "#f5e2b6",
+        fog: "#f4bd83"
+      },
+      country: {
+        skyTop: "#7d96a0",
+        skyBottom: "#edb47d",
+        groundA: "#79864a",
+        groundB: "#67763e",
+        roadA: "#625d53",
+        roadB: "#534f48",
+        rumbleA: "#f1d6a5",
+        rumbleB: "#a94d38",
+        lane: "#f5e0b6",
+        fog: "#e8b778"
+      },
+      mountain: {
+        skyTop: "#697c89",
+        skyBottom: "#d89a6d",
+        groundA: "#77705b",
+        groundB: "#615c4d",
+        roadA: "#55534f",
+        roadB: "#484744",
+        rumbleA: "#e9d1a2",
+        rumbleB: "#9c4939",
+        lane: "#ead9b5",
+        fog: "#d5a47d"
+      },
+      desert: {
+        skyTop: "#858b8a",
+        skyBottom: "#df8e54",
+        groundA: "#c48649",
+        groundB: "#ae6e3c",
+        roadA: "#655a4c",
+        roadB: "#574d43",
+        rumbleA: "#f1c986",
+        rumbleB: "#974233",
+        lane: "#f4d89d",
+        fog: "#dd9858"
+      },
+      city: {
+        skyTop: "#273746",
+        skyBottom: "#9a5c52",
+        groundA: "#494039",
+        groundB: "#3b3632",
+        roadA: "#4a4948",
+        roadB: "#3e3d3d",
+        rumbleA: "#d4b98b",
+        rumbleB: "#8f493e",
+        lane: "#e7d7ad",
+        fog: "#8d645a"
+      },
+      finale: {
+        skyTop: "#374e5d",
+        skyBottom: "#d07850",
+        groundA: "#876c48",
+        groundB: "#705b40",
+        roadA: "#55524d",
+        roadB: "#474641",
+        rumbleA: "#edce97",
+        rumbleB: "#a44235",
+        lane: "#f0dbab",
+        fog: "#c47c55"
+      }
+    };
+
+    function stageCurve(stage, segmentIndex) {
+      const p = segmentIndex / stage.length;
+      const source = p * (stage.curves.length - 1);
+      const index = Math.floor(source);
+      const next = Math.min(stage.curves.length - 1, index + 1);
+      return easeInOut(stage.curves[index], stage.curves[next], source - index);
+    }
+
+    function stageHill(stage, segmentIndex) {
+      const p = segmentIndex / stage.length;
+      const source = p * (stage.hills.length - 1);
+      const index = Math.floor(source);
+      const next = Math.min(stage.hills.length - 1, index + 1);
+      return easeInOut(stage.hills[index], stage.hills[next], source - index) * SEGMENT_LENGTH;
+    }
+
+    function stageSegmentCount() {
+      return currentStage ? currentStage.length : STAGES.coast.length;
+    }
+
+    function trackLength() {
+      return stageSegmentCount() * SEGMENT_LENGTH;
+    }
+
+    function findSegment(z) {
+      const count = stageSegmentCount();
+      const index = Math.floor(z / SEGMENT_LENGTH) % count;
+      return {
+        index,
+        curve: stageCurve(currentStage || STAGES.coast, index),
+        y1: stageHill(currentStage || STAGES.coast, index),
+        y2: stageHill(currentStage || STAGES.coast, (index + 1) % count)
+      };
+    }
+
+    function beginRun() {
+      initAudio();
+      state = "countdown";
+      stateClock = 3.8;
+      runClock = 0;
+      position = 0;
+      playerX = 0;
+      speed = 0;
+      score = 0;
+      displayedScore = 0;
+      timeLeft = 72;
+      checkpoint = 0;
+      routeHistory = [];
+      ending = "";
+      spin = 0;
+      collisionCooldown = 0;
+      passCombo = 0;
+      passClock = 0;
+      particles = [];
+      setStage("coast", true);
+      bannerText = "COASTAL START";
+      bannerSub = "THE LONG WAY HOME";
+      bannerClock = 2.8;
+      sound("start");
+    }
+
+    function setStage(id, first = false) {
+      currentStage = STAGES[id];
+      stageDistance = 0;
+      stageLength = currentStage.length * SEGMENT_LENGTH;
+      position = first ? 0 : SEGMENT_LENGTH * 2;
+      routePrompt = null;
+      routeChoice = 0;
+      buildRoadside();
+      buildTraffic();
+    }
+
+    function buildRoadside() {
+      roadside = [];
+      const theme = currentStage ? currentStage.theme : "coast";
+      for (let i = 5; i < stageSegmentCount(); i += 2 + ((Math.random() * 4) | 0)) {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        let type = "palm";
+        if (theme === "country") type = pick(["tree", "tree", "barn", "hay", "fence"]);
+        if (theme === "mountain") type = pick(["pine", "pine", "rock", "snowpost"]);
+        if (theme === "desert") type = pick(["cactus", "rock", "cactus", "sign"]);
+        if (theme === "city") type = pick(["building", "building", "lamp", "awning"]);
+        if (theme === "finale") type = pick(["palm", "pine", "lamp", "sign"]);
+        if (theme === "coast") type = pick(["palm", "palm", "rock", "sign"]);
+        roadside.push({
+          segment: i,
+          side,
+          offset: side * random(1.2, 2.6),
+          type,
+          scale: random(0.75, 1.35),
+          variant: (Math.random() * 4) | 0
+        });
+        if (type === "fence" || type === "lamp") {
+          roadside.push({
+            segment: i,
+            side: -side,
+            offset: -side * random(1.25, 1.55),
+            type,
+            scale: random(0.82, 1.1),
+            variant: (Math.random() * 4) | 0
+          });
+        }
+      }
+    }
+
+    function buildTraffic() {
+      traffic = [];
+      const density = currentStage ? currentStage.traffic : 0.5;
+      const count = Math.floor(12 + density * 18 + checkpoint * 3);
+      for (let i = 0; i < count; i += 1) {
+        traffic.push(makeTraffic(
+          random(SEGMENT_LENGTH * 12, stageLength - SEGMENT_LENGTH * 12),
+          random(-0.82, 0.82)
+        ));
+      }
+    }
+
+    function makeTraffic(z, offset) {
+      const kinds = ["sedan", "wagon", "van", "coupe", "truck"];
+      const kind = pick(kinds);
+      const colors = ["#d4a24e", "#52756c", "#dfd1a4", "#925049", "#4f6d88", "#7e7049"];
+      return {
+        id: trafficId++,
+        z,
+        offset,
+        targetOffset: offset,
+        speed: MAX_SPEED * random(0.22, 0.52 + checkpoint * 0.025),
+        kind,
+        color: pick(colors),
+        width: kind === "truck" ? 0.34 : kind === "van" ? 0.28 : 0.23,
+        passed: false,
+        near: false,
+        wobble: random(0, TAU)
+      };
+    }
+
+    // ------------------------------------------------------------
+    // Procedural audio and background music
+    // ------------------------------------------------------------
+
+    function initAudio() {
+      if (audioReady) {
+        if (audio.state === "suspended") audio.resume();
+        return;
+      }
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return;
+      audio = new AudioCtor();
+      master = audio.createGain();
+      master.gain.value = 0.23;
+      master.connect(audio.destination);
+      engineGain = audio.createGain();
+      engineGain.gain.value = 0.001;
+      engineGain.connect(master);
+      engineOsc = audio.createOscillator();
+      engineOsc.type = "sawtooth";
+      engineOsc.frequency.value = 55;
+      const engineFilter = audio.createBiquadFilter();
+      engineFilter.type = "lowpass";
+      engineFilter.frequency.value = 320;
+      engineOsc.connect(engineFilter);
+      engineFilter.connect(engineGain);
+      engineOsc.start();
+      noiseBuffer = audio.createBuffer(1, audio.sampleRate, audio.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+      audioReady = true;
+    }
+
+    function tone(freq, duration, type = "square", volume = 0.08, slide = 0) {
+      if (!audioReady) return;
+      const now = audio.currentTime;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, freq + slide), now + duration);
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(now);
+      osc.stop(now + duration + 0.03);
+    }
+
+    function noise(duration = 0.2, volume = 0.08, filterFreq = 800) {
+      if (!audioReady || !noiseBuffer) return;
+      const now = audio.currentTime;
+      const source = audio.createBufferSource();
+      const filter = audio.createBiquadFilter();
+      const gain = audio.createGain();
+      source.buffer = noiseBuffer;
+      filter.type = "lowpass";
+      filter.frequency.value = filterFreq;
+      gain.gain.setValueAtTime(volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(master);
+      source.start(now);
+      source.stop(now + duration);
+    }
+
+    function sound(name) {
+      if (!audioReady) return;
+      if (name === "start") {
+        tone(220, 0.18, "square", 0.1, 110);
+        setTimeout(() => tone(330, 0.28, "square", 0.1, 220), 180);
+      }
+      if (name === "tick") tone(440, 0.09, "square", 0.08, -20);
+      if (name === "go") {
+        tone(660, 0.32, "square", 0.11, 440);
+        tone(330, 0.32, "triangle", 0.07, 220);
+      }
+      if (name === "pass") tone(520 + passCombo * 45, 0.12, "triangle", 0.075, 120);
+      if (name === "checkpoint") {
+        tone(440, 0.2, "square", 0.09, 220);
+        setTimeout(() => tone(660, 0.32, "triangle", 0.11, 440), 120);
+      }
+      if (name === "choice") {
+        tone(300, 0.12, "square", 0.07, 100);
+        tone(450, 0.2, "triangle", 0.06, 130);
+      }
+      if (name === "crash") {
+        noise(0.48, 0.24, 620);
+        tone(90, 0.45, "sawtooth", 0.12, -55);
+      }
+      if (name === "offroad") noise(0.1, 0.035, 1300);
+      if (name === "finish") {
+        [330, 440, 550, 660, 880].forEach((n, i) => {
+          setTimeout(() => tone(n, 0.32, i % 2 ? "triangle" : "square", 0.08, 90), i * 115);
+        });
+      }
+      if (name === "gameover") {
+        tone(280, 0.5, "sawtooth", 0.1, -120);
+        setTimeout(() => tone(150, 0.8, "triangle", 0.09, -70), 300);
+      }
+    }
+
+    function updateAudio(dt) {
+      if (!audioReady) return;
+      const speedPercent = speed / MAX_SPEED;
+      const now = audio.currentTime;
+      engineOsc.frequency.setTargetAtTime(48 + speedPercent * 115, now, 0.04);
+      engineGain.gain.setTargetAtTime(state === "race" ? 0.025 + speedPercent * 0.09 : 0.001, now, 0.05);
+      musicClock -= dt;
+      if (state === "race" && musicClock <= 0) {
+        musicClock = 0.22;
+        const roots = currentStage && currentStage.theme === "city"
+          ? [110, 146.8, 164.8, 130.8]
+          : [98, 130.8, 146.8, 110];
+        const pattern = [0, 0, 2, 0, 1, 0, 3, 2, 0, 2, 1, 3, 2, 1, 0, 3];
+        const root = roots[Math.floor(musicStep / 16) % roots.length];
+        const note = root * [1, 1.5, 2, 1.25][pattern[musicStep % pattern.length]];
+        tone(note, 0.12, musicStep % 4 === 0 ? "square" : "triangle", 0.018, -2);
+        if (musicStep % 4 === 0) tone(root / 2, 0.16, "triangle", 0.025, -8);
+        musicStep += 1;
+      }
+    }
+
+    // ------------------------------------------------------------
+    // Input
+    // ------------------------------------------------------------
+
+    document.addEventListener("keydown", event => {
+      if (keyboardMap[event.code]) {
+        input[keyboardMap[event.code]] = true;
+        event.preventDefault();
+      }
+      if (event.code === "Space" || event.code === "Enter") {
+        activate();
+        event.preventDefault();
+      }
+      if (state === "route") {
+        if (event.code === "ArrowLeft" || event.code === "KeyA") chooseRoute(-1);
+        if (event.code === "ArrowRight" || event.code === "KeyD") chooseRoute(1);
+      }
+    });
+
+    document.addEventListener("keyup", event => {
+      if (keyboardMap[event.code]) {
+        input[keyboardMap[event.code]] = false;
+        event.preventDefault();
+      }
+    });
+
+    canvas.addEventListener("pointerdown", event => {
+      initAudio();
+      if (state === "route") {
+        chooseRoute(event.clientX < W / 2 ? -1 : 1);
+      } else if (state !== "race" && state !== "countdown") {
+        activate();
+      }
+    });
+
+    for (const button of touchBar.querySelectorAll("button")) {
+      const key = button.dataset.key;
+      const set = on => {
+        input[key] = on;
+        button.classList.toggle("on", on);
+        initAudio();
+      };
+      button.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        if (state === "route" && (key === "left" || key === "right")) {
+          chooseRoute(key === "left" ? -1 : 1);
+        } else {
+          set(true);
+        }
+      });
+      button.addEventListener("pointerup", event => {
+        event.preventDefault();
+        set(false);
+      });
+      button.addEventListener("pointercancel", () => set(false));
+      button.addEventListener("pointerleave", () => set(false));
+    }
+
+    function activate() {
+      initAudio();
+      if (state === "title" || state === "gameover" || state === "finish") beginRun();
+      if (state === "route") chooseRoute(routeChoice || -1);
+    }
+
+    function chooseRoute(direction) {
+      if (state !== "route" || !routePrompt) return;
+      routeChoice = direction < 0 ? -1 : 1;
+      const next = direction < 0 ? routePrompt.left : routePrompt.right;
+      const label = direction < 0 ? routePrompt.leftLabel : routePrompt.rightLabel;
+      routeHistory.push({
+        from: currentStage.id,
+        to: next,
+        direction,
+        label
+      });
+      sound("choice");
+      checkpoint += 1;
+      timeLeft += currentStage.time;
+      score += 5000 + Math.floor(timeLeft * 100);
+      bannerText = `CHECKPOINT ${checkpoint}`;
+      bannerSub = `+${currentStage.time} SEC  •  ${label}`;
+      bannerClock = 3.2;
+      if (next === "finale" && currentStage.id === "finale") {
+        finishRun();
+        return;
+      }
+      setStage(next);
+      state = "race";
+      stateClock = 0;
+    }
+
+    // ------------------------------------------------------------
+    // Simulation
+    // ------------------------------------------------------------
+
+    function update(dt) {
+      frame += dt;
+      stateClock -= dt;
+      shake = Math.max(0, shake - dt * 24);
+      flash = Math.max(0, flash - dt * 2.8);
+      bannerClock = Math.max(0, bannerClock - dt);
+      closeCallClock = Math.max(0, closeCallClock - dt);
+      collisionCooldown = Math.max(0, collisionCooldown - dt);
+      passClock = Math.max(0, passClock - dt);
+      if (passClock <= 0) passCombo = 0;
+      titleCar += dt * 0.32;
+      sunPhase += dt * 0.07;
+      updateParticles(dt);
+      updateAudio(dt);
+
+      if (state === "title") {
+        speed = lerp(speed, MAX_SPEED * 0.62, dt * 0.8);
+        position = increase(position, speed * dt, STAGES.coast.length * SEGMENT_LENGTH);
+        return;
+      }
+
+      if (state === "countdown") {
+        if (stateClock <= 0) {
+          state = "race";
+          stateClock = 0;
+          sound("go");
+          bannerText = "GO!";
+          bannerSub = "CHASE THE LAST LIGHT";
+          bannerClock = 1.5;
+        } else {
+          const mark = Math.ceil(stateClock);
+          const previous = Math.ceil(stateClock + dt);
+          if (mark !== previous && mark <= 3) sound("tick");
+        }
+        return;
+      }
+
+      if (state === "route") {
+        speed = Math.max(0, speed + BRAKE * dt * 0.55);
+        position = increase(position, speed * dt, trackLength());
+        return;
+      }
+
+      if (state !== "race") return;
+
+      runClock += dt;
+      timeLeft -= dt;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        gameOver();
+        return;
+      }
+
+      const speedPercent = speed / MAX_SPEED;
+      const playerSegment = findSegment(position + PLAYER_Z);
+      const steerPower = dt * (1.65 - speedPercent * 0.42);
+      const centrifugal = playerSegment.curve * speedPercent * speedPercent * dt * 0.62;
+      if (input.left) playerX -= steerPower;
+      if (input.right) playerX += steerPower;
+      playerX -= centrifugal;
+      if (spin !== 0) {
+        spin += Math.sign(spin) * dt * 6;
+        playerX += Math.sin(spin * 5) * dt * 1.3;
+        if (Math.abs(spin) > 2.8) spin = 0;
+      }
+
+      if (input.gas) {
+        speed += ACCEL * dt;
+      } else if (input.brake) {
+        speed += BRAKE * dt;
+      } else {
+        speed += DECEL * dt;
+      }
+
+      if (Math.abs(playerX) > 1.03 && speed > OFFROAD_LIMIT) {
+        speed += OFFROAD_DECEL * dt;
+        if (Math.random() < dt * 11) {
+          spawnDust(W / 2 + playerX * W * 0.19, playableBottom * 0.88, 1);
+          sound("offroad");
+        }
+        shake = Math.max(shake, speedPercent * 1.6);
+      }
+
+      playerX = clamp(playerX, -2.15, 2.15);
+      speed = clamp(speed, 0, MAX_SPEED);
+      const distance = speed * dt;
+      position = increase(position, distance, trackLength());
+      stageDistance += distance;
+      score += distance * (0.028 + speedPercent * 0.035);
+      displayedScore = lerp(displayedScore, score, Math.min(1, dt * 7));
+      updateTraffic(dt);
+
+      if (stageDistance >= stageLength - SEGMENT_LENGTH * 3) {
+        if (currentStage.forks.length) {
+          routePrompt = currentStage.forks[0];
+          state = "route";
+          stateClock = 12;
+          speed *= 0.68;
+          sound("checkpoint");
+        } else {
+          finishRun();
+        }
+      }
+    }
+
+    function updateTraffic(dt) {
+      const playerWorldZ = increase(position, PLAYER_Z, trackLength());
+      const difficulty = 1 + checkpoint * 0.1;
+      for (const car of traffic) {
+        car.z = increase(car.z, car.speed * dt * difficulty, trackLength());
+        car.wobble += dt * random(0.4, 0.9);
+        if (Math.random() < dt * 0.15 * difficulty) {
+          car.targetOffset = clamp(car.offset + random(-0.4, 0.4), -0.82, 0.82);
+        }
+        car.offset = lerp(car.offset, car.targetOffset, dt * 0.3);
+        const dz = relativeDistance(car.z, playerWorldZ);
+
+        if (dz > -SEGMENT_LENGTH * 1.2 && dz < SEGMENT_LENGTH * 1.15) {
+          const overlap = Math.abs(playerX - car.offset);
+          if (overlap < car.width + 0.18 && collisionCooldown <= 0) {
+            collision(car);
+          }
+        }
+
+        if (dz < -SEGMENT_LENGTH && dz > -SEGMENT_LENGTH * 5 && !car.passed) {
+          car.passed = true;
+          const gap = Math.abs(playerX - car.offset);
+          if (gap < 0.5) {
+            passCombo += 1;
+            passClock = 3;
+            const award = 700 * passCombo;
+            score += award;
+            closeCallText = `CLOSE PASS ×${passCombo}  +${award}`;
+            closeCallClock = 1.6;
+            sound("pass");
+            spawnSparks(W / 2 + playerX * W * 0.16, playableBottom * 0.79, 7, COLORS.amber);
+          } else {
+            score += 150;
+          }
+        }
+
+        if (dz < -SEGMENT_LENGTH * 18) {
+          car.passed = false;
+          car.z = increase(playerWorldZ, random(SEGMENT_LENGTH * 50, SEGMENT_LENGTH * 145), trackLength());
+          car.offset = random(-0.82, 0.82);
+          car.targetOffset = car.offset;
+        }
+      }
+    }
+
+    function relativeDistance(a, b) {
+      let d = a - b;
+      const length = trackLength();
+      if (d > length / 2) d -= length;
+      if (d < -length / 2) d += length;
+      return d;
+    }
+
+    function collision(car) {
+      collisionCooldown = 1.3;
+      speed *= 0.36;
+      score = Math.max(0, score - 1800);
+      shake = 15;
+      flash = 0.65;
+      spin = car.offset < playerX ? 0.1 : -0.1;
+      playerX += car.offset < playerX ? 0.23 : -0.23;
+      closeCallText = "COLLISION  -1800";
+      closeCallClock = 1.8;
+      spawnSparks(W / 2 + playerX * W * 0.17, playableBottom * 0.79, 30, COLORS.pale);
+      sound("crash");
+    }
+
+    function finishRun() {
+      state = "finish";
+      stateClock = 999;
+      speed *= 0.8;
+      score += Math.floor(timeLeft * 1000);
+      highScore = Math.max(highScore, score | 0);
+      const path = routeHistory.map(r => r.to).join("-");
+      if (timeLeft > 48 && score > 70000) {
+        ending = "SUNSET LEGEND";
+      } else if (path.includes("mountain") && path.includes("desert")) {
+        ending = "THE WILD HORIZON";
+      } else if (path.includes("country") && path.includes("city")) {
+        ending = "POSTCARD HOMECOMING";
+      } else if (path.includes("city")) {
+        ending = "MIDNIGHT ARRIVAL";
+      } else {
+        ending = "COAST ROAD FOREVER";
+      }
+      sound("finish");
+      for (let i = 0; i < 80; i += 1) {
+        particles.push({
+          x: random(0, W),
+          y: random(-H * 0.3, H * 0.2),
+          vx: random(-35, 35),
+          vy: random(55, 170),
+          life: random(2, 5),
+          max: 5,
+          size: random(2, 6),
+          color: pick([COLORS.amber, COLORS.red, COLORS.cream, COLORS.seaLight]),
+          gravity: 15,
+          shape: "confetti"
+        });
+      }
+    }
+
+    function gameOver() {
+      state = "gameover";
+      stateClock = 999;
+      speed = 0;
+      highScore = Math.max(highScore, score | 0);
+      sound("gameover");
+    }
+
+    // ------------------------------------------------------------
+    // Particles
+    // ------------------------------------------------------------
+
+    function spawnDust(x, y, amount) {
+      for (let i = 0; i < amount; i += 1) {
+        particles.push({
+          x: x + random(-15, 15),
+          y: y + random(-5, 5),
+          vx: random(-28, 28),
+          vy: random(-35, -12),
+          life: random(0.35, 0.75),
+          max: 0.75,
+          size: random(4, 12),
+          color: pick(["#d0a36b", "#b78350", "#e0b97d"]),
+          gravity: -4,
+          shape: "circle"
+        });
+      }
+    }
+
+    function spawnSparks(x, y, amount, color) {
+      for (let i = 0; i < amount; i += 1) {
+        particles.push({
+          x,
+          y,
+          vx: random(-220, 220),
+          vy: random(-190, 50),
+          life: random(0.25, 0.7),
+          max: 0.7,
+          size: random(1.5, 4),
+          color,
+          gravity: 440,
+          shape: "spark"
+        });
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i -= 1) {
+        const p = particles[i];
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += p.gravity * dt;
+        p.vx *= 0.99;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (const p of particles) {
+        const a = clamp(p.life / p.max, 0, 1);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        if (p.shape === "circle") {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * (1.4 - a * 0.4), 0, TAU);
+          ctx.fill();
+        } else if (p.shape === "spark") {
+          ctx.strokeStyle = p.color;
+          ctx.lineWidth = p.size;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x - p.vx * 0.025, p.y - p.vy * 0.025);
+          ctx.stroke();
+        } else {
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.x * 0.04);
+          ctx.fillRect(-p.size, -p.size * 0.45, p.size * 2, p.size * 0.9);
+          ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        }
+      }
+      ctx.restore();
+    }
+
+    // ------------------------------------------------------------
+    // Projection and world rendering
+    // ------------------------------------------------------------
+
+    function project(worldX, worldY, worldZ, cameraX, cameraY, cameraZ) {
+      const dz = worldZ - cameraZ;
+      const scale = CAMERA_DEPTH / Math.max(0.0001, dz);
+      return {
+        scale,
+        x: Math.round(W / 2 + scale * (worldX - cameraX) * W / 2),
+        y: Math.round(horizon - scale * (worldY - cameraY) * playableBottom / 2),
+        w: Math.round(scale * ROAD_WIDTH * W / 2)
+      };
+    }
+
+    function polygon(color, ...coords) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(coords[0], coords[1]);
+      for (let i = 2; i < coords.length; i += 2) ctx.lineTo(coords[i], coords[i + 1]);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawBackground(theme) {
+      const grad = ctx.createLinearGradient(0, 0, 0, horizon + 8);
+      grad.addColorStop(0, theme.skyTop);
+      grad.addColorStop(1, theme.skyBottom);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, horizon + 8);
+
+      if (currentStage && currentStage.theme === "city") {
+        for (const star of stars) {
+          ctx.globalAlpha = star.a * (0.75 + Math.sin(frame * 2 + star.x) * 0.25);
+          ctx.fillStyle = COLORS.cream;
+          ctx.fillRect(star.x, star.y, star.s, star.s);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      const sunX = W * (0.76 + Math.sin(sunPhase) * 0.015);
+      const sunY = horizon * 0.49;
+      const sunR = Math.max(25, Math.min(W, playableBottom) * 0.078);
+      ctx.fillStyle = currentStage && currentStage.theme === "city" ? "#e5b367" : "#f3c76f";
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, sunR, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = theme.skyBottom;
+      for (let y = sunY + sunR * 0.05; y < sunY + sunR; y += 7) {
+        ctx.fillRect(sunX - sunR, y, sunR * 2, 3);
+      }
+
+      drawDistantScenery(theme);
+    }
+
+    function drawDistantScenery(theme) {
+      const stageTheme = currentStage ? currentStage.theme : "coast";
+      if (stageTheme === "coast" || stageTheme === "finale") {
+        ctx.fillStyle = COLORS.sea;
+        ctx.fillRect(0, horizon * 0.79, W, horizon * 0.23);
+        ctx.fillStyle = "rgba(255,240,190,.28)";
+        for (let i = 0; i < 9; i += 1) {
+          const x = (i * 151 + frame * 7) % (W + 120) - 60;
+          ctx.fillRect(x, horizon * 0.85 + (i % 3) * 8, 45, 2);
+        }
+        polygon("#6a6652", 0, horizon, W * 0.18, horizon * 0.62, W * 0.37, horizon);
+        polygon("#565b50", W * 0.7, horizon, W * 0.86, horizon * 0.69, W, horizon);
+      } else if (stageTheme === "mountain") {
+        polygon("#6f6d65",
+          0, horizon,
+          W * 0.12, horizon * 0.53,
+          W * 0.26, horizon * 0.87,
+          W * 0.43, horizon * 0.42,
+          W * 0.62, horizon * 0.9,
+          W * 0.78, horizon * 0.49,
+          W, horizon * 0.82,
+          W, horizon
+        );
+        polygon("#d9c8aa",
+          W * 0.34, horizon * 0.58,
+          W * 0.43, horizon * 0.42,
+          W * 0.49, horizon * 0.61,
+          W * 0.43, horizon * 0.55
+        );
+      } else if (stageTheme === "city") {
+        ctx.fillStyle = "#34383a";
+        for (let x = 0; x < W; x += 28) {
+          const bh = 28 + ((x * 13) % 85);
+          ctx.fillRect(x, horizon - bh, 24, bh);
+          ctx.fillStyle = "#c49157";
+          if (x % 56 === 0) ctx.fillRect(x + 6, horizon - bh + 9, 4, 4);
+          ctx.fillStyle = "#34383a";
+        }
+      } else {
+        polygon(stageTheme === "desert" ? "#9c623f" : "#687147",
+          0, horizon,
+          W * 0.13, horizon * 0.72,
+          W * 0.28, horizon * 0.88,
+          W * 0.47, horizon * 0.67,
+          W * 0.66, horizon * 0.9,
+          W * 0.83, horizon * 0.74,
+          W, horizon
+        );
+      }
+    }
+
+    function buildProjection() {
+      projected = [];
+      const baseSegment = findSegment(position);
+      const basePercent = percentRemaining(position, SEGMENT_LENGTH);
+      const playerSegment = findSegment(position + PLAYER_Z);
+      const playerPercent = percentRemaining(position + PLAYER_Z, SEGMENT_LENGTH);
+      const playerY = lerp(playerSegment.y1, playerSegment.y2, playerPercent);
+      let x = 0;
+      let dx = -(baseSegment.curve * basePercent);
+      let maxY = playableBottom;
+      const count = stageSegmentCount();
+
+      for (let n = 0; n < DRAW_DISTANCE; n += 1) {
+        const index = (baseSegment.index + n) % count;
+        const looped = index < baseSegment.index;
+        const segment = {
+          index,
+          curve: stageCurve(currentStage || STAGES.coast, index),
+          y1: stageHill(currentStage || STAGES.coast, index),
+          y2: stageHill(currentStage || STAGES.coast, (index + 1) % count)
+        };
+        const z1 = index * SEGMENT_LENGTH + (looped ? trackLength() : 0);
+        const z2 = z1 + SEGMENT_LENGTH;
+        const p1 = project(
+          x,
+          segment.y1,
+          z1,
+          playerX * ROAD_WIDTH,
+          playerY + CAMERA_HEIGHT,
+          position
+        );
+        const p2 = project(
+          x + dx,
+          segment.y2,
+          z2,
+          playerX * ROAD_WIDTH,
+          playerY + CAMERA_HEIGHT,
+          position
+        );
+        x += dx;
+        dx += segment.curve;
+        const hidden = p2.y >= maxY || p2.y >= p1.y;
+        if (!hidden) maxY = p2.y;
+        projected.push({
+          index,
+          n,
+          p1,
+          p2,
+          hidden,
+          clip: maxY,
+          segment
+        });
+      }
+    }
+
+    function drawRoad(theme) {
+      buildProjection();
+      ctx.fillStyle = theme.groundA;
+      ctx.fillRect(0, horizon, W, playableBottom - horizon);
+
+      for (let i = projected.length - 1; i >= 0; i -= 1) {
+        const item = projected[i];
+        if (item.hidden) continue;
+        const { p1, p2, index } = item;
+        const alternating = Math.floor(index / 3) % 2 === 0;
+        const ground = alternating ? theme.groundA : theme.groundB;
+        const road = alternating ? theme.roadA : theme.roadB;
+        const rumble = alternating ? theme.rumbleA : theme.rumbleB;
+        const rumble1 = p1.w * 1.13;
+        const rumble2 = p2.w * 1.13;
+
+        polygon(ground,
+          0, p2.y,
+          W, p2.y,
+          W, p1.y,
+          0, p1.y
+        );
+        polygon(rumble,
+          p1.x - rumble1, p1.y,
+          p1.x - p1.w, p1.y,
+          p2.x - p2.w, p2.y,
+          p2.x - rumble2, p2.y
+        );
+        polygon(rumble,
+          p1.x + p1.w, p1.y,
+          p1.x + rumble1, p1.y,
+          p2.x + rumble2, p2.y,
+          p2.x + p2.w, p2.y
+        );
+        polygon(road,
+          p1.x - p1.w, p1.y,
+          p1.x + p1.w, p1.y,
+          p2.x + p2.w, p2.y,
+          p2.x - p2.w, p2.y
+        );
+
+        if (alternating) {
+          for (let lane = 1; lane < 3; lane += 1) {
+            const laneX1 = lerp(p1.x - p1.w, p1.x + p1.w, lane / 3);
+            const laneX2 = lerp(p2.x - p2.w, p2.x + p2.w, lane / 3);
+            const marker1 = Math.max(1, p1.w * 0.012);
+            const marker2 = Math.max(1, p2.w * 0.012);
+            polygon(theme.lane,
+              laneX1 - marker1, p1.y,
+              laneX1 + marker1, p1.y,
+              laneX2 + marker2, p2.y,
+              laneX2 - marker2, p2.y
+            );
+          }
+        }
+      }
+    }
+
+    function drawWorldObjects() {
+      const bySegment = new Map();
+      for (const item of roadside) {
+        if (!bySegment.has(item.segment)) bySegment.set(item.segment, []);
+        bySegment.get(item.segment).push(item);
+      }
+
+      const carsBySegment = new Map();
+      for (const car of traffic) {
+        const segment = Math.floor(car.z / SEGMENT_LENGTH) % stageSegmentCount();
+        if (!carsBySegment.has(segment)) carsBySegment.set(segment, []);
+        carsBySegment.get(segment).push(car);
+      }
+
+      for (let i = projected.length - 1; i >= 0; i -= 1) {
+        const item = projected[i];
+        if (item.hidden || item.n < 2) continue;
+        const objects = bySegment.get(item.index) || [];
+        for (const object of objects) drawRoadsideObject(object, item.p1, item.clip);
+        const cars = carsBySegment.get(item.index) || [];
+        for (const car of cars) drawTrafficCar(car, item.p1, item.clip);
+      }
+    }
+
+    function drawRoadsideObject(object, p, clip) {
+      const scale = p.scale * W / 2;
+      const x = p.x + p.w * object.offset;
+      const y = p.y;
+      const s = scale * object.scale;
+      if (s < 1 || y > clip + 3) return;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      ctx.rect(-W, -H, W * 2, clip - y);
+      ctx.clip();
+      if (object.type === "palm") drawPalm(s);
+      if (object.type === "tree") drawTree(s);
+      if (object.type === "pine") drawPine(s);
+      if (object.type === "rock") drawRock(s, object.variant);
+      if (object.type === "cactus") drawCactus(s);
+      if (object.type === "barn") drawBarn(s);
+      if (object.type === "hay") drawHay(s);
+      if (object.type === "fence") drawFence(s);
+      if (object.type === "sign") drawSign(s, object.variant);
+      if (object.type === "snowpost") drawSnowpost(s);
+      if (object.type === "building") drawBuilding(s, object.variant);
+      if (object.type === "lamp") drawLamp(s);
+      if (object.type === "awning") drawAwning(s);
+      ctx.restore();
+    }
+
+    function drawPalm(s) {
+      const h = s * 560;
+      ctx.strokeStyle = "#6a4930";
+      ctx.lineWidth = Math.max(1, s * 35);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(s * 45, -h * 0.55, 0, -h);
+      ctx.stroke();
+      ctx.strokeStyle = "#536b3e";
+      ctx.lineWidth = Math.max(1, s * 24);
+      for (let i = 0; i < 7; i += 1) {
+        const a = -Math.PI + i * Math.PI / 6;
+        ctx.beginPath();
+        ctx.moveTo(0, -h);
+        ctx.quadraticCurveTo(Math.cos(a) * s * 230, -h + Math.sin(a) * s * 95, Math.cos(a) * s * 330, -h + Math.sin(a) * s * 160);
+        ctx.stroke();
+      }
+    }
+
+    function drawTree(s) {
+      const h = s * 470;
+      ctx.fillStyle = "#68482e";
+      ctx.fillRect(-s * 24, -h * 0.58, s * 48, h * 0.58);
+      ctx.fillStyle = "#596c3c";
+      for (let i = 0; i < 7; i += 1) {
+        ctx.beginPath();
+        ctx.arc((i % 3 - 1) * s * 90, -h * (0.65 + (i % 2) * 0.12), s * (100 + i % 2 * 22), 0, TAU);
+        ctx.fill();
+      }
+    }
+
+    function drawPine(s) {
+      const h = s * 620;
+      ctx.fillStyle = "#574331";
+      ctx.fillRect(-s * 18, -h * 0.42, s * 36, h * 0.42);
+      ctx.fillStyle = "#425b45";
+      for (let i = 0; i < 4; i += 1) {
+        const yy = -h * (0.28 + i * 0.18);
+        const ww = s * (220 - i * 34);
+        polygon("#425b45", -ww, yy, ww, yy, 0, yy - s * 270);
+      }
+    }
+
+    function drawRock(s, variant) {
+      const w = s * (250 + variant * 25);
+      const h = s * (180 + variant * 20);
+      polygon("#76604a", -w, 0, -w * 0.66, -h * 0.8, -w * 0.12, -h, w * 0.75, -h * 0.55, w, 0);
+      polygon("#967658", -w * 0.66, -h * 0.8, -w * 0.12, -h, w * 0.18, -h * 0.44, -w * 0.22, -h * 0.28);
+    }
+
+    function drawCactus(s) {
+      const h = s * 420;
+      ctx.strokeStyle = "#556b43";
+      ctx.lineWidth = Math.max(1, s * 78);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -h);
+      ctx.moveTo(0, -h * 0.53);
+      ctx.lineTo(-s * 130, -h * 0.53);
+      ctx.lineTo(-s * 130, -h * 0.72);
+      ctx.moveTo(0, -h * 0.68);
+      ctx.lineTo(s * 120, -h * 0.68);
+      ctx.lineTo(s * 120, -h * 0.86);
+      ctx.stroke();
+      ctx.lineCap = "butt";
+    }
+
+    function drawBarn(s) {
+      const w = s * 390;
+      const h = s * 300;
+      ctx.fillStyle = "#8e4636";
+      ctx.fillRect(-w, -h, w * 2, h);
+      polygon("#55372b", -w * 1.15, -h, 0, -h * 1.52, w * 1.15, -h);
+      ctx.fillStyle = "#d4c098";
+      ctx.fillRect(-w * 0.25, -h * 0.55, w * 0.5, h * 0.55);
+      ctx.strokeStyle = "#8e4636";
+      ctx.lineWidth = Math.max(1, s * 20);
+      ctx.beginPath();
+      ctx.moveTo(-w * 0.25, -h * 0.55);
+      ctx.lineTo(w * 0.25, 0);
+      ctx.moveTo(w * 0.25, -h * 0.55);
+      ctx.lineTo(-w * 0.25, 0);
+      ctx.stroke();
+    }
+
+    function drawHay(s) {
+      ctx.fillStyle = "#c59b4e";
+      ctx.beginPath();
+      ctx.arc(0, -s * 120, s * 135, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = "#8f6d38";
+      ctx.lineWidth = Math.max(1, s * 15);
+      ctx.beginPath();
+      ctx.arc(0, -s * 120, s * 70, 0, TAU);
+      ctx.stroke();
+    }
+
+    function drawFence(s) {
+      ctx.strokeStyle = "#a68b62";
+      ctx.lineWidth = Math.max(1, s * 22);
+      ctx.beginPath();
+      ctx.moveTo(-s * 350, 0);
+      ctx.lineTo(-s * 350, -s * 150);
+      ctx.moveTo(s * 350, 0);
+      ctx.lineTo(s * 350, -s * 150);
+      ctx.moveTo(-s * 400, -s * 125);
+      ctx.lineTo(s * 400, -s * 125);
+      ctx.moveTo(-s * 400, -s * 65);
+      ctx.lineTo(s * 400, -s * 65);
+      ctx.stroke();
+    }
+
+    function drawSign(s, variant) {
+      const w = s * 220;
+      const h = s * 120;
+      ctx.fillStyle = "#6b4931";
+      ctx.fillRect(-s * 18, -s * 240, s * 36, s * 240);
+      ctx.fillStyle = variant % 2 ? "#d6b466" : "#e2cf9b";
+      ctx.fillRect(-w, -s * 340, w * 2, h);
+      ctx.fillStyle = "#6c3c2d";
+      ctx.fillRect(-w * 0.74, -s * 304, w * 1.48, s * 20);
+    }
+
+    function drawSnowpost(s) {
+      ctx.fillStyle = "#e3d6ba";
+      ctx.fillRect(-s * 24, -s * 330, s * 48, s * 330);
+      ctx.fillStyle = "#a34d3d";
+      ctx.fillRect(-s * 24, -s * 280, s * 48, s * 70);
+    }
+
+    function drawBuilding(s, variant) {
+      const w = s * (270 + variant * 35);
+      const h = s * (620 + variant * 130);
+      ctx.fillStyle = variant % 2 ? "#4c4943" : "#555048";
+      ctx.fillRect(-w, -h, w * 2, h);
+      ctx.fillStyle = "#c99d5a";
+      for (let yy = -h + s * 80; yy < -s * 50; yy += s * 110) {
+        for (let xx = -w + s * 55; xx < w - s * 30; xx += s * 90) {
+          if ((xx + yy + variant) % 3) ctx.fillRect(xx, yy, s * 35, s * 52);
+        }
+      }
+    }
+
+    function drawLamp(s) {
+      ctx.strokeStyle = "#463b31";
+      ctx.lineWidth = Math.max(1, s * 24);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -s * 470);
+      ctx.quadraticCurveTo(0, -s * 530, s * 90, -s * 530);
+      ctx.stroke();
+      ctx.fillStyle = "#edc477";
+      ctx.beginPath();
+      ctx.arc(s * 90, -s * 520, s * 38, 0, TAU);
+      ctx.fill();
+    }
+
+    function drawAwning(s) {
+      const w = s * 360;
+      ctx.fillStyle = "#5b5148";
+      ctx.fillRect(-w, -s * 520, w * 2, s * 520);
+      polygon("#b65a45", -w * 1.1, -s * 430, w * 1.1, -s * 430, w * 0.83, -s * 320, -w * 0.83, -s * 320);
+    }
+
+    function drawTrafficCar(car, p, clip) {
+      const s = p.scale * W / 2;
+      const x = p.x + p.w * car.offset;
+      const y = p.y;
+      const width = s * (car.kind === "truck" ? 520 : car.kind === "van" ? 430 : 390);
+      const height = s * (car.kind === "truck" ? 620 : car.kind === "van" ? 520 : 330);
+      if (width < 1 || y > clip + 2) return;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      ctx.rect(-W, -H, W * 2, clip - y);
+      ctx.clip();
+      ctx.fillStyle = "rgba(35,22,15,.38)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, width * 0.62, height * 0.12, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#211c18";
+      ctx.fillRect(-width * 0.55, -height * 0.26, width * 0.16, height * 0.32);
+      ctx.fillRect(width * 0.39, -height * 0.26, width * 0.16, height * 0.32);
+      ctx.fillStyle = car.color;
+      polygon(car.color,
+        -width * 0.58, 0,
+        -width * 0.52, -height * 0.6,
+        -width * 0.3, -height,
+        width * 0.3, -height,
+        width * 0.52, -height * 0.6,
+        width * 0.58, 0
+      );
+      ctx.fillStyle = "#33454a";
+      polygon("#33454a",
+        -width * 0.27, -height * 0.92,
+        width * 0.27, -height * 0.92,
+        width * 0.39, -height * 0.58,
+        -width * 0.39, -height * 0.58
+      );
+      ctx.fillStyle = "#e3b25e";
+      ctx.fillRect(-width * 0.46, -height * 0.28, width * 0.14, height * 0.1);
+      ctx.fillRect(width * 0.32, -height * 0.28, width * 0.14, height * 0.1);
+      ctx.fillStyle = "#7d2c28";
+      ctx.fillRect(-width * 0.45, -height * 0.14, width * 0.14, height * 0.08);
+      ctx.fillRect(width * 0.31, -height * 0.14, width * 0.14, height * 0.08);
+      ctx.restore();
+    }
+
+    // ------------------------------------------------------------
+    // Player car and interface
+    // ------------------------------------------------------------
+
+    function drawPlayerCar() {
+      if (state === "title") return;
+      const speedPercent = speed / MAX_SPEED;
+      const bounce = Math.sin(frame * 34) * speedPercent * 1.8;
+      const steer = (input.left ? -1 : 0) + (input.right ? 1 : 0);
+      const carW = clamp(W * 0.25, 104, 235);
+      const carH = carW * 0.49;
+      const x = W / 2 + steer * carW * 0.035 + Math.sin(spin * 4) * carW * 0.25;
+      const y = playableBottom - carH * 0.24 + bounce;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(Math.sin(spin * 4) * 0.18);
+      ctx.fillStyle = "rgba(25,16,11,.48)";
+      ctx.beginPath();
+      ctx.ellipse(0, carH * 0.06, carW * 0.55, carH * 0.22, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#1c1815";
+      ctx.fillRect(-carW * 0.47, -carH * 0.14, carW * 0.15, carH * 0.33);
+      ctx.fillRect(carW * 0.32, -carH * 0.14, carW * 0.15, carH * 0.33);
+      polygon("#7e2525",
+        -carW * 0.55, carH * 0.07,
+        -carW * 0.48, -carH * 0.48,
+        -carW * 0.29, -carH * 0.7,
+        carW * 0.29, -carH * 0.7,
+        carW * 0.48, -carH * 0.48,
+        carW * 0.55, carH * 0.07
+      );
+      polygon("#b83b32",
+        -carW * 0.45, -carH * 0.44,
+        -carW * 0.25, -carH * 0.78,
+        carW * 0.25, -carH * 0.78,
+        carW * 0.45, -carH * 0.44
+      );
+      ctx.fillStyle = "#2f3532";
+      ctx.fillRect(-carW * 0.28, -carH * 0.69, carW * 0.56, carH * 0.18);
+      ctx.strokeStyle = "#d0aa77";
+      ctx.lineWidth = Math.max(2, carW * 0.018);
+      ctx.beginPath();
+      ctx.moveTo(-carW * 0.34, -carH * 0.5);
+      ctx.lineTo(-carW * 0.25, -carH * 0.82);
+      ctx.lineTo(carW * 0.25, -carH * 0.82);
+      ctx.lineTo(carW * 0.34, -carH * 0.5);
+      ctx.stroke();
+      drawPassenger(-carW * 0.13, -carH * 0.69, carW * 0.075, "#6b3928", "#d29b68");
+      drawPassenger(carW * 0.14, -carH * 0.69, carW * 0.075, "#d1aa65", "#c98d64");
+      ctx.fillStyle = "#f1c06e";
+      ctx.fillRect(-carW * 0.43, -carH * 0.27, carW * 0.14, carH * 0.11);
+      ctx.fillRect(carW * 0.29, -carH * 0.27, carW * 0.14, carH * 0.11);
+      ctx.fillStyle = "#711d20";
+      ctx.fillRect(-carW * 0.44, -carH * 0.08, carW * 0.15, carH * 0.09);
+      ctx.fillRect(carW * 0.29, -carH * 0.08, carW * 0.15, carH * 0.09);
+      ctx.fillStyle = "#d7c39b";
+      ctx.fillRect(-carW * 0.16, -carH * 0.06, carW * 0.32, carH * 0.09);
+      ctx.fillStyle = "#4b3729";
+      ctx.fillRect(-carW * 0.09, -carH * 0.035, carW * 0.18, carH * 0.018);
+      ctx.restore();
+    }
+
+    function drawPassenger(x, y, r, hair, skin) {
+      ctx.fillStyle = hair;
+      ctx.beginPath();
+      ctx.arc(x, y - r * 0.25, r * 1.15, Math.PI, TAU);
+      ctx.fill();
+      ctx.fillStyle = skin;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#f0d7ad";
+      ctx.fillRect(x - r * 1.2, y + r * 0.7, r * 2.4, r * 1.4);
+    }
+
+    function drawHUD() {
+      if (state === "title") return;
+      const compact = W < 480;
+      const pad = compact ? 7 : 13;
+      const boxH = compact ? 42 : 52;
+      const leftW = compact ? 114 : 165;
+      const rightW = compact ? 110 : 160;
+      ctx.fillStyle = "rgba(29,21,15,.68)";
+      roundedRect(pad, pad, leftW, boxH, 6);
+      ctx.fill();
+      roundedRect(W - pad - rightW, pad, rightW, boxH, 6);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,225,171,.35)";
+      ctx.lineWidth = 1;
+      roundedRect(pad, pad, leftW, boxH, 6);
+      ctx.stroke();
+      roundedRect(W - pad - rightW, pad, rightW, boxH, 6);
+      ctx.stroke();
+      text("SCORE", pad + 8, pad + 11, compact ? 8 : 10, COLORS.amber, "left");
+      text(formatScore(displayedScore), pad + 8, pad + 29, compact ? 14 : 19, COLORS.cream, "left");
+      text("TIME", W - pad - 8, pad + 11, compact ? 8 : 10, COLORS.amber, "right");
+      text(formatTime(timeLeft), W - pad - 8, pad + 29, compact ? 15 : 20, timeLeft < 10 ? "#e7684f" : COLORS.cream, "right");
+
+      const speedX = W / 2;
+      text(`${Math.round(speed / MAX_SPEED * 280)}`, speedX, pad + 17, compact ? 16 : 23, COLORS.cream);
+      text("KM/H", speedX, pad + 34, compact ? 7 : 9, COLORS.amber);
+
+      if (currentStage) {
+        text(currentStage.name, W / 2, compact ? 66 : 78, compact ? 9 : 12, "rgba(255,241,202,.8)");
+        const progress = clamp(stageDistance / stageLength, 0, 1);
+        const barW = Math.min(W * 0.44, 280);
+        ctx.fillStyle = "rgba(31,22,15,.55)";
+        ctx.fillRect(W / 2 - barW / 2, compact ? 75 : 90, barW, 4);
+        ctx.fillStyle = COLORS.amber;
+        ctx.fillRect(W / 2 - barW / 2, compact ? 75 : 90, barW * progress, 4);
+      }
+
+      if (closeCallClock > 0) {
+        const alpha = clamp(closeCallClock, 0, 1);
+        ctx.globalAlpha = alpha;
+        shadowText(closeCallText, W / 2, playableBottom * 0.25, compact ? 13 : 19, COLORS.cream);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawBanner() {
+      if (bannerClock <= 0 || state === "title") return;
+      const alpha = clamp(Math.min(bannerClock, 3.2 - bannerClock) * 2.2, 0, 1);
+      const y = playableBottom * 0.31;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "rgba(38,24,15,.75)";
+      ctx.fillRect(0, y - 34, W, 68);
+      ctx.fillStyle = COLORS.amber;
+      ctx.fillRect(0, y - 36, W, 2);
+      ctx.fillRect(0, y + 34, W, 2);
+      shadowText(bannerText, W / 2, y - 8, clamp(W * 0.045, 16, 30), COLORS.cream);
+      text(bannerSub, W / 2, y + 18, clamp(W * 0.021, 8, 13), COLORS.amber);
+      ctx.globalAlpha = 1;
+    }
+
+    function drawCountdown() {
+      if (state !== "countdown") return;
+      const number = Math.ceil(stateClock);
+      const value = number > 3 ? "READY" : number > 0 ? String(number) : "GO!";
+      shadowText(value, W / 2, playableBottom * 0.43, clamp(W * 0.18, 54, 118), COLORS.cream);
+    }
+
+    function drawRouteScreen() {
+      if (state !== "route" || !routePrompt) return;
+      const compact = W < 480;
+      ctx.fillStyle = "rgba(28,20,14,.74)";
+      ctx.fillRect(0, 0, W, playableBottom);
+      shadowText("CHOOSE YOUR ROAD", W / 2, playableBottom * 0.2, compact ? 22 : 38, COLORS.cream);
+      text(`CHECKPOINT ${checkpoint + 1}`, W / 2, playableBottom * 0.27, compact ? 10 : 14, COLORS.amber);
+      const cardW = Math.min(compact ? W * 0.43 : 260, W * 0.45);
+      const cardH = compact ? 112 : 150;
+      drawRouteCard(W / 2 - cardW - 7, playableBottom * 0.36, cardW, cardH, "◀", routePrompt.leftLabel, routePrompt.left, routeChoice === -1);
+      drawRouteCard(W / 2 + 7, playableBottom * 0.36, cardW, cardH, "▶", routePrompt.rightLabel, routePrompt.right, routeChoice === 1);
+      text("STEER OR TAP TO SELECT", W / 2, playableBottom * 0.76, compact ? 9 : 13, COLORS.pale);
+      text(`TIME BONUS +${currentStage.time} SEC`, W / 2, playableBottom * 0.82, compact ? 9 : 12, COLORS.amber);
+    }
+
+    function drawRouteCard(x, y, w, h, arrow, label, stageId, selected) {
+      ctx.fillStyle = selected ? "rgba(187,118,52,.75)" : "rgba(73,51,32,.86)";
+      roundedRect(x, y, w, h, 8);
+      ctx.fill();
+      ctx.strokeStyle = selected ? COLORS.cream : "rgba(255,225,170,.42)";
+      ctx.lineWidth = selected ? 3 : 1;
+      roundedRect(x, y, w, h, 8);
+      ctx.stroke();
+      text(arrow, x + w / 2, y + h * 0.24, h * 0.22, COLORS.cream);
+      text(label, x + w / 2, y + h * 0.55, Math.min(13, w * 0.075), COLORS.cream);
+      text(STAGES[stageId].subtitle.toUpperCase(), x + w / 2, y + h * 0.75, Math.min(8, w * 0.048), COLORS.amber);
+    }
+
+    function drawTitle() {
+      if (state !== "title") return;
+      const compact = W < 480;
+      ctx.fillStyle = "rgba(28,20,14,.28)";
+      ctx.fillRect(0, 0, W, H);
+      const titleY = playableBottom * 0.23;
+      shadowText("COASTAL", W / 2, titleY, clamp(W * 0.105, 36, 86), COLORS.cream);
+      shadowText("RUSH '86", W / 2, titleY + clamp(W * 0.095, 34, 75), clamp(W * 0.115, 39, 94), COLORS.orange);
+      text("THE ROAD CHANGES. THE MEMORY LASTS.", W / 2, titleY + clamp(W * 0.18, 70, 142), compact ? 8 : 13, COLORS.pale);
+      const panelY = playableBottom * 0.68;
+      ctx.fillStyle = "rgba(42,29,18,.77)";
+      roundedRect(W / 2 - Math.min(W * 0.43, 285), panelY, Math.min(W * 0.86, 570), compact ? 98 : 122, 8);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,225,172,.42)";
+      roundedRect(W / 2 - Math.min(W * 0.43, 285), panelY, Math.min(W * 0.86, 570), compact ? 98 : 122, 8);
+      ctx.stroke();
+      shadowText("PRESS ENTER / TAP TO DRIVE", W / 2, panelY + 22, compact ? 12 : 18, COLORS.cream);
+      text("ARROWS / WASD  •  STEER  •  GAS  •  BRAKE", W / 2, panelY + 48, compact ? 7 : 11, COLORS.amber);
+      text("MAKE THE FORKS • BEAT THE CLOCK • FIND YOUR ENDING", W / 2, panelY + 67, compact ? 6 : 9, COLORS.pale);
+      text(`HIGH SCORE  ${formatScore(highScore)}`, W / 2, panelY + (compact ? 86 : 94), compact ? 8 : 11, COLORS.amber);
+    }
+
+    function drawEndScreen() {
+      if (state !== "finish" && state !== "gameover") return;
+      const won = state === "finish";
+      const compact = W < 480;
+      ctx.fillStyle = "rgba(27,19,13,.82)";
+      ctx.fillRect(0, 0, W, H);
+      shadowText(won ? "TOUR COMPLETE" : "TIME'S UP", W / 2, playableBottom * 0.2, compact ? 30 : 52, won ? COLORS.cream : "#df7b57");
+      if (won) {
+        text(ending, W / 2, playableBottom * 0.29, compact ? 14 : 22, COLORS.amber);
+      } else {
+        text("THE COAST ROAD WAITS", W / 2, playableBottom * 0.29, compact ? 11 : 17, COLORS.amber);
+      }
+      const panelW = Math.min(W * 0.86, 480);
+      const panelY = playableBottom * 0.37;
+      const panelH = compact ? 155 : 190;
+      ctx.fillStyle = "rgba(72,49,30,.72)";
+      roundedRect(W / 2 - panelW / 2, panelY, panelW, panelH, 9);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,225,170,.42)";
+      roundedRect(W / 2 - panelW / 2, panelY, panelW, panelH, 9);
+      ctx.stroke();
+      text("FINAL SCORE", W / 2, panelY + 22, compact ? 9 : 12, COLORS.amber);
+      shadowText(formatScore(score), W / 2, panelY + 50, compact ? 25 : 38, COLORS.cream);
+      text(`HIGH SCORE  ${formatScore(highScore)}`, W / 2, panelY + 80, compact ? 9 : 12, COLORS.pale);
+      text(`CHECKPOINTS  ${checkpoint}   •   PASSES  ${passCombo}`, W / 2, panelY + 105, compact ? 8 : 11, COLORS.amber);
+      const route = routeHistory.length
+        ? routeHistory.map(r => r.label).join("  ›  ")
+        : "AZURE COAST";
+      text(route, W / 2, panelY + 128, Math.min(compact ? 7 : 9, panelW / Math.max(26, route.length) * 1.6), COLORS.pale);
+      shadowText("PRESS ENTER / TAP TO RUN AGAIN", W / 2, playableBottom * 0.78, compact ? 11 : 16, COLORS.cream);
+    }
+
+    function drawVignette() {
+      const grad = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.2, W / 2, H / 2, Math.max(W, H) * 0.74);
+      grad.addColorStop(0, "rgba(0,0,0,0)");
+      grad.addColorStop(1, "rgba(18,11,7,.48)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = "#fff0cc";
+      for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
+      ctx.globalAlpha = 1;
+    }
+
+    function render() {
+      const theme = THEMES[currentStage ? currentStage.theme : "coast"];
+      ctx.save();
+      if (shake > 0) ctx.translate(random(-shake, shake), random(-shake, shake));
+      drawBackground(theme);
+      drawRoad(theme);
+      drawWorldObjects();
+      drawPlayerCar();
+      drawParticles();
+      drawHUD();
+      drawBanner();
+      drawCountdown();
+      drawRouteScreen();
+      drawTitle();
+      drawEndScreen();
+      drawVignette();
+      if (flash > 0) {
+        ctx.globalAlpha = flash;
+        ctx.fillStyle = COLORS.cream;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    }
+
+    // ------------------------------------------------------------
+    // Main loop
+    // ------------------------------------------------------------
+
+    function loop(now) {
+      const dt = Math.min(0.05, Math.max(0, (now - lastTime) / 1000));
+      lastTime = now;
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    currentStage = STAGES.coast;
+    stageLength = currentStage.length * SEGMENT_LENGTH;
+    buildRoadside();
+    buildTraffic();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

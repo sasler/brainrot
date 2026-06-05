@@ -11,10 +11,10 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     // Tagline
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
-    // Arena section with 15 game cards
+    // Arena section with 16 game cards
     const arena = page.locator("#arena");
     const gameCards = arena.locator('a[href^="/games/"]');
-    await expect(gameCards).toHaveCount(15);
+    await expect(gameCards).toHaveCount(16);
 
     // Game card titles present in arena section
     await expect(
@@ -76,6 +76,11 @@ test.describe("BrainRot Games — Smoke Tests", () => {
         .locator('a[href="/games/outrun-racer"]')
         .getByRole("heading", { name: "Neon Horizon Racer" }),
     ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/coastal-rush-86"]')
+        .getByRole("heading", { name: "Coastal Rush '86" }),
+    ).toBeVisible();
   });
 
   test("navbar has correct links", async ({ page }) => {
@@ -110,6 +115,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "space-invaders",
       "sudoku",
       "outrun-racer",
+      "coastal-rush-86",
     ];
 
     for (const game of games) {
@@ -120,7 +126,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
         page.getByRole("heading", { name: "AI IMPLEMENTATIONS" }),
       ).toBeVisible();
 
-      if (game === "outrun-racer") {
+      if (["outrun-racer", "coastal-rush-86"].includes(game)) {
         await expect(page.getByRole("heading", { name: "GPT 5.5", exact: true })).toBeVisible();
         continue;
       }
@@ -157,7 +163,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.games).toHaveLength(15);
+    expect(data.games).toHaveLength(16);
     expect(data.games.map((g: { id: string }) => g.id)).toEqual([
       "snake",
       "minesweeper",
@@ -174,6 +180,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "pac-man",
       "sudoku",
       "outrun-racer",
+      "coastal-rush-86",
     ]);
   });
 

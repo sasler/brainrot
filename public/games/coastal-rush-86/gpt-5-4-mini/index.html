@@ -1,0 +1,3921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#231a16" />
+  <title>Coastal Rush '86 Mini</title>
+  <style>
+    :root {
+      --bg0: #110c0b;
+      --bg1: #1c1513;
+      --panel: rgba(39, 28, 23, 0.92);
+      --panel2: rgba(66, 48, 39, 0.92);
+      --line: rgba(245, 224, 190, 0.24);
+      --ink: #f7e8d1;
+      --muted: #d7c3aa;
+      --gold: #d3a45d;
+      --brick: #a84a38;
+      --sage: #81906b;
+      --sand: #d4bf95;
+      --sea: #6f9bb0;
+      --wood: #73503d;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --button: rgba(233, 210, 176, 0.12);
+      --buttonHover: rgba(233, 210, 176, 0.22);
+      --buttonActive: rgba(233, 210, 176, 0.34);
+      --danger: #d56c5c;
+      --ok: #d2b06b;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 0%, #3a2720 0%, #231816 28%, #120d0c 100%);
+      color: var(--ink);
+      font-family:
+        "Trebuchet MS",
+        "Segoe UI",
+        system-ui,
+        sans-serif;
+      user-select: none;
+      touch-action: none;
+    }
+
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(59, 39, 29, 0.25), rgba(17, 12, 11, 0.82));
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+    }
+
+    #hud {
+      position: absolute;
+      inset: 0 0 auto 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px 0 12px;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .hud-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .title-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(93, 63, 47, 0.86), rgba(53, 36, 29, 0.92));
+      border: 1px solid rgba(245, 225, 196, 0.18);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+      max-width: min(57vw, 460px);
+    }
+
+    .title-chip strong {
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .title-chip span {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+      max-width: min(48vw, 440px);
+    }
+
+    .stat {
+      min-width: 88px;
+      padding: 7px 10px 8px;
+      border-radius: 11px;
+      background: rgba(35, 24, 20, 0.85);
+      border: 1px solid rgba(245, 225, 196, 0.14);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+    }
+
+    .stat label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: #d5c1a3;
+      margin-bottom: 3px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 17px;
+      letter-spacing: 0.04em;
+      color: #faedd9;
+    }
+
+    #modal {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      pointer-events: none;
+    }
+
+    #modal.hidden {
+      display: none;
+    }
+
+    .modal-card {
+      width: min(92vw, 640px);
+      border-radius: 24px;
+      padding: 18px;
+      background:
+        linear-gradient(180deg, rgba(58, 42, 33, 0.95), rgba(27, 20, 18, 0.96));
+      border: 1px solid rgba(245, 225, 196, 0.15);
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      pointer-events: auto;
+    }
+
+    .modal-kicker {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #d7b37a;
+      margin-bottom: 10px;
+    }
+
+    .modal-card h1 {
+      margin: 0;
+      font-size: clamp(30px, 6vw, 56px);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #fbe8c8;
+    }
+
+    .modal-card p {
+      margin: 12px 0 0 0;
+      font-size: clamp(14px, 2.5vw, 18px);
+      line-height: 1.55;
+      color: #ead9c2;
+      max-width: 60ch;
+    }
+
+    .modal-note {
+      margin-top: 12px;
+      color: #cab798;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      line-height: 1.45;
+    }
+
+    .choices {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .choice-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    button.choice {
+      border: 1px solid rgba(245, 225, 196, 0.18);
+      border-radius: 16px;
+      padding: 14px 14px 13px;
+      text-align: left;
+      background:
+        linear-gradient(180deg, var(--button), rgba(25, 18, 15, 0.7));
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+      transition:
+        transform 0.14s ease,
+        background 0.14s ease,
+        border-color 0.14s ease;
+    }
+
+    button.choice:hover {
+      transform: translateY(-1px);
+      background:
+        linear-gradient(180deg, var(--buttonHover), rgba(34, 24, 20, 0.82));
+    }
+
+    button.choice:active,
+    button.choice.active {
+      transform: translateY(1px) scale(0.995);
+      background:
+        linear-gradient(180deg, var(--buttonActive), rgba(35, 25, 21, 0.88));
+      border-color: rgba(245, 225, 196, 0.32);
+    }
+
+    .choice .name {
+      display: block;
+      font-size: 15px;
+      letter-spacing: 0.03em;
+      color: #f7ebd8;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .choice .desc {
+      display: block;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #dcc7af;
+    }
+
+    .choice .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: #cfb58c;
+      letter-spacing: 0.04em;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 225, 196, 0.16);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .pill.danger {
+      color: #f0b0a2;
+      border-color: rgba(213, 108, 92, 0.34);
+    }
+
+    .pill.ok {
+      color: #ecd29a;
+      border-color: rgba(211, 164, 93, 0.3);
+    }
+
+    .footer-line {
+      margin-top: 14px;
+      font-size: 11px;
+      line-height: 1.45;
+      letter-spacing: 0.04em;
+      color: #c3af92;
+    }
+
+    #touchControls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 8px;
+      padding: 10px 10px 12px;
+      pointer-events: auto;
+    }
+
+    .touch {
+      min-height: 58px;
+      border: 1px solid rgba(245, 225, 196, 0.18);
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(85, 60, 45, 0.78), rgba(34, 24, 19, 0.88));
+      color: var(--ink);
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow:
+        0 12px 24px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      touch-action: none;
+    }
+
+    .touch:active,
+    .touch.active {
+      background:
+        linear-gradient(180deg, rgba(122, 86, 60, 0.92), rgba(44, 29, 23, 0.92));
+      transform: translateY(1px);
+    }
+
+    .touch.small {
+      font-size: 12px;
+      letter-spacing: 0.11em;
+    }
+
+    #flash {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 60%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 58%);
+      opacity: 0;
+      mix-blend-mode: screen;
+    }
+
+    #miniHint {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 78px;
+      z-index: 3;
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: rgba(255, 240, 220, 0.72);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.48);
+      pointer-events: none;
+    }
+
+    @media (max-width: 520px) {
+      #hud {
+        padding: 8px 8px 0;
+        gap: 8px;
+      }
+
+      .title-chip {
+        max-width: 54vw;
+        padding: 7px 9px;
+      }
+
+      .title-chip strong {
+        font-size: 12px;
+      }
+
+      .title-chip span {
+        font-size: 10px;
+      }
+
+      .stat {
+        min-width: 72px;
+        padding: 6px 8px 7px;
+      }
+
+      .stat strong {
+        font-size: 15px;
+      }
+
+      .modal-card {
+        width: 94vw;
+        border-radius: 20px;
+        padding: 16px;
+      }
+
+      .choice-grid {
+        grid-template-columns: 1fr;
+      }
+
+      #touchControls {
+        gap: 6px;
+        padding: 8px 8px 10px;
+      }
+
+      .touch {
+        min-height: 54px;
+      }
+
+      #miniHint {
+        bottom: 74px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <div id="flash"></div>
+
+    <div id="hud">
+      <div class="hud-block">
+        <div class="title-chip">
+          <strong>Coastal Rush '86</strong>
+          <span id="chapterLabel">Title Screen</span>
+        </div>
+      </div>
+
+      <div class="hud-block">
+        <div class="stats-row">
+          <div class="stat">
+            <label>TIME</label>
+            <strong id="timeReadout">--:--</strong>
+          </div>
+          <div class="stat">
+            <label>SPEED</label>
+            <strong id="speedReadout">000</strong>
+          </div>
+          <div class="stat">
+            <label>SCORE</label>
+            <strong id="scoreReadout">000000</strong>
+          </div>
+          <div class="stat">
+            <label>HI-SCORE</label>
+            <strong id="highScoreReadout">000000</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="miniHint">Hold throttle, keep the red roadster on the tarmac, and pick a fork before the timer drains.</div>
+
+    <div id="modal" class="hidden">
+      <div class="modal-card">
+        <div class="modal-kicker" id="modalKicker">Welcome</div>
+        <h1 id="modalTitle">Coastal Rush '86</h1>
+        <p id="modalBody">A warm-blooded roadside sprint through coast, country, mountain, desert, and city. No badges. No nonsense. Just a red convertible and a clock that does not care about excuses.</p>
+        <div class="choices" id="modalChoices"></div>
+        <div class="modal-note" id="modalNote">Keyboard: arrows / WASD, Enter to choose. Touch: left/right, gas, brake.</div>
+        <div class="footer-line" id="modalFooter">Press Start to wake the engine.</div>
+      </div>
+    </div>
+
+    <div id="touchControls">
+      <button class="touch small" data-action="left" data-touch-control="left" data-touch="left">LEFT</button>
+      <button class="touch small" data-action="right" data-touch-control="right" data-touch="right">RIGHT</button>
+      <button class="touch" data-action="gas" data-touch-control="gas" data-touch="gas">GAS</button>
+      <button class="touch" data-action="brake" data-touch-control="brake" data-touch="brake">BRAKE</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d", { alpha: false });
+
+      const hudChapter = document.getElementById("chapterLabel");
+      const hudTime = document.getElementById("timeReadout");
+      const hudSpeed = document.getElementById("speedReadout");
+      const hudScore = document.getElementById("scoreReadout");
+      const hudHigh = document.getElementById("highScoreReadout");
+      const flashEl = document.getElementById("flash");
+      const modal = document.getElementById("modal");
+      const modalKicker = document.getElementById("modalKicker");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalBody = document.getElementById("modalBody");
+      const modalChoices = document.getElementById("modalChoices");
+      const modalNote = document.getElementById("modalNote");
+      const modalFooter = document.getElementById("modalFooter");
+      const touchButtons = [...document.querySelectorAll("[data-action], [data-touch], [data-touch-control]")];
+      const miniHint = document.getElementById("miniHint");
+
+      const VIEW_W = 960;
+      const VIEW_H = 540;
+      const SEGMENT_LENGTH = 200;
+      const DRAW_DISTANCE = 250;
+      const ROAD_HALF_WIDTH = 1380;
+      const ROAD_EDGE_WIDTH = 1850;
+      const CAMERA_HEIGHT = 1000;
+      const CAMERA_DEPTH = 1.12;
+      const PLAYER_Z = 930;
+      const MAX_SPEED = 240;
+      const MAX_SPEED_OVER = 280;
+      const MIN_SPEED = 0;
+      const START_TIME = 420;
+      const HIGH_SCORE_KEY = "coastalRush86MiniHighScore";
+      const SAVE_KEY = "coastalRush86MiniRoute";
+
+      const STATE = {
+        TITLE: "title",
+        ROUTE: "route",
+        COUNTDOWN: "countdown",
+        PLAY: "play",
+        CHECKPOINT: "checkpoint",
+        FINISH: "finish",
+        OVER: "over",
+      };
+
+      const THEMES = {
+        coast: {
+          skyTop: "#85a7bd",
+          skyMid: "#c8d7de",
+          skyBottom: "#f1cfa0",
+          haze: "#f3e1c2",
+          sun: "#ffd291",
+          roadDark: "#584c40",
+          roadLight: "#6e5f51",
+          roadStripe: "#ead9be",
+          shoulder: "#ab9570",
+          grass: "#778b5f",
+          dirt: "#9b8166",
+          water: "#739ab0",
+          rock: "#8a7a6c",
+          objectDark: "#395147",
+          objectLight: "#efe5c0",
+          traffic: ["#8a5747", "#b7775a", "#8d6a52", "#62707f", "#c3a177"],
+          fog: "rgba(241, 221, 191, 0.28)",
+        },
+        country: {
+          skyTop: "#8fa3b7",
+          skyMid: "#ced7d0",
+          skyBottom: "#f0d2a6",
+          haze: "#f4e5c9",
+          sun: "#ffdb94",
+          roadDark: "#5b4a3d",
+          roadLight: "#735f4f",
+          roadStripe: "#f2e1bf",
+          shoulder: "#ae9470",
+          grass: "#7a8b5c",
+          dirt: "#a58561",
+          water: "#7898a5",
+          rock: "#887264",
+          objectDark: "#5b6e49",
+          objectLight: "#f2e5c8",
+          traffic: ["#8c5e48", "#b58b64", "#646c5b", "#7f836f", "#d2b07b"],
+          fog: "rgba(244, 231, 199, 0.22)",
+        },
+        mountain: {
+          skyTop: "#7d93ab",
+          skyMid: "#c1ced6",
+          skyBottom: "#ead4af",
+          haze: "#efe5d4",
+          sun: "#ffcf88",
+          roadDark: "#534740",
+          roadLight: "#65584f",
+          roadStripe: "#ead8ba",
+          shoulder: "#9f8c76",
+          grass: "#66765e",
+          dirt: "#8d7767",
+          water: "#7593a1",
+          rock: "#8d8178",
+          objectDark: "#514d46",
+          objectLight: "#e8ddca",
+          traffic: ["#836152", "#a97a59", "#6a6f74", "#9d8e75", "#c8a471"],
+          fog: "rgba(232, 226, 217, 0.34)",
+        },
+        desert: {
+          skyTop: "#9f9cb0",
+          skyMid: "#d4c7ac",
+          skyBottom: "#f1cf95",
+          haze: "#f2dfbc",
+          sun: "#ffd18e",
+          roadDark: "#635146",
+          roadLight: "#7c6555",
+          roadStripe: "#f1d7aa",
+          shoulder: "#bd9b66",
+          grass: "#9c955c",
+          dirt: "#c1945e",
+          water: "#79a0ac",
+          rock: "#aa8768",
+          objectDark: "#755536",
+          objectLight: "#f0d7a2",
+          traffic: ["#a46649", "#c28b5a", "#8a6c4f", "#d4a171", "#75808a"],
+          fog: "rgba(244, 214, 162, 0.14)",
+        },
+        city: {
+          skyTop: "#7f899d",
+          skyMid: "#c1c8cf",
+          skyBottom: "#e6d0aa",
+          haze: "#f0e1ca",
+          sun: "#ffd58e",
+          roadDark: "#4f4740",
+          roadLight: "#655952",
+          roadStripe: "#eadfc1",
+          shoulder: "#8a7a67",
+          grass: "#67725f",
+          dirt: "#8e7863",
+          water: "#748f9e",
+          rock: "#7d7269",
+          objectDark: "#4a4b57",
+          objectLight: "#e2dcc8",
+          traffic: ["#8b5a48", "#cb8e5b", "#66728a", "#aa8d62", "#72736a"],
+          fog: "rgba(241, 224, 198, 0.18)",
+        },
+        harbor: {
+          skyTop: "#86a0b7",
+          skyMid: "#c8d6de",
+          skyBottom: "#efd1a0",
+          haze: "#efe4cf",
+          sun: "#ffd08b",
+          roadDark: "#524740",
+          roadLight: "#695950",
+          roadStripe: "#eadcbf",
+          shoulder: "#a28b72",
+          grass: "#74836a",
+          dirt: "#9a8065",
+          water: "#7199ac",
+          rock: "#84776d",
+          objectDark: "#395867",
+          objectLight: "#efe2ca",
+          traffic: ["#8f6650", "#b98a60", "#66757f", "#aa8d65", "#7a7d69"],
+          fog: "rgba(234, 232, 221, 0.26)",
+        },
+        boulevard: {
+          skyTop: "#8991a2",
+          skyMid: "#c5cad0",
+          skyBottom: "#ead5a8",
+          haze: "#efe3cf",
+          sun: "#ffcf8a",
+          roadDark: "#4b443d",
+          roadLight: "#635851",
+          roadStripe: "#ead8bb",
+          shoulder: "#91816c",
+          grass: "#6f7c64",
+          dirt: "#96806a",
+          water: "#7591a0",
+          rock: "#80726a",
+          objectDark: "#45475b",
+          objectLight: "#e6dbc5",
+          traffic: ["#8f5c48", "#c08a5a", "#647082", "#a58a65", "#7a796f"],
+          fog: "rgba(239, 230, 214, 0.17)",
+        },
+      };
+
+      const CHAPTERS = {
+        coast: {
+          id: "coast",
+          name: "Coastline Dawn",
+          theme: "coast",
+          length: 170,
+          curve: 0.24,
+          curveWave: 4.3,
+          curveRipple: 9.1,
+          curveRippleAmp: 0.18,
+          hill: 0.06,
+          hillWave: 3.2,
+          hillRipple: 7.3,
+          hillRippleAmp: 0.11,
+          noise: 0.055,
+          trafficDensity: 0.18,
+          trafficSpacing: 14,
+          speedTarget: 170,
+          timeBonus: 16,
+          decorSpacing: 8,
+          laneCycle: 6,
+          routeNote: "Sea air, cliff bends, and a forgiving first leg.",
+          intro: "The pier lights fade behind you and the road opens toward the water.",
+          choiceTitle: "Choose the first detour.",
+          choices: [
+            {
+              id: "country",
+              label: "Country Backroads",
+              desc: "Long sightlines, lighter traffic, and soft curves that let you build a clean rhythm.",
+              meta: ["easier", "longer", "+12 sec"],
+            },
+            {
+              id: "city",
+              label: "City Cut",
+              desc: "Tighter lanes, more traffic, and sharper braking, but the shortcut pays in speed and score.",
+              meta: ["harder", "shorter", "+8 sec"],
+            },
+          ],
+          final: false,
+        },
+        country: {
+          id: "country",
+          name: "Country Roads",
+          theme: "country",
+          length: 176,
+          curve: 0.28,
+          curveWave: 4.9,
+          curveRipple: 10.4,
+          curveRippleAmp: 0.19,
+          hill: 0.09,
+          hillWave: 3.6,
+          hillRipple: 8.2,
+          hillRippleAmp: 0.13,
+          noise: 0.06,
+          trafficDensity: 0.22,
+          trafficSpacing: 13,
+          speedTarget: 178,
+          timeBonus: 14,
+          decorSpacing: 8,
+          laneCycle: 7,
+          routeNote: "Rolling fields, fences, and a more relaxed pace with enough traffic to stay honest.",
+          intro: "The road narrows between hedges and barns, then starts climbing toward a fork in the hills.",
+          choiceTitle: "Pick your hill route.",
+          choices: [
+            {
+              id: "mountain",
+              label: "Mountain Pass",
+              desc: "Steeper climbs, sharper switchbacks, cooler air, and a serious grip test.",
+              meta: ["hard", "short", "+14 sec"],
+            },
+            {
+              id: "desert",
+              label: "Dry Valley",
+              desc: "Wide vistas, heat shimmer, and fast lines if you can keep the car composed.",
+              meta: ["mid", "wide", "+10 sec"],
+            },
+          ],
+          final: false,
+        },
+        city: {
+          id: "city",
+          name: "City Cut",
+          theme: "city",
+          length: 180,
+          curve: 0.32,
+          curveWave: 5.4,
+          curveRipple: 11.2,
+          curveRippleAmp: 0.2,
+          hill: 0.05,
+          hillWave: 3.1,
+          hillRipple: 6.8,
+          hillRippleAmp: 0.1,
+          noise: 0.068,
+          trafficDensity: 0.28,
+          trafficSpacing: 11,
+          speedTarget: 184,
+          timeBonus: 11,
+          decorSpacing: 7,
+          laneCycle: 5,
+          routeNote: "Warehouses, ramps, lane changes, and late-afternoon shadows.",
+          intro: "Concrete walls close in, traffic thickens, and the highway begins to braid through the skyline.",
+          choiceTitle: "Choose the night leg.",
+          choices: [
+            {
+              id: "harbor",
+              label: "Harbor Front",
+              desc: "Sea walls, cranes, and slick lanes that reward patience and smooth throttle control.",
+              meta: ["technical", "scenic", "+13 sec"],
+            },
+            {
+              id: "boulevard",
+              label: "Boulevard Loop",
+              desc: "A broader arterial route with heavier traffic, bigger passing points, and a tough final rhythm.",
+              meta: ["busy", "fast", "+9 sec"],
+            },
+          ],
+          final: false,
+        },
+        mountain: {
+          id: "mountain",
+          name: "Mountain Pass",
+          theme: "mountain",
+          length: 188,
+          curve: 0.35,
+          curveWave: 5.8,
+          curveRipple: 12.6,
+          curveRippleAmp: 0.22,
+          hill: 0.13,
+          hillWave: 4.4,
+          hillRipple: 9.8,
+          hillRippleAmp: 0.17,
+          noise: 0.07,
+          trafficDensity: 0.26,
+          trafficSpacing: 11,
+          speedTarget: 192,
+          timeBonus: 12,
+          decorSpacing: 7,
+          laneCycle: 6,
+          routeNote: "Tight climb, cool fog, and a lot less room for lazy steering.",
+          intro: "The road bites into the ridge. Pines blur past and the horizon starts to tilt.",
+          choiceTitle: "Choose the ridge descent.",
+          choices: [
+            {
+              id: "summit",
+              label: "Summit Line",
+              desc: "A short, brutal crest with technical bends and the best finishing view in the tour.",
+              meta: ["very hard", "short", "+16 sec"],
+            },
+            {
+              id: "harbor",
+              label: "Harbor Descent",
+              desc: "Long downhill sweepers that let you recover speed and stack a high score if you stay tidy.",
+              meta: ["hard", "flowing", "+12 sec"],
+            },
+          ],
+          final: false,
+        },
+        desert: {
+          id: "desert",
+          name: "Dry Valley",
+          theme: "desert",
+          length: 184,
+          curve: 0.27,
+          curveWave: 4.7,
+          curveRipple: 10.7,
+          curveRippleAmp: 0.18,
+          hill: 0.04,
+          hillWave: 2.7,
+          hillRipple: 6.5,
+          hillRippleAmp: 0.08,
+          noise: 0.06,
+          trafficDensity: 0.24,
+          trafficSpacing: 12,
+          speedTarget: 188,
+          timeBonus: 10,
+          decorSpacing: 8,
+          laneCycle: 6,
+          routeNote: "Hot air, long straightaways, and dust hanging in the afternoon light.",
+          intro: "Heat pours off the asphalt and the car starts to feel lighter, quicker, and less patient.",
+          choiceTitle: "Choose the horizon split.",
+          choices: [
+            {
+              id: "oasis",
+              label: "Oasis Route",
+              desc: "A calmer ribbon of road with more vegetation and a gentler final push.",
+              meta: ["safer", "longer", "+13 sec"],
+            },
+            {
+              id: "boulevard",
+              label: "Service Loop",
+              desc: "A direct desert bypass with rough shoulders, heavier dust, and plenty of score potential.",
+              meta: ["faster", "rougher", "+10 sec"],
+            },
+          ],
+          final: false,
+        },
+        harbor: {
+          id: "harbor",
+          name: "Harbor Run",
+          theme: "harbor",
+          length: 190,
+          curve: 0.3,
+          curveWave: 5.2,
+          curveRipple: 11.5,
+          curveRippleAmp: 0.2,
+          hill: 0.05,
+          hillWave: 3.1,
+          hillRipple: 7.1,
+          hillRippleAmp: 0.1,
+          noise: 0.068,
+          trafficDensity: 0.27,
+          trafficSpacing: 10,
+          speedTarget: 195,
+          timeBonus: 14,
+          decorSpacing: 7,
+          laneCycle: 5,
+          routeNote: "Sea walls, cranes, fog banks, and a very opinionated ferry lane.",
+          intro: "Masts and cargo silhouettes rise through the haze. The road tightens and the water begins to mirror the sky.",
+          choiceTitle: "Choose the final approach.",
+          choices: [
+            {
+              id: "pier",
+              label: "Pier Sprint",
+              desc: "A windy dockside dash with more traffic but a cleaner path to the finish.",
+              meta: ["final", "sharp", "+16 sec"],
+            },
+            {
+              id: "summit",
+              label: "Cliff Climb",
+              desc: "The road climbs away from the harbor and forces one last technical drive to the peak.",
+              meta: ["final", "hard", "+15 sec"],
+            },
+          ],
+          final: false,
+        },
+        boulevard: {
+          id: "boulevard",
+          name: "Boulevard Loop",
+          theme: "boulevard",
+          length: 194,
+          curve: 0.31,
+          curveWave: 5.0,
+          curveRipple: 11.0,
+          curveRippleAmp: 0.19,
+          hill: 0.06,
+          hillWave: 3.0,
+          hillRipple: 7.0,
+          hillRippleAmp: 0.1,
+          noise: 0.07,
+          trafficDensity: 0.3,
+          trafficSpacing: 10,
+          speedTarget: 198,
+          timeBonus: 11,
+          decorSpacing: 7,
+          laneCycle: 5,
+          routeNote: "Late-day traffic, wide medians, and a bright finish lane that keeps the pressure high.",
+          intro: "Streetlamps begin to flicker on as the boulevard stretches ahead like a final exam with tail lights.",
+          choiceTitle: "Choose the final approach.",
+          choices: [
+            {
+              id: "pier",
+              label: "Pier Sprint",
+              desc: "The last exit toward the waterfront, mixing broad straights with a few nasty lane traps.",
+              meta: ["final", "fast", "+15 sec"],
+            },
+            {
+              id: "oasis",
+              label: "Night Orchard",
+              desc: "A quieter outer-road finish with a steadier rhythm and a more graceful ending.",
+              meta: ["final", "smooth", "+14 sec"],
+            },
+          ],
+          final: false,
+        },
+        summit: {
+          id: "summit",
+          name: "Summit Finish",
+          theme: "mountain",
+          length: 160,
+          curve: 0.36,
+          curveWave: 4.9,
+          curveRipple: 10.8,
+          curveRippleAmp: 0.22,
+          hill: 0.15,
+          hillWave: 4.2,
+          hillRipple: 9.4,
+          hillRippleAmp: 0.18,
+          noise: 0.06,
+          trafficDensity: 0.22,
+          trafficSpacing: 11,
+          speedTarget: 190,
+          timeBonus: 0,
+          decorSpacing: 8,
+          laneCycle: 6,
+          routeNote: "A final ridge climb with air that feels sharper and a finish that looks like a postcard.",
+          intro: "The pass opens into a high shoulder of rock and pine. The finish is somewhere above the fog.",
+          final: true,
+          endingTitle: "Summit Sunrise",
+          endingBody: "You reached the peak with the red roadster planted and the sky turning copper behind the trees.",
+        },
+        oasis: {
+          id: "oasis",
+          name: "Oasis Finish",
+          theme: "desert",
+          length: 158,
+          curve: 0.26,
+          curveWave: 4.2,
+          curveRipple: 9.3,
+          curveRippleAmp: 0.16,
+          hill: 0.03,
+          hillWave: 2.6,
+          hillRipple: 5.8,
+          hillRippleAmp: 0.06,
+          noise: 0.05,
+          trafficDensity: 0.2,
+          trafficSpacing: 12,
+          speedTarget: 186,
+          timeBonus: 0,
+          decorSpacing: 8,
+          laneCycle: 6,
+          routeNote: "Palm shadows, dry heat, and a calm finish tucked into the edge of the dunes.",
+          intro: "A strip of shade appears ahead like a promise. The last stretch is all composure.",
+          final: true,
+          endingTitle: "Oasis Drift",
+          endingBody: "You slipped into the green pocket of the valley with enough time left to hear the engine cool.",
+        },
+        pier: {
+          id: "pier",
+          name: "Pier Finish",
+          theme: "harbor",
+          length: 162,
+          curve: 0.29,
+          curveWave: 4.7,
+          curveRipple: 10.2,
+          curveRippleAmp: 0.2,
+          hill: 0.04,
+          hillWave: 2.9,
+          hillRipple: 6.6,
+          hillRippleAmp: 0.09,
+          noise: 0.06,
+          trafficDensity: 0.23,
+          trafficSpacing: 10,
+          speedTarget: 192,
+          timeBonus: 0,
+          decorSpacing: 7,
+          laneCycle: 5,
+          routeNote: "Mooring lines, dock lamps, gull shadows, and a finish lane that smells like salt and diesel.",
+          intro: "The pier narrows, the water widens, and the final line is now close enough to taste.",
+          final: true,
+          endingTitle: "Pier Lights",
+          endingBody: "You shot across the waterfront under the lamps, polished and quick, with the sea rolling alongside.",
+        },
+      };
+
+      const START_CHOICES = [
+        {
+          id: "coast",
+          label: "Coastline Dawn",
+          desc: "Balanced opening with generous sightlines and classic seaside scenery.",
+          meta: ["starter", "balanced", "+16 sec"],
+        },
+        {
+          id: "country",
+          label: "Country Roads",
+          desc: "A calmer opening that gives you breathing room before the later forks become meaner.",
+          meta: ["starter", "easier", "+14 sec"],
+        },
+        {
+          id: "city",
+          label: "City Cut",
+          desc: "Heavier traffic right away, but the score multiplier starts to climb fast.",
+          meta: ["starter", "harder", "+11 sec"],
+        },
+      ];
+
+      const ROUTE_BOUNCES = {
+        coast: 0.16,
+        country: 0.18,
+        city: 0.2,
+        mountain: 0.22,
+        desert: 0.19,
+        harbor: 0.2,
+        boulevard: 0.21,
+        summit: 0.17,
+        oasis: 0.15,
+        pier: 0.18,
+      };
+
+      const VEHICLES = {
+        sedan: { w: 0.54, h: 0.34, roof: 0.15, body: "#65717e", top: "#c7d0d9", glass: "#dfe8ef" },
+        wagon: { w: 0.61, h: 0.34, roof: 0.18, body: "#85735f", top: "#d2c1a6", glass: "#e8eee7" },
+        van: { w: 0.63, h: 0.38, roof: 0.21, body: "#8a5b47", top: "#d4b08c", glass: "#e7ece9" },
+        pickup: { w: 0.62, h: 0.33, roof: 0.12, body: "#9b6f54", top: "#d8c0a0", glass: "#e4ebef" },
+        coupe: { w: 0.5, h: 0.31, roof: 0.11, body: "#6c7784", top: "#c3d0da", glass: "#e7f0f7" },
+        bus: { w: 0.72, h: 0.42, roof: 0.22, body: "#a07b55", top: "#e1d0ac", glass: "#f1f2e6" },
+      };
+
+      const playerCar = {
+        x: 0,
+        speed: 0,
+        angle: 0,
+        lean: 0,
+        spin: 0,
+        spinVel: 0,
+        shakeKick: 0,
+        damage: 0,
+        offroad: 0,
+        slip: 0,
+      };
+
+      const game = {
+        state: STATE.TITLE,
+        previousState: STATE.TITLE,
+        currentChapterId: "coast",
+        currentChapter: null,
+        currentRunSeed: 0,
+        currentRoutePath: [],
+        currentRouteLabel: "",
+        chapterIndex: 0,
+        chapterDistance: 0,
+        totalDistance: 0,
+        score: 0,
+        timeLeft: START_TIME,
+        highScore: 0,
+        passes: 0,
+        spins: 0,
+        collisions: 0,
+        combo: 0,
+        maxCombo: 0,
+        checkpointBonus: 0,
+        selectedChoice: 0,
+        checkpointTimer: 0,
+        countdown: 0,
+        countdownText: "",
+        routeTimer: 0,
+        finishTitle: "",
+        finishBody: "",
+        finishPath: "",
+        finishReason: "",
+        routeOptions: [],
+        routeMode: "start",
+        traffic: [],
+        decor: [],
+        particles: [],
+        weatherParticles: [],
+        cameraShake: 0,
+        screenFlash: 0,
+        messageTimer: 0,
+        routeHistory: [],
+        titleBlink: 0,
+        attractDistance: 0,
+        audioStarted: false,
+      };
+
+      const input = {
+        left: false,
+        right: false,
+        gas: false,
+        brake: false,
+        chooseLeft: false,
+        chooseRight: false,
+        confirm: false,
+        started: false,
+      };
+
+      const audio = new (class {
+        constructor() {
+          this.ctx = null;
+          this.master = null;
+          this.musicGain = null;
+          this.sfxGain = null;
+          this.engineGain = null;
+          this.engineOsc = null;
+          this.engineFilter = null;
+          this.noiseBuffer = null;
+          this.musicStep = 0;
+          this.nextBeat = 0;
+          this.bpm = 106;
+          this.playing = false;
+          this.musicEnabled = true;
+          this.lastPulse = 0;
+        }
+
+        ensure() {
+          if (!this.ctx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) {
+              return;
+            }
+            this.ctx = new AudioContextClass();
+            this.master = this.ctx.createGain();
+            this.musicGain = this.ctx.createGain();
+            this.sfxGain = this.ctx.createGain();
+            this.engineGain = this.ctx.createGain();
+            this.engineFilter = this.ctx.createBiquadFilter();
+
+            this.master.gain.value = 0.7;
+            this.musicGain.gain.value = 0.48;
+            this.sfxGain.gain.value = 0.7;
+            this.engineGain.gain.value = 0.0001;
+
+            this.musicGain.connect(this.master);
+            this.sfxGain.connect(this.master);
+            this.engineFilter.connect(this.engineGain);
+            this.engineGain.connect(this.master);
+            this.master.connect(this.ctx.destination);
+
+            this.engineOsc = this.ctx.createOscillator();
+            const engineSub = this.ctx.createOscillator();
+            this.engineOsc.type = "sawtooth";
+            engineSub.type = "triangle";
+            this.engineOsc.frequency.value = 48;
+            engineSub.frequency.value = 24;
+            this.engineOsc.connect(this.engineFilter);
+            engineSub.connect(this.engineFilter);
+            this.engineFilter.type = "lowpass";
+            this.engineFilter.frequency.value = 260;
+            this.engineFilter.Q.value = 0.9;
+            this.engineFilter.connect(this.engineGain);
+            this.engineOsc.start();
+            engineSub.start();
+
+            const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 1.2, this.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i += 1) {
+              data[i] = Math.random() * 2 - 1;
+            }
+            this.noiseBuffer = buffer;
+          }
+
+          if (this.ctx.state === "suspended") {
+            this.ctx.resume();
+          }
+        }
+
+        unlock() {
+          this.ensure();
+        }
+
+        now() {
+          return this.ctx ? this.ctx.currentTime : 0;
+        }
+
+        playTone({
+          frequency = 440,
+          type = "sine",
+          gain = 0.08,
+          attack = 0.01,
+          decay = 0.2,
+          detune = 0,
+          pan = 0,
+          duration = 0.25,
+          filter = 0,
+        }) {
+          if (!this.ctx) {
+            return;
+          }
+          const osc = this.ctx.createOscillator();
+          const amp = this.ctx.createGain();
+          const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+          const f = filter ? this.ctx.createBiquadFilter() : null;
+          osc.type = type;
+          osc.frequency.setValueAtTime(frequency, this.ctx.currentTime);
+          if (detune) {
+            osc.detune.setValueAtTime(detune, this.ctx.currentTime);
+          }
+          amp.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+          amp.gain.linearRampToValueAtTime(gain, this.ctx.currentTime + attack);
+          amp.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + Math.max(attack + 0.02, duration));
+          if (panner) {
+            panner.pan.setValueAtTime(pan, this.ctx.currentTime);
+            osc.connect(amp);
+            amp.connect(panner);
+            if (f) {
+              f.type = "lowpass";
+              f.frequency.value = filter;
+              panner.connect(f);
+              f.connect(this.sfxGain);
+            } else {
+              panner.connect(this.sfxGain);
+            }
+          } else {
+            osc.connect(amp);
+            amp.connect(this.sfxGain);
+          }
+          osc.start();
+          osc.stop(this.ctx.currentTime + Math.max(duration + 0.03, 0.08));
+        }
+
+        burstNoise({
+          gain = 0.14,
+          duration = 0.15,
+          filter = 1400,
+          type = "highpass",
+        }) {
+          if (!this.ctx || !this.noiseBuffer) {
+            return;
+          }
+          const src = this.ctx.createBufferSource();
+          const amp = this.ctx.createGain();
+          const filt = this.ctx.createBiquadFilter();
+          src.buffer = this.noiseBuffer;
+          filt.type = type;
+          filt.frequency.value = filter;
+          amp.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+          amp.gain.linearRampToValueAtTime(gain, this.ctx.currentTime + 0.015);
+          amp.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          src.connect(filt);
+          filt.connect(amp);
+          amp.connect(this.sfxGain);
+          src.start();
+          src.stop(this.ctx.currentTime + duration + 0.04);
+        }
+
+        startMusic() {
+          if (!this.ctx || this.playing) {
+            return;
+          }
+          this.playing = true;
+          this.nextBeat = this.ctx.currentTime + 0.04;
+          this.musicStep = 0;
+        }
+
+        stopMusic() {
+          this.playing = false;
+        }
+
+        updateMusic(themeBias = 0) {
+          if (!this.ctx || !this.playing) {
+            return;
+          }
+          const beatLen = 60 / this.bpm / 2;
+          const scale = [0, 3, 5, 7, 10];
+          const roots = [45, 43, 40, 38];
+          const prog = [0, 1, 2, 3, 1, 2, 0, 3];
+          const now = this.ctx.currentTime;
+          while (this.nextBeat < now + 0.08) {
+            const step = this.musicStep % 16;
+            const bar = Math.floor(this.musicStep / 16);
+            const root = roots[(bar + themeBias) % roots.length];
+            const chordIndex = prog[this.musicStep % prog.length];
+            const chordRoot = root + [0, 5, 7, 10][chordIndex];
+            if (step % 4 === 0) {
+              this.playTone({
+                frequency: midiToHz(chordRoot),
+                type: "triangle",
+                gain: 0.07,
+                attack: 0.01,
+                decay: 0.24,
+                duration: 0.26,
+                filter: 1200,
+              });
+            }
+            if (step === 0 || step === 8) {
+              this.playTone({
+                frequency: midiToHz(root - 12),
+                type: "sine",
+                gain: 0.12,
+                attack: 0.005,
+                decay: 0.22,
+                duration: 0.2,
+              });
+            }
+            if (step === 2 || step === 6 || step === 10 || step === 14) {
+              this.playTone({
+                frequency: midiToHz(chordRoot + scale[(step / 2) % scale.length]),
+                type: "square",
+                gain: 0.028,
+                attack: 0.004,
+                decay: 0.11,
+                duration: 0.12,
+                filter: 2200,
+              });
+            }
+            if (step === 4 || step === 12) {
+              this.burstNoise({
+                gain: 0.06,
+                duration: 0.07,
+                filter: 1200,
+                type: "highpass",
+              });
+            }
+            this.nextBeat += beatLen;
+            this.musicStep += 1;
+          }
+        }
+
+        engine(speed, throttle, brake, offroad, spinAmount) {
+          if (!this.ctx || !this.engineOsc) {
+            return;
+          }
+          const t = this.ctx.currentTime;
+          const pitch = 42 + speed * 0.58 + throttle * 18 + spinAmount * 8;
+          const gain = 0.008 + throttle * 0.052 + Math.max(speed / MAX_SPEED, 0.1) * 0.035 + offroad * 0.03;
+          const filterFreq = 190 + speed * 1.8 + throttle * 200 + (brake ? 20 : 0) - offroad * 120;
+          this.engineOsc.frequency.setTargetAtTime(pitch, t, 0.03);
+          this.engineFilter.frequency.setTargetAtTime(clamp(filterFreq, 140, 1300), t, 0.03);
+          this.engineGain.gain.setTargetAtTime(clamp(gain, 0.0001, 0.12), t, 0.02);
+        }
+
+        effect(kind, amount = 1) {
+          if (!this.ctx) {
+            return;
+          }
+          if (kind === "start") {
+            this.playTone({ frequency: 392, type: "triangle", gain: 0.08, duration: 0.12, filter: 1700 });
+            this.playTone({ frequency: 523.25, type: "triangle", gain: 0.08, duration: 0.16, filter: 1700, pan: -0.2 });
+            this.playTone({ frequency: 659.25, type: "triangle", gain: 0.07, duration: 0.18, filter: 1700, pan: 0.2 });
+          } else if (kind === "pass") {
+            this.playTone({ frequency: 659.25, type: "sine", gain: 0.06, duration: 0.08, filter: 2000, pan: -0.3 });
+            this.playTone({ frequency: 783.99, type: "sine", gain: 0.08, duration: 0.11, filter: 2000, pan: 0.3 });
+          } else if (kind === "checkpoint") {
+            this.playTone({ frequency: 523.25, type: "triangle", gain: 0.07, duration: 0.12, filter: 1800 });
+            this.playTone({ frequency: 659.25, type: "triangle", gain: 0.08, duration: 0.14, filter: 1800, pan: 0.16 });
+            this.playTone({ frequency: 783.99, type: "triangle", gain: 0.08, duration: 0.16, filter: 1800, pan: -0.16 });
+          } else if (kind === "crash") {
+            this.playTone({ frequency: 130, type: "sawtooth", gain: 0.14 * amount, duration: 0.14, filter: 800 });
+            this.burstNoise({ gain: 0.18 * amount, duration: 0.18, filter: 1000, type: "lowpass" });
+          } else if (kind === "spin") {
+            this.playTone({ frequency: 220, type: "triangle", gain: 0.1, duration: 0.18, filter: 900 });
+            this.playTone({ frequency: 174.61, type: "triangle", gain: 0.08, duration: 0.16, filter: 900, pan: -0.2 });
+          } else if (kind === "finish") {
+            this.playTone({ frequency: 523.25, type: "triangle", gain: 0.08, duration: 0.16, filter: 1700 });
+            this.playTone({ frequency: 659.25, type: "triangle", gain: 0.08, duration: 0.16, filter: 1700, pan: -0.18 });
+            this.playTone({ frequency: 783.99, type: "triangle", gain: 0.09, duration: 0.19, filter: 1700, pan: 0.18 });
+            this.playTone({ frequency: 1046.5, type: "triangle", gain: 0.08, duration: 0.22, filter: 1700, pan: 0.08 });
+          } else if (kind === "gameover") {
+            this.playTone({ frequency: 261.63, type: "sine", gain: 0.08, duration: 0.12, filter: 900 });
+            this.playTone({ frequency: 196, type: "sine", gain: 0.08, duration: 0.15, filter: 900, pan: -0.1 });
+            this.playTone({ frequency: 164.81, type: "sine", gain: 0.07, duration: 0.18, filter: 900, pan: 0.1 });
+          } else if (kind === "menu") {
+            this.playTone({ frequency: 392, type: "triangle", gain: 0.05, duration: 0.1, filter: 1700 });
+          } else if (kind === "tap") {
+            this.playTone({ frequency: 440, type: "triangle", gain: 0.03, duration: 0.06, filter: 1600 });
+          } else if (kind === "bonus") {
+            const base = 523.25 + amount * 18;
+            this.playTone({ frequency: base, type: "triangle", gain: 0.05, duration: 0.08, filter: 2000 });
+            this.playTone({ frequency: base * 1.25, type: "triangle", gain: 0.05, duration: 0.1, filter: 2000, pan: 0.18 });
+          }
+        }
+      })();
+
+      function clamp(v, min, max) {
+        return Math.max(min, Math.min(max, v));
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function easeInOut(t) {
+        return t < 0.5
+          ? 4 * t * t * t
+          : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function smoothstep(edge0, edge1, x) {
+        const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+        return t * t * (3 - 2 * t);
+      }
+
+      function randSeed(seed) {
+        let t = seed + 0x6d2b79f5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
+
+      function makeRng(seed) {
+        let a = seed >>> 0;
+        return () => {
+          a += 0x6d2b79f5;
+          let t = a;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function hashString(text) {
+        let h = 1779033703 ^ text.length;
+        for (let i = 0; i < text.length; i += 1) {
+          h = Math.imul(h ^ text.charCodeAt(i), 3432918353);
+          h = (h << 13) | (h >>> 19);
+        }
+        return () => {
+          h = Math.imul(h ^ (h >>> 16), 2246822507);
+          h = Math.imul(h ^ (h >>> 13), 3266489909);
+          return (h ^= h >>> 16) >>> 0;
+        };
+      }
+
+      function midiToHz(note) {
+        return 440 * Math.pow(2, (note - 69) / 12);
+      }
+
+      function formatTime(seconds) {
+        const clamped = Math.max(0, seconds);
+        const mm = Math.floor(clamped / 60);
+        const ss = Math.floor(clamped % 60);
+        return `${mm}:${String(ss).padStart(2, "0")}`;
+      }
+
+      function formatScore(value) {
+        return Math.floor(value).toString().padStart(6, "0");
+      }
+
+      function formatSpeed(value) {
+        return Math.max(0, Math.round(value)).toString().padStart(3, "0");
+      }
+
+      function readHighScore() {
+        try {
+          const raw = localStorage.getItem(HIGH_SCORE_KEY);
+          return raw ? Number(raw) || 0 : 0;
+        } catch {
+          return 0;
+        }
+      }
+
+      function writeHighScore(value) {
+        try {
+          localStorage.setItem(HIGH_SCORE_KEY, String(Math.floor(value)));
+        } catch {
+          // Ignore storage failures.
+        }
+      }
+
+      function chapterSpec(id) {
+        return CHAPTERS[id];
+      }
+
+      function themeSpec(id) {
+        return THEMES[id];
+      }
+
+      function nextChoiceForChapter(id) {
+        const spec = chapterSpec(id);
+        return spec && spec.choices ? spec.choices : [];
+      }
+
+      function currentTheme() {
+        if (!game.currentChapter || !game.currentChapter.theme) {
+          return themeSpec("coast");
+        }
+        if (typeof game.currentChapter.theme === "string") {
+          return themeSpec(game.currentChapter.theme) || themeSpec("coast");
+        }
+        return game.currentChapter.theme;
+      }
+
+      function buildChapter(id, depth, seedBase) {
+        const spec = chapterSpec(id);
+        const theme = themeSpec(spec.theme);
+        const rng = makeRng(seedBase ^ hashString(id)());
+        const segments = [];
+        const decor = [];
+        const traffic = [];
+        const length = spec.length;
+        let centerX = 0;
+        let centerY = 0;
+        let extra = rng();
+
+        for (let i = 0; i < length; i += 1) {
+          const t = i / Math.max(1, length - 1);
+          const ripple = Math.sin(t * Math.PI * spec.curveWave + depth * 0.43 + extra * 2.2);
+          const ripple2 = Math.sin(t * Math.PI * spec.curveRipple + depth * 0.13 + extra * 5.1);
+          const curveNoise = (rng() - 0.5) * spec.noise;
+          const hillNoise = (rng() - 0.5) * spec.noise * 0.8;
+          const curve = spec.curve * ripple + spec.curveRippleAmp * ripple2 + curveNoise;
+          const hill = spec.hill * Math.sin(t * Math.PI * spec.hillWave + depth * 0.27 + extra) + spec.hillRippleAmp * Math.sin(t * Math.PI * spec.hillRipple + depth * 0.11) + hillNoise;
+          centerX += curve * 42;
+          centerY += hill * 24;
+          const shade = i % 2 === 0 ? theme.roadLight : theme.roadDark;
+          const shoulder = i % 2 === 0 ? theme.shoulder : theme.dirt;
+          segments.push({
+            index: i,
+            z: i * SEGMENT_LENGTH,
+            curve,
+            hill,
+            centerX,
+            centerY,
+            roadShade: shade,
+            shoulderShade: shoulder,
+            laneCycle: spec.laneCycle,
+            isCurve: Math.abs(curve) > 0.18,
+            isHill: Math.abs(hill) > 0.08,
+          });
+        }
+
+        const sceneryTypes = sceneryForTheme(spec.theme);
+        const trafficKinds = trafficForTheme(spec.theme);
+
+        for (let z = 20; z < length - 18; z += spec.decorSpacing) {
+          const side = rng() > 0.5 ? 1 : -1;
+          const type = sceneryTypes[Math.floor(rng() * sceneryTypes.length)];
+          const scale = 0.8 + rng() * 1.5;
+          const offset = 1.1 + rng() * 1.1;
+          decor.push({
+            z: z * SEGMENT_LENGTH + (rng() * 100),
+            side,
+            type,
+            scale,
+            offset,
+            hue: theme.objectDark,
+            accent: theme.objectLight,
+            wobble: rng() * Math.PI * 2,
+          });
+          if (rng() > 0.76) {
+            const altType = sceneryTypes[Math.floor(rng() * sceneryTypes.length)];
+            decor.push({
+              z: z * SEGMENT_LENGTH + 58 + rng() * 50,
+              side: -side,
+              type: altType,
+              scale: 0.7 + rng() * 1.2,
+              offset: 1.3 + rng() * 0.8,
+              hue: theme.objectDark,
+              accent: theme.objectLight,
+              wobble: rng() * Math.PI * 2,
+            });
+          }
+        }
+
+        for (let z = 28; z < length - 20; z += spec.trafficSpacing) {
+          if (rng() < spec.trafficDensity) {
+            const laneRoll = rng();
+            const lane = laneRoll < 0.33 ? -1 : laneRoll < 0.66 ? 0 : 1;
+            const kind = trafficKinds[Math.floor(rng() * trafficKinds.length)];
+            const speedFactor = 0.54 + rng() * 0.34;
+            const offset = lane * 0.37 + (rng() - 0.5) * 0.05;
+            traffic.push({
+              z: z * SEGMENT_LENGTH + 80 + rng() * 180,
+              lane,
+              offset,
+              kind,
+              speed: spec.speedTarget * speedFactor,
+              color: theme.traffic[Math.floor(rng() * theme.traffic.length)],
+              passed: false,
+              crashed: false,
+              wobble: rng() * Math.PI * 2,
+              sway: (rng() - 0.5) * 0.2,
+            });
+          }
+          if (rng() < spec.trafficDensity * 0.45) {
+            const laneRoll = rng();
+            const lane = laneRoll < 0.25 ? -1 : laneRoll < 0.5 ? 0 : laneRoll < 0.75 ? 1 : 2;
+            const kind = trafficKinds[Math.floor(rng() * trafficKinds.length)];
+            const speedFactor = 0.5 + rng() * 0.28;
+            const offset = (lane - 1) * 0.31 + (rng() - 0.5) * 0.04;
+            traffic.push({
+              z: z * SEGMENT_LENGTH + 260 + rng() * 110,
+              lane,
+              offset,
+              kind,
+              speed: spec.speedTarget * speedFactor,
+              color: theme.traffic[Math.floor(rng() * theme.traffic.length)],
+              passed: false,
+              crashed: false,
+              wobble: rng() * Math.PI * 2,
+              sway: (rng() - 0.5) * 0.18,
+            });
+          }
+        }
+
+        for (let i = 0; i < 12; i += 1) {
+          const z = (i + 5) * (length / 18);
+          decor.push({
+            z: z * SEGMENT_LENGTH + 60,
+            side: i % 2 === 0 ? 1 : -1,
+            type: "sign",
+            scale: 0.9 + (i % 3) * 0.25,
+            offset: 1.0 + (i % 4) * 0.15,
+            hue: theme.objectDark,
+            accent: theme.objectLight,
+            wobble: rng() * Math.PI * 2,
+          });
+        }
+
+        return {
+          spec,
+          theme,
+          segments,
+          decor,
+          traffic,
+          lengthPx: length * SEGMENT_LENGTH,
+        };
+      }
+
+      function sceneryForTheme(themeId) {
+        switch (themeId) {
+          case "coast":
+            return ["pine", "cliff", "boat", "lighthouse", "spray"];
+          case "country":
+            return ["tree", "barn", "fence", "windmill", "hedge"];
+          case "mountain":
+            return ["pine", "rock", "cabin", "peak", "guardrail"];
+          case "desert":
+            return ["cactus", "dune", "mesa", "station", "stone"];
+          case "city":
+            return ["tower", "overpass", "warehouse", "lamp", "billboard"];
+          case "harbor":
+            return ["crane", "boat", "warehouse", "pier", "beacon"];
+          case "boulevard":
+            return ["tower", "lamp", "median", "tree", "billboard"];
+          default:
+            return ["tree", "rock", "lamp"];
+        }
+      }
+
+      function trafficForTheme(themeId) {
+        switch (themeId) {
+          case "coast":
+            return ["sedan", "wagon", "pickup"];
+          case "country":
+            return ["sedan", "pickup", "wagon"];
+          case "mountain":
+            return ["wagon", "pickup", "sedan"];
+          case "desert":
+            return ["pickup", "sedan", "wagon"];
+          case "city":
+            return ["sedan", "van", "bus", "wagon"];
+          case "harbor":
+            return ["van", "wagon", "pickup"];
+          case "boulevard":
+            return ["sedan", "wagon", "van", "bus"];
+          default:
+            return ["sedan", "wagon"];
+        }
+      }
+
+      function resetPlayer() {
+        playerCar.x = 0;
+        playerCar.speed = 0;
+        playerCar.angle = 0;
+        playerCar.lean = 0;
+        playerCar.spin = 0;
+        playerCar.spinVel = 0;
+        playerCar.shakeKick = 0;
+        playerCar.damage = 0;
+        playerCar.offroad = 0;
+        playerCar.slip = 0;
+      }
+
+      function resetRun(seed, startChapterId) {
+        game.currentRunSeed = seed;
+        game.currentRoutePath = [];
+        game.currentRouteLabel = "";
+        game.routeHistory = [];
+        game.chapterIndex = 0;
+        game.chapterDistance = 0;
+        game.totalDistance = 0;
+        game.score = 0;
+        game.timeLeft = START_TIME;
+        game.passes = 0;
+        game.spins = 0;
+        game.collisions = 0;
+        game.combo = 0;
+        game.maxCombo = 0;
+        game.checkpointBonus = 0;
+        game.selectedChoice = 0;
+        game.checkpointTimer = 0;
+        game.countdown = 0;
+        game.countdownText = "";
+        game.routeTimer = 0;
+        game.finishTitle = "";
+        game.finishBody = "";
+        game.finishPath = "";
+        game.finishReason = "";
+        game.routeOptions = [];
+        game.routeMode = "start";
+        game.traffic = [];
+        game.decor = [];
+        game.particles = [];
+        game.weatherParticles = [];
+        game.cameraShake = 0;
+        game.screenFlash = 0;
+        game.messageTimer = 0;
+        game.attractDistance = 0;
+        resetPlayer();
+        loadChapter(startChapterId, true);
+        setState(STATE.COUNTDOWN, {
+          title: "Route Locked",
+          body: `Starting at ${chapterSpec(startChapterId).name}. Hold the throttle and settle the car before the first bend.`,
+          note: "The timer starts now.",
+          footer: "3",
+        }, 2.4);
+        audio.effect("start");
+        audio.startMusic();
+      }
+
+      function loadChapter(id, fromStart = false) {
+        const spec = chapterSpec(id);
+        const seed = (game.currentRunSeed || 1) ^ hashString(id)() ^ (game.chapterIndex + 1) * 0x9e3779b1;
+        game.currentChapterId = id;
+        game.currentChapter = buildChapter(id, game.chapterIndex, seed);
+        game.chapterDistance = 0;
+        game.traffic = game.currentChapter.traffic.map((car) => ({
+          ...car,
+          baseZ: car.z,
+          flash: 0,
+          spin: 0,
+          hit: 0,
+        }));
+        game.decor = game.currentChapter.decor.map((item) => ({ ...item }));
+        game.selectedChoice = 0;
+        game.routeOptions = spec.final ? [] : spec.choices.map((choice) => ({ ...choice }));
+        game.routeMode = fromStart ? "start" : "checkpoint";
+        game.routeTimer = 0;
+        game.checkpointTimer = 0;
+        game.messageTimer = 2.4;
+        game.routeHistory.push(id);
+        hudChapter.textContent = spec.name;
+      }
+
+      function setState(next, overlayData = null, timer = 0) {
+        game.previousState = game.state;
+        game.state = next;
+        if (overlayData) {
+          showModal(overlayData);
+        } else if (next === STATE.PLAY) {
+          hideModal();
+        }
+        if (next === STATE.ROUTE) {
+          showRouteScreen();
+        }
+        if (next === STATE.TITLE) {
+          showTitleScreen();
+        }
+        if (next === STATE.FINISH || next === STATE.OVER) {
+          game.routeTimer = timer;
+        }
+      }
+
+      function showModal({ kicker = "", title = "", body = "", note = "", footer = "", choices = [] }) {
+        modal.classList.remove("hidden");
+        modalKicker.textContent = kicker;
+        modalTitle.textContent = title;
+        modalBody.textContent = body;
+        modalNote.textContent = note;
+        modalFooter.textContent = footer;
+        modalChoices.innerHTML = "";
+        choices.forEach((choice, index) => {
+          const button = document.createElement("button");
+          button.className = "choice";
+          button.dataset.choice = String(index);
+          button.innerHTML = `
+            <span class="name">${choice.label}</span>
+            <span class="desc">${choice.desc || ""}</span>
+            <span class="meta">${(choice.meta || []).map((item) => `<span class="pill">${item}</span>`).join("")}</span>
+          `;
+          button.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            handleChoice(index);
+          });
+          modalChoices.appendChild(button);
+        });
+        updateChoiceHighlight();
+      }
+
+      function hideModal() {
+        modal.classList.add("hidden");
+      }
+
+      function showTitleScreen() {
+        setModalContent({
+          kicker: "1986 Touring Special",
+          title: "Coastal Rush '86",
+          body:
+            "A retro roadside sprint with a warm natural palette, a red convertible, a passenger in the seat, and a branching checkpoint tour through coast, country, mountain, desert, harbor, and city.",
+          note:
+            "Use the arrows or WASD to drive once the race begins. At forks, choose a route card or tap the left/right controls to move the selection.",
+          footer: `Best run: ${formatScore(game.highScore)}. Procedural background music and engine audio are generated live. Press Start to wake the engine.`,
+          choices: [
+            {
+              label: "START TOUR",
+              desc: "Enter route selection and begin the drive.",
+              meta: ["enter", "touch", "space"],
+            },
+          ],
+        });
+        miniHint.textContent = "Title screen. Press Start, Enter, or tap the card.";
+        hudChapter.textContent = "Title Screen";
+      }
+
+      function showRouteScreen() {
+        setModalContent({
+          kicker: "Route Screen",
+          title: "Choose Your Opening Leg",
+          body:
+            "The first branch sets the tone for the entire tour. Coast is the balanced opener, Country is friendlier, and City throws you into traffic immediately.",
+          note: "Pick one, then the tour locks in and the timer begins.",
+          footer: `Current high score: ${formatScore(game.highScore)}.`,
+          choices: START_CHOICES.map((entry) => ({
+            label: entry.label,
+            desc: entry.desc,
+            meta: entry.meta,
+          })),
+        });
+        miniHint.textContent = "Route screen. Left / Right changes the selected card. Enter confirms.";
+      }
+
+      function showCheckpointScreen(spec) {
+        setModalContent({
+          kicker: "Checkpoint",
+          title: spec.choiceTitle,
+          body: `${spec.intro} ${spec.routeNote}`,
+          note: `Time bonus on arrival: +${spec.timeBonus} seconds. Choose quickly or the left route becomes the default.`,
+          footer: `${spec.name} complete. Route history: ${game.routeHistory.join(" > ")}.`,
+          choices: spec.final ? [] : spec.choices.map((entry) => ({
+            label: entry.label,
+            desc: entry.desc,
+            meta: entry.meta,
+          })),
+        });
+        if (spec.final) {
+          modalChoices.innerHTML = "";
+        }
+        miniHint.textContent = "Checkpoint reached. Choose the next road before the tour resumes.";
+      }
+
+      function showFinishScreen() {
+        setModalContent({
+          kicker: "Finish",
+          title: game.finishTitle || "Finish Line",
+          body: game.finishBody || "The tour is over. The engine is still warm, but the road has nothing left to say.",
+          note: game.finishPath,
+          footer: `Final score ${formatScore(game.score)}. Best score ${formatScore(game.highScore)}.`,
+          choices: [
+            {
+              label: "RUN AGAIN",
+              desc: "Start a fresh tour with the same route selection flow.",
+              meta: ["restart"],
+            },
+            {
+              label: "BACK TO TITLE",
+              desc: "Return to the attract screen and leave the road behind for a moment.",
+              meta: ["title"],
+            },
+          ],
+        });
+        miniHint.textContent = "Finish screen. Choose a new run or return to title.";
+      }
+
+      function showGameOverScreen(reason) {
+        setModalContent({
+          kicker: "Game Over",
+          title: "Tour Failed",
+          body: reason,
+          note: `You lasted through ${game.routeHistory.length} chapters, ${game.passes} clean passes, and ${game.spins} spins.`,
+          footer: `Score ${formatScore(game.score)}. High score ${formatScore(game.highScore)}.`,
+          choices: [
+            {
+              label: "RETRY",
+              desc: "Reload the route and try the tour again.",
+              meta: ["retry"],
+            },
+            {
+              label: "TITLE",
+              desc: "Back to the title screen.",
+              meta: ["menu"],
+            },
+          ],
+        });
+        miniHint.textContent = "Game over. The timer or the damage meter won the argument.";
+      }
+
+      function setModalContent(data) {
+        modal.classList.remove("hidden");
+        modalKicker.textContent = data.kicker || "";
+        modalTitle.textContent = data.title || "";
+        modalBody.textContent = data.body || "";
+        modalNote.textContent = data.note || "";
+        modalFooter.textContent = data.footer || "";
+        modalChoices.innerHTML = "";
+        (data.choices || []).forEach((choice, index) => {
+          const button = document.createElement("button");
+          button.className = "choice";
+          button.dataset.choice = String(index);
+          button.innerHTML = `
+            <span class="name">${choice.label}</span>
+            <span class="desc">${choice.desc || ""}</span>
+            <span class="meta">${(choice.meta || []).map((item) => `<span class="pill">${item}</span>`).join("")}</span>
+          `;
+          button.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            handleChoice(index);
+          });
+          modalChoices.appendChild(button);
+        });
+        updateChoiceHighlight();
+      }
+
+      function updateChoiceHighlight() {
+        const buttons = [...modalChoices.querySelectorAll("button.choice")];
+        buttons.forEach((button, index) => {
+          button.classList.toggle("active", index === game.selectedChoice);
+        });
+      }
+
+      function pickStartRoute(index) {
+        const choice = START_CHOICES[index];
+        if (!choice) {
+          return;
+        }
+        game.selectedChoice = index;
+        game.currentRoutePath = [choice.id];
+        game.currentRouteLabel = choice.label;
+        game.routeHistory = [choice.id];
+        game.chapterIndex = 0;
+        game.timeLeft = START_TIME;
+        game.score = 0;
+        game.passes = 0;
+        game.spins = 0;
+        game.collisions = 0;
+        game.combo = 0;
+        game.maxCombo = 0;
+        game.checkpointBonus = 0;
+        game.routeMode = "start";
+        game.currentRunSeed = (Date.now() ^ Math.floor(Math.random() * 1000000)) >>> 0;
+        loadChapter(choice.id, true);
+        setState(STATE.COUNTDOWN, {
+          kicker: "Tour Start",
+          title: `${choice.label}`,
+          body: `${chapterSpec(choice.id).intro} ${chapterSpec(choice.id).routeNote}`,
+          note: "The road is alive. Hold the line and keep the red convertible planted.",
+          footer: "3",
+        }, 2.4);
+        audio.effect("start");
+        audio.startMusic();
+      }
+
+      function handleChoice(index) {
+        audio.effect("tap");
+        if (game.state === STATE.TITLE) {
+          setState(STATE.ROUTE);
+          return;
+        }
+        if (game.state === STATE.ROUTE) {
+          pickStartRoute(index);
+          return;
+        }
+        if (game.state === STATE.CHECKPOINT) {
+          chooseNextChapter(index);
+          return;
+        }
+        if (game.state === STATE.FINISH || game.state === STATE.OVER) {
+          if (index === 0) {
+            startFreshRun();
+          } else {
+            setState(STATE.TITLE);
+          }
+          return;
+        }
+      }
+
+      function chooseNextChapter(index) {
+        const options = game.currentChapter.spec.choices || [];
+        const selected = options[index] || options[0];
+        if (!selected) {
+          finishTour("You reached the end of the route without a valid next leg.");
+          return;
+        }
+        game.currentRoutePath.push(selected.id);
+        game.currentRouteLabel = selected.label;
+        game.chapterIndex += 1;
+        game.totalDistance += game.currentChapter.lengthPx;
+        game.checkpointBonus += game.currentChapter.spec.timeBonus;
+        game.score += 300 + game.timeLeft * 6 + game.combo * 35 + game.currentChapter.spec.timeBonus * 12;
+        game.timeLeft += game.currentChapter.spec.timeBonus;
+        game.selectedChoice = 0;
+        loadChapter(selected.id, false);
+        setState(STATE.COUNTDOWN, {
+          kicker: "Fork Selected",
+          title: selected.label,
+          body: chapterSpec(selected.id).intro + " " + chapterSpec(selected.id).routeNote,
+          note: "The new road is loading. Keep the car straight during the merge.",
+          footer: "2",
+        }, 1.9);
+        audio.effect("checkpoint");
+      }
+
+      function startFreshRun() {
+        setState(STATE.ROUTE);
+        showRouteScreen();
+      }
+
+      function finishTour(reason = "") {
+        const spec = game.currentChapter.spec;
+        const routeText = game.routeHistory.map((id) => chapterSpec(id).name).join(" > ");
+        const endTitle = spec.endingTitle || "Tour Complete";
+        const finishFlavor = spec.endingBody || "The route ends in warm light and a working engine.";
+        game.finishTitle = endTitle;
+        game.finishBody = finishFlavor;
+        game.finishPath = routeText;
+        game.finishReason = reason;
+        game.score += Math.max(0, Math.floor(game.timeLeft * 15));
+        if (game.score > game.highScore) {
+          game.highScore = game.score;
+          writeHighScore(game.highScore);
+        }
+        audio.effect("finish");
+        setState(STATE.FINISH);
+        showFinishScreen();
+      }
+
+      function gameOver(reason) {
+        if (game.score > game.highScore) {
+          game.highScore = game.score;
+          writeHighScore(game.highScore);
+        }
+        audio.effect("gameover");
+        setState(STATE.OVER);
+        showGameOverScreen(reason);
+      }
+
+      function beginCountdown(label, seconds = 2.5) {
+        game.countdown = seconds;
+        game.countdownText = label;
+      }
+
+      function startPlayFromCountdown() {
+        hideModal();
+        setState(STATE.PLAY);
+        miniHint.textContent = "Drive clean, pass traffic, and watch the route timer. Forks appear at checkpoints.";
+      }
+
+      function updateState(dt) {
+        game.titleBlink += dt * 2;
+        game.screenFlash = Math.max(0, game.screenFlash - dt * 2.2);
+        flashEl.style.opacity = String(game.screenFlash * 0.7);
+        hudHigh.textContent = formatScore(game.highScore);
+
+        if (game.state === STATE.TITLE) {
+          game.attractDistance += dt * 140;
+          if (game.attractDistance > 1000) {
+            game.attractDistance -= 1000;
+          }
+          hudChapter.textContent = "Title Screen";
+          hudTime.textContent = "--:--";
+          hudSpeed.textContent = "000";
+          hudScore.textContent = formatScore(game.highScore);
+          return;
+        }
+
+        if (game.state === STATE.ROUTE) {
+          hudChapter.textContent = "Route Select";
+          hudTime.textContent = formatTime(game.timeLeft);
+          hudSpeed.textContent = formatSpeed(playerCar.speed);
+          hudScore.textContent = formatScore(game.score);
+          return;
+        }
+
+        if (game.state === STATE.COUNTDOWN) {
+          game.countdown -= dt;
+          if (game.countdown <= 0) {
+            startPlayFromCountdown();
+            return;
+          }
+          const number = Math.max(1, Math.ceil(game.countdown));
+          modalFooter.textContent = String(number);
+          hudChapter.textContent = `${game.currentChapter.spec.name} - Launch`;
+          hudTime.textContent = formatTime(game.timeLeft);
+          hudSpeed.textContent = formatSpeed(playerCar.speed);
+          hudScore.textContent = formatScore(game.score);
+          return;
+        }
+
+        if (game.state === STATE.CHECKPOINT) {
+          game.checkpointTimer -= dt;
+          if (game.checkpointTimer <= 0) {
+            chooseNextChapter(0);
+          }
+          hudChapter.textContent = `${game.currentChapter.spec.name} - Checkpoint`;
+          hudTime.textContent = formatTime(game.timeLeft);
+          hudSpeed.textContent = formatSpeed(playerCar.speed);
+          hudScore.textContent = formatScore(game.score);
+          return;
+        }
+
+        if (game.state === STATE.FINISH || game.state === STATE.OVER) {
+          hudChapter.textContent = game.state === STATE.FINISH ? "Finish" : "Game Over";
+          hudTime.textContent = formatTime(game.timeLeft);
+          hudSpeed.textContent = formatSpeed(playerCar.speed);
+          hudScore.textContent = formatScore(game.score);
+          return;
+        }
+
+        if (game.state !== STATE.PLAY) {
+          return;
+        }
+
+        const spec = game.currentChapter.spec;
+        const theme = game.currentChapter.theme;
+        const themeData = currentTheme();
+        const steer = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+        const throttle = input.gas ? 1 : 0;
+        const braking = input.brake ? 1 : 0;
+        const speedTarget = spec.speedTarget + (throttle ? 18 : 0);
+        const accelRate = 112;
+        const brakeRate = 178;
+        const dragRate = 12.5;
+        const offroadFactor = clamp(Math.abs(playerCar.x) - 1.0, 0, 1.4);
+        const roadAssist = 0.65 + Math.min(playerCar.speed / MAX_SPEED, 1) * 0.6;
+        const spinDrag = playerCar.spin > 0 ? 0.5 : 1;
+
+        if (throttle) {
+          playerCar.speed += accelRate * dt * roadAssist;
+        } else {
+          playerCar.speed -= dragRate * dt * (1 + playerCar.offroad * 0.4);
+        }
+
+        if (braking) {
+          playerCar.speed -= brakeRate * dt;
+        }
+
+        if (playerCar.speed < MIN_SPEED) {
+          playerCar.speed = 0;
+        }
+        if (playerCar.speed > MAX_SPEED_OVER) {
+          playerCar.speed = MAX_SPEED_OVER;
+        }
+        if (playerCar.speed > speedTarget) {
+          playerCar.speed -= (playerCar.speed - speedTarget) * dt * 0.8;
+        }
+
+        const curveAtCar = roadCurveAt(game.currentChapter, game.chapterDistance);
+        const steerPower = 0.92 + playerCar.speed / MAX_SPEED * 1.12;
+        playerCar.x += steer * dt * steerPower * 0.82;
+        playerCar.x -= curveAtCar * dt * 0.26;
+        playerCar.x += (playerCar.spin * 0.5) * dt * 0.2;
+        playerCar.x *= 1 - dt * 0.02;
+        playerCar.x = clamp(playerCar.x, -1.28, 1.28);
+
+        const slide = Math.abs(steer) > 0.2 && playerCar.speed > 130 ? Math.abs(steer) * dt * playerCar.speed * 0.01 : 0;
+        playerCar.lean = lerp(playerCar.lean, -steer * clamp(playerCar.speed / MAX_SPEED, 0, 1), dt * 8);
+        playerCar.angle = lerp(playerCar.angle, -steer * clamp(playerCar.speed / MAX_SPEED, 0, 1.1) * 0.12 + playerCar.spin * 0.6, dt * 6);
+
+        playerCar.offroad = smoothstep(1.0, 1.18, Math.abs(playerCar.x));
+        if (playerCar.offroad > 0) {
+          playerCar.speed -= (45 + playerCar.offroad * 42) * dt;
+          if (randSeed(Math.floor(game.chapterDistance + game.totalDistance)) > 0.5) {
+            spawnDustForPlayer(themeData, 1.5 + playerCar.offroad * 1.8);
+          }
+          game.combo = Math.max(0, game.combo - 1);
+        }
+
+        if (playerCar.spin > 0) {
+          playerCar.spin = Math.max(0, playerCar.spin - dt * 0.95);
+          playerCar.spinVel *= 1 - dt * 1.1;
+          playerCar.speed *= 1 - dt * 0.34;
+        }
+
+        if (braking && steer !== 0 && playerCar.speed > 140 && playerCar.spin <= 0.02) {
+          playerCar.spin = 0.48;
+          playerCar.spinVel = steer > 0 ? 2.1 : -2.1;
+          game.cameraShake = Math.max(game.cameraShake, 0.18);
+          playerCar.damage += 8;
+          game.spins += 1;
+          game.combo = 0;
+          audio.effect("spin");
+        }
+
+        playerCar.spin += playerCar.spinVel * dt * 0.01;
+        playerCar.spin = clamp(playerCar.spin, 0, 1);
+
+        if (playerCar.speed > 70) {
+          game.score += playerCar.speed * dt * (0.9 + game.combo * 0.02);
+        } else {
+          game.score += dt * 3;
+        }
+
+        game.chapterDistance += playerCar.speed * dt;
+        game.totalDistance += playerCar.speed * dt;
+        game.timeLeft -= dt;
+
+        if (game.timeLeft <= 0) {
+          gameOver("The timer ran out before the route reached its final leg.");
+          return;
+        }
+
+        updateTraffic(dt, themeData);
+        updateParticles(dt, themeData);
+        updateWeather(dt, themeData);
+        updateAudio(dt);
+
+        if (playerCar.damage >= 100) {
+          gameOver("The convertible took too many hits to keep the tour alive.");
+          return;
+        }
+
+        if (game.chapterDistance >= game.currentChapter.lengthPx) {
+          game.chapterDistance = game.currentChapter.lengthPx;
+          if (game.currentChapter.spec.final) {
+            finishTour();
+            return;
+          }
+          nextCheckpoint();
+          return;
+        }
+
+        if (slide > 0.12) {
+          playerCar.speed -= slide * 14;
+        }
+
+        hudChapter.textContent = spec.name;
+        hudTime.textContent = formatTime(game.timeLeft);
+        hudSpeed.textContent = formatSpeed(playerCar.speed);
+        hudScore.textContent = formatScore(game.score);
+        hudHigh.textContent = formatScore(game.highScore);
+      }
+
+      function nextCheckpoint() {
+        const spec = game.currentChapter.spec;
+        game.timeLeft += spec.timeBonus;
+        game.checkpointBonus += spec.timeBonus;
+        game.score += 300 + spec.timeBonus * 18 + game.combo * 16;
+        game.selectedChoice = 0;
+        game.checkpointTimer = 8.0;
+        game.cameraShake = Math.max(game.cameraShake, 0.12);
+        game.screenFlash = Math.max(game.screenFlash, 0.22);
+        audio.effect("checkpoint");
+        setState(STATE.CHECKPOINT);
+        showCheckpointScreen(spec);
+      }
+
+      function roadCurveAt(chapter, distancePx) {
+        if (!chapter || !chapter.segments.length) {
+          return 0;
+        }
+        const idx = clamp(Math.floor(distancePx / SEGMENT_LENGTH), 0, chapter.segments.length - 1);
+        return chapter.segments[idx].curve;
+      }
+
+      function updateTraffic(dt, themeData) {
+        const chapter = game.currentChapter;
+        const chapterLength = chapter.lengthPx;
+        const carWorldX = currentRoadCenterX() + playerCar.x * ROAD_HALF_WIDTH * 0.9;
+        for (const car of game.traffic) {
+          car.z += car.speed * dt;
+          const relZ = car.z - game.chapterDistance;
+          if (relZ < -240) {
+            if (!car.passed) {
+              car.passed = true;
+              game.passes += 1;
+              game.combo = clamp(game.combo + 1, 0, 12);
+              game.maxCombo = Math.max(game.maxCombo, game.combo);
+              game.score += 120 + game.combo * 22;
+              audio.effect("pass");
+              spawnPassParticles(themeData, car);
+            }
+            continue;
+          }
+          if (relZ > chapterLength + 320) {
+            continue;
+          }
+          const laneX = car.laneOffset !== undefined ? car.laneOffset : (car.lane - 1) * 0.34;
+          const trafficWorldX = roadCenterForZ(chapter, car.z) + laneX * ROAD_HALF_WIDTH * 0.88;
+          const xDelta = Math.abs(trafficWorldX - carWorldX);
+          const zDelta = Math.abs(relZ);
+          if (!car.crashed && relZ > -120 && relZ < 140 && xDelta < 165 && zDelta < 100) {
+            if (!car.hit) {
+              car.hit = 1;
+              resolveCollision(car, themeData, xDelta, relZ);
+            }
+          }
+          if (car.z > chapterLength + 800) {
+            car.passed = true;
+          }
+        }
+      }
+
+      function resolveCollision(car, themeData, xDelta, zDelta) {
+        car.crashed = true;
+        car.hit = 1;
+        game.collisions += 1;
+        game.combo = 0;
+        playerCar.speed *= 0.58;
+        playerCar.spin = Math.max(playerCar.spin, 0.68);
+        playerCar.spinVel = xDelta > 0 ? -2.8 : 2.8;
+        playerCar.damage += 22;
+        game.cameraShake = Math.max(game.cameraShake, 0.4);
+        game.screenFlash = Math.max(game.screenFlash, 0.55);
+        audio.effect("crash", 1 + clamp(game.collisions * 0.1, 0, 0.6));
+        spawnCrashParticles(themeData, car, xDelta, zDelta);
+      }
+
+      function currentRoadCenterX() {
+        const chapter = game.currentChapter || buildChapter("coast", 0, 1);
+        const idx = clamp(Math.floor(game.chapterDistance / SEGMENT_LENGTH), 0, chapter.segments.length - 1);
+        return chapter.segments[idx].centerX;
+      }
+
+      function roadCenterForZ(chapter, z) {
+        if (!chapter || !chapter.segments || !chapter.segments.length) {
+          chapter = game.currentChapter || buildChapter("coast", 0, 1);
+        }
+        const idx = clamp(Math.floor(z / SEGMENT_LENGTH), 0, chapter.segments.length - 1);
+        return chapter.segments[idx].centerX;
+      }
+
+      function spawnDustForPlayer(themeData, intensity) {
+        const baseX = VIEW_W * 0.5 + (playerCar.x * VIEW_W * 0.24);
+        const baseY = VIEW_H * 0.78;
+        for (let i = 0; i < 4; i += 1) {
+          game.particles.push({
+            x: baseX + (Math.random() - 0.5) * 18,
+            y: baseY + (Math.random() - 0.5) * 12,
+            vx: (Math.random() - 0.5) * 70 - playerCar.speed * 0.14,
+            vy: 10 + Math.random() * 18,
+            life: 0.28 + Math.random() * 0.22,
+            size: 2 + Math.random() * 5 * intensity,
+            color: themeData.dirt,
+            type: "dust",
+          });
+        }
+      }
+
+      function spawnPassParticles(themeData, car) {
+        const baseY = VIEW_H * 0.56 + Math.random() * 40;
+        const baseX = VIEW_W * 0.5 + (car.lane - 1) * 54;
+        for (let i = 0; i < 6; i += 1) {
+          game.particles.push({
+            x: baseX + (Math.random() - 0.5) * 30,
+            y: baseY + (Math.random() - 0.5) * 18,
+            vx: (Math.random() - 0.5) * 120,
+            vy: -10 + Math.random() * 40,
+            life: 0.2 + Math.random() * 0.22,
+            size: 1.4 + Math.random() * 2.8,
+            color: themeData.objectLight,
+            type: "spark",
+          });
+        }
+      }
+
+      function spawnCrashParticles(themeData, car, xDelta, zDelta) {
+        const baseX = VIEW_W * 0.5 + (car.lane - 1) * 60;
+        const baseY = VIEW_H * 0.58 + Math.random() * 26;
+        for (let i = 0; i < 12; i += 1) {
+          game.particles.push({
+            x: baseX + (Math.random() - 0.5) * 48,
+            y: baseY + (Math.random() - 0.5) * 26,
+            vx: (Math.random() - 0.5) * 180 + Math.sign(xDelta || 1) * 50,
+            vy: -40 + Math.random() * 120,
+            life: 0.24 + Math.random() * 0.3,
+            size: 2 + Math.random() * 4.5,
+            color: Math.random() > 0.5 ? themeData.roadStripe : themeData.dirt,
+            type: "debris",
+          });
+        }
+        for (let i = 0; i < 4; i += 1) {
+          game.particles.push({
+            x: baseX + (Math.random() - 0.5) * 40,
+            y: baseY + (Math.random() - 0.5) * 20,
+            vx: (Math.random() - 0.5) * 90,
+            vy: -20 + Math.random() * 50,
+            life: 0.26 + Math.random() * 0.24,
+            size: 4 + Math.random() * 5,
+            color: themeData.roadStripe,
+            type: "smoke",
+          });
+        }
+      }
+
+      function updateParticles(dt, themeData) {
+        const remaining = [];
+        for (const particle of game.particles) {
+          particle.life -= dt;
+          particle.x += particle.vx * dt;
+          particle.y += particle.vy * dt;
+          particle.vx *= 1 - dt * 0.06;
+          particle.vy += 50 * dt;
+          if (particle.type === "spark") {
+            particle.vy *= 0.96;
+          } else if (particle.type === "smoke") {
+            particle.vx *= 1 - dt * 0.22;
+            particle.vy *= 1 - dt * 0.08;
+          } else if (particle.type === "dust") {
+            particle.vx *= 1 - dt * 0.18;
+          }
+          if (particle.life > 0) {
+            remaining.push(particle);
+          }
+        }
+        game.particles = remaining;
+      }
+
+      function updateWeather(dt, themeData) {
+        const weather = game.currentChapter.spec.theme;
+        const pools = game.weatherParticles;
+        const maxCount = weather === "city" ? 8 : weather === "harbor" ? 10 : weather === "mountain" ? 12 : weather === "desert" ? 18 : 10;
+        while (pools.length < maxCount) {
+          pools.push({
+            x: Math.random() * VIEW_W,
+            y: Math.random() * VIEW_H * 0.8,
+            vx: -20 - Math.random() * 40,
+            vy: 10 + Math.random() * 25,
+            life: 1 + Math.random() * 1,
+            size: 1 + Math.random() * 3,
+            type: weather,
+          });
+        }
+        for (const particle of pools) {
+          particle.x += particle.vx * dt;
+          particle.y += particle.vy * dt;
+          particle.life -= dt * 0.25;
+          if (particle.x < -20) {
+            particle.x = VIEW_W + 20;
+            particle.y = Math.random() * VIEW_H * 0.8;
+          }
+          if (particle.y > VIEW_H * 0.82) {
+            particle.y = Math.random() * 100;
+          }
+        }
+      }
+
+      function updateAudio(dt) {
+        if (audio.ctx) {
+          audio.engine(
+            playerCar.speed,
+            input.gas ? 1 : 0,
+            input.brake ? 1 : 0,
+            playerCar.offroad,
+            playerCar.spin,
+          );
+          audio.updateMusic(themeIndexForChapter(game.currentChapterId));
+        }
+      }
+
+      function themeIndexForChapter(id) {
+        const order = ["coast", "country", "city", "mountain", "desert", "harbor", "boulevard", "summit", "oasis", "pier"];
+        return clamp(order.indexOf(id), 0, 9);
+      }
+
+      function drawScene() {
+        const themeData = currentTheme();
+        const chapter = game.currentChapter || buildChapter("coast", 0, 1);
+        const shake = game.cameraShake;
+        const swayX = shake ? (Math.random() - 0.5) * 14 * shake : 0;
+        const swayY = shake ? (Math.random() - 0.5) * 10 * shake : 0;
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = themeData.skyTop;
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
+        skyGrad.addColorStop(0, themeData.skyTop);
+        skyGrad.addColorStop(0.45, themeData.skyMid);
+        skyGrad.addColorStop(0.72, themeData.skyBottom);
+        skyGrad.addColorStop(1, "#c69d67");
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+        drawDistantBackdrop(themeData, chapter);
+
+        ctx.translate(swayX, swayY);
+        drawRoad(themeData, chapter);
+        drawDecor(themeData, chapter);
+        drawTraffic(themeData, chapter);
+        drawPlayer(themeData);
+        drawParticles(themeData);
+        drawDash(themeData);
+
+        if (game.state === STATE.TITLE || game.state === STATE.ROUTE) {
+          drawAttractRoad(themeData);
+        }
+        if (game.state === STATE.COUNTDOWN) {
+          drawCountdown(themeData);
+        }
+
+        ctx.restore();
+      }
+
+      function drawDistantBackdrop(themeData, chapter) {
+        const progress = game.state === STATE.TITLE ? game.attractDistance : game.chapterDistance;
+        const t = (progress / chapter.lengthPx) % 1;
+        const horizonY = VIEW_H * 0.42;
+        const sunX = VIEW_W * (0.2 + 0.56 * ((Math.sin(t * Math.PI * 2) * 0.5) + 0.5));
+        const sunY = VIEW_H * 0.18 + Math.sin(t * Math.PI * 2) * 10;
+        ctx.save();
+        ctx.fillStyle = themeData.haze;
+        ctx.globalAlpha = 0.2;
+        ctx.fillRect(0, horizonY - 26, VIEW_W, 78);
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.fillStyle = themeData.sun;
+        ctx.arc(sunX, sunY, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.16;
+        ctx.beginPath();
+        ctx.fillStyle = "#fff8d9";
+        ctx.arc(sunX, sunY, 68, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.restore();
+
+        switch (chapter.spec.theme) {
+          case "coast":
+            drawCoastBackdrop(themeData, horizonY);
+            break;
+          case "country":
+            drawCountryBackdrop(themeData, horizonY);
+            break;
+          case "mountain":
+            drawMountainBackdrop(themeData, horizonY);
+            break;
+          case "desert":
+            drawDesertBackdrop(themeData, horizonY);
+            break;
+          case "city":
+            drawCityBackdrop(themeData, horizonY);
+            break;
+          case "harbor":
+            drawHarborBackdrop(themeData, horizonY);
+            break;
+          case "boulevard":
+            drawBoulevardBackdrop(themeData, horizonY);
+            break;
+          default:
+            drawCountryBackdrop(themeData, horizonY);
+            break;
+        }
+      }
+
+      function drawCoastBackdrop(themeData, horizonY) {
+        const waterGrad = ctx.createLinearGradient(0, horizonY, 0, VIEW_H);
+        waterGrad.addColorStop(0, "#6f99ab");
+        waterGrad.addColorStop(1, "#4c7487");
+        ctx.fillStyle = waterGrad;
+        ctx.fillRect(0, horizonY + 10, VIEW_W, VIEW_H - horizonY);
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = "#f7e7cc";
+        for (let i = 0; i < 10; i += 1) {
+          const x = (i * 117 + game.attractDistance * 0.16) % (VIEW_W + 150) - 80;
+          ctx.beginPath();
+          ctx.ellipse(x, horizonY + 48 + (i % 3) * 12, 40 + i * 2, 10 + (i % 4), 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        drawRollingShape(horizonY, 0.32, 0.44, themeData.rock, themeData.objectDark, 4);
+      }
+
+      function drawCountryBackdrop(themeData, horizonY) {
+        drawRollingShape(horizonY, 0.26, 0.34, themeData.grass, themeData.objectDark, 6);
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = "#f2e2b7";
+        for (let i = 0; i < 9; i += 1) {
+          const x = (i * 104 + game.attractDistance * 0.12) % (VIEW_W + 130) - 70;
+          ctx.fillRect(x, horizonY + 34 + (i % 2) * 7, 42, 5);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawMountainBackdrop(themeData, horizonY) {
+        drawMountainRange(horizonY, themeData);
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = "#dcdad1";
+        for (let i = 0; i < 8; i += 1) {
+          const x = (i * 125 + game.attractDistance * 0.1) % (VIEW_W + 140) - 80;
+          ctx.beginPath();
+          ctx.moveTo(x, horizonY + 64);
+          ctx.lineTo(x + 24, horizonY + 24);
+          ctx.lineTo(x + 52, horizonY + 64);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawDesertBackdrop(themeData, horizonY) {
+        drawDuneBackdrop(horizonY, themeData);
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = "#b48b56";
+        for (let i = 0; i < 10; i += 1) {
+          const x = (i * 97 + game.attractDistance * 0.09) % (VIEW_W + 140) - 70;
+          ctx.fillRect(x, horizonY + 38, 20, 40);
+          ctx.fillRect(x + 8, horizonY + 28, 4, 52);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawCityBackdrop(themeData, horizonY) {
+        ctx.fillStyle = "#4e5868";
+        ctx.fillRect(0, horizonY, VIEW_W, VIEW_H - horizonY);
+        ctx.globalAlpha = 0.85;
+        for (let i = 0; i < 16; i += 1) {
+          const w = 34 + (i % 5) * 18;
+          const h = 80 + (i % 7) * 24;
+          const x = (i * 66 + game.attractDistance * 0.14) % (VIEW_W + 120) - 60;
+          const y = horizonY - h + 22;
+          ctx.fillStyle = i % 3 === 0 ? "#3f4653" : i % 3 === 1 ? "#5a6574" : "#474f5d";
+          ctx.fillRect(x, y, w, h);
+          ctx.fillStyle = "#d9cfaa";
+          for (let row = 0; row < Math.floor(h / 16); row += 1) {
+            for (let col = 0; col < Math.floor(w / 12); col += 1) {
+              if ((row + col + i) % 3 === 0) {
+                ctx.fillRect(x + 5 + col * 12, y + 6 + row * 16, 4, 8);
+              }
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawHarborBackdrop(themeData, horizonY) {
+        ctx.fillStyle = "#527689";
+        ctx.fillRect(0, horizonY + 8, VIEW_W, VIEW_H - horizonY);
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = "#f3e7cd";
+        for (let i = 0; i < 9; i += 1) {
+          const x = (i * 122 + game.attractDistance * 0.11) % (VIEW_W + 180) - 90;
+          ctx.fillRect(x, horizonY + 44, 34, 5);
+          ctx.fillRect(x + 20, horizonY + 28, 6, 34);
+        }
+        ctx.globalAlpha = 1;
+        drawRollingShape(horizonY, 0.18, 0.26, "#5f7769", "#364a53", 4);
+      }
+
+      function drawBoulevardBackdrop(themeData, horizonY) {
+        ctx.fillStyle = "#5c6370";
+        ctx.fillRect(0, horizonY, VIEW_W, VIEW_H - horizonY);
+        ctx.globalAlpha = 0.9;
+        for (let i = 0; i < 12; i += 1) {
+          const x = (i * 88 + game.attractDistance * 0.15) % (VIEW_W + 100) - 50;
+          const h = 70 + (i % 5) * 20;
+          ctx.fillStyle = i % 2 === 0 ? "#505867" : "#656f7d";
+          ctx.fillRect(x, horizonY + 20 - h, 48, h);
+          ctx.fillStyle = "#e9e0bb";
+          ctx.fillRect(x + 16, horizonY + 24 - h, 8, 10);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawRollingShape(horizonY, low, high, fill, ridge, hills) {
+        ctx.beginPath();
+        ctx.moveTo(0, VIEW_H);
+        for (let i = 0; i <= 20; i += 1) {
+          const x = (i / 20) * VIEW_W;
+          const y = horizonY + 28 + Math.sin((i / 20) * Math.PI * hills + game.attractDistance * 0.001) * (VIEW_H * low) + Math.cos((i / 20) * Math.PI * 2 + game.attractDistance * 0.0005) * (VIEW_H * high * 0.2);
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(VIEW_W, VIEW_H);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.globalAlpha = 0.24;
+        ctx.strokeStyle = ridge;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawMountainRange(horizonY, themeData) {
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY + 30);
+        for (let i = 0; i <= 16; i += 1) {
+          const x = (i / 16) * VIEW_W;
+          const y = horizonY + 56 - Math.sin(i * 0.6 + game.attractDistance * 0.0012) * 26 - (i % 2) * 18;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(VIEW_W, VIEW_H);
+        ctx.lineTo(0, VIEW_H);
+        ctx.closePath();
+        ctx.fillStyle = "#65707d";
+        ctx.fill();
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = "#d7d1c6";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawDuneBackdrop(horizonY, themeData) {
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY + 20);
+        for (let i = 0; i <= 18; i += 1) {
+          const x = (i / 18) * VIEW_W;
+          const y = horizonY + 40 + Math.sin(i * 0.62 + game.attractDistance * 0.0008) * 24;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(VIEW_W, VIEW_H);
+        ctx.lineTo(0, VIEW_H);
+        ctx.closePath();
+        ctx.fillStyle = "#c79d5d";
+        ctx.fill();
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = "#eed0a1";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawRoad(themeData, chapter) {
+        const baseIndex = clamp(Math.floor(game.chapterDistance / SEGMENT_LENGTH), 0, chapter.segments.length - 1);
+        const playerPct = (game.chapterDistance % SEGMENT_LENGTH) / SEGMENT_LENGTH;
+        const cameraX = currentRoadCenterX() + playerCar.x * ROAD_HALF_WIDTH * 0.9;
+        const cameraY = chapter.segments[baseIndex].centerY + CAMERA_HEIGHT;
+        const drawSegments = [];
+        let maxY = VIEW_H;
+
+        for (let n = 0; n < DRAW_DISTANCE; n += 1) {
+          const idx = baseIndex + n;
+          if (idx >= chapter.segments.length - 1) {
+            break;
+          }
+          const p1 = projectSegment(chapter.segments[idx], cameraX, cameraY, game.chapterDistance);
+          const p2 = projectSegment(chapter.segments[idx + 1], cameraX, cameraY, game.chapterDistance);
+          if (!p1 || !p2) {
+            continue;
+          }
+          if (p2.y >= maxY) {
+            continue;
+          }
+          maxY = p2.y;
+          drawSegments.push({ p1, p2, segment: chapter.segments[idx] });
+        }
+
+        for (let i = drawSegments.length - 1; i >= 0; i -= 1) {
+          const item = drawSegments[i];
+          const p1 = item.p1;
+          const p2 = item.p2;
+          const segment = item.segment;
+          const grassColor = i % 2 === 0 ? themeData.grass : themeData.dirt;
+          const shoulderColor = i % 2 === 0 ? themeData.shoulder : themeData.dirt;
+          const roadColor = segment.roadShade;
+          const roadWidth1 = p1.w * 1.05;
+          const roadWidth2 = p2.w * 1.05;
+          const shoulder1 = p1.w * 1.32;
+          const shoulder2 = p2.w * 1.32;
+
+          ctx.beginPath();
+          ctx.moveTo(0, p2.y);
+          ctx.lineTo(VIEW_W, p2.y);
+          ctx.lineTo(VIEW_W, p1.y);
+          ctx.lineTo(0, p1.y);
+          ctx.closePath();
+          ctx.fillStyle = grassColor;
+          ctx.fill();
+
+          drawRoadBand(p1.x, p1.y, roadWidth1, p2.x, p2.y, roadWidth2, shoulderColor, roadColor, themeData);
+
+          if (i % 3 === 0) {
+            drawLaneMarkers(p1, p2, themeData);
+          }
+
+          if (i % 7 === 0) {
+            drawRoadRumble(p1, p2, themeData);
+          }
+        }
+
+        drawRoadGuide(themeData, chapter, baseIndex, playerPct, cameraX, cameraY);
+      }
+
+      function projectSegment(segment, cameraX, cameraY, cameraZ) {
+        const z = segment.z - cameraZ;
+        if (z < 1) {
+          return null;
+        }
+        const scale = CAMERA_DEPTH / z;
+        const x = Math.round((VIEW_W * 0.5) + scale * (segment.centerX - cameraX) * VIEW_W * 0.5);
+        const y = Math.round((VIEW_H * 0.56) + scale * (segment.centerY - cameraY) * VIEW_H * 0.58);
+        const w = Math.round(scale * ROAD_HALF_WIDTH * VIEW_W * 0.5);
+        return { x, y, w, scale, z, segment };
+      }
+
+      function drawRoadBand(x1, y1, w1, x2, y2, w2, shoulderColor, roadColor, themeData) {
+        const left1 = x1 - w1;
+        const right1 = x1 + w1;
+        const left2 = x2 - w2;
+        const right2 = x2 + w2;
+        const shoulderLeft1 = x1 - w1 * 1.25;
+        const shoulderRight1 = x1 + w1 * 1.25;
+        const shoulderLeft2 = x2 - w2 * 1.25;
+        const shoulderRight2 = x2 + w2 * 1.25;
+
+        ctx.beginPath();
+        ctx.moveTo(shoulderLeft1, y1);
+        ctx.lineTo(shoulderRight1, y1);
+        ctx.lineTo(shoulderRight2, y2);
+        ctx.lineTo(shoulderLeft2, y2);
+        ctx.closePath();
+        ctx.fillStyle = shoulderColor;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(left1, y1);
+        ctx.lineTo(right1, y1);
+        ctx.lineTo(right2, y2);
+        ctx.lineTo(left2, y2);
+        ctx.closePath();
+        ctx.fillStyle = roadColor;
+        ctx.fill();
+
+        ctx.globalAlpha = 0.24;
+        ctx.beginPath();
+        ctx.moveTo(left1, y1);
+        ctx.lineTo(left2, y2);
+        ctx.strokeStyle = themeData.roadStripe;
+        ctx.lineWidth = Math.max(1, w1 * 0.02);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(right1, y1);
+        ctx.lineTo(right2, y2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawLaneMarkers(p1, p2, themeData) {
+        const laneCount = 3;
+        for (let lane = 1; lane < laneCount; lane += 1) {
+          const t = lane / laneCount;
+          const x1 = lerp(p1.x - p1.w, p1.x + p1.w, t);
+          const x2 = lerp(p2.x - p2.w, p2.x + p2.w, t);
+          ctx.globalAlpha = 0.55;
+          ctx.strokeStyle = themeData.roadStripe;
+          ctx.lineWidth = Math.max(1, p1.w * 0.018);
+          ctx.beginPath();
+          ctx.setLineDash([Math.max(4, p1.w * 0.1), Math.max(4, p1.w * 0.07)]);
+          ctx.moveTo(x1, p1.y);
+          ctx.lineTo(x2, p2.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      function drawRoadRumble(p1, p2, themeData) {
+        ctx.globalAlpha = 0.24;
+        ctx.fillStyle = "#f3d6a8";
+        ctx.beginPath();
+        ctx.moveTo(p1.x - p1.w * 1.23, p1.y);
+        ctx.lineTo(p1.x - p1.w, p1.y);
+        ctx.lineTo(p2.x - p2.w, p2.y);
+        ctx.lineTo(p2.x - p2.w * 1.23, p2.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(p1.x + p1.w, p1.y);
+        ctx.lineTo(p1.x + p1.w * 1.23, p1.y);
+        ctx.lineTo(p2.x + p2.w * 1.23, p2.y);
+        ctx.lineTo(p2.x + p2.w, p2.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawRoadGuide(themeData, chapter, baseIndex, playerPct, cameraX, cameraY) {
+        const liveChapter = game.currentChapter || chapter;
+        const signDistance = liveChapter.lengthPx - game.chapterDistance;
+        if (signDistance < 2000 && !chapter.spec.final) {
+          const p = projectSegment(chapter.segments[Math.max(0, chapter.segments.length - 4)], cameraX, cameraY, game.chapterDistance);
+          if (p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.globalAlpha = 0.92;
+            ctx.fillStyle = "#f0e0ba";
+            ctx.fillRect(-18, -52, 36, 10);
+            ctx.fillStyle = themeData.objectDark;
+            ctx.fillRect(-4, -40, 8, 34);
+            ctx.fillStyle = "#f1d2a5";
+            ctx.fillRect(-70, -96, 140, 44);
+            ctx.fillStyle = "#6a4d3e";
+            ctx.fillRect(-66, -92, 132, 36);
+            ctx.fillStyle = "#f8ead1";
+            ctx.font = "bold 12px Trebuchet MS, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("CHECKPOINT AHEAD", 0, -68);
+            ctx.restore();
+          }
+        }
+      }
+
+      function drawDecor(themeData, chapter) {
+        const cameraX = currentRoadCenterX() + playerCar.x * ROAD_HALF_WIDTH * 0.9;
+        const cameraY = chapter.segments[clamp(Math.floor(game.chapterDistance / SEGMENT_LENGTH), 0, chapter.segments.length - 1)].centerY + CAMERA_HEIGHT;
+        const items = game.decor;
+        for (const item of items) {
+          const relZ = item.z - game.chapterDistance;
+          if (relZ < -220 || relZ > DRAW_DISTANCE * SEGMENT_LENGTH) {
+            continue;
+          }
+          const idx = clamp(Math.floor(item.z / SEGMENT_LENGTH), 0, chapter.segments.length - 1);
+          const segment = chapter.segments[idx];
+          const proj = projectSegment(segment, cameraX, cameraY, game.chapterDistance);
+          if (!proj) {
+            continue;
+          }
+          const side = item.side;
+          const offset = (item.offset || 1.3) * proj.w * 0.9;
+          const x = proj.x + side * offset;
+          const y = proj.y + 4;
+          const scale = proj.scale * 120 * item.scale;
+          if (x < -120 || x > VIEW_W + 120 || y > VIEW_H + 80) {
+            continue;
+          }
+          drawSceneryObject(item.type, x, y, scale, side, item, themeData, proj);
+        }
+      }
+
+      function drawSceneryObject(type, x, y, scale, side, item, themeData, proj) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(side < 0 ? -1 : 1, 1);
+        ctx.globalAlpha = clamp(proj.scale * 12, 0.18, 1);
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        switch (type) {
+          case "pine":
+            drawPine(scale, themeData);
+            break;
+          case "tree":
+            drawTree(scale, themeData);
+            break;
+          case "cliff":
+            drawCliff(scale, themeData);
+            break;
+          case "boat":
+            drawBoat(scale, themeData);
+            break;
+          case "lighthouse":
+            drawLighthouse(scale, themeData);
+            break;
+          case "barn":
+            drawBarn(scale, themeData);
+            break;
+          case "fence":
+            drawFence(scale, themeData);
+            break;
+          case "windmill":
+            drawWindmill(scale, themeData);
+            break;
+          case "hedge":
+            drawHedge(scale, themeData);
+            break;
+          case "rock":
+            drawRock(scale, themeData);
+            break;
+          case "cabin":
+            drawCabin(scale, themeData);
+            break;
+          case "peak":
+            drawPeak(scale, themeData);
+            break;
+          case "guardrail":
+            drawGuardrail(scale, themeData);
+            break;
+          case "cactus":
+            drawCactus(scale, themeData);
+            break;
+          case "dune":
+            drawDune(scale, themeData);
+            break;
+          case "mesa":
+            drawMesa(scale, themeData);
+            break;
+          case "station":
+            drawStation(scale, themeData);
+            break;
+          case "stone":
+            drawStone(scale, themeData);
+            break;
+          case "tower":
+            drawTower(scale, themeData);
+            break;
+          case "overpass":
+            drawOverpass(scale, themeData);
+            break;
+          case "warehouse":
+            drawWarehouse(scale, themeData);
+            break;
+          case "lamp":
+            drawLamp(scale, themeData);
+            break;
+          case "billboard":
+            drawBillboard(scale, themeData);
+            break;
+          case "crane":
+            drawCrane(scale, themeData);
+            break;
+          case "pier":
+            drawPier(scale, themeData);
+            break;
+          case "beacon":
+            drawBeacon(scale, themeData);
+            break;
+          case "median":
+            drawMedian(scale, themeData);
+            break;
+          case "sign":
+            drawSign(scale, themeData);
+            break;
+          case "spray":
+            drawSpray(scale, themeData);
+            break;
+          default:
+            drawTree(scale, themeData);
+            break;
+        }
+
+        ctx.restore();
+      }
+
+      function drawPine(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-2, 10, 4, 16);
+        ctx.beginPath();
+        ctx.moveTo(0, -34);
+        ctx.lineTo(18, 6);
+        ctx.lineTo(-18, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, -16);
+        ctx.lineTo(14, 14);
+        ctx.lineTo(-14, 14);
+        ctx.closePath();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fill();
+      }
+
+      function drawTree(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-2, 12, 4, 18);
+        ctx.beginPath();
+        ctx.arc(0, -6, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.beginPath();
+        ctx.arc(-4, -10, 10, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawCliff(scale, themeData) {
+        ctx.fillStyle = themeData.rock;
+        ctx.beginPath();
+        ctx.moveTo(-30, 24);
+        ctx.lineTo(-10, -10);
+        ctx.lineTo(18, 8);
+        ctx.lineTo(28, 30);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.beginPath();
+        ctx.moveTo(-20, 20);
+        ctx.lineTo(0, -2);
+        ctx.lineTo(12, 8);
+        ctx.lineTo(22, 28);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawBoat(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.beginPath();
+        ctx.moveTo(-24, 22);
+        ctx.lineTo(24, 22);
+        ctx.lineTo(12, 34);
+        ctx.lineTo(-10, 34);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-6, -20, 6, 42);
+        ctx.beginPath();
+        ctx.moveTo(0, -22);
+        ctx.lineTo(20, -6);
+        ctx.lineTo(0, -6);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawLighthouse(scale, themeData) {
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-7, -28, 14, 52);
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-9, -16, 18, 6);
+        ctx.fillRect(-7, 2, 14, 6);
+        ctx.fillRect(-5, -40, 10, 12);
+      }
+
+      function drawBarn(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.beginPath();
+        ctx.moveTo(-22, 28);
+        ctx.lineTo(-22, -8);
+        ctx.lineTo(0, -30);
+        ctx.lineTo(22, -8);
+        ctx.lineTo(22, 28);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-6, 6, 12, 22);
+      }
+
+      function drawFence(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        for (let i = -24; i <= 24; i += 12) {
+          ctx.fillRect(i, 12, 4, 14);
+        }
+        ctx.fillRect(-28, 18, 56, 3);
+        ctx.fillRect(-28, 8, 56, 3);
+      }
+
+      function drawWindmill(scale, themeData) {
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-4, 4, 8, 26);
+        ctx.beginPath();
+        ctx.moveTo(0, -2);
+        ctx.lineTo(16, -18);
+        ctx.lineTo(2, -4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(0, -2);
+        ctx.lineTo(-16, -18);
+        ctx.lineTo(-2, -4);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawHedge(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.beginPath();
+        ctx.moveTo(-28, 20);
+        ctx.quadraticCurveTo(-8, -4, 0, 2);
+        ctx.quadraticCurveTo(12, -6, 28, 18);
+        ctx.lineTo(28, 28);
+        ctx.lineTo(-28, 28);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawRock(scale, themeData) {
+        ctx.fillStyle = themeData.rock;
+        ctx.beginPath();
+        ctx.moveTo(-18, 24);
+        ctx.lineTo(-8, -4);
+        ctx.lineTo(16, 6);
+        ctx.lineTo(24, 24);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.beginPath();
+        ctx.moveTo(-8, 20);
+        ctx.lineTo(0, 2);
+        ctx.lineTo(12, 8);
+        ctx.lineTo(18, 18);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawCabin(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-18, 4, 36, 22);
+        ctx.beginPath();
+        ctx.moveTo(-22, 4);
+        ctx.lineTo(0, -16);
+        ctx.lineTo(22, 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-4, 10, 8, 16);
+      }
+
+      function drawPeak(scale, themeData) {
+        ctx.fillStyle = themeData.rock;
+        ctx.beginPath();
+        ctx.moveTo(-28, 26);
+        ctx.lineTo(-4, -20);
+        ctx.lineTo(12, 2);
+        ctx.lineTo(28, 26);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = themeData.objectLight;
+        ctx.beginPath();
+        ctx.moveTo(-2, -12);
+        ctx.lineTo(8, 2);
+        ctx.lineTo(14, 14);
+        ctx.lineTo(0, 8);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawGuardrail(scale, themeData) {
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-30, 12, 60, 4);
+        ctx.fillRect(-22, 6, 4, 20);
+        ctx.fillRect(-4, 6, 4, 20);
+        ctx.fillRect(14, 6, 4, 20);
+      }
+
+      function drawCactus(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-4, -20, 8, 42);
+        ctx.fillRect(-14, -6, 8, 20);
+        ctx.fillRect(6, -2, 8, 16);
+        ctx.beginPath();
+        ctx.arc(0, -20, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawDune(scale, themeData) {
+        ctx.fillStyle = themeData.dirt;
+        ctx.beginPath();
+        ctx.moveTo(-30, 24);
+        ctx.quadraticCurveTo(-10, -10, 20, 10);
+        ctx.lineTo(30, 24);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawMesa(scale, themeData) {
+        ctx.fillStyle = themeData.rock;
+        ctx.beginPath();
+        ctx.moveTo(-24, 22);
+        ctx.lineTo(-18, -6);
+        ctx.lineTo(18, -6);
+        ctx.lineTo(24, 22);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawStation(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-20, 6, 40, 16);
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-6, -18, 12, 28);
+        ctx.fillRect(-16, -8, 32, 4);
+      }
+
+      function drawStone(scale, themeData) {
+        ctx.fillStyle = themeData.rock;
+        ctx.beginPath();
+        ctx.moveTo(-16, 18);
+        ctx.lineTo(-8, -8);
+        ctx.lineTo(8, -4);
+        ctx.lineTo(18, 18);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawTower(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-14, -26, 28, 50);
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-10, -18, 20, 8);
+        ctx.fillRect(-10, 0, 20, 8);
+        ctx.fillRect(-10, 18, 20, 8);
+      }
+
+      function drawOverpass(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-30, 14, 60, 6);
+        ctx.fillRect(-20, 14, 8, 22);
+        ctx.fillRect(12, 14, 8, 22);
+      }
+
+      function drawWarehouse(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-24, 0, 48, 24);
+        ctx.beginPath();
+        ctx.moveTo(-26, 0);
+        ctx.lineTo(0, -18);
+        ctx.lineTo(26, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawLamp(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-2, -18, 4, 38);
+        ctx.fillRect(-2, -18, 18, 3);
+        ctx.beginPath();
+        ctx.arc(16, -16, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawBillboard(scale, themeData) {
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-24, -22, 48, 28);
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-2, 6, 4, 24);
+        ctx.fillRect(-18, 6, 4, 18);
+        ctx.fillRect(14, 6, 4, 18);
+      }
+
+      function drawCrane(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-2, -24, 4, 52);
+        ctx.fillRect(-2, -24, 26, 4);
+        ctx.fillRect(22, -24, 4, 18);
+      }
+
+      function drawPier(scale, themeData) {
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-28, 10, 56, 8);
+        ctx.fillRect(-22, 18, 6, 16);
+        ctx.fillRect(16, 18, 6, 16);
+      }
+
+      function drawBeacon(scale, themeData) {
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-5, -24, 10, 46);
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-7, -12, 14, 6);
+        ctx.fillRect(-7, 6, 14, 6);
+      }
+
+      function drawMedian(scale, themeData) {
+        ctx.fillStyle = themeData.dirt;
+        ctx.beginPath();
+        ctx.moveTo(-28, 24);
+        ctx.quadraticCurveTo(0, -6, 28, 24);
+        ctx.lineTo(28, 28);
+        ctx.lineTo(-28, 28);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawSign(scale, themeData) {
+        ctx.fillStyle = themeData.objectLight;
+        ctx.fillRect(-16, -20, 32, 18);
+        ctx.fillStyle = themeData.objectDark;
+        ctx.fillRect(-2, -2, 4, 34);
+      }
+
+      function drawSpray(scale, themeData) {
+        ctx.fillStyle = "rgba(240, 246, 255, 0.68)";
+        ctx.beginPath();
+        ctx.arc(-10, 6, 5, 0, Math.PI * 2);
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.arc(12, 8, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawTraffic(themeData, chapter) {
+        const cameraX = currentRoadCenterX() + playerCar.x * ROAD_HALF_WIDTH * 0.9;
+        const cameraY = chapter.segments[clamp(Math.floor(game.chapterDistance / SEGMENT_LENGTH), 0, chapter.segments.length - 1)].centerY + CAMERA_HEIGHT;
+        const sorted = [...game.traffic].sort((a, b) => b.z - a.z);
+        for (const car of sorted) {
+          const relZ = car.z - game.chapterDistance;
+          if (relZ < -180 || relZ > DRAW_DISTANCE * SEGMENT_LENGTH) {
+            continue;
+          }
+          const idx = clamp(Math.floor(car.z / SEGMENT_LENGTH), 0, chapter.segments.length - 1);
+          const segment = chapter.segments[idx];
+          const proj = projectSegment(segment, cameraX, cameraY, game.chapterDistance);
+          if (!proj) {
+            continue;
+          }
+          const laneOffset = car.offset || 0;
+          const x = proj.x + laneOffset * proj.w * 0.88;
+          const y = proj.y + proj.scale * 40;
+          const scale = clamp(proj.scale * 180, 0.12, 1.2);
+          if (x < -100 || x > VIEW_W + 100 || y > VIEW_H + 80) {
+            continue;
+          }
+          drawTrafficCar(car, x, y, scale, proj, themeData);
+        }
+      }
+
+      function drawTrafficCar(car, x, y, scale, proj, themeData) {
+        const model = VEHICLES[car.kind] || VEHICLES.sedan;
+        const bodyW = model.w * 52 * scale;
+        const bodyH = model.h * 52 * scale;
+        const roofH = model.roof * 52 * scale;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.translate(0, -8);
+        ctx.fillStyle = themeData.roadDark;
+        ctx.beginPath();
+        roundCarBody(-model.w * 24, -model.h * 18, model.w * 48, model.h * 36, 8);
+        ctx.fill();
+        ctx.fillStyle = car.color;
+        ctx.beginPath();
+        roundCarBody(-model.w * 24, -model.h * 18, model.w * 48, model.h * 36, 8);
+        ctx.fill();
+        ctx.fillStyle = model.top;
+        ctx.beginPath();
+        roundCarBody(-model.w * 14, -model.h * 26, model.w * 28, model.h * 16, 6);
+        ctx.fill();
+        ctx.fillStyle = model.glass;
+        ctx.fillRect(-10, -20, 20, 10);
+        ctx.fillStyle = "#3b332c";
+        ctx.fillRect(-18, 10, 8, 7);
+        ctx.fillRect(10, 10, 8, 7);
+        ctx.fillRect(-18, 18, 8, 6);
+        ctx.fillRect(10, 18, 8, 6);
+        ctx.fillRect(-8, 20, 16, 3);
+        ctx.restore();
+      }
+
+      function roundCarBody(x, y, w, h, r) {
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+      }
+
+      function drawPlayer(themeData) {
+        const baseX = VIEW_W * 0.5 + playerCar.x * VIEW_W * 0.22;
+        const baseY = VIEW_H * 0.79 + Math.sin(game.totalDistance * 0.0025) * 2;
+        const scale = 1.05 + clamp(playerCar.speed / MAX_SPEED, 0, 1) * 0.08;
+        const spin = playerCar.spin * (playerCar.spinVel >= 0 ? 1 : -1);
+        const angle = playerCar.angle + spin * 0.85;
+
+        ctx.save();
+        ctx.translate(baseX, baseY);
+        ctx.rotate(angle);
+        ctx.translate(0, playerCar.offroad * 3);
+        ctx.shadowColor = "rgba(0,0,0,0.25)";
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 6;
+
+        drawPlayerShadow(scale);
+        drawConvertible(themeData, scale, playerCar.damage);
+        ctx.restore();
+      }
+
+      function drawPlayerShadow(scale) {
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.beginPath();
+        ctx.ellipse(0, 18 * scale, 48 * scale, 14 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawConvertible(themeData, scale, damage) {
+        const body = "#b84b3b";
+        const trim = "#d99e83";
+        const glass = "#dfe9ea";
+        const seat = "#7b5641";
+        const tire = "#2e2725";
+        const wheel = "#161312";
+        const highlight = "#e08f71";
+
+        ctx.save();
+        ctx.scale(scale, scale);
+        ctx.translate(0, 1);
+        ctx.fillStyle = tire;
+        ctx.beginPath();
+        ctx.arc(-24, 18, 9, 0, Math.PI * 2);
+        ctx.arc(24, 18, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = wheel;
+        ctx.beginPath();
+        ctx.arc(-24, 18, 5, 0, Math.PI * 2);
+        ctx.arc(24, 18, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#52241d";
+        ctx.fillRect(-28, -8, 56, 26);
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.moveTo(-30, 4);
+        ctx.quadraticCurveTo(-28, -8, -18, -10);
+        ctx.lineTo(18, -10);
+        ctx.quadraticCurveTo(29, -8, 30, 4);
+        ctx.lineTo(28, 16);
+        ctx.quadraticCurveTo(28, 22, 20, 24);
+        ctx.lineTo(-20, 24);
+        ctx.quadraticCurveTo(-28, 22, -30, 16);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = highlight;
+        ctx.fillRect(-20, -4, 40, 6);
+        ctx.fillStyle = trim;
+        ctx.fillRect(-25, 10, 50, 4);
+        ctx.fillRect(-21, -8, 42, 3);
+        ctx.fillStyle = "#c56d5b";
+        ctx.fillRect(-24, -2, 48, 18);
+        ctx.fillStyle = glass;
+        ctx.beginPath();
+        ctx.moveTo(-16, -18);
+        ctx.lineTo(16, -18);
+        ctx.lineTo(24, -2);
+        ctx.lineTo(-24, -2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = seat;
+        ctx.fillRect(-16, -1, 12, 8);
+        ctx.fillRect(4, -1, 12, 8);
+        drawPassenger(-8, -12, 1, 0.96, themeData);
+        drawPassenger(10, -12, 1, 0.93, themeData);
+        ctx.fillStyle = "#f3d2b0";
+        ctx.fillRect(-23, 8, 46, 4);
+        ctx.fillStyle = "#8e4a3c";
+        ctx.fillRect(-29, 0, 8, 10);
+        ctx.fillRect(21, 0, 8, 10);
+        ctx.fillRect(-27, 14, 8, 8);
+        ctx.fillRect(19, 14, 8, 8);
+
+        if (damage > 0) {
+          ctx.globalAlpha = clamp(damage / 100, 0, 0.55);
+          ctx.fillStyle = "#241512";
+          ctx.fillRect(-6, -6, 4, 8);
+          ctx.fillRect(5, 0, 4, 6);
+          ctx.globalAlpha = 1;
+        }
+        ctx.restore();
+      }
+
+      function drawPassenger(x, y, scale, expression, themeData) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = "#3c251c";
+        ctx.beginPath();
+        ctx.arc(0, -8, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#f1c49b";
+        ctx.beginPath();
+        ctx.arc(0, -3, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#7c5544";
+        ctx.fillRect(-6, 3, 12, 7);
+        ctx.fillStyle = "#e7d6bf";
+        ctx.fillRect(-4, 5, 8, 2);
+        ctx.restore();
+      }
+
+      function drawParticles(themeData) {
+        for (const particle of game.particles) {
+          const alpha = clamp(particle.life * 3, 0, 1);
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = particle.color;
+          if (particle.type === "spark") {
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (particle.type === "smoke") {
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size * 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (particle.type === "dust") {
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawDash(themeData) {
+        const x = 14;
+        const y = VIEW_H - 98;
+        const w = 250;
+        const h = 72;
+        ctx.save();
+        ctx.fillStyle = "rgba(31, 22, 18, 0.8)";
+        roundRect(ctx, x, y, w, h, 18);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(243, 223, 190, 0.18)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.fillStyle = "#f2e1bf";
+        ctx.font = "bold 11px Trebuchet MS, sans-serif";
+        ctx.fillText("SPEED", x + 18, y + 20);
+        ctx.fillText("RANGE", x + 18, y + 34);
+        ctx.fillText("COMBO", x + 18, y + 48);
+
+        ctx.fillStyle = "#f9e8ce";
+        ctx.font = "bold 16px Trebuchet MS, sans-serif";
+        ctx.fillText(formatSpeed(playerCar.speed), x + 90, y + 20);
+        ctx.fillText(formatScore(game.totalDistance), x + 90, y + 34);
+        ctx.fillText(String(game.combo), x + 90, y + 48);
+
+        const gaugeCx = x + 196;
+        const gaugeCy = y + 36;
+        const gaugeR = 24;
+        ctx.beginPath();
+        ctx.arc(gaugeCx, gaugeCy, gaugeR, Math.PI * 0.75, Math.PI * 2.25);
+        ctx.strokeStyle = "rgba(245, 224, 193, 0.4)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        const speedT = clamp(playerCar.speed / MAX_SPEED, 0, 1);
+        const angle = lerp(Math.PI * 0.78, Math.PI * 2.18, speedT);
+        ctx.save();
+        ctx.translate(gaugeCx, gaugeCy);
+        ctx.rotate(angle);
+        ctx.strokeStyle = "#d5a25d";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-3, 0);
+        ctx.lineTo(gaugeR - 3, 0);
+        ctx.stroke();
+        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(gaugeCx, gaugeCy, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#f1d3a7";
+        ctx.fill();
+
+        ctx.font = "10px Trebuchet MS, sans-serif";
+        ctx.fillStyle = "#e4d0b2";
+        ctx.fillText(game.currentChapter ? game.currentChapter.spec.name : "Title Screen", x + 140, y + 58);
+        ctx.restore();
+      }
+
+      function drawAttractRoad(themeData) {
+        const t = game.attractDistance * 0.003;
+        const w = 340 + Math.sin(t * 1.4) * 20;
+        const baseY = VIEW_H * 0.84;
+        ctx.save();
+        ctx.globalAlpha = 0.38;
+        ctx.fillStyle = "rgba(0,0,0,0.12)";
+        ctx.fillRect(0, VIEW_H * 0.82, VIEW_W, VIEW_H * 0.18);
+        ctx.restore();
+      }
+
+      function drawCountdown(themeData) {
+        const number = Math.max(1, Math.ceil(game.countdown));
+        ctx.save();
+        ctx.globalAlpha = 0.94;
+        ctx.fillStyle = "rgba(26, 18, 16, 0.28)";
+        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+        ctx.fillStyle = "#f7e5c9";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "bold 118px Trebuchet MS, sans-serif";
+        ctx.fillText(String(number), VIEW_W * 0.5, VIEW_H * 0.44);
+        ctx.font = "bold 20px Trebuchet MS, sans-serif";
+        ctx.fillText(game.currentChapter ? game.currentChapter.spec.name : "TOUR", VIEW_W * 0.5, VIEW_H * 0.58);
+        ctx.restore();
+      }
+
+      function roundRect(context, x, y, w, h, r) {
+        context.beginPath();
+        context.moveTo(x + r, y);
+        context.lineTo(x + w - r, y);
+        context.quadraticCurveTo(x + w, y, x + w, y + r);
+        context.lineTo(x + w, y + h - r);
+        context.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        context.lineTo(x + r, y + h);
+        context.quadraticCurveTo(x, y + h, x, y + h - r);
+        context.lineTo(x, y + r);
+        context.quadraticCurveTo(x, y, x + r, y);
+        context.closePath();
+      }
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        ctx.setTransform(canvas.width / VIEW_W, 0, 0, canvas.height / VIEW_H, 0, 0);
+      }
+
+      function updateRouteSelection(delta) {
+        const count = game.state === STATE.ROUTE ? START_CHOICES.length : (game.currentChapter && !game.currentChapter.spec.final ? 2 : 0);
+        if (!count) {
+          return;
+        }
+        game.selectedChoice = (game.selectedChoice + delta + count) % count;
+        updateChoiceHighlight();
+      }
+
+      function chooseByKeyboard() {
+        if (game.state === STATE.TITLE) {
+          setState(STATE.ROUTE);
+          return;
+        }
+        if (game.state === STATE.ROUTE) {
+          pickStartRoute(game.selectedChoice);
+          return;
+        }
+        if (game.state === STATE.CHECKPOINT) {
+          chooseNextChapter(game.selectedChoice);
+          return;
+        }
+        if (game.state === STATE.FINISH || game.state === STATE.OVER) {
+          startFreshRun();
+        }
+      }
+
+      function handleKeyDown(event) {
+        const key = event.key.toLowerCase();
+        if (["arrowleft", "arrowright", "arrowup", "arrowdown", " ", "enter", "w", "a", "s", "d"].includes(key)) {
+          event.preventDefault();
+        }
+        if (key === "arrowleft" || key === "a") {
+          if (game.state === STATE.PLAY) {
+            input.left = true;
+          } else {
+            updateRouteSelection(-1);
+          }
+        } else if (key === "arrowright" || key === "d") {
+          if (game.state === STATE.PLAY) {
+            input.right = true;
+          } else {
+            updateRouteSelection(1);
+          }
+        } else if (key === "arrowup" || key === "w") {
+          if (game.state === STATE.PLAY) {
+            input.gas = true;
+          } else if (game.state === STATE.ROUTE || game.state === STATE.TITLE || game.state === STATE.CHECKPOINT || game.state === STATE.FINISH || game.state === STATE.OVER) {
+            chooseByKeyboard();
+          }
+        } else if (key === "arrowdown" || key === "s") {
+          if (game.state === STATE.PLAY) {
+            input.brake = true;
+          }
+        } else if (key === " " || key === "enter") {
+          chooseByKeyboard();
+        }
+        unlockAudio();
+      }
+
+      function handleKeyUp(event) {
+        const key = event.key.toLowerCase();
+        if (key === "arrowleft" || key === "a") {
+          input.left = false;
+        } else if (key === "arrowright" || key === "d") {
+          input.right = false;
+        } else if (key === "arrowup" || key === "w") {
+          input.gas = false;
+        } else if (key === "arrowdown" || key === "s") {
+          input.brake = false;
+        }
+      }
+
+      function unlockAudio() {
+        if (!game.audioStarted) {
+          game.audioStarted = true;
+          audio.unlock();
+          audio.startMusic();
+        }
+      }
+
+      function wireControls() {
+        window.addEventListener("resize", resize);
+        window.addEventListener("keydown", handleKeyDown, { passive: false });
+        window.addEventListener("keyup", handleKeyUp, { passive: false });
+        window.addEventListener("pointerdown", unlockAudio, { passive: true });
+
+        touchButtons.forEach((button) => {
+          const action = button.dataset.action;
+          const press = (event) => {
+            event.preventDefault();
+            unlockAudio();
+            button.classList.add("active");
+            if (action === "left") {
+              if (game.state === STATE.PLAY) {
+                input.left = true;
+              } else {
+                updateRouteSelection(-1);
+              }
+            } else if (action === "right") {
+              if (game.state === STATE.PLAY) {
+                input.right = true;
+              } else {
+                updateRouteSelection(1);
+              }
+            } else if (action === "gas") {
+              if (game.state === STATE.PLAY) {
+                input.gas = true;
+              } else {
+                chooseByKeyboard();
+              }
+            } else if (action === "brake") {
+              if (game.state === STATE.PLAY) {
+                input.brake = true;
+              } else if (game.state === STATE.ROUTE || game.state === STATE.CHECKPOINT || game.state === STATE.FINISH || game.state === STATE.OVER || game.state === STATE.TITLE) {
+                chooseByKeyboard();
+              }
+            }
+          };
+          const release = () => {
+            button.classList.remove("active");
+            if (action === "left") {
+              input.left = false;
+            } else if (action === "right") {
+              input.right = false;
+            } else if (action === "gas") {
+              input.gas = false;
+            } else if (action === "brake") {
+              input.brake = false;
+            }
+          };
+          button.addEventListener("pointerdown", press, { passive: false });
+          button.addEventListener("pointerup", release, { passive: true });
+          button.addEventListener("pointercancel", release, { passive: true });
+          button.addEventListener("pointerleave", release, { passive: true });
+        });
+      }
+
+      function selectDefaultAttract() {
+        showTitleScreen();
+      }
+
+      function boot() {
+        game.highScore = readHighScore();
+        hudHigh.textContent = formatScore(game.highScore);
+        resize();
+        wireControls();
+        selectDefaultAttract();
+        requestAnimationFrame(loop);
+      }
+
+      let last = performance.now();
+      function loop(now) {
+        const dt = clamp((now - last) / 1000, 0, 0.033);
+        last = now;
+
+        if (game.state === STATE.TITLE) {
+          hudChapter.textContent = "Title Screen";
+        }
+
+        if (game.state === STATE.COUNTDOWN && game.countdown <= 0) {
+          startPlayFromCountdown();
+        }
+
+        if (game.state === STATE.PLAY) {
+          game.cameraShake = Math.max(0, game.cameraShake - dt * 1.8);
+        } else {
+          game.cameraShake = Math.max(0, game.cameraShake - dt * 1.2);
+        }
+
+        updateState(dt);
+        drawScene();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener("blur", () => {
+        input.left = false;
+        input.right = false;
+        input.gas = false;
+        input.brake = false;
+      });
+
+      function setTitleHighScore() {
+        hudHigh.textContent = formatScore(game.highScore);
+      }
+
+      function autoAdvanceRouteTimer(dt) {
+        if (game.state === STATE.CHECKPOINT && game.checkpointTimer <= 1.6) {
+          miniHint.textContent = `Auto-selecting ${game.currentChapter.spec.choices[0].label}...`;
+        }
+      }
+
+      setInterval(() => {
+        setTitleHighScore();
+        if (game.state === STATE.TITLE) {
+          modalFooter.textContent = `Best run: ${formatScore(game.highScore)}. Press Start to wake the engine.`;
+        }
+      }, 500);
+
+      boot();
+    })();
+  </script>
+</body>
+</html>

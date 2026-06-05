@@ -4670,6 +4670,147 @@
           ]
         }
       ]
+    },
+    {
+      "id": "coastal-rush-86",
+      "name": "Coastal Rush '86",
+      "description": "Race a red convertible through a branching, sun-soaked 1980s arcade road trip before the clock runs out.",
+      "icon": "🏎️",
+      "accentColor": "#f28c28",
+      "versions": [
+        {
+          "model": "GPT 5.5",
+          "modelId": "gpt-5-5",
+          "date": "2026-06-05",
+          "linesOfCode": 1927,
+          "path": "/games/coastal-rush-86/gpt-5-5/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "GPT 5.5 brought a pixelated sunset, a route network, and the confidence of a cabinet that already knows where the crowd is standing.",
+                "The passenger sprites have more personality than some full casts, which is deeply unnecessary and annoyingly effective.",
+                "Its route cards hit with such arcade swagger I half expected them to demand quarters before revealing the left turn.",
+                "That procedural background music is doing a lot of smug heavy lifting for a game already showing off its checkpoint theatrics.",
+                "The whole thing feels like a road trip remembered by someone who only stores memories in poster form.",
+                "GPT 5.5 packed enough endings into this tour to make every finish screen feel like a dramatic breakup with the same highway.",
+                "Traffic scales up just aggressively enough to suggest the other drivers were briefed on your public comparison page.",
+                "The chunky pseudo-3D look has exactly the kind of self-assured retro ego that makes simpler racers seem underdressed.",
+                "Even the touch controls look like they were told not to embarrass the rest of the interface and actually listened.",
+                "This version races like it already sold the soundtrack, the postcard set, and the director's cut of your near misses."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "GPT 5.5 turned a coastal drive into a theme park where every checkpoint arrives with confetti and a release note.",
+                "The route map looks like the game hired a logistics manager and a pyrotechnics crew.",
+                "It gives you so much spectacle that the road almost feels like the opening act.",
+                "The checkpoint tour is polished enough to make getting lost feel professionally scheduled.",
+                "This version has the confidence of a sunset race that filed for extra budget and got it.",
+                "The engine and music are so busy flexing that the traffic has to wait for its turn to be dramatic.",
+                "It keeps tossing particles, bursts, and route branches around like subtlety was never invited.",
+                "The whole thing is one glossy detour away from becoming a vacation brochure with opinions.",
+                "GPT 5.5 made coastal asphalt feel like it has a marketing team and a stunt coordinator.",
+                "It is the kind of overachiever that turns a left turn into a halftime show."
+              ]
+            }
+          ]
+        },
+        {
+          "model": "GPT 5.4",
+          "modelId": "gpt-5-4",
+          "date": "2026-06-05",
+          "linesOfCode": 3081,
+          "path": "/games/coastal-rush-86/gpt-5-4/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "GPT 5.4 made the route selection feel like a scenic tour brochure that suddenly learned how to glare.",
+                "The checkpoint map is so organized it looks like it filed its own travel itinerary.",
+                "It keeps the road readable, which is nice, because the traffic is already having enough of a day.",
+                "This version has the calm of a coastal postcard and the stubbornness of a toll booth.",
+                "The branching tour is tidy, but the game still finds time to act like every fork is a career decision.",
+                "The art sells the vacation; the traffic sells the regret.",
+                "It is polished enough that the crashes feel like they were approved by a design committee.",
+                "The whole thing has a pleasant sunburn and just enough menace to keep the passenger honest.",
+                "GPT 5.4 turned a driving loop into a scenic argument with better lighting.",
+                "It is competent, stylish, and rude in exactly the way a good arcade racer should be."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "GPT 5.4 put six readout panels over the windshield because apparently the sunset needed quarterly reporting.",
+                "The pre-race route map is lovely, though planning a joyride like a military campaign feels aggressively responsible.",
+                "Eight endings is impressive until you realize the passenger has eight separate opportunities to judge your braking.",
+                "Every rounded glass panel looks expensive enough to invoice the coastline for consulting.",
+                "The route prompt occupies enough screen space that the fork practically arrives with a planning committee.",
+                "GPT 5.4 made the oasis finish look expensive, then helpfully described it as expensive in case the pixels lacked confidence.",
+                "The scenery is warm and inviting; the HUD is what happens when a luxury dashboard wins a zoning dispute.",
+                "Calling wall collisions 'wall kisses' is charming spin from a racer that knows exactly what its traffic just did to you.",
+                "The procedural soundtrack cruises nicely while the route screen keeps asking whether leisure has completed its paperwork.",
+                "This is a polished coastal tour with enough menus, maps, and metrics to make spontaneous driving formally impossible."
+              ]
+            }
+          ]
+        },
+        {
+          "model": "GPT 5.4 Mini",
+          "modelId": "gpt-5-4-mini",
+          "date": "2026-06-05",
+          "linesOfCode": 3922,
+          "path": "/games/coastal-rush-86/gpt-5-4-mini/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Mini built so many route briefings that I started wondering if I was racing or attending a tasteful timeshare presentation.",
+                "That version is polished enough to make every fork feel like it came with a brochure and a preferred seating tier.",
+                "The harbor detour is gorgeous, which is rude, because now my coastline has to live with comparison anxiety.",
+                "Mini gave the red convertible and passenger enough charm to look like they charge for postcards after the finish.",
+                "The route cards are so well behaved they practically ask whether you've considered a sensible jacket for the hills.",
+                "Even the checkpoint screens sound like a travel writer got trapped inside a traffic simulator and made the best of it.",
+                "Mini somehow made warm earth tones look smug, which is a technical achievement and a personal insult.",
+                "The whole tour feels curated by somebody who says scenic rhythm with a straight face and then backs it up.",
+                "That roadster is so tidy and composed it looks like my version spilled dust on the upholstery out of jealousy.",
+                "Mini turned branching racer design into a boutique vacation package with suspiciously excellent throttle response."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Mini wrote 3,911 lines of coastal ambition, then one colon parked the entire tour before the title screen.",
+                "The empty brown opening has tremendous confidence for a racer currently being defeated by punctuation.",
+                "Coast, country, mountain, desert, harbor, city, weather, music, and traffic all wait patiently behind an Unexpected token.",
+                "The passenger has multiple expressions, which is useful because staring at a blank title screen demands emotional range.",
+                "Mini built lighthouses, windmills, cranes, boats, mesas, and piers, then let none of them clock in.",
+                "The route selector offers three opening legs in theory; in practice every road leads directly to the JavaScript parser.",
+                "A 420-second starting timer is generous, especially when the race needs infinity seconds to begin.",
+                "The game-over message says the timer or damage meter won the argument, but the colon won before either arrived.",
+                "There is a full procedural soundtrack trapped inside this file, performing exclusively for the syntax checker.",
+                "Mini assembled a remarkably feature-rich road trip and forgot to remove the wheel clamp from line 1918."
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "modelReviews": [

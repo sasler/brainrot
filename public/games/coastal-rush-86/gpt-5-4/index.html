@@ -1,0 +1,3080 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  >
+  <title>Coastal Rush '86 // GPT 5.4</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #26170f;
+      --sand: #e7cda5;
+      --sun: #f3b35a;
+      --peach: #de8c61;
+      --terracotta: #9f4a2d;
+      --sea: #4f90a3;
+      --pine: #365646;
+      --road: #40434a;
+      --road-edge: #d9d0c3;
+      --cream: #f8ecd2;
+      --panel: rgba(32, 19, 12, 0.76);
+      --panel-strong: rgba(24, 15, 10, 0.92);
+      --panel-line: rgba(255, 228, 179, 0.22);
+      --panel-glow: rgba(243, 179, 90, 0.18);
+      --text: #fff3db;
+      --muted: #d0b79a;
+      --danger: #ff9463;
+      --good: #ffe698;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 14%, rgba(243, 179, 90, 0.20), transparent 24%),
+        radial-gradient(circle at 72% 76%, rgba(79, 144, 163, 0.14), transparent 28%),
+        radial-gradient(circle at 18% 70%, rgba(159, 74, 45, 0.12), transparent 26%),
+        linear-gradient(180deg, #72452d 0%, #2d1d18 52%, #120d0b 100%);
+      color: var(--text);
+      font-family:
+        "Trebuchet MS",
+        "Gill Sans",
+        "Avenir Next",
+        "Segoe UI",
+        sans-serif;
+      touch-action: none;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    body::before {
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.016) 1px, transparent 1px),
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.18;
+      mask-image: linear-gradient(180deg, transparent 0%, black 16%, black 86%, transparent 100%);
+    }
+
+    body::after {
+      background:
+        radial-gradient(circle at center, transparent 44%, rgba(0, 0, 0, 0.50) 100%),
+        repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0 1px, transparent 1px 4px);
+      opacity: 0.20;
+      mix-blend-mode: screen;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+      z-index: 0;
+    }
+
+    .hud {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      left: max(10px, env(safe-area-inset-left));
+      right: max(10px, env(safe-area-inset-right));
+      z-index: 5;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .readout {
+      min-width: 0;
+      padding: 8px 10px 9px;
+      border-radius: 16px;
+      border: 1px solid var(--panel-line);
+      background:
+        linear-gradient(180deg, rgba(53, 31, 20, 0.84), rgba(24, 15, 10, 0.92));
+      box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.22),
+        inset 0 0 0 1px rgba(255, 240, 209, 0.04),
+        0 0 24px var(--panel-glow);
+      backdrop-filter: blur(10px);
+    }
+
+    .readout span {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .readout strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      text-shadow: 0 2px 12px rgba(243, 179, 90, 0.18);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .readout.wide {
+      grid-column: span 2;
+    }
+
+    .banner {
+      position: fixed;
+      top: 22%;
+      left: 50%;
+      z-index: 8;
+      transform: translate(-50%, -50%);
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 227, 171, 0.28);
+      background: rgba(45, 28, 18, 0.74);
+      color: var(--good);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      box-shadow:
+        0 0 34px rgba(243, 179, 90, 0.20),
+        inset 0 0 0 1px rgba(255, 244, 222, 0.04);
+    }
+
+    .banner.show {
+      opacity: 1;
+      transform: translate(-50%, -65%) scale(1.05);
+    }
+
+    .routePrompt {
+      position: fixed;
+      left: 50%;
+      bottom: max(96px, calc(env(safe-area-inset-bottom) + 84px));
+      z-index: 8;
+      transform: translateX(-50%);
+      width: min(560px, calc(100vw - 24px));
+      padding: 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 228, 179, 0.22);
+      background:
+        linear-gradient(180deg, rgba(56, 34, 22, 0.94), rgba(27, 16, 11, 0.92));
+      box-shadow:
+        0 20px 34px rgba(0, 0, 0, 0.34),
+        0 0 26px rgba(243, 179, 90, 0.16);
+      transition: opacity 160ms ease, transform 160ms ease;
+      pointer-events: auto;
+    }
+
+    .routePrompt.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(10px);
+    }
+
+    .routeTitle {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .routeOptions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .routeButton {
+      min-width: 0;
+      padding: 12px 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 232, 187, 0.18);
+      background:
+        linear-gradient(180deg, rgba(98, 55, 31, 0.72), rgba(64, 35, 20, 0.88));
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255, 244, 223, 0.04);
+    }
+
+    .routeButton span {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .routeButton strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .routeButton.active {
+      border-color: rgba(255, 230, 170, 0.46);
+      box-shadow:
+        0 0 24px rgba(243, 179, 90, 0.26),
+        inset 0 0 0 1px rgba(255, 244, 223, 0.06);
+      transform: translateY(-1px);
+    }
+
+    .touchControls {
+      position: fixed;
+      left: max(10px, env(safe-area-inset-left));
+      right: max(10px, env(safe-area-inset-right));
+      bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 6;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .touchCluster {
+      display: flex;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .leftCluster {
+      flex-wrap: nowrap;
+    }
+
+    .pedalCluster {
+      flex-wrap: nowrap;
+    }
+
+    .touchButton {
+      width: 74px;
+      height: 56px;
+      border: 1px solid rgba(255, 228, 179, 0.20);
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(67, 41, 26, 0.84), rgba(35, 22, 16, 0.92));
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow:
+        0 12px 24px rgba(0, 0, 0, 0.24),
+        inset 0 0 0 1px rgba(255, 244, 223, 0.04);
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .touchButton.gas {
+      background:
+        linear-gradient(180deg, rgba(93, 55, 23, 0.90), rgba(54, 28, 13, 0.94));
+      color: var(--good);
+    }
+
+    .touchButton.brake {
+      background:
+        linear-gradient(180deg, rgba(108, 49, 35, 0.86), rgba(58, 24, 18, 0.94));
+      color: #ffd1ba;
+    }
+
+    .touchButton.active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow:
+        0 0 22px rgba(243, 179, 90, 0.22),
+        inset 0 0 0 1px rgba(255, 244, 223, 0.08);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9;
+      display: grid;
+      place-items: center;
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+      background:
+        radial-gradient(circle at 50% 18%, rgba(243, 179, 90, 0.20), transparent 24%),
+        linear-gradient(180deg, rgba(32, 19, 12, 0.52), rgba(18, 11, 8, 0.82));
+      transition: opacity 180ms ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .panel {
+      width: min(760px, 100%);
+      max-height: min(92vh, 780px);
+      overflow: auto;
+      padding: 22px 20px 18px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 226, 170, 0.22);
+      background:
+        linear-gradient(180deg, rgba(57, 34, 20, 0.94), rgba(23, 15, 10, 0.94));
+      box-shadow:
+        0 28px 50px rgba(0, 0, 0, 0.38),
+        0 0 30px rgba(243, 179, 90, 0.14),
+        inset 0 0 0 1px rgba(255, 244, 223, 0.04);
+    }
+
+    .kicker {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .panel h1 {
+      font-size: clamp(32px, 7vw, 64px);
+      line-height: 0.94;
+      color: var(--cream);
+      text-shadow: 0 2px 18px rgba(243, 179, 90, 0.10);
+      margin-bottom: 14px;
+    }
+
+    .panel p {
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.55;
+      max-width: 62ch;
+    }
+
+    .overlayStats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .overlayStat {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 245, 228, 0.05);
+      border: 1px solid rgba(255, 231, 185, 0.10);
+    }
+
+    .overlayStat span {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .overlayStat strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--cream);
+    }
+
+    .routeMap {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255, 245, 228, 0.04);
+      border: 1px solid rgba(255, 231, 185, 0.10);
+    }
+
+    .routeMapTitle {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .routeNodeRow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .routeNode {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 230, 180, 0.14);
+      background: rgba(255, 245, 228, 0.03);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .routeNode.active {
+      background: rgba(243, 179, 90, 0.20);
+      border-color: rgba(255, 229, 170, 0.40);
+      box-shadow: 0 0 22px rgba(243, 179, 90, 0.16);
+    }
+
+    .routeNode.done {
+      background: rgba(79, 144, 163, 0.18);
+      border-color: rgba(132, 206, 228, 0.24);
+    }
+
+    .routeArrow {
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .actionButton {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 20px;
+      background:
+        linear-gradient(180deg, #f1c578, #c77a42);
+      color: #25160d;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow:
+        0 14px 24px rgba(0, 0, 0, 0.28),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+    }
+
+    .actionButton.ghost {
+      background:
+        linear-gradient(180deg, rgba(255, 244, 222, 0.08), rgba(255, 244, 222, 0.03));
+      border: 1px solid rgba(255, 228, 179, 0.18);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    .smallPrint {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .smallPrint strong {
+      color: var(--cream);
+    }
+
+    @media (max-width: 760px) {
+      .hud {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .readout.wide {
+        grid-column: span 3;
+      }
+
+      .overlayStats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .hud {
+        top: max(6px, env(safe-area-inset-top));
+        left: max(6px, env(safe-area-inset-left));
+        right: max(6px, env(safe-area-inset-right));
+        gap: 6px;
+      }
+
+      .readout {
+        padding: 7px 8px 8px;
+        border-radius: 14px;
+      }
+
+      .readout span {
+        font-size: 9px;
+      }
+
+      .readout strong {
+        font-size: 16px;
+      }
+
+      .banner {
+        top: 20%;
+        font-size: 18px;
+        padding: 8px 15px;
+      }
+
+      .routePrompt {
+        bottom: max(82px, calc(env(safe-area-inset-bottom) + 72px));
+        padding: 10px;
+      }
+
+      .routeButton strong {
+        font-size: 16px;
+      }
+
+      .touchControls {
+        gap: 8px;
+      }
+
+      .touchCluster {
+        gap: 8px;
+      }
+
+      .touchButton {
+        width: 62px;
+        height: 48px;
+        border-radius: 15px;
+        font-size: 11px;
+      }
+
+      .panel {
+        padding: 18px 16px 16px;
+        border-radius: 24px;
+      }
+
+      .panel p {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 360px), (max-height: 520px) {
+      .hud {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .readout.wide {
+        grid-column: span 2;
+      }
+
+      .routePrompt {
+        width: calc(100vw - 16px);
+      }
+
+      .routeTitle {
+        font-size: 10px;
+      }
+
+      .routeButton {
+        padding: 10px 8px;
+      }
+
+      .routeButton span {
+        font-size: 10px;
+      }
+
+      .routeButton strong {
+        font-size: 14px;
+      }
+
+      .touchControls {
+        left: max(6px, env(safe-area-inset-left));
+        right: max(6px, env(safe-area-inset-right));
+        bottom: max(6px, env(safe-area-inset-bottom));
+      }
+
+      .touchCluster {
+        gap: 6px;
+      }
+
+      .touchButton {
+        width: 54px;
+        height: 44px;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="gameCanvas" aria-label="Coastal Rush '86"></canvas>
+
+    <div class="hud">
+      <div class="readout">
+        <span>Speed</span>
+        <strong id="speedValue">000 mph</strong>
+      </div>
+      <div class="readout">
+        <span>Timer</span>
+        <strong id="timerValue">60.0</strong>
+      </div>
+      <div class="readout">
+        <span>Score</span>
+        <strong id="scoreValue">0</strong>
+      </div>
+      <div class="readout">
+        <span>Stage</span>
+        <strong id="stageValue">Attract</strong>
+      </div>
+      <div class="readout">
+        <span>Route</span>
+        <strong id="routeValue">Scenic</strong>
+      </div>
+      <div class="readout wide">
+        <span>Status</span>
+        <strong id="statusValue">Warm start by the sea</strong>
+      </div>
+    </div>
+
+    <div id="banner" class="banner">Checkpoint</div>
+
+    <div id="routePrompt" class="routePrompt hidden">
+      <div class="routeTitle">Fork Ahead</div>
+      <div class="routeOptions">
+        <button id="routeLeftButton" class="routeButton" data-choice="left" type="button">
+          <span>Left Route</span>
+          <strong id="routeLeftLabel">Country Hills</strong>
+        </button>
+        <button id="routeRightButton" class="routeButton" data-choice="right" type="button">
+          <span>Right Route</span>
+          <strong id="routeRightLabel">Bay City</strong>
+        </button>
+      </div>
+    </div>
+
+    <div class="touchControls" aria-hidden="true">
+      <div class="touchCluster leftCluster">
+        <button class="touchButton" data-touch="left" type="button">Left</button>
+        <button class="touchButton" data-touch="right" type="button">Right</button>
+      </div>
+      <div class="touchCluster pedalCluster">
+        <button class="touchButton brake" data-touch="brake" type="button">Brake</button>
+        <button class="touchButton gas" data-touch="gas" type="button">Gas</button>
+      </div>
+    </div>
+
+    <div id="overlay" class="overlay">
+      <div class="panel">
+        <div id="overlayKicker" class="kicker">1986 Scenic Grand Tour</div>
+        <h1 id="overlayTitle">Coastal Rush '86</h1>
+        <p id="overlayBody">
+          Open road. Warm wind. A red convertible with a fearless passenger and too many
+          checkpoints between the coast and nightfall.
+        </p>
+        <div id="overlayStats" class="overlayStats"></div>
+        <div id="routeMap" class="routeMap"></div>
+        <div class="actions">
+          <button id="primaryButton" class="actionButton" type="button">Plan Route</button>
+          <button id="secondaryButton" class="actionButton ghost" type="button">Audio On</button>
+        </div>
+        <div id="smallPrint" class="smallPrint"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const SEGMENT_LENGTH = 200;
+      const ROAD_WIDTH = 2200;
+      const CAMERA_HEIGHT = 980;
+      const DRAW_DISTANCE = 240;
+      const CAMERA_DEPTH = 0.84;
+      const LANES = 3;
+      const STORAGE_KEY = "brainrot_coastal_rush_86_gpt54_high_score";
+
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const ui = {
+        speed: document.getElementById("speedValue"),
+        timer: document.getElementById("timerValue"),
+        score: document.getElementById("scoreValue"),
+        stage: document.getElementById("stageValue"),
+        route: document.getElementById("routeValue"),
+        status: document.getElementById("statusValue"),
+        banner: document.getElementById("banner"),
+        overlay: document.getElementById("overlay"),
+        overlayKicker: document.getElementById("overlayKicker"),
+        overlayTitle: document.getElementById("overlayTitle"),
+        overlayBody: document.getElementById("overlayBody"),
+        overlayStats: document.getElementById("overlayStats"),
+        routeMap: document.getElementById("routeMap"),
+        smallPrint: document.getElementById("smallPrint"),
+        primaryButton: document.getElementById("primaryButton"),
+        secondaryButton: document.getElementById("secondaryButton"),
+        routePrompt: document.getElementById("routePrompt"),
+        routeLeftButton: document.getElementById("routeLeftButton"),
+        routeRightButton: document.getElementById("routeRightButton"),
+        routeLeftLabel: document.getElementById("routeLeftLabel"),
+        routeRightLabel: document.getElementById("routeRightLabel"),
+        touchButtons: Array.from(document.querySelectorAll("[data-touch]"))
+      };
+
+      const input = {
+        left: false,
+        right: false,
+        gas: false,
+        brake: false
+      };
+
+      const state = {
+        mode: "title",
+        overlayMode: "title",
+        width: 0,
+        height: 0,
+        pixelRatio: 1,
+        lastTime: 0,
+        elapsed: 0,
+        playerX: 0,
+        playerZ: 0,
+        speed: 0,
+        score: 0,
+        highScore: loadHighScore(),
+        timer: 60,
+        shake: 0,
+        flash: 0,
+        spinTimer: 0,
+        spinDirection: 1,
+        messageTimer: 0,
+        bannerText: "",
+        countdown: 0,
+        routeHistory: [],
+        routeNames: [],
+        endingKey: "",
+        checkpoints: 0,
+        raceTime: 0,
+        totalDistance: 0,
+        stageId: "coastStart",
+        stage: null,
+        segments: [],
+        stageLength: 0,
+        traffic: [],
+        particles: [],
+        branchPrompt: false,
+        branchChoice: null,
+        routeChoiceCooldown: 0,
+        collisionCooldown: 0,
+        checkpointPause: 0,
+        pendingStageId: "",
+        pendingStageName: "",
+        endingTitle: "",
+        endingBody: "",
+        autoCruise: 7600,
+        attractTime: 0,
+        statusText: "Warm start by the sea",
+        routeText: "Scenic Tour",
+        musicEnabled: true
+      };
+
+      const ENV = {
+        coast: {
+          skyTop: "#7fb4ca",
+          skyBottom: "#f3c08d",
+          haze: "#f8dfba",
+          groundNear: "#d0b084",
+          groundFar: "#cfa677",
+          shoulderA: "#d8b98d",
+          shoulderB: "#c29c70",
+          lane: "#fff8dc",
+          road: "#41444b",
+          ridge: "#8a6748",
+          accent: "#4f90a3"
+        },
+        country: {
+          skyTop: "#7fb0c0",
+          skyBottom: "#efbf7e",
+          haze: "#f4ddbf",
+          groundNear: "#b89d66",
+          groundFar: "#9e8a57",
+          shoulderA: "#c7b27a",
+          shoulderB: "#b19a62",
+          lane: "#fff3d6",
+          road: "#3f4448",
+          ridge: "#628153",
+          accent: "#4e6a3f"
+        },
+        city: {
+          skyTop: "#6489a7",
+          skyBottom: "#dc9a69",
+          haze: "#f3d7b5",
+          groundNear: "#7a6a59",
+          groundFar: "#675a4c",
+          shoulderA: "#b3a594",
+          shoulderB: "#978976",
+          lane: "#fff0cb",
+          road: "#3d4047",
+          ridge: "#4d4542",
+          accent: "#7b908a"
+        },
+        mountain: {
+          skyTop: "#709cb7",
+          skyBottom: "#e0ab76",
+          haze: "#f4ddbd",
+          groundNear: "#8b8068",
+          groundFar: "#776d56",
+          shoulderA: "#b9ab94",
+          shoulderB: "#978971",
+          lane: "#fff5dc",
+          road: "#42464d",
+          ridge: "#6b655d",
+          accent: "#5f6e68"
+        },
+        desert: {
+          skyTop: "#8aa9bd",
+          skyBottom: "#f0b56e",
+          haze: "#f7dfb5",
+          groundNear: "#c89b5d",
+          groundFar: "#ad8047",
+          shoulderA: "#d4b27b",
+          shoulderB: "#bc955c",
+          lane: "#fff0d2",
+          road: "#44464b",
+          ridge: "#9b6a3e",
+          accent: "#7e5536"
+        }
+      };
+
+      const ENDINGS = {
+        cliffFinish: {
+          title: "Cliffside Escape",
+          body:
+            "You chased the last orange light along the bluffs, passenger laughing, tires singing, and reached the sea before the clock could argue."
+        },
+        summitFinish: {
+          title: "Summit Starlight",
+          body:
+            "You climbed above the haze and parked beneath the first cold stars, somehow making a road race feel like a postcard that learned to drift."
+        },
+        canyonFinish: {
+          title: "Canyon Dust Glory",
+          body:
+            "You kept the throttle pinned through the copper cuts, traded paint with the wind, and arrived wrapped in dust and scoreboard points."
+        },
+        oasisFinish: {
+          title: "Oasis Boulevard",
+          body:
+            "You threaded heat, traffic, and twilight into a final sprint toward the lit boulevard, finishing with style and just enough tire left to brag."
+        }
+      };
+
+      const STAGES = {
+        coastStart: {
+          id: "coastStart",
+          name: "Sunset Coast",
+          env: "coast",
+          difficulty: 1,
+          timeBonus: 18,
+          traffic: 8,
+          leftLabel: "Country Hills",
+          rightLabel: "Bay City",
+          nextLeft: "countryRun",
+          nextRight: "cityDash",
+          description:
+            "Palm shadows, open surf, and a forgiving road that slowly stops being forgiving.",
+          sections: [
+            { count: 34, curve: 0.00, hill: 60, env: "coast" },
+            { count: 30, curve: 0.06, hill: 100, env: "coast" },
+            { count: 26, curve: -0.09, hill: -80, env: "coast" },
+            { count: 32, curve: 0.03, hill: 160, env: "coast" },
+            { count: 28, curve: -0.12, hill: -120, env: "coast" },
+            { count: 24, curve: 0.08, hill: 80, env: "coast" },
+            { count: 34, curve: 0.00, hill: -50, env: "coast" },
+            { count: 24, curve: 0.14, hill: 190, env: "coast" },
+            { count: 20, curve: -0.08, hill: -140, env: "coast" },
+            { count: 26, curve: 0.02, hill: 0, env: "coast" }
+          ]
+        },
+        countryRun: {
+          id: "countryRun",
+          name: "Country Hills",
+          env: "country",
+          difficulty: 2,
+          timeBonus: 15,
+          traffic: 10,
+          leftLabel: "High Pass",
+          rightLabel: "Dry Canyon",
+          nextLeft: "mountainPass",
+          nextRight: "desertRun",
+          description:
+            "Golden fields, tighter bends, tractors that somehow believe they belong in a race.",
+          sections: [
+            { count: 24, curve: -0.05, hill: 220, env: "country" },
+            { count: 26, curve: 0.10, hill: -80, env: "country" },
+            { count: 28, curve: -0.11, hill: 100, env: "country" },
+            { count: 30, curve: 0.13, hill: -180, env: "country" },
+            { count: 24, curve: 0.00, hill: 200, env: "country" },
+            { count: 22, curve: -0.15, hill: 0, env: "country" },
+            { count: 30, curve: 0.08, hill: 160, env: "country" },
+            { count: 24, curve: -0.04, hill: -180, env: "country" },
+            { count: 26, curve: 0.16, hill: 120, env: "country" },
+            { count: 18, curve: -0.08, hill: -80, env: "country" }
+          ]
+        },
+        cityDash: {
+          id: "cityDash",
+          name: "Bay City",
+          env: "city",
+          difficulty: 3,
+          timeBonus: 14,
+          traffic: 12,
+          leftLabel: "High Pass",
+          rightLabel: "Dry Canyon",
+          nextLeft: "mountainPass",
+          nextRight: "desertRun",
+          description:
+            "Tunnels of glass, tourist traffic, and exactly enough room to regret every late brake.",
+          sections: [
+            { count: 26, curve: 0.04, hill: 80, env: "city" },
+            { count: 20, curve: -0.13, hill: -60, env: "city" },
+            { count: 24, curve: 0.12, hill: 100, env: "city" },
+            { count: 24, curve: -0.06, hill: 0, env: "city" },
+            { count: 30, curve: 0.15, hill: -150, env: "city" },
+            { count: 28, curve: -0.16, hill: 180, env: "city" },
+            { count: 20, curve: 0.00, hill: 90, env: "city" },
+            { count: 28, curve: 0.11, hill: -220, env: "city" },
+            { count: 24, curve: -0.09, hill: 130, env: "city" },
+            { count: 18, curve: 0.05, hill: -60, env: "city" }
+          ]
+        },
+        mountainPass: {
+          id: "mountainPass",
+          name: "High Pass",
+          env: "mountain",
+          difficulty: 4,
+          timeBonus: 12,
+          traffic: 13,
+          leftLabel: "Cliffside",
+          rightLabel: "Summit",
+          nextLeft: "cliffFinish",
+          nextRight: "summitFinish",
+          description:
+            "Cold air, guard rails with trust issues, and a horizon that keeps moving just to spite you.",
+          sections: [
+            { count: 24, curve: 0.08, hill: 260, env: "mountain" },
+            { count: 18, curve: -0.17, hill: 260, env: "mountain" },
+            { count: 20, curve: 0.18, hill: -220, env: "mountain" },
+            { count: 24, curve: -0.12, hill: 300, env: "mountain" },
+            { count: 22, curve: 0.14, hill: -180, env: "mountain" },
+            { count: 20, curve: 0.00, hill: 200, env: "mountain" },
+            { count: 22, curve: -0.18, hill: -260, env: "mountain" },
+            { count: 18, curve: 0.16, hill: 140, env: "mountain" },
+            { count: 20, curve: -0.08, hill: 220, env: "mountain" },
+            { count: 16, curve: 0.12, hill: -160, env: "mountain" }
+          ]
+        },
+        desertRun: {
+          id: "desertRun",
+          name: "Dry Canyon",
+          env: "desert",
+          difficulty: 4,
+          timeBonus: 12,
+          traffic: 13,
+          leftLabel: "Canyon Run",
+          rightLabel: "Oasis Lights",
+          nextLeft: "canyonFinish",
+          nextRight: "oasisFinish",
+          description:
+            "Long sightlines, drifting sand, and enough heat shimmer to make every mirror look haunted.",
+          sections: [
+            { count: 28, curve: 0.03, hill: 100, env: "desert" },
+            { count: 24, curve: -0.08, hill: -80, env: "desert" },
+            { count: 26, curve: 0.12, hill: 140, env: "desert" },
+            { count: 30, curve: -0.16, hill: 100, env: "desert" },
+            { count: 18, curve: 0.00, hill: -120, env: "desert" },
+            { count: 26, curve: 0.18, hill: 180, env: "desert" },
+            { count: 22, curve: -0.12, hill: -220, env: "desert" },
+            { count: 22, curve: 0.10, hill: 120, env: "desert" },
+            { count: 22, curve: -0.05, hill: 90, env: "desert" },
+            { count: 16, curve: 0.08, hill: -70, env: "desert" }
+          ]
+        },
+        cliffFinish: {
+          id: "cliffFinish",
+          name: "Cliffside",
+          env: "coast",
+          difficulty: 5,
+          timeBonus: 0,
+          traffic: 14,
+          leftLabel: "",
+          rightLabel: "",
+          nextLeft: "",
+          nextRight: "",
+          description:
+            "Final blast by the ocean wall. Fast, exposed, and spectacular if you survive long enough to admire it.",
+          sections: [
+            { count: 22, curve: -0.11, hill: -120, env: "coast" },
+            { count: 22, curve: 0.15, hill: 180, env: "coast" },
+            { count: 24, curve: -0.19, hill: -100, env: "coast" },
+            { count: 22, curve: 0.08, hill: 140, env: "coast" },
+            { count: 20, curve: -0.06, hill: -80, env: "coast" },
+            { count: 20, curve: 0.12, hill: 110, env: "coast" },
+            { count: 20, curve: -0.15, hill: -90, env: "coast" }
+          ]
+        },
+        summitFinish: {
+          id: "summitFinish",
+          name: "Summit",
+          env: "mountain",
+          difficulty: 5,
+          timeBonus: 0,
+          traffic: 14,
+          leftLabel: "",
+          rightLabel: "",
+          nextLeft: "",
+          nextRight: "",
+          description:
+            "Thin air, late shadows, and a finish line balanced on a mountain that seems personally offended by understeer.",
+          sections: [
+            { count: 24, curve: 0.10, hill: 200, env: "mountain" },
+            { count: 18, curve: -0.17, hill: 260, env: "mountain" },
+            { count: 22, curve: 0.14, hill: -130, env: "mountain" },
+            { count: 18, curve: -0.12, hill: 180, env: "mountain" },
+            { count: 22, curve: 0.00, hill: 260, env: "mountain" },
+            { count: 18, curve: 0.16, hill: -120, env: "mountain" },
+            { count: 18, curve: -0.07, hill: 80, env: "mountain" }
+          ]
+        },
+        canyonFinish: {
+          id: "canyonFinish",
+          name: "Canyon Run",
+          env: "desert",
+          difficulty: 5,
+          timeBonus: 0,
+          traffic: 14,
+          leftLabel: "",
+          rightLabel: "",
+          nextLeft: "",
+          nextRight: "",
+          description:
+            "The canyon closes in, the timer gets rude, and every successful pass feels like a personal insult to gravity.",
+          sections: [
+            { count: 22, curve: 0.06, hill: 120, env: "desert" },
+            { count: 22, curve: -0.18, hill: 0, env: "desert" },
+            { count: 24, curve: 0.19, hill: 150, env: "desert" },
+            { count: 24, curve: -0.16, hill: -110, env: "desert" },
+            { count: 18, curve: 0.12, hill: 100, env: "desert" },
+            { count: 20, curve: -0.08, hill: -70, env: "desert" },
+            { count: 22, curve: 0.14, hill: 90, env: "desert" }
+          ]
+        },
+        oasisFinish: {
+          id: "oasisFinish",
+          name: "Oasis Lights",
+          env: "city",
+          difficulty: 5,
+          timeBonus: 0,
+          traffic: 15,
+          leftLabel: "",
+          rightLabel: "",
+          nextLeft: "",
+          nextRight: "",
+          description:
+            "A hot straight into the resort lights, dense traffic, and a finish line that somehow looks expensive.",
+          sections: [
+            { count: 22, curve: 0.04, hill: 100, env: "desert" },
+            { count: 18, curve: -0.09, hill: -60, env: "desert" },
+            { count: 20, curve: 0.10, hill: 80, env: "city" },
+            { count: 22, curve: -0.14, hill: 0, env: "city" },
+            { count: 20, curve: 0.16, hill: 100, env: "city" },
+            { count: 20, curve: -0.08, hill: -100, env: "city" },
+            { count: 22, curve: 0.12, hill: 50, env: "city" }
+          ]
+        }
+      };
+
+      const audio = createAudioSystem();
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function easeInOut01(t) {
+        return 0.5 - Math.cos(Math.PI * clamp(t, 0, 1)) * 0.5;
+      }
+
+      function formatScore(value) {
+        return Math.round(value).toLocaleString("en-US");
+      }
+
+      function loadHighScore() {
+        try {
+          return Number(localStorage.getItem(STORAGE_KEY) || 0);
+        } catch (error) {
+          return 0;
+        }
+      }
+
+      function saveHighScore() {
+        if (state.score <= state.highScore) {
+          return;
+        }
+        state.highScore = Math.round(state.score);
+        try {
+          localStorage.setItem(STORAGE_KEY, String(state.highScore));
+        } catch (error) {
+          return;
+        }
+      }
+
+      function hash01(seed) {
+        const value = Math.sin(seed * 12.9898 + seed * seed * 0.0013) * 43758.5453123;
+        return value - Math.floor(value);
+      }
+
+      function randomBetween(seed, min, max) {
+        return min + (max - min) * hash01(seed);
+      }
+
+      function resize() {
+        state.pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        state.width = window.innerWidth;
+        state.height = window.innerHeight;
+        canvas.width = Math.floor(state.width * state.pixelRatio);
+        canvas.height = Math.floor(state.height * state.pixelRatio);
+        canvas.style.width = state.width + "px";
+        canvas.style.height = state.height + "px";
+        ctx.setTransform(state.pixelRatio, 0, 0, state.pixelRatio, 0, 0);
+      }
+
+      function setBanner(text, duration) {
+        state.bannerText = text;
+        state.messageTimer = duration;
+        ui.banner.textContent = text;
+        ui.banner.classList.add("show");
+      }
+
+      function clearBanner() {
+        state.messageTimer = 0;
+        ui.banner.classList.remove("show");
+      }
+
+      function setOverlayVisible(visible) {
+        ui.overlay.classList.toggle("hidden", !visible);
+      }
+
+      function setOverlay(mode, title, body, primaryText, secondaryText) {
+        state.overlayMode = mode;
+        ui.overlayTitle.textContent = title;
+        ui.overlayBody.textContent = body;
+        ui.primaryButton.textContent = primaryText;
+        ui.secondaryButton.textContent = secondaryText;
+        setOverlayVisible(true);
+      }
+
+      function buildOverlayStats(items) {
+        ui.overlayStats.innerHTML = items
+          .map((item) => {
+            return (
+              '<div class="overlayStat">' +
+              "<span>" +
+              item.label +
+              "</span>" +
+              "<strong>" +
+              item.value +
+              "</strong>" +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+
+      function routeNode(label, status) {
+        const classes = ["routeNode"];
+        if (status) {
+          classes.push(status);
+        }
+        return '<span class="' + classes.join(" ") + '">' + label + "</span>";
+      }
+
+      function buildRouteMap() {
+        const activeStage = state.stage ? state.stage.id : "coastStart";
+        const traveled = new Set(state.routeHistory);
+        const current = activeStage;
+
+        const first = traveled.has("coastStart")
+          ? "done"
+          : current === "coastStart"
+            ? "active"
+            : "";
+
+        const secondLeft = traveled.has("countryRun")
+          ? "done"
+          : current === "countryRun"
+            ? "active"
+            : "";
+
+        const secondRight = traveled.has("cityDash")
+          ? "done"
+          : current === "cityDash"
+            ? "active"
+            : "";
+
+        const thirdLeft = traveled.has("mountainPass")
+          ? "done"
+          : current === "mountainPass"
+            ? "active"
+            : "";
+
+        const thirdRight = traveled.has("desertRun")
+          ? "done"
+          : current === "desertRun"
+            ? "active"
+            : "";
+
+        const cliff = current === "cliffFinish" ? "active" : state.endingKey === "cliffFinish" ? "done" : "";
+        const summit = current === "summitFinish" ? "active" : state.endingKey === "summitFinish" ? "done" : "";
+        const canyon = current === "canyonFinish" ? "active" : state.endingKey === "canyonFinish" ? "done" : "";
+        const oasis = current === "oasisFinish" ? "active" : state.endingKey === "oasisFinish" ? "done" : "";
+
+        ui.routeMap.innerHTML =
+          '<div class="routeMapTitle">Checkpoint Tour Map</div>' +
+          '<div class="routeNodeRow">' +
+          routeNode("Sunset Coast", first) +
+          '<span class="routeArrow">-></span>' +
+          routeNode("Country Hills", secondLeft) +
+          routeNode("Bay City", secondRight) +
+          "</div>" +
+          '<div class="routeNodeRow">' +
+          routeNode("High Pass", thirdLeft) +
+          routeNode("Dry Canyon", thirdRight) +
+          "</div>" +
+          '<div class="routeNodeRow">' +
+          routeNode("Cliffside", cliff) +
+          routeNode("Summit", summit) +
+          routeNode("Canyon Run", canyon) +
+          routeNode("Oasis Lights", oasis) +
+          "</div>";
+      }
+
+      function setTitleScreen() {
+        state.mode = "title";
+        state.routeText = "Scenic Tour";
+        state.statusText = "Warm start by the sea";
+        ui.overlayKicker.textContent = "1986 Scenic Grand Tour";
+        setOverlay(
+          "title",
+          "Coastal Rush '86",
+          "A warm-toned pseudo-3D checkpoint racer: original red convertible, nervous passenger, branching routes, rough traffic, and just enough time to find the best sunset.",
+          "Plan Route",
+          state.musicEnabled ? "Audio On" : "Audio Off"
+        );
+        buildOverlayStats([
+          { label: "Best Score", value: formatScore(state.highScore) },
+          { label: "Routes", value: "8 endings" },
+          { label: "Controls", value: "Steer / Gas / Brake" }
+        ]);
+        buildRouteMap();
+        ui.smallPrint.innerHTML =
+          "<strong>Keyboard:</strong> arrows or WASD. <strong>Touch:</strong> compact on-screen controls. " +
+          "<strong>Audio:</strong> procedural background music, engine audio, and effects are generated live with Web Audio. " +
+          "<strong>Rules:</strong> traffic hurts, dirt slows, forks matter, and the clock never apologizes.";
+      }
+
+      function setRouteScreen() {
+        state.mode = "route";
+        ui.overlayKicker.textContent = "Tour Briefing";
+        setOverlay(
+          "route",
+          "Choose The Faster Postcard",
+          "Every checkpoint grants time. Every fork trades scenery for risk. Coastal roads are easiest, city lanes are meaner, mountain passes punish late steering, and desert runs invite glorious overconfidence.",
+          "Start Engine",
+          state.musicEnabled ? "Audio On" : "Audio Off"
+        );
+        buildOverlayStats([
+          { label: "Start Time", value: "58 sec" },
+          { label: "Checkpoints", value: "3 forks" },
+          { label: "Best", value: formatScore(state.highScore) }
+        ]);
+        buildRouteMap();
+        ui.smallPrint.innerHTML =
+          "Pick with the road when the prompt appears. If you freeze at the fork, the car commits based on your steering. " +
+          "Passing traffic builds score. Wall kisses turn into spins. The passenger will judge every brake tap.";
+      }
+
+      function setCheckpointScreen(currentStage, nextStageName, bonus) {
+        state.mode = "checkpoint";
+        ui.overlayKicker.textContent = "Checkpoint";
+        setOverlay(
+          "checkpoint",
+          currentStage.name + " Cleared",
+          "You banked extra time and kept the convertible intact enough to continue. The next sector tightens up, so stop pretending the opening straight made you immortal.",
+          "Continue",
+          state.musicEnabled ? "Audio On" : "Audio Off"
+        );
+        buildOverlayStats([
+          { label: "Time Bonus", value: "+" + bonus + " sec" },
+          { label: "Next Stage", value: nextStageName },
+          { label: "Score", value: formatScore(state.score) }
+        ]);
+        buildRouteMap();
+        ui.smallPrint.innerHTML =
+          "Route so far: <strong>" +
+          state.routeNames.join(" -> ") +
+          "</strong>. Next prompt will arrive near the end of the upcoming sector.";
+      }
+
+      function setFinishScreen() {
+        const ending = ENDINGS[state.endingKey] || ENDINGS.cliffFinish;
+        ui.overlayKicker.textContent = "Finish";
+        setOverlay(
+          "finish",
+          ending.title,
+          ending.body,
+          "Run Again",
+          state.musicEnabled ? "Audio On" : "Audio Off"
+        );
+        buildOverlayStats([
+          { label: "Final Score", value: formatScore(state.score) },
+          { label: "Race Time", value: state.raceTime.toFixed(1) + " sec" },
+          { label: "High Score", value: formatScore(state.highScore) }
+        ]);
+        buildRouteMap();
+        ui.smallPrint.innerHTML =
+          "Completed path: <strong>" +
+          state.routeNames.join(" -> ") +
+          "</strong>. Clean passes and brave forks pay better than panic.";
+      }
+
+      function setGameOverScreen(reason) {
+        ui.overlayKicker.textContent = "Game Over";
+        setOverlay(
+          "gameover",
+          "Tour Over",
+          reason,
+          "Try Again",
+          state.musicEnabled ? "Audio On" : "Audio Off"
+        );
+        buildOverlayStats([
+          { label: "Score", value: formatScore(state.score) },
+          { label: "Best", value: formatScore(state.highScore) },
+          { label: "Checkpoints", value: String(state.checkpoints) }
+        ]);
+        buildRouteMap();
+        ui.smallPrint.innerHTML =
+          "Off-road drags speed, traffic spins the car, and the timer is not sentimental. A calmer line is faster than a dramatic recovery.";
+      }
+
+      function hideOverlayForRace() {
+        setOverlayVisible(false);
+      }
+
+      function createSegmentsForStage(stageDef) {
+        const segments = [];
+        let currentY = 0;
+
+        for (const section of stageDef.sections) {
+          const startY = currentY;
+          const endY = currentY + section.hill;
+
+          for (let i = 0; i < section.count; i += 1) {
+            const pct = section.count <= 1 ? 1 : i / (section.count - 1);
+            const wave = Math.sin(pct * Math.PI);
+            const curve = section.curve * wave;
+            const y = lerp(startY, endY, easeInOut01(pct));
+
+            segments.push({
+              index: segments.length,
+              z: segments.length * SEGMENT_LENGTH,
+              y,
+              curve,
+              env: section.env,
+              sprites: [],
+              tag: ""
+            });
+          }
+
+          currentY = endY;
+        }
+
+        decorateStage(stageDef, segments);
+        return segments;
+      }
+
+      function addSprite(segments, index, side, type, offset, scale) {
+        const segment = segments[index];
+        if (!segment) {
+          return;
+        }
+
+        segment.sprites.push({
+          side,
+          type,
+          offset,
+          scale
+        });
+      }
+
+      function decorateStage(stageDef, segments) {
+        const length = segments.length;
+
+        for (let i = 8; i < length - 26; i += 1) {
+          const env = segments[i].env;
+          const seed = i * 19 + length * 7;
+
+          if (env === "coast") {
+            if (i % 7 === 0) {
+              addSprite(segments, i, -1, "palm", 1.7 + hash01(seed) * 0.8, 0.9 + hash01(seed + 1) * 0.6);
+            }
+            if (i % 9 === 0) {
+              addSprite(segments, i, 1, "palm", 1.8 + hash01(seed + 2) * 0.9, 0.8 + hash01(seed + 3) * 0.7);
+            }
+            if (i % 17 === 0) {
+              addSprite(segments, i, -1, "rock", 2.4, 0.8 + hash01(seed + 4) * 0.5);
+            }
+            if (i % 31 === 0) {
+              addSprite(segments, i, 1, "beachSign", 1.55, 1);
+            }
+          }
+
+          if (env === "country") {
+            if (i % 8 === 0) {
+              addSprite(segments, i, -1, "pine", 1.7 + hash01(seed) * 0.7, 0.9 + hash01(seed + 1) * 0.7);
+            }
+            if (i % 13 === 0) {
+              addSprite(segments, i, 1, "house", 2.0, 1 + hash01(seed + 2) * 0.4);
+            }
+            if (i % 19 === 0) {
+              addSprite(segments, i, 1, "fence", 1.45, 1);
+            }
+            if (i % 27 === 0) {
+              addSprite(segments, i, -1, "billboard", 1.5, 1.05);
+            }
+          }
+
+          if (env === "city") {
+            if (i % 6 === 0) {
+              addSprite(segments, i, -1, "building", 1.6, 1.0 + hash01(seed) * 1.0);
+            }
+            if (i % 7 === 0) {
+              addSprite(segments, i, 1, "building", 1.55, 1.0 + hash01(seed + 1) * 1.2);
+            }
+            if (i % 18 === 0) {
+              addSprite(segments, i, -1, "lamp", 1.35, 0.95);
+            }
+            if (i % 22 === 0) {
+              addSprite(segments, i, 1, "billboard", 1.45, 1.0);
+            }
+          }
+
+          if (env === "mountain") {
+            if (i % 7 === 0) {
+              addSprite(segments, i, -1, "pine", 1.7, 1.0 + hash01(seed) * 0.7);
+            }
+            if (i % 9 === 0) {
+              addSprite(segments, i, 1, "rock", 2.0, 0.9 + hash01(seed + 1) * 0.8);
+            }
+            if (i % 21 === 0) {
+              addSprite(segments, i, -1, "guardRail", 1.15, 1.1);
+            }
+          }
+
+          if (env === "desert") {
+            if (i % 6 === 0) {
+              addSprite(segments, i, -1, "cactus", 1.8 + hash01(seed) * 0.9, 0.8 + hash01(seed + 1) * 0.7);
+            }
+            if (i % 8 === 0) {
+              addSprite(segments, i, 1, "rock", 2.2, 0.9 + hash01(seed + 2) * 0.7);
+            }
+            if (i % 23 === 0) {
+              addSprite(segments, i, 1, "billboard", 1.5, 0.95);
+            }
+          }
+        }
+
+        if (stageDef.nextLeft && stageDef.nextRight) {
+          for (let i = length - 60; i < length - 18; i += 8) {
+            addSprite(segments, i, -1, "arrowLeft", 1.22, 0.95);
+            addSprite(segments, i, 1, "arrowRight", 1.22, 0.95);
+          }
+          addSprite(segments, length - 12, 0, "checkpointArch", 0, 1.15);
+          segments[length - 12].tag = "checkpoint";
+        } else {
+          for (let i = length - 46; i < length - 12; i += 10) {
+            addSprite(segments, i, -1, "finishFlag", 1.16, 1.0);
+            addSprite(segments, i, 1, "finishFlag", 1.16, 1.0);
+          }
+          addSprite(segments, length - 10, 0, "finishArch", 0, 1.25);
+          segments[length - 10].tag = "finish";
+        }
+      }
+
+      function spawnTraffic(stageDef, segments) {
+        const traffic = [];
+        const count = stageDef.traffic + stageDef.difficulty * 2;
+        const length = (segments.length - 1) * SEGMENT_LENGTH;
+
+        for (let i = 0; i < count; i += 1) {
+          const seed = i * 71 + stageDef.name.length * 9;
+          const lane = Math.floor(hash01(seed) * LANES);
+          const laneCenter = lane === 0 ? -0.66 : lane === 1 ? 0 : 0.66;
+          const offset = laneCenter + randomBetween(seed + 2, -0.08, 0.08);
+          const z = randomBetween(seed + 1, 2800, Math.max(4200, length - 2200));
+          const speed = 5200 + hash01(seed + 3) * 4200 + stageDef.difficulty * 420;
+          const typeRoll = hash01(seed + 4);
+
+          traffic.push({
+            z,
+            offset,
+            speed,
+            color: trafficColor(i),
+            width: typeRoll < 0.18 ? 0.28 : typeRoll < 0.52 ? 0.22 : 0.19,
+            height: typeRoll < 0.18 ? 0.62 : typeRoll < 0.52 ? 0.54 : 0.48,
+            type: typeRoll < 0.18 ? "truck" : typeRoll < 0.52 ? "van" : "coupe",
+            driftSeed: seed + 11,
+            counted: false
+          });
+        }
+
+        traffic.sort((a, b) => a.z - b.z);
+        return traffic;
+      }
+
+      function trafficColor(index) {
+        const colors = [
+          "#d6c0a0",
+          "#6f8ea2",
+          "#b75842",
+          "#8f7b69",
+          "#c5a25f",
+          "#47675e",
+          "#91443e",
+          "#a7b0b8"
+        ];
+        return colors[index % colors.length];
+      }
+
+      function loadStage(stageId, keepSpeed) {
+        const stageDef = STAGES[stageId];
+
+        state.stageId = stageId;
+        state.stage = stageDef;
+        state.segments = createSegmentsForStage(stageDef);
+        state.stageLength = (state.segments.length - 1) * SEGMENT_LENGTH;
+        state.traffic = spawnTraffic(stageDef, state.segments);
+        state.playerZ = 0;
+        state.playerX = clamp(state.playerX * 0.5, -0.32, 0.32);
+        state.branchPrompt = false;
+        state.branchChoice = null;
+        state.routeChoiceCooldown = 0;
+        state.collisionCooldown = 0;
+        state.statusText = stageDef.description;
+        state.routeText = stageDef.name;
+
+        if (keepSpeed) {
+          state.speed = Math.min(state.speed, maxSpeedForStage(stageDef) * 0.72);
+        } else {
+          state.speed = 0;
+        }
+      }
+
+      function maxSpeedForStage(stageDef) {
+        const base = 17000;
+        return base - stageDef.difficulty * 600;
+      }
+
+      function currentSegmentIndex() {
+        return clamp(Math.floor(state.playerZ / SEGMENT_LENGTH), 0, state.segments.length - 2);
+      }
+
+      function project(worldX, worldY, worldZ, playerRoadY) {
+        const dz = Math.max(1, worldZ - state.playerZ);
+        const scale = CAMERA_DEPTH / dz;
+        return {
+          scale,
+          x: Math.round((1 + scale * worldX) * state.width * 0.5),
+          y: Math.round((1 - scale * (worldY - playerRoadY - CAMERA_HEIGHT)) * state.height * 0.5),
+          w: Math.round(scale * ROAD_WIDTH * state.width * 0.5)
+        };
+      }
+
+      function createVisibleSegments() {
+        const visible = [];
+        const baseIndex = currentSegmentIndex();
+        const basePercent = (state.playerZ % SEGMENT_LENGTH) / SEGMENT_LENGTH;
+        const baseSegment = state.segments[baseIndex];
+        const nextBaseSegment = state.segments[baseIndex + 1];
+        const playerRoadY = baseSegment && nextBaseSegment
+          ? lerp(baseSegment.y, nextBaseSegment.y, basePercent)
+          : 0;
+        let curveX = 0;
+        let dx = 0;
+
+        for (let n = 0; n < DRAW_DISTANCE; n += 1) {
+          const index = baseIndex + n;
+          const segment = state.segments[index];
+          const next = state.segments[index + 1];
+
+          if (!segment || !next) {
+            break;
+          }
+
+          const currentCurve = segment.curve;
+          const x1 = curveX - dx * basePercent;
+          const x2 = curveX + currentCurve;
+          const p1 = project((x1 * 1600) - state.playerX * ROAD_WIDTH, segment.y, segment.z, playerRoadY);
+          const p2 = project((x2 * 1600) - state.playerX * ROAD_WIDTH, next.y, next.z, playerRoadY);
+
+          visible.push({
+            index,
+            segment,
+            next,
+            p1,
+            p2
+          });
+
+          curveX = x2;
+          dx += currentCurve * 0.46;
+        }
+
+        return visible;
+      }
+
+      function handlePrimaryAction() {
+        audio.resume();
+
+        if (state.overlayMode === "title") {
+          setRouteScreen();
+          return;
+        }
+
+        if (state.overlayMode === "route") {
+          startRun();
+          return;
+        }
+
+        if (state.overlayMode === "checkpoint") {
+          finishCheckpointPause();
+          return;
+        }
+
+        if (state.overlayMode === "finish" || state.overlayMode === "gameover") {
+          resetToTitle();
+        }
+      }
+
+      function handleSecondaryAction() {
+        state.musicEnabled = !state.musicEnabled;
+        audio.setMuted(!state.musicEnabled);
+        ui.secondaryButton.textContent = state.musicEnabled ? "Audio On" : "Audio Off";
+      }
+
+      function resetToTitle() {
+        state.score = 0;
+        state.timer = 58;
+        state.playerX = 0;
+        state.playerZ = 0;
+        state.speed = 0;
+        state.raceTime = 0;
+        state.totalDistance = 0;
+        state.routeHistory = [];
+        state.routeNames = [];
+        state.checkpoints = 0;
+        state.endingKey = "";
+        state.particles.length = 0;
+        loadStage("coastStart", false);
+        setTitleScreen();
+      }
+
+      function startRun() {
+        state.score = 0;
+        state.timer = 58;
+        state.playerX = 0;
+        state.playerZ = 0;
+        state.speed = 0;
+        state.spinTimer = 0;
+        state.raceTime = 0;
+        state.totalDistance = 0;
+        state.routeHistory = [];
+        state.routeNames = [];
+        state.checkpoints = 0;
+        state.endingKey = "";
+        state.particles.length = 0;
+        loadStage("coastStart", false);
+        hideOverlayForRace();
+        state.mode = "countdown";
+        state.countdown = 3.2;
+        state.statusText = "Start the tour clean";
+        setBanner("3", 0.6);
+        audio.startRace();
+      }
+
+      function showRoutePrompt() {
+        if (!state.stage.nextLeft || !state.stage.nextRight) {
+          return;
+        }
+        state.branchPrompt = true;
+        ui.routeLeftLabel.textContent = state.stage.leftLabel;
+        ui.routeRightLabel.textContent = state.stage.rightLabel;
+        ui.routePrompt.classList.remove("hidden");
+      }
+
+      function hideRoutePrompt() {
+        state.branchPrompt = false;
+        ui.routePrompt.classList.add("hidden");
+        ui.routeLeftButton.classList.remove("active");
+        ui.routeRightButton.classList.remove("active");
+      }
+
+      function chooseRoute(choice) {
+        if (!state.branchPrompt || state.routeChoiceCooldown > 0) {
+          return;
+        }
+
+        state.branchChoice = choice;
+        state.routeChoiceCooldown = 0.22;
+        ui.routeLeftButton.classList.toggle("active", choice === "left");
+        ui.routeRightButton.classList.toggle("active", choice === "right");
+        state.statusText = "Fork locked: " + (choice === "left" ? state.stage.leftLabel : state.stage.rightLabel);
+        setBanner(choice === "left" ? state.stage.leftLabel : state.stage.rightLabel, 0.7);
+        audio.playRoute();
+      }
+
+      function finishCheckpointPause() {
+        if (!state.pendingStageId) {
+          return;
+        }
+        loadStage(state.pendingStageId, true);
+        hideOverlayForRace();
+        state.mode = "countdown";
+        state.countdown = 1.4;
+        state.pendingStageId = "";
+        state.pendingStageName = "";
+        state.statusText = "Back on the clock";
+        setBanner("Go!", 0.7);
+      }
+
+      function completeStage() {
+        const stageDef = state.stage;
+        const hasNext = Boolean(stageDef.nextLeft && stageDef.nextRight);
+
+        state.routeHistory.push(stageDef.id);
+        state.routeNames.push(stageDef.name);
+        state.checkpoints += hasNext ? 1 : 0;
+
+        if (hasNext) {
+          const choice =
+            state.branchChoice ||
+            (input.left && !input.right ? "left" : input.right && !input.left ? "right" : state.playerX < 0 ? "left" : "right");
+
+          const nextStageId = choice === "left" ? stageDef.nextLeft : stageDef.nextRight;
+          const bonus = stageDef.timeBonus + clamp(Math.floor(state.speed / 3600), 1, 6);
+
+          state.timer += bonus;
+          state.score += 1800 + bonus * 160;
+          state.pendingStageId = nextStageId;
+          state.pendingStageName = STAGES[nextStageId].name;
+          hideRoutePrompt();
+          state.playerZ = 0;
+          state.speed *= 0.68;
+          spawnCheckpointBurst();
+          state.flash = 0.65;
+          state.shake = 4;
+          saveHighScore();
+          setCheckpointScreen(stageDef, STAGES[nextStageId].name, bonus);
+          audio.playCheckpoint();
+          return;
+        }
+
+        state.endingKey = stageDef.id;
+        state.routeNames.push(ENDINGS[stageDef.id].title);
+        state.score += 4800 + Math.max(0, Math.floor(state.timer * 80));
+        state.mode = "finish";
+        hideRoutePrompt();
+        spawnFinishBurst();
+        state.flash = 1;
+        state.shake = 6;
+        saveHighScore();
+        audio.playFinish();
+        setFinishScreen();
+      }
+
+      function gameOver(reason) {
+        state.mode = "gameover";
+        hideRoutePrompt();
+        saveHighScore();
+        audio.playCrash();
+        setGameOverScreen(reason);
+      }
+
+      function triggerCrash(source) {
+        if (state.collisionCooldown > 0 || state.spinTimer > 0 || state.mode !== "racing") {
+          return;
+        }
+
+        state.collisionCooldown = 0.9;
+        state.spinTimer = source === "edge" ? 0.95 : 0.78;
+        state.spinDirection = state.playerX >= 0 ? -1 : 1;
+        state.speed *= source === "edge" ? 0.38 : 0.52;
+        state.score = Math.max(0, state.score - 450);
+        state.shake = 7;
+        state.flash = 0.55;
+        state.statusText = source === "traffic" ? "Traffic hit. Collect yourself." : "Too far off-road. Bad idea.";
+        spawnCrashSparks();
+        audio.playCrash();
+      }
+
+      function updateCountdown(dt) {
+        const before = Math.ceil(state.countdown);
+        state.countdown -= dt;
+        const after = Math.ceil(state.countdown);
+
+        if (after > 0 && after !== before) {
+          setBanner(String(after), 0.5);
+          audio.playCountdownBeep();
+        }
+
+        if (state.countdown <= 0) {
+          state.mode = "racing";
+          clearBanner();
+          setBanner("Go!", 0.6);
+          audio.playGo();
+        }
+      }
+
+      function updateAttract(dt) {
+        state.attractTime += dt;
+        state.speed = lerp(state.speed, state.autoCruise, 0.035);
+        state.playerX = Math.sin(state.attractTime * 0.28) * 0.18;
+        state.playerZ += state.speed * dt;
+        if (state.playerZ >= state.stageLength - 1800) {
+          loadStage("coastStart", false);
+          state.playerZ = 0;
+        }
+        state.statusText = "Warm start by the sea";
+        updateParticles(dt);
+      }
+
+      function updateRace(dt) {
+        const stageDef = state.stage;
+        const maxSpeed = maxSpeedForStage(stageDef);
+        const steerInput = (input.left ? -1 : 0) + (input.right ? 1 : 0);
+        const throttle = input.gas;
+        const braking = input.brake;
+
+        if (state.routeChoiceCooldown > 0) {
+          state.routeChoiceCooldown -= dt;
+        }
+
+        if (state.collisionCooldown > 0) {
+          state.collisionCooldown -= dt;
+        }
+
+        if (state.spinTimer > 0) {
+          state.spinTimer -= dt;
+          state.playerX += state.spinDirection * dt * 0.95;
+          state.speed = Math.max(1200, state.speed - dt * 7400);
+        } else {
+          if (throttle) {
+            state.speed += dt * 7100;
+          } else {
+            state.speed -= dt * 3500;
+          }
+
+          if (braking) {
+            state.speed -= dt * 8600;
+          }
+
+          const steerStrength = 1.75 - (state.speed / maxSpeed) * 0.78;
+          state.playerX += steerInput * dt * steerStrength;
+
+          const seg = state.segments[currentSegmentIndex()];
+          if (seg) {
+            state.playerX -= seg.curve * dt * 11.5 * (state.speed / maxSpeed);
+          }
+        }
+
+        state.speed = clamp(state.speed, 0, maxSpeed);
+
+        if (Math.abs(state.playerX) > 1.02) {
+          state.speed -= dt * (2800 + Math.abs(state.playerX) * 2600);
+          spawnDustTrail();
+          state.statusText = "Off-road drag";
+        }
+
+        if (Math.abs(state.playerX) > 1.42 && state.speed > 6800) {
+          triggerCrash("edge");
+        }
+
+        state.playerX = clamp(state.playerX, -1.8, 1.8);
+        state.playerZ += state.speed * dt;
+        state.timer -= dt;
+        state.raceTime += dt;
+        state.totalDistance += state.speed * dt;
+        state.score += state.speed * dt * 0.12;
+
+        updateTraffic(dt);
+        updateParticles(dt);
+
+        const progress = state.stageLength <= 0 ? 0 : state.playerZ / state.stageLength;
+
+        if (!state.branchPrompt && state.stage.nextLeft && state.stage.nextRight && progress > 0.72) {
+          showRoutePrompt();
+          state.statusText = "Fork ahead. Choose early.";
+        }
+
+        if (state.branchPrompt && !state.branchChoice) {
+          if (input.left && !input.right) {
+            chooseRoute("left");
+          }
+          if (input.right && !input.left) {
+            chooseRoute("right");
+          }
+        }
+
+        if (state.playerZ >= state.stageLength - SEGMENT_LENGTH * 1.2) {
+          completeStage();
+          return;
+        }
+
+        if (state.timer <= 0) {
+          state.timer = 0;
+          gameOver("The sun kept moving. You did not.");
+        }
+      }
+
+      function updateTraffic(dt) {
+        const length = state.stageLength;
+
+        for (const car of state.traffic) {
+          car.z += car.speed * dt;
+          const drift = Math.sin((state.elapsed + car.driftSeed) * 0.55) * 0.04;
+          car.renderOffset = car.offset + drift;
+
+          if (!car.counted && state.playerZ > car.z + 140) {
+            car.counted = true;
+            state.score += 140 + Math.min(280, Math.floor(state.speed / 50));
+            if (Math.floor(state.score) % 2200 < 150) {
+              setBanner("Clean pass", 0.45);
+            }
+          }
+
+          if (car.z < state.playerZ - 2000 && state.playerZ < length - 8000) {
+            car.z = clamp(state.playerZ + randomBetween(car.driftSeed + state.elapsed, 6200, 15000), 0, length - 1600);
+            car.counted = false;
+          }
+
+          if (Math.abs(car.z - state.playerZ) < 180 && Math.abs(car.renderOffset - state.playerX) < car.width + 0.12) {
+            triggerCrash("traffic");
+          }
+        }
+      }
+
+      function updateParticles(dt) {
+        for (let i = state.particles.length - 1; i >= 0; i -= 1) {
+          const particle = state.particles[i];
+          particle.life -= dt;
+          if (particle.life <= 0) {
+            state.particles.splice(i, 1);
+            continue;
+          }
+
+          particle.vx *= 1 - particle.drag * dt;
+          particle.vy += particle.gravity * dt;
+          particle.x += particle.vx * dt;
+          particle.y += particle.vy * dt;
+          particle.size *= 1 - particle.shrink * dt;
+        }
+      }
+
+      function spawnParticle(x, y, vx, vy, life, size, color, gravity, drag, shrink) {
+        state.particles.push({
+          x,
+          y,
+          vx,
+          vy,
+          life,
+          maxLife: life,
+          size,
+          color,
+          gravity,
+          drag,
+          shrink
+        });
+      }
+
+      function spawnDustTrail() {
+        const baseX = state.width * 0.5 + state.playerX * 70;
+        const baseY = state.height - Math.max(110, state.height * 0.22);
+        for (let i = 0; i < 2; i += 1) {
+          const vx = randomBetween(state.elapsed + i * 3.1, -22, 22);
+          const vy = randomBetween(state.elapsed + i * 4.7, -58, -16);
+          spawnParticle(baseX, baseY, vx, vy, 0.48, randomBetween(state.elapsed + i, 6, 12), "rgba(214, 192, 150, 0.54)", 65, 0.18, 0.22);
+        }
+      }
+
+      function spawnCrashSparks() {
+        const baseX = state.width * 0.5 + state.playerX * 80;
+        const baseY = state.height - Math.max(112, state.height * 0.22);
+        for (let i = 0; i < 28; i += 1) {
+          const angle = (Math.PI * 2 * i) / 28;
+          const speed = 80 + hash01(i + state.elapsed) * 140;
+          spawnParticle(
+            baseX,
+            baseY,
+            Math.cos(angle) * speed,
+            Math.sin(angle) * speed - 100,
+            0.7 + hash01(i * 9) * 0.25,
+            3 + hash01(i * 2) * 5,
+            i % 2 === 0 ? "rgba(255, 234, 177, 0.95)" : "rgba(255, 148, 99, 0.92)",
+            210,
+            0.04,
+            0.28
+          );
+        }
+      }
+
+      function spawnCheckpointBurst() {
+        for (let i = 0; i < 34; i += 1) {
+          const x = state.width * 0.5 + randomBetween(i * 2.2, -90, 90);
+          const y = state.height * 0.3 + randomBetween(i * 3.1, -20, 20);
+          spawnParticle(
+            x,
+            y,
+            randomBetween(i * 4.3, -90, 90),
+            randomBetween(i * 6.4, -180, -50),
+            0.9 + hash01(i * 7) * 0.4,
+            6 + hash01(i * 5) * 5,
+            i % 2 === 0 ? "rgba(255, 246, 201, 0.90)" : "rgba(243, 179, 90, 0.86)",
+            180,
+            0.05,
+            0.18
+          );
+        }
+      }
+
+      function spawnFinishBurst() {
+        for (let i = 0; i < 84; i += 1) {
+          const x = state.width * 0.5 + randomBetween(i * 1.3, -220, 220);
+          const y = state.height * 0.46 + randomBetween(i * 2.1, -120, 70);
+          const colors = [
+            "rgba(255, 246, 210, 0.92)",
+            "rgba(243, 179, 90, 0.90)",
+            "rgba(79, 144, 163, 0.88)",
+            "rgba(222, 140, 97, 0.88)"
+          ];
+          spawnParticle(
+            x,
+            y,
+            randomBetween(i * 3.7, -140, 140),
+            randomBetween(i * 4.4, -260, -20),
+            1.2 + hash01(i * 11) * 0.6,
+            7 + hash01(i * 13) * 6,
+            colors[i % colors.length],
+            170,
+            0.05,
+            0.12
+          );
+        }
+      }
+
+      function renderSky(envName) {
+        const env = ENV[envName] || ENV.coast;
+        const gradient = ctx.createLinearGradient(0, 0, 0, state.height);
+        gradient.addColorStop(0, env.skyTop);
+        gradient.addColorStop(0.52, env.skyBottom);
+        gradient.addColorStop(1, env.haze);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, state.width, state.height);
+
+        const sunX = state.width * 0.75;
+        const sunY = state.height * 0.18;
+        const sun = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, state.height * 0.18);
+        sun.addColorStop(0, "rgba(255, 249, 220, 0.92)");
+        sun.addColorStop(0.35, "rgba(245, 196, 118, 0.68)");
+        sun.addColorStop(1, "rgba(245, 196, 118, 0)");
+        ctx.fillStyle = sun;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, state.height * 0.17, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function renderBackdrop(envName) {
+        const env = ENV[envName] || ENV.coast;
+        const horizon = state.height * 0.42;
+        const curveShift = Math.sin(state.elapsed * 0.2 + state.playerX) * 40;
+
+        ctx.fillStyle = "rgba(255, 248, 226, 0.15)";
+        ctx.fillRect(0, horizon - 12, state.width, 24);
+
+        if (envName === "coast") {
+          ctx.fillStyle = "#588ea4";
+          ctx.fillRect(0, horizon + 18, state.width, 60);
+          drawRidges(horizon + 18, env.ridge, curveShift, 44, 6, 0.48);
+          drawPalmsOnHorizon(horizon + 8);
+        }
+
+        if (envName === "country") {
+          drawRidges(horizon + 22, "#6c8251", curveShift, 58, 8, 0.55);
+          drawBarns(horizon + 28);
+        }
+
+        if (envName === "city") {
+          drawSkyline(horizon + 24, "#594e48", curveShift);
+        }
+
+        if (envName === "mountain") {
+          drawRidges(horizon + 16, "#6f6a61", curveShift * 0.6, 84, 10, 0.62);
+          drawRidges(horizon + 38, "#4f5a5d", curveShift * 0.3, 108, 12, 0.72);
+        }
+
+        if (envName === "desert") {
+          drawRidges(horizon + 26, "#a17042", curveShift * 0.5, 62, 7, 0.54);
+          drawDunes(horizon + 42, "#c69255", curveShift);
+        }
+      }
+
+      function drawRidges(baseY, color, shift, heightScale, peaks, alpha) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.moveTo(0, state.height);
+
+        for (let i = 0; i <= peaks; i += 1) {
+          const x = (state.width / peaks) * i;
+          const wave = Math.sin(i * 0.8 + shift * 0.01) * heightScale;
+          const detail = Math.cos(i * 1.7 + shift * 0.02) * heightScale * 0.25;
+          ctx.lineTo(x, baseY - wave - detail);
+        }
+
+        ctx.lineTo(state.width, state.height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawDunes(baseY, color, shift) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.46;
+        ctx.beginPath();
+        ctx.moveTo(0, state.height);
+
+        for (let i = 0; i <= 16; i += 1) {
+          const x = (state.width / 16) * i;
+          const y = baseY + Math.sin(i * 0.7 + shift * 0.02) * 18 + Math.cos(i * 1.3) * 10;
+          ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(state.width, state.height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      function drawBarns(baseY) {
+        const barns = [
+          { x: state.width * 0.2, y: baseY, w: 44, h: 26 },
+          { x: state.width * 0.68, y: baseY + 8, w: 52, h: 30 }
+        ];
+
+        ctx.fillStyle = "rgba(103, 71, 53, 0.72)";
+        for (const barn of barns) {
+          ctx.fillRect(barn.x, barn.y - barn.h, barn.w, barn.h);
+          ctx.beginPath();
+          ctx.moveTo(barn.x - 6, barn.y - barn.h);
+          ctx.lineTo(barn.x + barn.w * 0.5, barn.y - barn.h - 14);
+          ctx.lineTo(barn.x + barn.w + 6, barn.y - barn.h);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      function drawPalmsOnHorizon(baseY) {
+        ctx.strokeStyle = "rgba(73, 82, 56, 0.55)";
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 5; i += 1) {
+          const x = state.width * (0.12 + i * 0.18);
+          ctx.beginPath();
+          ctx.moveTo(x, baseY + 24);
+          ctx.lineTo(x + Math.sin(i) * 4, baseY - 10);
+          ctx.stroke();
+          for (let j = 0; j < 5; j += 1) {
+            ctx.beginPath();
+            ctx.moveTo(x, baseY - 12);
+            ctx.lineTo(x + Math.cos(j * 1.2 + i) * 12, baseY - 8 + Math.sin(j * 1.8) * 12);
+            ctx.stroke();
+          }
+        }
+      }
+
+      function drawSkyline(baseY, color, shift) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.8;
+        const blocks = 13;
+
+        for (let i = 0; i < blocks; i += 1) {
+          const x = (state.width / blocks) * i + (shift * (i % 2 === 0 ? 0.05 : -0.04));
+          const w = 26 + (i % 3) * 12;
+          const h = 32 + ((i * 17) % 5) * 16;
+          ctx.fillRect(x, baseY - h, w, h);
+        }
+
+        ctx.globalAlpha = 1;
+      }
+
+      function renderRoad() {
+        const visible = createVisibleSegments();
+        const clipYStart = state.height;
+        let clipY = clipYStart;
+
+        for (let i = visible.length - 1; i >= 0; i -= 1) {
+          const item = visible[i];
+          const p1 = item.p1;
+          const p2 = item.p2;
+          const env = ENV[item.segment.env] || ENV.coast;
+
+          if (p1.y >= clipY || p2.y >= clipY || p2.y >= p1.y || p2.w <= 0) {
+            continue;
+          }
+
+          const laneMarkerWidth1 = p1.w * 0.05;
+          const laneMarkerWidth2 = p2.w * 0.05;
+          const rumbleWidth1 = p1.w * 1.14;
+          const rumbleWidth2 = p2.w * 1.14;
+          const grassColor = i % 2 === 0 ? env.groundNear : env.groundFar;
+          const shoulderColor = i % 2 === 0 ? env.shoulderA : env.shoulderB;
+
+          drawQuad(0, p1.y, state.width, p2.y, grassColor);
+          drawRoadQuad(p1.x - rumbleWidth1, p1.y, p1.x + rumbleWidth1, p1.y, p2.x + rumbleWidth2, p2.y, p2.x - rumbleWidth2, p2.y, shoulderColor);
+          drawRoadQuad(p1.x - p1.w, p1.y, p1.x + p1.w, p1.y, p2.x + p2.w, p2.y, p2.x - p2.w, p2.y, env.road);
+
+          const laneCount = LANES - 1;
+          for (let lane = 1; lane <= laneCount; lane += 1) {
+            const laneRatio = lane / LANES;
+            const x1 = lerp(p1.x - p1.w, p1.x + p1.w, laneRatio);
+            const x2 = lerp(p2.x - p2.w, p2.x + p2.w, laneRatio);
+
+            if ((item.index + lane) % 2 === 0) {
+              drawRoadQuad(
+                x1 - laneMarkerWidth1 * 0.35,
+                p1.y,
+                x1 + laneMarkerWidth1 * 0.35,
+                p1.y,
+                x2 + laneMarkerWidth2 * 0.35,
+                p2.y,
+                x2 - laneMarkerWidth2 * 0.35,
+                p2.y,
+                env.lane
+              );
+            }
+          }
+
+          clipY = p2.y;
+        }
+
+        for (let i = visible.length - 1; i >= 0; i -= 1) {
+          const item = visible[i];
+          const p2 = item.p2;
+          if (p2.w <= 0) {
+            continue;
+          }
+          renderSegmentSprites(item.segment, p2);
+          renderSegmentTraffic(item.segment, p2);
+        }
+      }
+
+      function drawQuad(x1, y1, x2, y2, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, y2, state.width, y1 - y2);
+      }
+
+      function drawRoadQuad(x1, y1, x2, y2, x3, y3, x4, y4, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.lineTo(x4, y4);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function renderSegmentSprites(segment, projection) {
+        const roadHalf = projection.w;
+        const baseY = projection.y;
+        const centerX = projection.x;
+
+        for (const sprite of segment.sprites) {
+          const sideOffset = sprite.side === 0 ? 0 : sprite.side * (roadHalf * sprite.offset);
+          const scale = clamp(projection.scale * 180 * sprite.scale, 0.12, 3.2);
+          const x = centerX + sideOffset;
+          const y = baseY;
+
+          drawSpriteType(sprite.type, x, y, scale);
+        }
+      }
+
+      function renderSegmentTraffic(segment, projection) {
+        const segmentStart = segment.z;
+        const segmentEnd = segment.z + SEGMENT_LENGTH;
+
+        for (const car of state.traffic) {
+          if (car.z < segmentStart || car.z >= segmentEnd) {
+            continue;
+          }
+
+          const scale = clamp(projection.scale * 170 * car.height, 0.14, 3.4);
+          const x = projection.x + projection.w * car.renderOffset;
+          const y = projection.y - scale * 46;
+          drawTrafficCar(x, y, scale, car.color, car.type);
+        }
+      }
+
+      function drawSpriteType(type, x, y, scale) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
+        if (type === "palm") {
+          ctx.strokeStyle = "#7a563a";
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(4, -44);
+          ctx.stroke();
+          ctx.strokeStyle = "#3e6245";
+          ctx.lineWidth = 4;
+          for (let i = 0; i < 6; i += 1) {
+            ctx.beginPath();
+            ctx.moveTo(4, -42);
+            ctx.lineTo(4 + Math.cos(i * 1.15) * 22, -42 + Math.sin(i * 1.25) * 18);
+            ctx.stroke();
+          }
+        }
+
+        if (type === "pine") {
+          ctx.fillStyle = "#46634d";
+          ctx.beginPath();
+          ctx.moveTo(0, -56);
+          ctx.lineTo(-18, -18);
+          ctx.lineTo(-8, -18);
+          ctx.lineTo(-24, 6);
+          ctx.lineTo(24, 6);
+          ctx.lineTo(8, -18);
+          ctx.lineTo(18, -18);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = "#6a4c34";
+          ctx.fillRect(-4, 6, 8, 14);
+        }
+
+        if (type === "rock") {
+          ctx.fillStyle = "#8b765f";
+          ctx.beginPath();
+          ctx.moveTo(-16, 6);
+          ctx.lineTo(-8, -8);
+          ctx.lineTo(10, -12);
+          ctx.lineTo(18, 0);
+          ctx.lineTo(8, 10);
+          ctx.lineTo(-10, 12);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        if (type === "cactus") {
+          ctx.fillStyle = "#55704a";
+          ctx.fillRect(-5, -44, 10, 50);
+          ctx.fillRect(-16, -28, 8, 20);
+          ctx.fillRect(8, -24, 8, 18);
+          ctx.fillRect(-16, -30, 16, 8);
+          ctx.fillRect(0, -26, 16, 8);
+        }
+
+        if (type === "house") {
+          ctx.fillStyle = "#8f7056";
+          ctx.fillRect(-20, -22, 40, 28);
+          ctx.fillStyle = "#694630";
+          ctx.beginPath();
+          ctx.moveTo(-24, -22);
+          ctx.lineTo(0, -40);
+          ctx.lineTo(24, -22);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = "#f1d9bb";
+          ctx.fillRect(-10, -10, 8, 8);
+          ctx.fillRect(4, -10, 8, 8);
+        }
+
+        if (type === "building") {
+          ctx.fillStyle = "#5b5450";
+          ctx.fillRect(-18, -52, 36, 58);
+          ctx.fillStyle = "#cbb78f";
+          for (let row = 0; row < 4; row += 1) {
+            for (let col = 0; col < 2; col += 1) {
+              ctx.fillRect(-12 + col * 12, -44 + row * 12, 6, 7);
+            }
+          }
+        }
+
+        if (type === "lamp") {
+          ctx.strokeStyle = "#73604a";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(0, 6);
+          ctx.lineTo(0, -36);
+          ctx.stroke();
+          ctx.fillStyle = "#ffe6a7";
+          ctx.beginPath();
+          ctx.arc(0, -40, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        if (type === "fence") {
+          ctx.strokeStyle = "#8f7758";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(-18, -4);
+          ctx.lineTo(18, -4);
+          ctx.moveTo(-18, -18);
+          ctx.lineTo(18, -18);
+          ctx.moveTo(-14, -24);
+          ctx.lineTo(-14, 8);
+          ctx.moveTo(14, -24);
+          ctx.lineTo(14, 8);
+          ctx.stroke();
+        }
+
+        if (type === "billboard") {
+          ctx.fillStyle = "#6b523a";
+          ctx.fillRect(-4, -8, 8, 18);
+          ctx.fillStyle = "#f4d498";
+          ctx.fillRect(-26, -42, 52, 28);
+          ctx.fillStyle = "#8f4d30";
+          ctx.fillRect(-20, -36, 40, 16);
+        }
+
+        if (type === "beachSign") {
+          ctx.fillStyle = "#70513c";
+          ctx.fillRect(-3, -8, 6, 22);
+          ctx.fillStyle = "#f0d2a5";
+          ctx.fillRect(-20, -30, 40, 18);
+          ctx.fillStyle = "#4a7a90";
+          ctx.fillRect(-16, -26, 32, 10);
+        }
+
+        if (type === "guardRail") {
+          ctx.strokeStyle = "#c8c8c8";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(-24, -10);
+          ctx.lineTo(24, -10);
+          ctx.moveTo(-18, 6);
+          ctx.lineTo(-18, -14);
+          ctx.moveTo(18, 6);
+          ctx.lineTo(18, -14);
+          ctx.stroke();
+        }
+
+        if (type === "arrowLeft" || type === "arrowRight") {
+          ctx.fillStyle = "#f7e0b8";
+          ctx.fillRect(-18, -28, 36, 22);
+          ctx.fillStyle = "#934c31";
+          ctx.beginPath();
+          if (type === "arrowLeft") {
+            ctx.moveTo(-8, -17);
+            ctx.lineTo(-2, -24);
+            ctx.lineTo(-2, -20);
+            ctx.lineTo(10, -20);
+            ctx.lineTo(10, -14);
+            ctx.lineTo(-2, -14);
+            ctx.lineTo(-2, -10);
+          } else {
+            ctx.moveTo(8, -17);
+            ctx.lineTo(2, -24);
+            ctx.lineTo(2, -20);
+            ctx.lineTo(-10, -20);
+            ctx.lineTo(-10, -14);
+            ctx.lineTo(2, -14);
+            ctx.lineTo(2, -10);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        if (type === "checkpointArch" || type === "finishArch") {
+          const poleColor = type === "finishArch" ? "#f1d59f" : "#f2e0bb";
+          const bannerColor = type === "finishArch" ? "#b54f34" : "#4f90a3";
+          ctx.fillStyle = poleColor;
+          ctx.fillRect(-30, -72, 8, 72);
+          ctx.fillRect(22, -72, 8, 72);
+          ctx.fillRect(-34, -72, 64, 10);
+          ctx.fillStyle = bannerColor;
+          ctx.fillRect(-26, -66, 48, 16);
+        }
+
+        if (type === "finishFlag") {
+          ctx.strokeStyle = "#f2e0bb";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(0, 8);
+          ctx.lineTo(0, -40);
+          ctx.stroke();
+          ctx.fillStyle = "#b74e35";
+          ctx.beginPath();
+          ctx.moveTo(0, -40);
+          ctx.lineTo(18, -34);
+          ctx.lineTo(0, -26);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      function drawTrafficCar(x, y, scale, color, type) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(scale, scale);
+
+        const width = type === "truck" ? 52 : type === "van" ? 44 : 36;
+        const height = type === "truck" ? 28 : 24;
+        const cabinHeight = type === "truck" ? 20 : 16;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+        ctx.beginPath();
+        ctx.ellipse(0, 12, width * 0.6, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = color;
+        ctx.fillRect(-width * 0.5, -height, width, height);
+        ctx.fillStyle = brighten(color, 0.16);
+        ctx.fillRect(-width * 0.33, -height - cabinHeight, width * 0.66, cabinHeight);
+        ctx.fillStyle = "#dbd9d0";
+        ctx.fillRect(-width * 0.22, -height - cabinHeight + 4, width * 0.16, 8);
+        ctx.fillRect(width * 0.06, -height - cabinHeight + 4, width * 0.16, 8);
+        ctx.fillStyle = "#2b2728";
+        ctx.fillRect(-width * 0.5 + 4, 0, 10, 6);
+        ctx.fillRect(width * 0.5 - 14, 0, 10, 6);
+        ctx.fillStyle = "#ffefb0";
+        ctx.fillRect(-width * 0.28, -4, 7, 4);
+        ctx.fillRect(width * 0.12, -4, 7, 4);
+
+        ctx.restore();
+      }
+
+      function brighten(color, amount) {
+        const hex = color.replace("#", "");
+        const num = parseInt(hex, 16);
+        const r = clamp(((num >> 16) & 255) + amount * 255, 0, 255);
+        const g = clamp(((num >> 8) & 255) + amount * 255, 0, 255);
+        const b = clamp((num & 255) + amount * 255, 0, 255);
+        return "rgb(" + Math.round(r) + ", " + Math.round(g) + ", " + Math.round(b) + ")";
+      }
+
+      function renderParticles() {
+        for (const particle of state.particles) {
+          const alpha = clamp(particle.life / particle.maxLife, 0, 1);
+          ctx.fillStyle = particle.color.replace(/[\d.]+\)$/, alpha.toFixed(3) + ")");
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, Math.max(1, particle.size), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function renderPlayerCar() {
+        const baseX = state.width * 0.5 + state.playerX * Math.min(110, state.width * 0.16);
+        const baseY = state.height - Math.max(104, state.height * 0.205);
+        const wobble = Math.sin(state.elapsed * 12 + state.speed * 0.0013) * Math.min(4, state.speed / 5400);
+        const tilt = state.spinTimer > 0 ? Math.sin(state.elapsed * 22) * 0.48 * state.spinDirection : 0;
+        const scale = clamp(0.96 + state.speed / 30000, 0.95, 1.28);
+
+        ctx.save();
+        ctx.translate(baseX, baseY + wobble);
+        ctx.rotate(tilt);
+        ctx.scale(scale, scale);
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.26)";
+        ctx.beginPath();
+        ctx.ellipse(0, 30, 72, 24, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#b61e1d";
+        ctx.beginPath();
+        ctx.moveTo(-68, 26);
+        ctx.lineTo(-54, -10);
+        ctx.lineTo(-24, -34);
+        ctx.lineTo(24, -34);
+        ctx.lineTo(54, -10);
+        ctx.lineTo(68, 26);
+        ctx.lineTo(48, 38);
+        ctx.lineTo(-48, 38);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#d14632";
+        ctx.beginPath();
+        ctx.moveTo(-44, -6);
+        ctx.lineTo(-18, -24);
+        ctx.lineTo(18, -24);
+        ctx.lineTo(44, -6);
+        ctx.lineTo(34, 14);
+        ctx.lineTo(-34, 14);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#e6d2b4";
+        ctx.fillRect(-20, -10, 40, 18);
+        ctx.fillStyle = "#658ca5";
+        ctx.beginPath();
+        ctx.moveTo(-16, -8);
+        ctx.lineTo(-6, -20);
+        ctx.lineTo(6, -20);
+        ctx.lineTo(16, -8);
+        ctx.lineTo(12, 4);
+        ctx.lineTo(-12, 4);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#e8c79d";
+        ctx.beginPath();
+        ctx.arc(-10, -14, 8, 0, Math.PI * 2);
+        ctx.arc(10, -14, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#6d3e2c";
+        ctx.fillRect(-15, -22, 10, 4);
+        ctx.fillRect(5, -22, 10, 4);
+        ctx.fillStyle = "#7b4229";
+        ctx.fillRect(-34, -4, 68, 16);
+
+        ctx.fillStyle = "#2d2c31";
+        ctx.fillRect(-56, 24, 18, 12);
+        ctx.fillRect(38, 24, 18, 12);
+        ctx.fillStyle = "#fff3b9";
+        ctx.fillRect(-50, 12, 10, 6);
+        ctx.fillRect(40, 12, 10, 6);
+        ctx.fillStyle = "#f07d52";
+        ctx.fillRect(-16, 28, 12, 5);
+        ctx.fillRect(4, 28, 12, 5);
+
+        ctx.restore();
+      }
+
+      function renderHud() {
+        const speedMph = Math.round(state.speed * 0.018);
+        ui.speed.textContent = String(speedMph).padStart(3, "0") + " mph";
+        ui.timer.textContent = state.timer.toFixed(1);
+        ui.score.textContent = formatScore(state.score);
+        ui.stage.textContent = state.stage ? state.stage.name : "Attract";
+        ui.route.textContent = state.routeText;
+        ui.status.textContent = state.statusText;
+      }
+
+      function render() {
+        const envName = state.stage ? state.stage.env : "coast";
+        const shakeX = state.shake > 0 ? randomBetween(state.elapsed * 19.3, -state.shake, state.shake) : 0;
+        const shakeY = state.shake > 0 ? randomBetween(state.elapsed * 23.7, -state.shake, state.shake) : 0;
+
+        ctx.save();
+        ctx.translate(shakeX, shakeY);
+        renderSky(envName);
+        renderBackdrop(envName);
+        renderRoad();
+        renderParticles();
+        renderPlayerCar();
+
+        if (state.flash > 0) {
+          ctx.fillStyle = "rgba(255, 248, 220, " + (state.flash * 0.28).toFixed(3) + ")";
+          ctx.fillRect(-20, -20, state.width + 40, state.height + 40);
+        }
+
+        ctx.restore();
+      }
+
+      function update(dt) {
+        state.elapsed += dt;
+
+        if (state.messageTimer > 0) {
+          state.messageTimer -= dt;
+          if (state.messageTimer <= 0) {
+            clearBanner();
+          }
+        }
+
+        state.shake = Math.max(0, state.shake - dt * 10);
+        state.flash = Math.max(0, state.flash - dt * 1.8);
+
+        if (state.mode === "title" || state.mode === "route") {
+          updateAttract(dt);
+        }
+
+        if (state.mode === "countdown") {
+          updateCountdown(dt);
+        }
+
+        if (state.mode === "racing") {
+          updateRace(dt);
+        }
+
+        if (state.mode === "checkpoint") {
+          updateAttract(dt);
+        }
+
+        if (state.mode === "finish" || state.mode === "gameover") {
+          updateParticles(dt);
+        }
+
+        renderHud();
+        audio.update(dt);
+      }
+
+      function loop(timestamp) {
+        if (!state.lastTime) {
+          state.lastTime = timestamp;
+        }
+
+        const dt = Math.min(0.033, (timestamp - state.lastTime) / 1000);
+        state.lastTime = timestamp;
+
+        update(dt);
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      function bindInput() {
+        window.addEventListener("keydown", (event) => {
+          if (event.repeat) {
+            return;
+          }
+
+          if (event.code === "ArrowLeft" || event.code === "KeyA") {
+            input.left = true;
+            if (state.branchPrompt) {
+              chooseRoute("left");
+            }
+          }
+
+          if (event.code === "ArrowRight" || event.code === "KeyD") {
+            input.right = true;
+            if (state.branchPrompt) {
+              chooseRoute("right");
+            }
+          }
+
+          if (event.code === "ArrowUp" || event.code === "KeyW") {
+            input.gas = true;
+          }
+
+          if (event.code === "ArrowDown" || event.code === "KeyS") {
+            input.brake = true;
+          }
+
+          if (event.code === "Enter" || event.code === "Space") {
+            event.preventDefault();
+            handlePrimaryAction();
+          }
+
+          if (event.code === "KeyM") {
+            handleSecondaryAction();
+          }
+        });
+
+        window.addEventListener("keyup", (event) => {
+          if (event.code === "ArrowLeft" || event.code === "KeyA") {
+            input.left = false;
+          }
+          if (event.code === "ArrowRight" || event.code === "KeyD") {
+            input.right = false;
+          }
+          if (event.code === "ArrowUp" || event.code === "KeyW") {
+            input.gas = false;
+          }
+          if (event.code === "ArrowDown" || event.code === "KeyS") {
+            input.brake = false;
+          }
+        });
+
+        ui.primaryButton.addEventListener("click", handlePrimaryAction);
+        ui.secondaryButton.addEventListener("click", handleSecondaryAction);
+        ui.routeLeftButton.addEventListener("click", () => chooseRoute("left"));
+        ui.routeRightButton.addEventListener("click", () => chooseRoute("right"));
+
+        for (const button of ui.touchButtons) {
+          const action = button.dataset.touch;
+
+          const setActive = (pressed) => {
+            button.classList.toggle("active", pressed);
+            input[action] = pressed;
+            if (pressed) {
+              audio.resume();
+              if (state.branchPrompt && (action === "left" || action === "right")) {
+                chooseRoute(action);
+              }
+            }
+          };
+
+          const onDown = (event) => {
+            event.preventDefault();
+            setActive(true);
+          };
+
+          const onUp = (event) => {
+            event.preventDefault();
+            setActive(false);
+          };
+
+          button.addEventListener("pointerdown", onDown);
+          button.addEventListener("pointerup", onUp);
+          button.addEventListener("pointercancel", onUp);
+          button.addEventListener("pointerleave", onUp);
+        }
+      }
+
+      function createAudioSystem() {
+        let audioContext = null;
+        let master = null;
+        let engineOscA = null;
+        let engineOscB = null;
+        let engineGain = null;
+        let droneOsc = null;
+        let droneGain = null;
+        let muted = false;
+        let beatTimer = 0;
+        let beatStep = 0;
+
+        function ensure() {
+          if (audioContext) {
+            return;
+          }
+
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) {
+            return;
+          }
+
+          audioContext = new Ctx();
+          master = audioContext.createGain();
+          master.gain.value = 0.18;
+          master.connect(audioContext.destination);
+
+          engineGain = audioContext.createGain();
+          engineGain.gain.value = 0.0001;
+          engineGain.connect(master);
+
+          engineOscA = audioContext.createOscillator();
+          engineOscA.type = "sawtooth";
+          engineOscA.frequency.value = 80;
+          engineOscA.connect(engineGain);
+          engineOscA.start();
+
+          engineOscB = audioContext.createOscillator();
+          engineOscB.type = "triangle";
+          engineOscB.frequency.value = 42;
+          engineOscB.connect(engineGain);
+          engineOscB.start();
+
+          droneGain = audioContext.createGain();
+          droneGain.gain.value = 0.0001;
+          droneGain.connect(master);
+
+          droneOsc = audioContext.createOscillator();
+          droneOsc.type = "triangle";
+          droneOsc.frequency.value = 146;
+          droneOsc.connect(droneGain);
+          droneOsc.start();
+        }
+
+        function resume() {
+          ensure();
+          if (audioContext && audioContext.state === "suspended") {
+            audioContext.resume();
+          }
+        }
+
+        function setMuted(nextMuted) {
+          muted = nextMuted;
+          if (!master || !audioContext) {
+            return;
+          }
+          master.gain.setTargetAtTime(muted ? 0 : 0.18, audioContext.currentTime, 0.04);
+        }
+
+        function blip(freq, duration, type, volume, offset) {
+          if (!audioContext || muted) {
+            return;
+          }
+
+          const when = audioContext.currentTime + (offset || 0);
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, when);
+          gain.gain.setValueAtTime(0.0001, when);
+          gain.gain.linearRampToValueAtTime(volume, when + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(when);
+          osc.stop(when + duration + 0.02);
+        }
+
+        function noiseBurst(duration, volume) {
+          if (!audioContext || muted) {
+            return;
+          }
+
+          const buffer = audioContext.createBuffer(1, Math.floor(audioContext.sampleRate * duration), audioContext.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < data.length; i += 1) {
+            data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+          }
+
+          const source = audioContext.createBufferSource();
+          const filter = audioContext.createBiquadFilter();
+          filter.type = "highpass";
+          filter.frequency.value = 480;
+          const gain = audioContext.createGain();
+          gain.gain.value = volume;
+          source.buffer = buffer;
+          source.connect(filter);
+          filter.connect(gain);
+          gain.connect(master);
+          source.start();
+        }
+
+        function startRace() {
+          resume();
+          beatTimer = 0;
+          beatStep = 0;
+          blip(260, 0.18, "square", 0.04, 0);
+          blip(320, 0.18, "square", 0.03, 0.12);
+        }
+
+        function playCountdownBeep() {
+          blip(440, 0.12, "square", 0.03, 0);
+        }
+
+        function playGo() {
+          blip(392, 0.12, "square", 0.04, 0);
+          blip(523, 0.18, "square", 0.04, 0.09);
+        }
+
+        function playCheckpoint() {
+          blip(392, 0.14, "triangle", 0.05, 0);
+          blip(494, 0.16, "triangle", 0.05, 0.09);
+          blip(659, 0.20, "triangle", 0.05, 0.18);
+        }
+
+        function playFinish() {
+          blip(330, 0.18, "triangle", 0.06, 0);
+          blip(494, 0.20, "triangle", 0.06, 0.12);
+          blip(659, 0.26, "triangle", 0.06, 0.26);
+          noiseBurst(0.4, 0.022);
+        }
+
+        function playCrash() {
+          noiseBurst(0.24, 0.06);
+          blip(92, 0.20, "sawtooth", 0.06, 0);
+          blip(64, 0.24, "square", 0.05, 0.06);
+        }
+
+        function playRoute() {
+          blip(294, 0.10, "triangle", 0.025, 0);
+          blip(370, 0.12, "triangle", 0.028, 0.08);
+        }
+
+        function update(dt) {
+          if (!audioContext || !engineOscA || muted) {
+            return;
+          }
+
+          const pace = clamp(state.speed / 17000, 0, 1);
+          const engineFreq = 68 + pace * 170 + Math.sin(state.elapsed * 32) * 3;
+          const engineBlend = state.mode === "racing" || state.mode === "countdown" ? 0.065 + pace * 0.08 : 0.018;
+          engineOscA.frequency.setTargetAtTime(engineFreq, audioContext.currentTime, 0.04);
+          engineOscB.frequency.setTargetAtTime(engineFreq * 0.51, audioContext.currentTime, 0.04);
+          engineGain.gain.setTargetAtTime(engineBlend, audioContext.currentTime, 0.05);
+          droneOsc.frequency.setTargetAtTime(146 + pace * 18, audioContext.currentTime, 0.08);
+          droneGain.gain.setTargetAtTime(state.mode === "title" || state.mode === "route" ? 0.028 : 0.02, audioContext.currentTime, 0.08);
+
+          if (state.mode !== "racing" && state.mode !== "title" && state.mode !== "route") {
+            return;
+          }
+
+          beatTimer += dt * (state.mode === "racing" ? 1.6 + pace * 0.8 : 0.7);
+
+          if (beatTimer >= 0.5) {
+            beatTimer -= 0.5;
+            beatStep = (beatStep + 1) % 8;
+            const bass = [110, 110, 123.47, 110, 146.83, 123.47, 110, 98];
+            const lead = [220, 246.94, 293.66, 246.94, 329.63, 293.66, 246.94, 220];
+            blip(bass[beatStep], 0.18, "triangle", 0.015, 0);
+            if (beatStep % 2 === 0) {
+              blip(lead[beatStep], 0.12, "square", 0.010, 0.04);
+            }
+          }
+        }
+
+        return {
+          resume,
+          setMuted,
+          startRace,
+          playCountdownBeep,
+          playGo,
+          playCheckpoint,
+          playFinish,
+          playCrash,
+          playRoute,
+          update
+        };
+      }
+
+      window.addEventListener("resize", resize);
+      bindInput();
+      resize();
+      loadStage("coastStart", false);
+      setTitleScreen();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
