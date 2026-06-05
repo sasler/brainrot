@@ -1631,9 +1631,9 @@
         const scale = CAMERA_DEPTH / dz;
         return {
           scale,
-          x: Math.round((1 + scale * worldX) * state.width * 0.5),
-          y: Math.round((1 - scale * (worldY - playerRoadY - CAMERA_HEIGHT)) * state.height * 0.5),
-          w: Math.round(scale * ROAD_WIDTH * state.width * 0.5)
+          x: (1 + scale * worldX) * state.width * 0.5,
+          y: (1 - scale * (worldY - playerRoadY - CAMERA_HEIGHT)) * state.height * 0.5,
+          w: scale * ROAD_WIDTH * state.width * 0.5
         };
       }
 
@@ -2263,8 +2263,7 @@
 
       function renderRoad() {
         const visible = createVisibleSegments();
-        const clipYStart = state.height;
-        let clipY = clipYStart;
+        const screenBottom = state.height;
 
         for (let i = visible.length - 1; i >= 0; i -= 1) {
           const item = visible[i];
@@ -2272,33 +2271,48 @@
           const p2 = item.p2;
           const env = ENV[item.segment.env] || ENV.coast;
 
-          if (p1.y >= clipY || p2.y >= clipY || p2.y >= p1.y || p2.w <= 0) {
+          if (p1.w <= 0 || p2.w <= 0 || p1.y <= p2.y || p2.y >= screenBottom || p1.y <= 0) {
             continue;
           }
 
-          const laneMarkerWidth1 = p1.w * 0.05;
+          let nearX = p1.x;
+          let nearY = p1.y;
+          let nearW = p1.w;
+
+          if (nearY > screenBottom) {
+            const clipT = (screenBottom - nearY) / (p2.y - nearY);
+            nearX = lerp(nearX, p2.x, clipT);
+            nearW = lerp(nearW, p2.w, clipT);
+            nearY = screenBottom;
+          }
+
+          if (nearY <= p2.y || nearW <= 0) {
+            continue;
+          }
+
+          const laneMarkerWidth1 = nearW * 0.05;
           const laneMarkerWidth2 = p2.w * 0.05;
-          const rumbleWidth1 = p1.w * 1.14;
+          const rumbleWidth1 = nearW * 1.14;
           const rumbleWidth2 = p2.w * 1.14;
           const grassColor = i % 2 === 0 ? env.groundNear : env.groundFar;
           const shoulderColor = i % 2 === 0 ? env.shoulderA : env.shoulderB;
 
-          drawQuad(0, p1.y, state.width, p2.y, grassColor);
-          drawRoadQuad(p1.x - rumbleWidth1, p1.y, p1.x + rumbleWidth1, p1.y, p2.x + rumbleWidth2, p2.y, p2.x - rumbleWidth2, p2.y, shoulderColor);
-          drawRoadQuad(p1.x - p1.w, p1.y, p1.x + p1.w, p1.y, p2.x + p2.w, p2.y, p2.x - p2.w, p2.y, env.road);
+          drawQuad(0, nearY, state.width, p2.y, grassColor);
+          drawRoadQuad(nearX - rumbleWidth1, nearY, nearX + rumbleWidth1, nearY, p2.x + rumbleWidth2, p2.y, p2.x - rumbleWidth2, p2.y, shoulderColor);
+          drawRoadQuad(nearX - nearW, nearY, nearX + nearW, nearY, p2.x + p2.w, p2.y, p2.x - p2.w, p2.y, env.road);
 
           const laneCount = LANES - 1;
           for (let lane = 1; lane <= laneCount; lane += 1) {
             const laneRatio = lane / LANES;
-            const x1 = lerp(p1.x - p1.w, p1.x + p1.w, laneRatio);
+            const x1 = lerp(nearX - nearW, nearX + nearW, laneRatio);
             const x2 = lerp(p2.x - p2.w, p2.x + p2.w, laneRatio);
 
             if ((item.index + lane) % 2 === 0) {
               drawRoadQuad(
                 x1 - laneMarkerWidth1 * 0.35,
-                p1.y,
+                nearY,
                 x1 + laneMarkerWidth1 * 0.35,
-                p1.y,
+                nearY,
                 x2 + laneMarkerWidth2 * 0.35,
                 p2.y,
                 x2 - laneMarkerWidth2 * 0.35,
@@ -2307,8 +2321,6 @@
               );
             }
           }
-
-          clipY = p2.y;
         }
 
         for (let i = visible.length - 1; i >= 0; i -= 1) {

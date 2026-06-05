@@ -1311,6 +1311,7 @@
         );
         x += dx;
         dx += segment.curve;
+        const clip = maxY;
         const hidden = p2.y >= maxY || p2.y >= p1.y;
         if (!hidden) maxY = p2.y;
         projected.push({
@@ -1319,7 +1320,7 @@
           p1,
           p2,
           hidden,
-          clip: maxY,
+          clip,
           segment
         });
       }
@@ -1403,7 +1404,16 @@
         const objects = bySegment.get(item.index) || [];
         for (const object of objects) drawRoadsideObject(object, item.p1, item.clip);
         const cars = carsBySegment.get(item.index) || [];
-        for (const car of cars) drawTrafficCar(car, item.p1, item.clip);
+        for (const car of cars) {
+          const percent = percentRemaining(car.z, SEGMENT_LENGTH);
+          const p = {
+            scale: lerp(item.p1.scale, item.p2.scale, percent),
+            x: lerp(item.p1.x, item.p2.x, percent),
+            y: lerp(item.p1.y, item.p2.y, percent),
+            w: lerp(item.p1.w, item.p2.w, percent)
+          };
+          drawTrafficCar(car, p, item.clip);
+        }
       }
     }
 
@@ -1609,7 +1619,7 @@
       ctx.save();
       ctx.translate(x, y);
       ctx.beginPath();
-      ctx.rect(-W, -H, W * 2, clip - y);
+      ctx.rect(-W, -H, W * 2, H + clip - y);
       ctx.clip();
       ctx.fillStyle = "rgba(35,22,15,.38)";
       ctx.beginPath();

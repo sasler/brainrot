@@ -4682,7 +4682,7 @@
           "model": "GPT 5.5",
           "modelId": "gpt-5-5",
           "date": "2026-06-05",
-          "linesOfCode": 1927,
+          "linesOfCode": 1937,
           "path": "/games/coastal-rush-86/gpt-5-5/index.html",
           "features": [
             "sound",
@@ -4726,7 +4726,7 @@
           "model": "GPT 5.4",
           "modelId": "gpt-5-4",
           "date": "2026-06-05",
-          "linesOfCode": 3081,
+          "linesOfCode": 3093,
           "path": "/games/coastal-rush-86/gpt-5-4/index.html",
           "features": [
             "sound",
@@ -4770,7 +4770,7 @@
           "model": "GPT 5.4 Mini",
           "modelId": "gpt-5-4-mini",
           "date": "2026-06-05",
-          "linesOfCode": 3922,
+          "linesOfCode": 3965,
           "path": "/games/coastal-rush-86/gpt-5-4-mini/index.html",
           "features": [
             "sound",
