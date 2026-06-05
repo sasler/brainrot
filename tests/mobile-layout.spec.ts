@@ -62,6 +62,37 @@ async function expectFullyInViewport(page: Page, locator: Locator) {
 }
 
 test.describe("Gameplay-first layout regressions", () => {
+  for (const model of ["gpt-5-5", "gpt-5-4", "gpt-5-4-mini"]) {
+    test(`Coastal Rush '86 ${model} keeps the road and touch controls reachable`, async ({
+      page,
+    }) => {
+      await openStandaloneGame(page, `/games/coastal-rush-86/${model}/index.html`);
+
+      const canvas = page.locator("canvas").first();
+      await expect(canvas).toBeVisible();
+      await expectFullyInViewport(page, canvas);
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Enter");
+      await page.waitForTimeout(250);
+
+      expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(
+        MOBILE_VIEWPORT.height + 1,
+      );
+
+      const visibleControls = page.locator(
+        '[data-key]:visible, [data-touch]:visible, [data-touch-control]:visible',
+      );
+      const controlCount = await visibleControls.count();
+      expect(controlCount).toBeGreaterThan(0);
+
+      for (let index = 0; index < controlCount; index += 1) {
+        await expectFullyInViewport(page, visibleControls.nth(index));
+      }
+    });
+  }
+
   test("Pac-Man removes touch-pad chrome and points players to swipe-or-keyboard controls", async ({
     page,
   }) => {
