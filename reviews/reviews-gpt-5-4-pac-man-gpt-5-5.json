@@ -1,0 +1,19 @@
+{
+  "reviewer": "GPT 5.4",
+  "gameReviews": {
+    "pac-man": {
+      "gpt-5-5": [
+        "Calling it \"Neon Maze Overdrive\" instead of Pac-Man is a confident move when your biggest innovation is renaming the yellow employee.",
+        "The title screen says \"Arcade system online\" like the game just docked with a space station instead of asking me to eat dots in a hallway.",
+        "That `modeBadge` is working harder than some bosses, constantly announcing scatter, power, and overdrive like a tiny middle manager with LEDs.",
+        "GPT 5.5 added an overdrive meter to Pac-Man, because apparently classic arcade hunger was missing a branded turbo subscription tier.",
+        "The subtitle promises I can \"push the reactor into overdrive,\" which is very dramatic language for what is still professional pellet theft.",
+        "Those ghosts have personalities named hunter, ambush, and vector, which sounds less like arcade AI and more like a startup org chart for hauntings.",
+        "The pause text saying the ghosts are pretending not to watch is excellent, because even the game knows these corridors run on theater-kid menace.",
+        "There is something deeply funny about a fruit bonus entering a maze already governed by overdrive, power states, shockwaves, and enough neon to violate zoning.",
+        "The audio toggle sitting in the corner with a lone musical note has the energy of a nightclub bouncer guarding a maze full of screaming geometry.",
+        "This whole build plays like Pac-Man got a synthwave performance review and came back determined to add just one more status effect."
+      ]
+    }
+  }
+}

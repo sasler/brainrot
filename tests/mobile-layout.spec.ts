@@ -93,23 +93,69 @@ test.describe("Gameplay-first layout regressions", () => {
     });
   }
 
-  test("Pac-Man removes touch-pad chrome and points players to swipe-or-keyboard controls", async ({
-    page,
-  }) => {
-    await instrumentAudioStarts(page);
-    await openStandaloneGame(page, "/games/pac-man/gpt-5-4/index.html");
+  for (const model of ["gpt-5-4", "gpt-5-5"]) {
+    test(`Pac-Man ${model} keeps swipe-first controls and the maze in view`, async ({ page }) => {
+      await instrumentAudioStarts(page);
+      await openStandaloneGame(page, `/games/pac-man/${model}/index.html`);
 
-    const overlay = page.locator("#overlay");
-    await expect(page.locator("#tipChip")).toHaveText(/Arrow keys \/ WASD \/ swipe anywhere/i);
-    await expect(overlay).toContainText("Arrow keys or WASD steer instantly at lane centers.");
-    await expect(overlay).toContainText("Swipe anywhere on mobile to steer without covering the maze.");
+      const overlay = page.locator("#overlay");
+      const canvas = page.locator("canvas").first();
+      await expect(page.locator("#tipChip")).toHaveText(/swipe anywhere/i);
+      await expect(overlay).toContainText(/Arrow keys|WASD/i);
+      await expect(overlay).toContainText(/Swipe (anywhere|to steer)/i);
+      await expectFullyInViewport(page, canvas);
 
+      await page.locator("#primaryButton").click();
+
+      await expect(overlay).not.toHaveClass(/active/);
+      await expect(page.locator(".touch-wrap, #touchToggle, #touchPad, .marquee")).toHaveCount(0);
+      await expect(page.locator("#audioToggle")).not.toHaveClass(/muted/);
+      await expectFullyInViewport(page, canvas);
+      expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(
+        MOBILE_VIEWPORT.height + 1,
+      );
+      await expect.poll(() => page.evaluate(() => (window as typeof window & { __brainrotAudioStarts?: number }).__brainrotAudioStarts ?? 0)).toBeGreaterThan(0);
+    });
+  }
+
+  test("GPT 5.5 Pac-Man and ghosts move after the ready countdown", async ({ page }) => {
+    await openStandaloneGame(page, "/games/pac-man/gpt-5-5/index.html");
     await page.locator("#primaryButton").click();
+    await page.waitForTimeout(1900);
 
-    await expect(overlay).not.toHaveClass(/active/);
-    await expect(page.locator(".touch-wrap, #touchToggle, #touchPad, .marquee")).toHaveCount(0);
-    await expect(page.locator("#audioToggle")).not.toHaveClass(/muted/);
-    await expect.poll(() => page.evaluate(() => (window as typeof window & { __brainrotAudioStarts?: number }).__brainrotAudioStarts ?? 0)).toBeGreaterThan(0);
+    const before = await page.evaluate(() => ({
+      player: { x: player.x, y: player.y },
+      ghost: { x: ghosts[0].x, y: ghosts[0].y },
+    }));
+
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(500);
+
+    const after = await page.evaluate(() => ({
+      player: { x: player.x, y: player.y },
+      ghost: { x: ghosts[0].x, y: ghosts[0].y },
+    }));
+
+    expect(Math.hypot(after.player.x - before.player.x, after.player.y - before.player.y)).toBeGreaterThan(10);
+    expect(Math.hypot(after.ghost.x - before.ghost.x, after.ghost.y - before.ghost.y)).toBeGreaterThan(10);
+  });
+
+  test("GPT 5.5 Pac-Man accepts another direction after stopping at a wall", async ({ page }) => {
+    await openStandaloneGame(page, "/games/pac-man/gpt-5-5/index.html");
+    await page.locator("#primaryButton").click();
+    await page.waitForTimeout(1900);
+
+    await page.keyboard.press("ArrowUp");
+    await expect.poll(() => page.evaluate(() => player.dir.name)).toBe("none");
+
+    const stopped = await page.evaluate(() => ({ x: player.x, y: player.y }));
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(500);
+    const turned = await page.evaluate(() => ({ x: player.x, y: player.y, dir: player.dir.name }));
+
+    expect(turned.dir).toBe("left");
+    expect(Math.hypot(turned.x - stopped.x, turned.y - stopped.y)).toBeGreaterThan(10);
   });
 
   test("Sudoku keeps the board and number pad playable together without scrolling", async ({
