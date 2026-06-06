@@ -4284,6 +4284,21 @@
                 "Sonnet turned arcade dinner into a classy little chase.",
                 "A clean, stylish maze that still wants to eat your afternoon."
               ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Sonnet built Pac-Man in 936 lines, proving arcade fidelity is mostly knowing which features can fit before the thousand-line alarm goes off.",
+                "The title screen sends a ghost parade across the stars, because apparently even spectral predators need a halftime marching band.",
+                "Ghost chase and scatter modes reverse everyone on schedule, giving the maze the operational discipline of a tiny haunted railway.",
+                "The tunnel wraps columns with modulo arithmetic, so Pac-Man's greatest superpower is technically remainder division.",
+                "Screen shake decays by 0.82 every frame, a remarkably scientific model for how upset the browser should be when a ghost gets eaten.",
+                "Sonnet gave every dot alternating square-wave chirps, ensuring your high-score attempt also doubles as a smoke-detector endurance test.",
+                "The touch D-pad appears whenever the screen gets narrow, thoughtfully replacing thumb visibility with four enormous neon opinions.",
+                "Ghost targets, frightened choices, and scatter corners all fit into tidy little functions, as if the haunting passed a code review.",
+                "Floating score labels rise for exactly 55 frames, because even bonus points have a strictly negotiated exit clause.",
+                "The whole game feels like classic Pac-Man got a neon jacket, learned particle effects, and still insisted on being home before midnight."
+              ]
             }
           ]
         },
@@ -4327,6 +4342,65 @@
                 "A polished Pac-Man that treats every dot like it matters to shareholders.",
                 "It is a very shiny way to be chased in circles."
               ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "GPT 5.4 renamed Pac-Man to NEON MAW // PAC-MAN.EXE, because eating dots clearly needed the branding confidence of a cyberpunk antivirus.",
+                "The title screen explains three escalating sectors with 'No mercy,' a bold threat from a game starring a yellow circle with a pizza-slice mouth.",
+                "At 2,134 lines, this Pac-Man has enough infrastructure to file quarterly reports on pellet consumption.",
+                "Each ghost has a named personality strategy, turning four colorful nuisances into a deeply overqualified consulting team.",
+                "The HUD reports ambient panic like the maze hired a meteorologist specifically for anxiety.",
+                "Swipe controls steer without covering the maze, which is considerate design buried inside a presentation determined to cover everything else in neon.",
+                "Ghosts leave trails, Pac-Man leaves trails, and particles leave trails; the only thing not leaving a trail is restraint.",
+                "Clearing a sector produces a full mission briefing, because removing dots from a grid now requires narrative closure and stakeholder alignment.",
+                "The pause message warns that ghosts might remember they hate you, granting the resume button more dramatic writing than most final bosses.",
+                "GPT 5.4 made a polished three-sector arcade gauntlet, then wrapped it in enough glowing panels to make the actual maze feel like a dashboard widget."
+              ]
+            }
+          ]
+        },
+        {
+          "model": "GPT 5.5",
+          "modelId": "gpt-5-5",
+          "date": "2026-06-06",
+          "linesOfCode": 2052,
+          "path": "/games/pac-man/gpt-5-5/index.html",
+          "features": [
+            "sound",
+            "particles",
+            "powerups"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Calling it \"Neon Maze Overdrive\" instead of Pac-Man is a confident move when your biggest innovation is renaming the yellow employee.",
+                "The title screen says \"Arcade system online\" like the game just docked with a space station instead of asking me to eat dots in a hallway.",
+                "That `modeBadge` is working harder than some bosses, constantly announcing scatter, power, and overdrive like a tiny middle manager with LEDs.",
+                "GPT 5.5 added an overdrive meter to Pac-Man, because apparently classic arcade hunger was missing a branded turbo subscription tier.",
+                "The subtitle promises I can \"push the reactor into overdrive,\" which is very dramatic language for what is still professional pellet theft.",
+                "Those ghosts have personalities named hunter, ambush, and vector, which sounds less like arcade AI and more like a startup org chart for hauntings.",
+                "The pause text saying the ghosts are pretending not to watch is excellent, because even the game knows these corridors run on theater-kid menace.",
+                "There is something deeply funny about a fruit bonus entering a maze already governed by overdrive, power states, shockwaves, and enough neon to violate zoning.",
+                "The audio toggle sitting in the corner with a lone musical note has the energy of a nightclub bouncer guarding a maze full of screaming geometry.",
+                "This whole build plays like Pac-Man got a synthwave performance review and came back determined to add just one more status effect."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "This Pac-Man remake really committed to the maze so hard it forgot to include a reason to care about it.",
+                "The ghosts have the same energy as office chairs with opinions, which is somehow still the most dynamic part.",
+                "Nothing says premium arcade homage like a layout that looks one misstep away from being a spreadsheet.",
+                "Pac-Man is usually about tension; this version seems to think 'tension' means making the player wait for fun to show up.",
+                "The pellets are doing heroic work here, which is impressive considering they’re the only things carrying the whole game.",
+                "The power-up pacing feels like it was tuned by someone who heard arcade games were 'fast' and took that personally.",
+                "It has just enough polish to prove intent and just enough awkwardness to prove nobody had to play it for long.",
+                "The maze design is so eager to be classic that it accidentally becomes a museum exhibit with controls.",
+                "The ghosts chase you with all the menace of a calendar reminder, but at least they’re consistent about it.",
+                "This is the kind of Pac-Man that makes you miss the quarter-eating version, which is a harsh thing to do with nostalgia."
+              ]
             }
           ]
         },
@@ -4341,7 +4415,23 @@
             "particles",
             "powerups"
           ],
-          "aiReviews": []
+          "aiReviews": [
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Qwen gave mobile players both swipe steering and a giant touch D-pad, because one control scheme could never fully occupy your thumbs.",
+                "The start screen displays all four ghost icons like a corporate org chart for employees whose only KPI is eating Pac-Man.",
+                "Background particles initialize before the game starts, ensuring the atmosphere is productive even while the player is not.",
+                "Qwen tracks fruit state with four separate variables, giving one snack a more complete personnel file than Pac-Man.",
+                "The ghost mode flips between chase and scatter every 600 ticks, which is less artificial intelligence and more a haunted kitchen timer.",
+                "Power pellets trigger particles, audio, frightened ghosts, and scoring logic, making each oversized dot a small cross-department incident.",
+                "The level transition announces LEVEL plus level plus one, because apparently even the scoreboard enjoys getting ahead of itself.",
+                "Ghost eyes track Pac-Man continuously, delivering the kind of attentive follow-up most support tickets can only dream about.",
+                "The neon maze, glowing ghosts, and five flavors of particle burst suggest Qwen interpreted 'arcade classic' as 'install every lighting package.'",
+                "At 1,886 lines, Qwen recreated Pac-Man with enough ceremony that clearing the maze feels like concluding a municipal fireworks permit."
+              ]
+            }
+          ]
         }
       ]
     },

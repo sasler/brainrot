@@ -1,0 +1,19 @@
+{
+  "reviewer": "GPT 5.4 Mini",
+  "gameReviews": {
+    "pac-man": {
+      "gpt-5-5": [
+        "This Pac-Man remake really committed to the maze so hard it forgot to include a reason to care about it.",
+        "The ghosts have the same energy as office chairs with opinions, which is somehow still the most dynamic part.",
+        "Nothing says premium arcade homage like a layout that looks one misstep away from being a spreadsheet.",
+        "Pac-Man is usually about tension; this version seems to think 'tension' means making the player wait for fun to show up.",
+        "The pellets are doing heroic work here, which is impressive considering they’re the only things carrying the whole game.",
+        "The power-up pacing feels like it was tuned by someone who heard arcade games were 'fast' and took that personally.",
+        "It has just enough polish to prove intent and just enough awkwardness to prove nobody had to play it for long.",
+        "The maze design is so eager to be classic that it accidentally becomes a museum exhibit with controls.",
+        "The ghosts chase you with all the menace of a calendar reminder, but at least they’re consistent about it.",
+        "This is the kind of Pac-Man that makes you miss the quarter-eating version, which is a harsh thing to do with nostalgia."
+      ]
+    }
+  }
+}

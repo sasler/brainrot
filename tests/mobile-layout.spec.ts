@@ -93,24 +93,31 @@ test.describe("Gameplay-first layout regressions", () => {
     });
   }
 
-  test("Pac-Man removes touch-pad chrome and points players to swipe-or-keyboard controls", async ({
-    page,
-  }) => {
-    await instrumentAudioStarts(page);
-    await openStandaloneGame(page, "/games/pac-man/gpt-5-4/index.html");
+  for (const model of ["gpt-5-4", "gpt-5-5"]) {
+    test(`Pac-Man ${model} keeps swipe-first controls and the maze in view`, async ({ page }) => {
+      await instrumentAudioStarts(page);
+      await openStandaloneGame(page, `/games/pac-man/${model}/index.html`);
 
-    const overlay = page.locator("#overlay");
-    await expect(page.locator("#tipChip")).toHaveText(/Arrow keys \/ WASD \/ swipe anywhere/i);
-    await expect(overlay).toContainText("Arrow keys or WASD steer instantly at lane centers.");
-    await expect(overlay).toContainText("Swipe anywhere on mobile to steer without covering the maze.");
+      const overlay = page.locator("#overlay");
+      const canvas = page.locator("canvas").first();
+      await expect(page.locator("#tipChip")).toHaveText(/swipe anywhere/i);
+      await expect(overlay).toContainText(/Arrow keys|WASD/i);
+      await expect(overlay).toContainText(/Swipe (anywhere|to steer)/i);
+      await expectFullyInViewport(page, canvas);
 
-    await page.locator("#primaryButton").click();
+      await page.locator("#primaryButton").click();
 
-    await expect(overlay).not.toHaveClass(/active/);
-    await expect(page.locator(".touch-wrap, #touchToggle, #touchPad, .marquee")).toHaveCount(0);
-    await expect(page.locator("#audioToggle")).not.toHaveClass(/muted/);
-    await expect.poll(() => page.evaluate(() => (window as typeof window & { __brainrotAudioStarts?: number }).__brainrotAudioStarts ?? 0)).toBeGreaterThan(0);
-  });
+      await expect(overlay).not.toHaveClass(/active/);
+      await expect(page.locator(".touch-wrap, #touchToggle, #touchPad, .marquee")).toHaveCount(0);
+      await expect(page.locator("#audioToggle")).not.toHaveClass(/muted/);
+      await expectFullyInViewport(page, canvas);
+      expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(
+        MOBILE_VIEWPORT.height + 1,
+      );
+      await expect.poll(() => page.evaluate(() => (window as typeof window & { __brainrotAudioStarts?: number }).__brainrotAudioStarts ?? 0)).toBeGreaterThan(0);
+    });
+  }
 
   test("Sudoku keeps the board and number pad playable together without scrolling", async ({
     page,
