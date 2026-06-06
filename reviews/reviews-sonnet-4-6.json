@@ -50,7 +50,7 @@
         "The snake's head and tail look identical — same shape, same color, same everything. A snake with no face.",
         "All direction-change logic lives on a single 147-character line. Gemini believes in a one-liner universe."
       ],
-      "qwen-3-6-35b-a3b": [
+      "qwen3.6-35b-a3b": [
         "Qwen 35b named its Snake game 'Neon Snake: BrainRot Edition' — the only model in the competition that acknowledged the brand in its actual game title. Respect.",
         "781 lines, full particle system, Web Audio API, proper CSS custom properties — Qwen 35b arrived with the full toolkit and used most of it correctly.",
         "Courier New as the primary font. Qwen 35b chose a monospace identity for Snake and committed. It looks like a hacker terminal playing Snake. Which is kind of perfect.",
@@ -789,7 +789,7 @@
       "952 lines for 2048 puts Qwen-27b above Opus at 870 lines and below GPT-5.5 at 1,860. A comfortable middle. Reasonable scope. Achievable quality.",
       "Qwen-27b submitted one game and made it complete. A title screen with animation, audio, particles, swipe controls, and proper architecture. One game done right beats many games done poorly."
     ],
-    "qwen-3-6-35b-a3b": [
+    "qwen3.6-35b-a3b": [
       "Qwen 3.6-35B-A3B entered the competition with one game: Snake. 781 lines. The 35B parameter advantage over the 27B model translates to 171 more lines of Snake. This is science.",
       "The game is titled 'Neon Snake: BrainRot Edition' — the only model in the entire competition to acknowledge the competition brand in its game title. Brand awareness. Good marketing instinct.",
       "Qwen-35b chose Courier New as its font. A monospace terminal font for a Snake game. The choice is thematically correct — Snake is a retro game and Courier New is a retro font. Intentional.",

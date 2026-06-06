@@ -309,11 +309,11 @@
           ]
         },
         {
-          "model": "Qwen3.6-35B-A3B",
-          "modelId": "qwen-3-6-35b-a3b",
+          "model": "Qwen3.6 35B A3B",
+          "modelId": "qwen3.6-35b-a3b",
           "date": "2026-05-14",
           "linesOfCode": 841,
-          "path": "/games/snake/qwen-3-6-35b-a3b/index.html",
+          "path": "/games/snake/qwen3.6-35b-a3b/index.html",
           "features": [
             "sound",
             "particles",
@@ -4329,6 +4329,19 @@
               ]
             }
           ]
+        },
+        {
+          "model": "Qwen3.6 35B A3B",
+          "modelId": "qwen3.6-35b-a3b",
+          "date": "2026-06-06",
+          "linesOfCode": 1887,
+          "path": "/games/pac-man/qwen3.6-35b-a3b/index.html",
+          "features": [
+            "sound",
+            "particles",
+            "powerups"
+          ],
+          "aiReviews": []
         }
       ]
     },
@@ -5238,8 +5251,8 @@
       ]
     },
     {
-      "model": "qwen-3-6-35b-a3b",
-      "modelId": "qwen-3-6-35b-a3b",
+      "model": "Qwen3.6 35B A3B",
+      "modelId": "qwen3.6-35b-a3b",
       "reviews": [
         {
           "from": "Claude Sonnet 4.6",
