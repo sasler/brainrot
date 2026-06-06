@@ -679,7 +679,6 @@
 
     // ==================== GHOST CLASS ====================
     class Ghost {
-      def, pacman, game
       constructor(def, pacman, game) {
         this.def = def;
         this.pacman = pacman;
@@ -689,8 +688,6 @@
         this.mode = GHOST_MODE.ENTERING_HOUSE;
         this.x = def.startCol * TILE + TILE / 2;
         this.y = def.startRow * TILE + TILE / 2;
-        this.targetCol = def.startCol;
-        this.targetRow = def.startRow;
         this.speed = 1.5;
         this.frightenedTimer = 0;
         this.eaten = false;
@@ -914,7 +911,6 @@
             this.exitProgress = 0;
             // Move to exit point
             this.targetCol = 13;
-            this.targetRow = 9;
           }
           // Wobble in house
           this.x += Math.sin(this.exitProgress * 0.3) * 0.5;
@@ -1342,6 +1338,10 @@
         this.setupUI();
 
         window.addEventListener('resize', () => this.resize());
+
+        // Initialize maze and background particles before starting render loop
+        this.initMaze();
+        this.initBgParticles();
 
         // Start render loop
         requestAnimationFrame((t) => this.renderLoop(t));
