@@ -4364,7 +4364,7 @@
           "model": "GPT 5.5",
           "modelId": "gpt-5-5",
           "date": "2026-06-06",
-          "linesOfCode": 2057,
+          "linesOfCode": 2058,
           "path": "/games/pac-man/gpt-5-5/index.html",
           "features": [
             "sound",

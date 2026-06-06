@@ -141,6 +141,23 @@ test.describe("Gameplay-first layout regressions", () => {
     expect(Math.hypot(after.ghost.x - before.ghost.x, after.ghost.y - before.ghost.y)).toBeGreaterThan(10);
   });
 
+  test("GPT 5.5 Pac-Man accepts another direction after stopping at a wall", async ({ page }) => {
+    await openStandaloneGame(page, "/games/pac-man/gpt-5-5/index.html");
+    await page.locator("#primaryButton").click();
+    await page.waitForTimeout(1900);
+
+    await page.keyboard.press("ArrowUp");
+    await expect.poll(() => page.evaluate(() => player.dir.name)).toBe("none");
+
+    const stopped = await page.evaluate(() => ({ x: player.x, y: player.y }));
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(500);
+    const turned = await page.evaluate(() => ({ x: player.x, y: player.y, dir: player.dir.name }));
+
+    expect(turned.dir).toBe("left");
+    expect(Math.hypot(turned.x - stopped.x, turned.y - stopped.y)).toBeGreaterThan(10);
+  });
+
   test("Sudoku keeps the board and number pad playable together without scrolling", async ({
     page,
   }) => {
