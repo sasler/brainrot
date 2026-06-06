@@ -10,7 +10,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | Game | Description | Versions |
 |------|-------------|----------|
 | 🐍 Snake | Navigate the serpent through a digital grid. Consume pixels to grow, but one wrong move means total annihilation. | 7 |
-| 👻 Pac-Man | Dash through a neon maze, gobble pellets, outsmart relentless ghosts, and flip the hunt with power surges. | 2 |
+| 👻 Pac-Man | Dash through a neon maze, gobble pellets, outsmart relentless ghosts, and flip the hunt with power surges. | 3 |
 | 💣 Minesweeper | Every click is a calculated gamble. Use logic to uncover safe tiles while avoiding hidden explosives. | 5 |
 | 🧱 Tetris | Falling tetrominoes demand split-second decisions. Stack them perfectly or watch entropy consume the board. | 5 |
 | ⚫ Reversi | A war of strategic placement. Flip your opponent's pieces and dominate the 8×8 battlefield. | 5 |
@@ -39,7 +39,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | Gemma 4 12B | 514 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 337 lines | N/A |
 | Minimax M2.7 | N/A | N/A | N/A | N/A | 1,032 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Qwen3.6-27B | N/A | N/A | N/A | N/A | N/A | 1,122 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| Qwen3.6-35B-A3B | 841 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| Qwen3.6 35B A3B | 841 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,887 lines | N/A | N/A | N/A |
 
 Each game is a standalone HTML file (HTML + CSS + JS inline) running in a sandboxed iframe — fully isolated from the main site.
 
