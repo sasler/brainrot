@@ -1134,9 +1134,6 @@ function directionOpen(actor, direction) {
 }
 
 function moveActor(actor, dt, speed) {
-  if (atCenter(actor)) {
-    snapCenter(actor);
-  }
   actor.x += actor.dir.x * speed * dt;
   actor.y += actor.dir.y * speed * dt;
   if (actor.x < -TILE / 2) {
@@ -1150,8 +1147,14 @@ function moveActor(actor, dt, speed) {
 function updatePlayer(dt) {
   const baseSpeed = 99 + Math.min(18, game.level * 2);
   const speed = baseSpeed * (game.overdrive > 0 ? 1.17 : 1);
-  if (atCenter(player, 3.5)) {
+  const playerCol = toTile(player.x);
+  const playerRow = toTile(player.y);
+  const enteringNewTile = !player.decisionTile
+    || playerCol !== player.decisionTile.x
+    || playerRow !== player.decisionTile.y;
+  if (atCenter(player, 3.5) && enteringNewTile) {
     snapCenter(player);
+    player.decisionTile = { x: playerCol, y: playerRow };
     if (directionOpen(player, player.wanted)) {
       player.dir = player.wanted;
     }
@@ -1384,7 +1387,9 @@ function updateGhost(ghost, index, dt) {
   }
   const col = toTile(ghost.x);
   const row = toTile(ghost.y);
-  if (atCenter(ghost, 3.2) && (col !== ghost.lastTile.x || row !== ghost.lastTile.y)) {
+  const enteredNewTile = col !== ghost.lastTile.x || row !== ghost.lastTile.y;
+  const needsDirection = ghost.dir === DIR.none || !directionOpen(ghost, ghost.dir);
+  if (atCenter(ghost, 3.2) && (enteredNewTile || needsDirection)) {
     snapCenter(ghost);
     ghost.lastTile.x = col;
     ghost.lastTile.y = row;

@@ -119,6 +119,28 @@ test.describe("Gameplay-first layout regressions", () => {
     });
   }
 
+  test("GPT 5.5 Pac-Man and ghosts move after the ready countdown", async ({ page }) => {
+    await openStandaloneGame(page, "/games/pac-man/gpt-5-5/index.html");
+    await page.locator("#primaryButton").click();
+    await page.waitForTimeout(1900);
+
+    const before = await page.evaluate(() => ({
+      player: { x: player.x, y: player.y },
+      ghost: { x: ghosts[0].x, y: ghosts[0].y },
+    }));
+
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(500);
+
+    const after = await page.evaluate(() => ({
+      player: { x: player.x, y: player.y },
+      ghost: { x: ghosts[0].x, y: ghosts[0].y },
+    }));
+
+    expect(Math.hypot(after.player.x - before.player.x, after.player.y - before.player.y)).toBeGreaterThan(10);
+    expect(Math.hypot(after.ghost.x - before.ghost.x, after.ghost.y - before.ghost.y)).toBeGreaterThan(10);
+  });
+
   test("Sudoku keeps the board and number pad playable together without scrolling", async ({
     page,
   }) => {
