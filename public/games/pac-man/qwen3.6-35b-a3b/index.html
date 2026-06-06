@@ -957,10 +957,10 @@
           this.x = tileCenterX;
           this.y = tileCenterY;
           this.currentDir = this.chooseDirection();
-        } else {
-          this.x += this.currentDir.x * speed;
-          this.y += this.currentDir.y * speed;
         }
+
+        this.x += this.currentDir.x * speed;
+        this.y += this.currentDir.y * speed;
       }
 
       draw(ctx) {
@@ -1163,10 +1163,10 @@
           this.y = this.tileCenterY;
           this.col = Math.round((this.x - TILE / 2) / TILE);
           this.row = Math.round((this.y - TILE / 2) / TILE);
-        } else {
-          this.x += this.currentDir.x * speed;
-          this.y += this.currentDir.y * speed;
         }
+
+        this.x += this.currentDir.x * speed;
+        this.y += this.currentDir.y * speed;
 
         // Tunnel wrapping
         if (this.x < -TILE / 2) this.x = (COLS - 1) * TILE + TILE / 2;
