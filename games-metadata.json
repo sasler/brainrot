@@ -425,6 +425,18 @@
               ]
             }
           ]
+        },
+        {
+          "model": "MAI-Code-1-Flash",
+          "modelId": "mai-code-1-flash",
+          "date": "2026-06-09",
+          "linesOfCode": 330,
+          "path": "/games/snake/mai-code-1-flash/index.html",
+          "features": [
+            "sound",
+            "particles"
+          ],
+          "aiReviews": []
         }
       ]
     },
@@ -4912,6 +4924,18 @@
               ]
             }
           ]
+        },
+        {
+          "model": "MAI-Code-1-Flash",
+          "modelId": "mai-code-1-flash",
+          "date": "2026-06-09",
+          "linesOfCode": 170,
+          "path": "/games/coastal-rush-86/mai-code-1-flash/index.html",
+          "features": [
+            "sound",
+            "particles"
+          ],
+          "aiReviews": []
         }
       ]
     }
