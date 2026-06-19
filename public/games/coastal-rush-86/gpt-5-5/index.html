@@ -344,7 +344,7 @@
         length: 176,
         curves: [0, 0.25, 0.85, 1.08, -0.45, -1.18, -0.78, 0.35, 1.0, 0.72, -0.9, -0.35, 0.55, 0],
         hills: [0, 5, 12, 8, -3, -8, 3, 12, 18, 10, -4, 6, 14, 0],
-        traffic: 0.56,
+        traffic: 0.34,
         time: 45,
         forks: [
           {
@@ -363,7 +363,7 @@
         length: 196,
         curves: [0.15, -0.65, -0.95, 0.25, 0.82, 1.05, 0.15, -1.12, -0.72, 0.55, 0.95, -0.35, 0],
         hills: [2, 11, 18, 7, -2, 9, 17, 5, -7, 4, 14, 8, 0],
-        traffic: 0.72,
+        traffic: 0.48,
         time: 42,
         forks: [
           {
@@ -382,7 +382,7 @@
         length: 214,
         curves: [0.4, 1.25, -1.45, 0.6, -1.3, 1.55, -0.8, 0.25],
         hills: [10, 42, 72, 28, 86, 38, 14, 0],
-        traffic: 0.69,
+        traffic: 0.5,
         time: 46,
         forks: [
           {
@@ -401,7 +401,7 @@
         length: 228,
         curves: [0, 0.18, -0.25, 0.55, 0.1, -0.62, 0, 0.35],
         hills: [0, 4, 2, 11, -5, 7, 3, 0],
-        traffic: 0.86,
+        traffic: 0.62,
         time: 43,
         forks: [
           {
@@ -420,7 +420,7 @@
         length: 204,
         curves: [0, -0.45, 0.35, 0.85, -0.75, 0.15, 0.5, 0],
         hills: [0, 6, -4, 8, 2, -8, 5, 0],
-        traffic: 1.05,
+        traffic: 0.78,
         time: 42,
         forks: [
           {
@@ -439,7 +439,7 @@
         length: 244,
         curves: [0.2, 0.92, 1.18, 0.38, -0.82, -1.2, -0.35, 0.72, 1.05, -0.72, -1.05, 0.42, 0.85, 0],
         hills: [0, 8, 17, 12, 2, -6, 5, 15, 22, 11, -3, 8, 18, 0],
-        traffic: 1.15,
+        traffic: 0.86,
         time: 48,
         forks: []
       }
@@ -674,11 +674,17 @@
     function buildTraffic() {
       traffic = [];
       const density = currentStage ? currentStage.traffic : 0.5;
-      const count = Math.floor(12 + density * 18 + checkpoint * 3);
+      const count = Math.floor(7 + density * 12 + checkpoint * 2.5);
+      const startZ = SEGMENT_LENGTH * (checkpoint === 0 ? 18 : 12);
+      const endZ = Math.max(startZ + SEGMENT_LENGTH * 10, stageLength - SEGMENT_LENGTH * 14);
+      const span = Math.max(SEGMENT_LENGTH * 12, endZ - startZ);
       for (let i = 0; i < count; i += 1) {
+        const laneBias = i % 3 === 0 ? random(-0.72, -0.22) : i % 3 === 1 ? random(0.22, 0.72) : random(-0.48, 0.48);
+        const spacing = span / count;
+        const z = startZ + spacing * i + random(spacing * 0.18, spacing * 0.82);
         traffic.push(makeTraffic(
-          random(SEGMENT_LENGTH * 12, stageLength - SEGMENT_LENGTH * 12),
-          random(-0.82, 0.82)
+          z,
+          laneBias
         ));
       }
     }
@@ -696,6 +702,8 @@
         kind,
         color: pick(colors),
         width: kind === "truck" ? 0.34 : kind === "van" ? 0.28 : 0.23,
+        collisionWidth: kind === "truck" ? 0.27 : kind === "van" ? 0.23 : kind === "wagon" ? 0.2 : 0.18,
+        closePassWidth: kind === "truck" ? 0.5 : kind === "van" ? 0.46 : 0.42,
         passed: false,
         near: false,
         wobble: random(0, TAU)
@@ -1041,7 +1049,7 @@
 
         if (dz > -SEGMENT_LENGTH * 1.2 && dz < SEGMENT_LENGTH * 1.15) {
           const overlap = Math.abs(playerX - car.offset);
-          if (overlap < car.width + 0.18 && collisionCooldown <= 0) {
+          if (overlap < car.collisionWidth && collisionCooldown <= 0) {
             collision(car);
           }
         }
@@ -1049,7 +1057,7 @@
         if (dz < -SEGMENT_LENGTH && dz > -SEGMENT_LENGTH * 5 && !car.passed) {
           car.passed = true;
           const gap = Math.abs(playerX - car.offset);
-          if (gap < 0.5) {
+          if (gap < car.closePassWidth) {
             passCombo += 1;
             passClock = 3;
             const award = 700 * passCombo;
