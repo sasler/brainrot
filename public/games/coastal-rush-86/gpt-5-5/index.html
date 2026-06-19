@@ -119,6 +119,10 @@
     const ROAD_WIDTH = 1900;
     const CAMERA_HEIGHT = 920;
     const DRAW_DISTANCE = 190;
+    const HILL_SCALE = 12;
+    const MAX_VISIBLE_GRADE = 0.18;
+    const CURVE_VISUAL_STRENGTH = 1.45;
+    const CURVE_PHYSICS_STRENGTH = 0.74;
     const FOV = 92;
     const CAMERA_DEPTH = 1 / Math.tan((FOV / 2) * Math.PI / 180);
     const MAX_SPEED = SEGMENT_LENGTH * 58;
@@ -133,21 +137,21 @@
       pale: "#ffe2a2",
       amber: "#e5a84f",
       orange: "#d66b33",
-      red: "#b7352f",
-      deepRed: "#702723",
-      brown: "#4e3323",
-      dark: "#20170f",
-      ink: "#16100d",
-      road: "#5b554d",
-      roadDark: "#49453f",
-      sand: "#cc9a5b",
-      sandDark: "#b67e44",
-      grass: "#7d8b4d",
-      grassDark: "#60713e",
-      sea: "#427f87",
-      seaLight: "#75a8a2",
-      sky: "#e69d62",
-      skyTop: "#6e8790",
+      red: "#e63038",
+      deepRed: "#951d26",
+      brown: "#674525",
+      dark: "#12303a",
+      ink: "#071820",
+      road: "#6b7076",
+      roadDark: "#555b62",
+      sand: "#e7cd8a",
+      sandDark: "#d4b66e",
+      grass: "#43a845",
+      grassDark: "#2f8738",
+      sea: "#159bd8",
+      seaLight: "#61d6f1",
+      sky: "#54cbff",
+      skyTop: "#1585ea",
       white: "#fff8dd",
       black: "#17120f"
     };
@@ -338,9 +342,9 @@
         subtitle: "Salt air and cliff roads",
         theme: "coast",
         length: 176,
-        curves: [0, 0.25, 0.8, -0.6, -1.15, 0.35, 0.85, 0],
-        hills: [0, 10, 28, 5, -18, 12, 30, 0],
-        traffic: 0.56,
+        curves: [0, 0.25, 0.85, 1.08, -0.45, -1.18, -0.78, 0.35, 1.0, 0.72, -0.9, -0.35, 0.55, 0],
+        hills: [0, 2, 4, 3, -1, -2, 1, 4, 5, 3, -1, 2, 4, 0],
+        traffic: 0.22,
         time: 45,
         forks: [
           {
@@ -357,9 +361,9 @@
         subtitle: "Orchards, barns, open bends",
         theme: "country",
         length: 196,
-        curves: [0.2, -0.55, 0, 0.75, 1.2, -0.9, -0.4, 0.55],
-        hills: [4, 20, -8, 12, -16, 22, 7, 0],
-        traffic: 0.72,
+        curves: [0.15, -0.65, -0.95, 0.25, 0.82, 1.05, 0.15, -1.12, -0.72, 0.55, 0.95, -0.35, 0],
+        hills: [1, 4, 5, 2, 0, 3, 5, 2, -2, 1, 4, 2, 0],
+        traffic: 0.28,
         time: 42,
         forks: [
           {
@@ -377,8 +381,8 @@
         theme: "mountain",
         length: 214,
         curves: [0.4, 1.25, -1.45, 0.6, -1.3, 1.55, -0.8, 0.25],
-        hills: [10, 42, 72, 28, 86, 38, 14, 0],
-        traffic: 0.69,
+        hills: [1, 4, 7, 3, 8, 4, 2, 0],
+        traffic: 0.3,
         time: 46,
         forks: [
           {
@@ -396,8 +400,8 @@
         theme: "desert",
         length: 228,
         curves: [0, 0.18, -0.25, 0.55, 0.1, -0.62, 0, 0.35],
-        hills: [0, 4, 2, 11, -5, 7, 3, 0],
-        traffic: 0.86,
+        hills: [0, 1, 0, 2, -1, 1, 0, 0],
+        traffic: 0.34,
         time: 43,
         forks: [
           {
@@ -415,8 +419,8 @@
         theme: "city",
         length: 204,
         curves: [0, -0.45, 0.35, 0.85, -0.75, 0.15, 0.5, 0],
-        hills: [0, 6, -4, 8, 2, -8, 5, 0],
-        traffic: 1.05,
+        hills: [0, 1, -1, 2, 1, -1, 1, 0],
+        traffic: 0.4,
         time: 42,
         forks: [
           {
@@ -433,9 +437,9 @@
         subtitle: "Race the sunset home",
         theme: "finale",
         length: 244,
-        curves: [0.2, 0.8, -0.6, -1.05, 1.2, 0.35, -0.45, 0],
-        hills: [0, 18, 36, 5, -12, 26, 9, 0],
-        traffic: 1.15,
+        curves: [0.2, 0.92, 1.18, 0.38, -0.82, -1.2, -0.35, 0.72, 1.05, -0.72, -1.05, 0.42, 0.85, 0],
+        hills: [0, 2, 4, 3, 1, -1, 1, 3, 5, 2, -1, 2, 4, 0],
+        traffic: 0.46,
         time: 48,
         forks: []
       }
@@ -443,76 +447,76 @@
 
     const THEMES = {
       coast: {
-        skyTop: "#718a91",
-        skyBottom: "#e7aa72",
-        groundA: "#c89b62",
-        groundB: "#b88956",
-        roadA: "#5f5a53",
-        roadB: "#514c47",
-        rumbleA: "#f3d39b",
-        rumbleB: "#b7563f",
-        lane: "#f5e2b6",
-        fog: "#f4bd83"
+        skyTop: "#1188f2",
+        skyBottom: "#7ee6ff",
+        groundA: "#46b84c",
+        groundB: "#379f42",
+        roadA: "#747d86",
+        roadB: "#626b74",
+        rumbleA: "#fff7df",
+        rumbleB: "#df3d36",
+        lane: "#fffdf0",
+        fog: "#b9f2ff"
       },
       country: {
-        skyTop: "#7d96a0",
-        skyBottom: "#edb47d",
-        groundA: "#79864a",
-        groundB: "#67763e",
-        roadA: "#625d53",
-        roadB: "#534f48",
-        rumbleA: "#f1d6a5",
-        rumbleB: "#a94d38",
-        lane: "#f5e0b6",
-        fog: "#e8b778"
+        skyTop: "#2398ee",
+        skyBottom: "#a8edff",
+        groundA: "#55ad3f",
+        groundB: "#79c24e",
+        roadA: "#6d7379",
+        roadB: "#5d636b",
+        rumbleA: "#fff4d1",
+        rumbleB: "#d53c35",
+        lane: "#fffef2",
+        fog: "#d3f5ff"
       },
       mountain: {
-        skyTop: "#697c89",
-        skyBottom: "#d89a6d",
-        groundA: "#77705b",
-        groundB: "#615c4d",
-        roadA: "#55534f",
-        roadB: "#484744",
-        rumbleA: "#e9d1a2",
-        rumbleB: "#9c4939",
-        lane: "#ead9b5",
-        fog: "#d5a47d"
+        skyTop: "#327fd2",
+        skyBottom: "#bfeeff",
+        groundA: "#5f8d63",
+        groundB: "#6fa76e",
+        roadA: "#687079",
+        roadB: "#555f68",
+        rumbleA: "#f5f5ee",
+        rumbleB: "#cf433e",
+        lane: "#fffef0",
+        fog: "#d7f0ff"
       },
       desert: {
-        skyTop: "#858b8a",
-        skyBottom: "#df8e54",
-        groundA: "#c48649",
-        groundB: "#ae6e3c",
-        roadA: "#655a4c",
-        roadB: "#574d43",
-        rumbleA: "#f1c986",
-        rumbleB: "#974233",
-        lane: "#f4d89d",
-        fog: "#dd9858"
+        skyTop: "#2491ef",
+        skyBottom: "#ffdc8e",
+        groundA: "#e6c26b",
+        groundB: "#d9b35c",
+        roadA: "#706f6c",
+        roadB: "#5f5f5e",
+        rumbleA: "#fff0bc",
+        rumbleB: "#d24835",
+        lane: "#fff8db",
+        fog: "#ffe2a4"
       },
       city: {
-        skyTop: "#273746",
-        skyBottom: "#9a5c52",
-        groundA: "#494039",
-        groundB: "#3b3632",
-        roadA: "#4a4948",
-        roadB: "#3e3d3d",
-        rumbleA: "#d4b98b",
-        rumbleB: "#8f493e",
-        lane: "#e7d7ad",
-        fog: "#8d645a"
+        skyTop: "#163366",
+        skyBottom: "#6db9f0",
+        groundA: "#3c5255",
+        groundB: "#31464c",
+        roadA: "#575d65",
+        roadB: "#484f58",
+        rumbleA: "#f2e6ba",
+        rumbleB: "#b83b46",
+        lane: "#fff6d7",
+        fog: "#75bce6"
       },
       finale: {
-        skyTop: "#374e5d",
-        skyBottom: "#d07850",
-        groundA: "#876c48",
-        groundB: "#705b40",
-        roadA: "#55524d",
-        roadB: "#474641",
-        rumbleA: "#edce97",
-        rumbleB: "#a44235",
-        lane: "#f0dbab",
-        fog: "#c47c55"
+        skyTop: "#0f81e8",
+        skyBottom: "#6ee3ff",
+        groundA: "#41b54d",
+        groundB: "#339943",
+        roadA: "#767f88",
+        roadB: "#626c76",
+        rumbleA: "#fff7db",
+        rumbleB: "#df3b38",
+        lane: "#fffdf0",
+        fog: "#b8eeff"
       }
     };
 
@@ -529,7 +533,7 @@
       const source = p * (stage.hills.length - 1);
       const index = Math.floor(source);
       const next = Math.min(stage.hills.length - 1, index + 1);
-      return easeInOut(stage.hills[index], stage.hills[next], source - index) * SEGMENT_LENGTH;
+      return easeInOut(stage.hills[index], stage.hills[next], source - index) * HILL_SCALE;
     }
 
     function stageSegmentCount() {
@@ -591,15 +595,16 @@
     function buildRoadside() {
       roadside = [];
       const theme = currentStage ? currentStage.theme : "coast";
-      for (let i = 5; i < stageSegmentCount(); i += 2 + ((Math.random() * 4) | 0)) {
+      const coastal = theme === "coast" || theme === "finale";
+      for (let i = 5; i < stageSegmentCount(); i += coastal ? 2 + ((Math.random() * 3) | 0) : 2 + ((Math.random() * 4) | 0)) {
         const side = Math.random() < 0.5 ? -1 : 1;
         let type = "palm";
-        if (theme === "country") type = pick(["tree", "tree", "barn", "hay", "fence"]);
+        if (theme === "country") type = pick(["tree", "tree", "barn", "hay", "fence", "spectators", "sign"]);
         if (theme === "mountain") type = pick(["pine", "pine", "rock", "snowpost"]);
         if (theme === "desert") type = pick(["cactus", "rock", "cactus", "sign"]);
         if (theme === "city") type = pick(["building", "building", "lamp", "awning"]);
-        if (theme === "finale") type = pick(["palm", "pine", "lamp", "sign"]);
-        if (theme === "coast") type = pick(["palm", "palm", "rock", "sign"]);
+        if (theme === "finale") type = pick(["palm", "palm", "palm", "shrub", "umbrella", "lamp", "sign", "spectators"]);
+        if (theme === "coast") type = pick(["palm", "palm", "palm", "palm", "shrub", "umbrella", "rock", "sign", "spectators"]);
         roadside.push({
           segment: i,
           side,
@@ -618,17 +623,70 @@
             variant: (Math.random() * 4) | 0
           });
         }
+        if (coastal && (type === "palm" || Math.random() < 0.28)) {
+          const clusterSide = Math.random() < 0.72 ? side : -side;
+          roadside.push({
+            segment: (i + 1 + ((Math.random() * 3) | 0)) % stageSegmentCount(),
+            side: clusterSide,
+            offset: clusterSide * random(1.65, 3.25),
+            type: "palm",
+            scale: random(0.72, 1.18),
+            variant: (Math.random() * 4) | 0
+          });
+          if (Math.random() < 0.48) {
+            roadside.push({
+              segment: (i + 2 + ((Math.random() * 4) | 0)) % stageSegmentCount(),
+              side: -clusterSide,
+              offset: -clusterSide * random(1.35, 2.25),
+              type: pick(["shrub", "umbrella", "sign"]),
+              scale: random(0.62, 1.05),
+              variant: (Math.random() * 4) | 0
+            });
+          }
+        }
+      }
+      if (coastal) {
+        const earlyPalms = [6, 9, 12, 16, 21, 27, 34];
+        for (let n = 0; n < earlyPalms.length; n += 1) {
+          const side = n % 2 === 0 ? -1 : 1;
+          roadside.push({
+            segment: earlyPalms[n] % stageSegmentCount(),
+            side,
+            offset: side * (n < 3 ? 1.18 + n * 0.14 : 1.5 + (n % 3) * 0.3),
+            type: "palm",
+            scale: n < 3 ? 1.75 - n * 0.12 : 1.25 + (n % 2) * 0.18,
+            variant: n % 4
+          });
+          if (n < 5) {
+            roadside.push({
+              segment: (earlyPalms[n] + 2) % stageSegmentCount(),
+              side: -side,
+              offset: -side * (1.38 + (n % 2) * 0.32),
+              type: n % 3 === 1 ? "umbrella" : "palm",
+              scale: n % 3 === 1 ? 0.92 : 1.18,
+              variant: (n + 2) % 4
+            });
+          }
+        }
       }
     }
 
     function buildTraffic() {
       traffic = [];
       const density = currentStage ? currentStage.traffic : 0.5;
-      const count = Math.floor(12 + density * 18 + checkpoint * 3);
+      const count = Math.floor(4 + density * 7 + checkpoint * 1.2);
+      const startZ = SEGMENT_LENGTH * (checkpoint === 0 ? 24 : 28);
+      const endZ = Math.max(startZ + SEGMENT_LENGTH * 28, stageLength - SEGMENT_LENGTH * 18);
+      const span = Math.max(SEGMENT_LENGTH * 34, endZ - startZ);
+      const lanes = [-0.58, 0, 0.58];
       for (let i = 0; i < count; i += 1) {
+        const laneIndex = (i * 2 + ((Math.random() * 2) | 0)) % lanes.length;
+        const laneBias = lanes[laneIndex] + random(-0.12, 0.12);
+        const spacing = span / count;
+        const z = startZ + spacing * i + random(spacing * 0.3, spacing * 0.92);
         traffic.push(makeTraffic(
-          random(SEGMENT_LENGTH * 12, stageLength - SEGMENT_LENGTH * 12),
-          random(-0.82, 0.82)
+          z,
+          laneBias
         ));
       }
     }
@@ -646,6 +704,8 @@
         kind,
         color: pick(colors),
         width: kind === "truck" ? 0.34 : kind === "van" ? 0.28 : 0.23,
+        collisionWidth: kind === "truck" ? 0.27 : kind === "van" ? 0.23 : kind === "wagon" ? 0.2 : 0.18,
+        closePassWidth: kind === "truck" ? 0.5 : kind === "van" ? 0.46 : 0.42,
         passed: false,
         near: false,
         wobble: random(0, TAU)
@@ -928,7 +988,7 @@
       const speedPercent = speed / MAX_SPEED;
       const playerSegment = findSegment(position + PLAYER_Z);
       const steerPower = dt * (1.65 - speedPercent * 0.42);
-      const centrifugal = playerSegment.curve * speedPercent * speedPercent * dt * 0.62;
+      const centrifugal = playerSegment.curve * CURVE_PHYSICS_STRENGTH * speedPercent * speedPercent * dt * 0.62;
       if (input.left) playerX -= steerPower;
       if (input.right) playerX += steerPower;
       playerX -= centrifugal;
@@ -991,7 +1051,7 @@
 
         if (dz > -SEGMENT_LENGTH * 1.2 && dz < SEGMENT_LENGTH * 1.15) {
           const overlap = Math.abs(playerX - car.offset);
-          if (overlap < car.width + 0.18 && collisionCooldown <= 0) {
+          if (overlap < car.collisionWidth && collisionCooldown <= 0) {
             collision(car);
           }
         }
@@ -999,7 +1059,7 @@
         if (dz < -SEGMENT_LENGTH && dz > -SEGMENT_LENGTH * 5 && !car.passed) {
           car.passed = true;
           const gap = Math.abs(playerX - car.offset);
-          if (gap < 0.5) {
+          if (gap < car.closePassWidth) {
             passCombo += 1;
             passClock = 3;
             const award = 700 * passCombo;
@@ -1195,6 +1255,13 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, horizon + 8);
 
+      if (!currentStage || currentStage.theme !== "city") {
+        const cloudDrift = (frame * 10) % (W + 260);
+        drawArcadeCloud((W * 0.18 - cloudDrift + W + 260) % (W + 260) - 130, horizon * 0.2, W * 0.1, 0.82);
+        drawArcadeCloud((W * 0.57 - cloudDrift * 0.62 + W + 280) % (W + 280) - 140, horizon * 0.33, W * 0.075, 0.68);
+        drawArcadeCloud((W * 0.88 - cloudDrift * 0.84 + W + 300) % (W + 300) - 150, horizon * 0.14, W * 0.085, 0.55);
+      }
+
       if (currentStage && currentStage.theme === "city") {
         for (const star of stars) {
           ctx.globalAlpha = star.a * (0.75 + Math.sin(frame * 2 + star.x) * 0.25);
@@ -1219,18 +1286,63 @@
       drawDistantScenery(theme);
     }
 
+    function drawArcadeCloud(x, y, s, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#f8ffff";
+      ctx.beginPath();
+      ctx.ellipse(x, y, s * 0.9, s * 0.22, 0, 0, TAU);
+      ctx.ellipse(x - s * 0.42, y + s * 0.02, s * 0.42, s * 0.18, 0, 0, TAU);
+      ctx.ellipse(x + s * 0.38, y - s * 0.04, s * 0.48, s * 0.2, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawHorizonPalm(x, y, s, lean) {
+      const h = s * 3.15;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = "rgba(116,78,40,.88)";
+      ctx.lineWidth = Math.max(2, s * 0.16);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(s * lean, -h * 0.55, s * lean * 0.42, -h);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(23,128,61,.92)";
+      ctx.lineWidth = Math.max(2, s * 0.12);
+      for (let i = 0; i < 7; i += 1) {
+        const a = -Math.PI * 0.96 + i * Math.PI / 5.8;
+        const crownX = s * lean * 0.42;
+        const crownY = -h;
+        ctx.beginPath();
+        ctx.moveTo(crownX, crownY);
+        ctx.quadraticCurveTo(crownX + Math.cos(a) * s * 0.95, crownY + Math.sin(a) * s * 0.32, crownX + Math.cos(a) * s * 1.6, crownY + Math.sin(a) * s * 0.62);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function drawDistantScenery(theme) {
       const stageTheme = currentStage ? currentStage.theme : "coast";
       if (stageTheme === "coast" || stageTheme === "finale") {
         ctx.fillStyle = COLORS.sea;
         ctx.fillRect(0, horizon * 0.79, W, horizon * 0.23);
-        ctx.fillStyle = "rgba(255,240,190,.28)";
-        for (let i = 0; i < 9; i += 1) {
-          const x = (i * 151 + frame * 7) % (W + 120) - 60;
-          ctx.fillRect(x, horizon * 0.85 + (i % 3) * 8, 45, 2);
+        ctx.fillStyle = COLORS.seaLight;
+        ctx.fillRect(0, horizon * 0.78, W, 3);
+        ctx.fillStyle = "rgba(255,255,245,.58)";
+        for (let i = 0; i < 13; i += 1) {
+          const x = (i * 127 + frame * 9) % (W + 120) - 60;
+          ctx.fillRect(x, horizon * 0.84 + (i % 4) * 8, 52, 2);
         }
-        polygon("#6a6652", 0, horizon, W * 0.18, horizon * 0.62, W * 0.37, horizon);
-        polygon("#565b50", W * 0.7, horizon, W * 0.86, horizon * 0.69, W, horizon);
+        polygon("#4aa95b", 0, horizon, W * 0.16, horizon * 0.66, W * 0.36, horizon);
+        polygon("#3c8f55", W * 0.66, horizon, W * 0.84, horizon * 0.7, W, horizon);
+        polygon("#65b56a", W * 0.42, horizon * 0.84, W * 0.5, horizon * 0.72, W * 0.62, horizon * 0.84);
+        const palmS = clamp(W * 0.035, 18, 46);
+        drawHorizonPalm(W * 0.075, horizon * 0.97, palmS * 1.05, 0.42);
+        drawHorizonPalm(W * 0.14, horizon * 0.96, palmS * 0.86, -0.35);
+        drawHorizonPalm(W * 0.86, horizon * 0.97, palmS, -0.5);
+        drawHorizonPalm(W * 0.94, horizon * 0.95, palmS * 0.78, 0.36);
+        polygon("#e7cf85", 0, horizon, W, horizon, W, horizon * 1.04, 0, horizon * 1.04);
       } else if (stageTheme === "mountain") {
         polygon("#6f6d65",
           0, horizon,
@@ -1278,7 +1390,7 @@
       const playerPercent = percentRemaining(position + PLAYER_Z, SEGMENT_LENGTH);
       const playerY = lerp(playerSegment.y1, playerSegment.y2, playerPercent);
       let x = 0;
-      let dx = -(baseSegment.curve * basePercent);
+      let dx = -(baseSegment.curve * CURVE_VISUAL_STRENGTH * basePercent);
       let maxY = playableBottom;
       const count = stageSegmentCount();
 
@@ -1291,6 +1403,8 @@
           y1: stageHill(currentStage || STAGES.coast, index),
           y2: stageHill(currentStage || STAGES.coast, (index + 1) % count)
         };
+        const y2 = segment.y1 + clamp(segment.y2 - segment.y1, -SEGMENT_LENGTH * MAX_VISIBLE_GRADE, SEGMENT_LENGTH * MAX_VISIBLE_GRADE);
+        const visualCurve = segment.curve * CURVE_VISUAL_STRENGTH;
         const z1 = index * SEGMENT_LENGTH + (looped ? trackLength() : 0);
         const z2 = z1 + SEGMENT_LENGTH;
         const p1 = project(
@@ -1303,14 +1417,14 @@
         );
         const p2 = project(
           x + dx,
-          segment.y2,
+          y2,
           z2,
           playerX * ROAD_WIDTH,
           playerY + CAMERA_HEIGHT,
           position
         );
         x += dx;
-        dx += segment.curve;
+        dx += visualCurve;
         const clip = maxY;
         const hidden = p2.y >= maxY || p2.y >= p1.y;
         if (!hidden) maxY = p2.y;
@@ -1328,6 +1442,7 @@
 
     function drawRoad(theme) {
       buildProjection();
+      const coastalRoad = currentStage && (currentStage.theme === "coast" || currentStage.theme === "finale");
       ctx.fillStyle = theme.groundA;
       ctx.fillRect(0, horizon, W, playableBottom - horizon);
 
@@ -1348,6 +1463,23 @@
           W, p1.y,
           0, p1.y
         );
+        if (coastalRoad) {
+          const shoulder1 = p1.w * 1.28;
+          const shoulder2 = p2.w * 1.28;
+          const shoulderColor = alternating ? "#e8cf82" : "#dbc071";
+          polygon(shoulderColor,
+            p1.x - shoulder1, p1.y,
+            p1.x - rumble1, p1.y,
+            p2.x - rumble2, p2.y,
+            p2.x - shoulder2, p2.y
+          );
+          polygon(shoulderColor,
+            p1.x + rumble1, p1.y,
+            p1.x + shoulder1, p1.y,
+            p2.x + shoulder2, p2.y,
+            p2.x + rumble2, p2.y
+          );
+        }
         polygon(rumble,
           p1.x - rumble1, p1.y,
           p1.x - p1.w, p1.y,
@@ -1366,13 +1498,27 @@
           p2.x + p2.w, p2.y,
           p2.x - p2.w, p2.y
         );
+        const edge1 = Math.max(2, p1.w * 0.02);
+        const edge2 = Math.max(2, p2.w * 0.02);
+        polygon("rgba(24,31,36,.38)",
+          p1.x - p1.w, p1.y,
+          p1.x - p1.w + edge1, p1.y,
+          p2.x - p2.w + edge2, p2.y,
+          p2.x - p2.w, p2.y
+        );
+        polygon("rgba(24,31,36,.38)",
+          p1.x + p1.w - edge1, p1.y,
+          p1.x + p1.w, p1.y,
+          p2.x + p2.w, p2.y,
+          p2.x + p2.w - edge2, p2.y
+        );
 
         if (alternating) {
           for (let lane = 1; lane < 3; lane += 1) {
             const laneX1 = lerp(p1.x - p1.w, p1.x + p1.w, lane / 3);
             const laneX2 = lerp(p2.x - p2.w, p2.x + p2.w, lane / 3);
-            const marker1 = Math.max(1, p1.w * 0.012);
-            const marker2 = Math.max(1, p2.w * 0.012);
+            const marker1 = Math.max(2, p1.w * 0.014);
+            const marker2 = Math.max(2, p2.w * 0.014);
             polygon(theme.lane,
               laneX1 - marker1, p1.y,
               laneX1 + marker1, p1.y,
@@ -1429,6 +1575,9 @@
       ctx.rect(-W, -H, W * 2, clip - y);
       ctx.clip();
       if (object.type === "palm") drawPalm(s);
+      if (object.type === "shrub") drawShrub(s, object.variant);
+      if (object.type === "umbrella") drawUmbrella(s, object.variant);
+      if (object.type === "spectators") drawSpectators(s, object.variant);
       if (object.type === "tree") drawTree(s);
       if (object.type === "pine") drawPine(s);
       if (object.type === "rock") drawRock(s, object.variant);
@@ -1446,19 +1595,85 @@
 
     function drawPalm(s) {
       const h = s * 560;
-      ctx.strokeStyle = "#6a4930";
+      ctx.strokeStyle = "#9a6434";
       ctx.lineWidth = Math.max(1, s * 35);
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.quadraticCurveTo(s * 45, -h * 0.55, 0, -h);
       ctx.stroke();
-      ctx.strokeStyle = "#536b3e";
-      ctx.lineWidth = Math.max(1, s * 24);
-      for (let i = 0; i < 7; i += 1) {
-        const a = -Math.PI + i * Math.PI / 6;
+      ctx.strokeStyle = "#1f9b48";
+      ctx.lineWidth = Math.max(1, s * 26);
+      for (let i = 0; i < 9; i += 1) {
+        const a = -Math.PI * 0.96 + i * Math.PI / 7;
         ctx.beginPath();
         ctx.moveTo(0, -h);
-        ctx.quadraticCurveTo(Math.cos(a) * s * 230, -h + Math.sin(a) * s * 95, Math.cos(a) * s * 330, -h + Math.sin(a) * s * 160);
+        ctx.quadraticCurveTo(Math.cos(a) * s * 250, -h + Math.sin(a) * s * 95, Math.cos(a) * s * 360, -h + Math.sin(a) * s * 165);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#e4b55b";
+      ctx.beginPath();
+      ctx.arc(-s * 34, -h + s * 42, s * 19, 0, TAU);
+      ctx.arc(s * 16, -h + s * 58, s * 17, 0, TAU);
+      ctx.fill();
+    }
+
+    function drawShrub(s, variant) {
+      const base = variant % 2 ? "#229a44" : "#35b957";
+      ctx.fillStyle = "rgba(0,0,0,.18)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s * 260, s * 42, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = base;
+      for (let i = 0; i < 6; i += 1) {
+        ctx.beginPath();
+        ctx.arc((i - 2.5) * s * 70, -s * (45 + (i % 2) * 32), s * (72 + (i % 3) * 11), 0, TAU);
+        ctx.fill();
+      }
+      ctx.fillStyle = "#f8e277";
+      for (let i = 0; i < 5; i += 1) {
+        ctx.fillRect((i - 2) * s * 82, -s * (105 + (i % 2) * 24), s * 18, s * 18);
+      }
+    }
+
+    function drawUmbrella(s, variant) {
+      const w = s * 360;
+      const h = s * 290;
+      ctx.strokeStyle = "#76542f";
+      ctx.lineWidth = Math.max(1, s * 18);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -h * 0.96);
+      ctx.stroke();
+      const colorA = variant % 2 ? "#f2413d" : "#1ba7ff";
+      const colorB = variant % 2 ? "#fff4cf" : "#fff7db";
+      polygon(colorA, -w, -h * 0.72, 0, -h * 1.18, w, -h * 0.72);
+      polygon(colorB, -w * 0.48, -h * 0.72, 0, -h * 1.18, w * 0.48, -h * 0.72);
+      ctx.fillStyle = "#ffd66f";
+      ctx.fillRect(-w * 0.55, -s * 22, w * 1.1, s * 22);
+    }
+
+    function drawSpectators(s, variant) {
+      const shirts = ["#ffec58", "#29b8ff", "#f04248", "#ffffff"];
+      ctx.fillStyle = "rgba(0,0,0,.18)";
+      ctx.fillRect(-s * 250, -s * 12, s * 500, s * 18);
+      for (let i = 0; i < 5; i += 1) {
+        const x = (i - 2) * s * 105;
+        const y = -s * (80 + (i % 2) * 12);
+        ctx.fillStyle = "#c98961";
+        ctx.beginPath();
+        ctx.arc(x, y - s * 42, s * 27, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = shirts[(i + variant) % shirts.length];
+        ctx.fillRect(x - s * 28, y - s * 16, s * 56, s * 75);
+        ctx.strokeStyle = "#26323a";
+        ctx.lineWidth = Math.max(1, s * 9);
+        ctx.beginPath();
+        ctx.moveTo(x - s * 50, y + s * 4);
+        ctx.lineTo(x + s * 50, y - s * 18);
+        ctx.moveTo(x - s * 18, y + s * 58);
+        ctx.lineTo(x - s * 36, y + s * 122);
+        ctx.moveTo(x + s * 18, y + s * 58);
+        ctx.lineTo(x + s * 38, y + s * 122);
         ctx.stroke();
       }
     }
@@ -1490,8 +1705,8 @@
     function drawRock(s, variant) {
       const w = s * (250 + variant * 25);
       const h = s * (180 + variant * 20);
-      polygon("#76604a", -w, 0, -w * 0.66, -h * 0.8, -w * 0.12, -h, w * 0.75, -h * 0.55, w, 0);
-      polygon("#967658", -w * 0.66, -h * 0.8, -w * 0.12, -h, w * 0.18, -h * 0.44, -w * 0.22, -h * 0.28);
+      polygon("#9a977d", -w, 0, -w * 0.66, -h * 0.8, -w * 0.12, -h, w * 0.75, -h * 0.55, w, 0);
+      polygon("#c7c0a0", -w * 0.66, -h * 0.8, -w * 0.12, -h, w * 0.18, -h * 0.44, -w * 0.22, -h * 0.28);
     }
 
     function drawCactus(s) {
@@ -1560,12 +1775,13 @@
     function drawSign(s, variant) {
       const w = s * 220;
       const h = s * 120;
-      ctx.fillStyle = "#6b4931";
+      ctx.fillStyle = "#74532f";
       ctx.fillRect(-s * 18, -s * 240, s * 36, s * 240);
-      ctx.fillStyle = variant % 2 ? "#d6b466" : "#e2cf9b";
+      ctx.fillStyle = variant % 2 ? "#21a9f4" : "#fff1b6";
       ctx.fillRect(-w, -s * 340, w * 2, h);
-      ctx.fillStyle = "#6c3c2d";
-      ctx.fillRect(-w * 0.74, -s * 304, w * 1.48, s * 20);
+      ctx.fillStyle = variant % 2 ? "#fff9d6" : "#e23b36";
+      ctx.fillRect(-w * 0.74, -s * 308, w * 1.48, s * 18);
+      ctx.fillRect(-w * 0.42, -s * 276, w * 0.84, s * 15);
     }
 
     function drawSnowpost(s) {
@@ -1676,7 +1892,7 @@
       ctx.fillStyle = "#1c1815";
       ctx.fillRect(-carW * 0.47, -carH * 0.14, carW * 0.15, carH * 0.33);
       ctx.fillRect(carW * 0.32, -carH * 0.14, carW * 0.15, carH * 0.33);
-      polygon("#7e2525",
+      polygon("#9d1724",
         -carW * 0.55, carH * 0.07,
         -carW * 0.48, -carH * 0.48,
         -carW * 0.29, -carH * 0.7,
@@ -1684,15 +1900,17 @@
         carW * 0.48, -carH * 0.48,
         carW * 0.55, carH * 0.07
       );
-      polygon("#b83b32",
+      polygon("#ed2c38",
         -carW * 0.45, -carH * 0.44,
         -carW * 0.25, -carH * 0.78,
         carW * 0.25, -carH * 0.78,
         carW * 0.45, -carH * 0.44
       );
-      ctx.fillStyle = "#2f3532";
+      ctx.fillStyle = "#1f4f68";
       ctx.fillRect(-carW * 0.28, -carH * 0.69, carW * 0.56, carH * 0.18);
-      ctx.strokeStyle = "#d0aa77";
+      ctx.fillStyle = "#ff6c62";
+      ctx.fillRect(-carW * 0.38, -carH * 0.41, carW * 0.76, carH * 0.06);
+      ctx.strokeStyle = "#fff1c8";
       ctx.lineWidth = Math.max(2, carW * 0.018);
       ctx.beginPath();
       ctx.moveTo(-carW * 0.34, -carH * 0.5);
@@ -1702,10 +1920,10 @@
       ctx.stroke();
       drawPassenger(-carW * 0.13, -carH * 0.69, carW * 0.075, "#6b3928", "#d29b68");
       drawPassenger(carW * 0.14, -carH * 0.69, carW * 0.075, "#d1aa65", "#c98d64");
-      ctx.fillStyle = "#f1c06e";
+      ctx.fillStyle = "#fff6b0";
       ctx.fillRect(-carW * 0.43, -carH * 0.27, carW * 0.14, carH * 0.11);
       ctx.fillRect(carW * 0.29, -carH * 0.27, carW * 0.14, carH * 0.11);
-      ctx.fillStyle = "#711d20";
+      ctx.fillStyle = "#7c101b";
       ctx.fillRect(-carW * 0.44, -carH * 0.08, carW * 0.15, carH * 0.09);
       ctx.fillRect(carW * 0.29, -carH * 0.08, carW * 0.15, carH * 0.09);
       ctx.fillStyle = "#d7c39b";

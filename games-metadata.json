@@ -4797,7 +4797,7 @@
           "model": "GPT 5.5",
           "modelId": "gpt-5-5",
           "date": "2026-06-05",
-          "linesOfCode": 1937,
+          "linesOfCode": 2155,
           "path": "/games/coastal-rush-86/gpt-5-5/index.html",
           "features": [
             "sound",
