@@ -4,6 +4,7 @@ export const MODEL_COLORS: Record<string, string> = {
   "gpt-5-4-mini": "#74aa9c",
   "gpt-5-5": "#37f6e7",
   "opus-4-6": "#6366f1",
+  "opus-4-8": "#8b5cf6",
   "gemini-3-1-pro": "#4285f4",
   "gemma-4-12b": "#f59e0b",
   "qwen-3-6-27b": "#b86cff",
