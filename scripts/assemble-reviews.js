@@ -21,6 +21,7 @@ if (!reviewsDir) {
 
 const REVIEW_FILES = [
   "reviews-opus-4-6.json",
+  "reviews-opus-4-8.json",
   "reviews-sonnet-4-6.json",
   "reviews-gpt-5-4.json",
   "reviews-gpt-5-4-mini.json",
@@ -98,6 +99,7 @@ for (const game of metadata.games) {
 // Model ID to display name mapping
 const MODEL_NAMES = {
   "opus-4-6": "Claude Opus 4.6",
+  "opus-4-8": "Claude Opus 4.8",
   "sonnet-4-6": "Claude Sonnet 4.6",
   "gpt-5-4": "GPT 5.4",
   "gpt-5-4-mini": "GPT 5.4 Mini",

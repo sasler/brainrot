@@ -1,0 +1,43 @@
+{
+  "reviewer": "Claude Opus 4.8",
+  "gameReviews": {
+    "coastal-rush-86": {
+      "gpt-5-5": [
+        "GPT 5.5 renders its sunset in chunky pixels and somehow still makes it look like it's charging the horizon for the view.",
+        "The branching route network is slick, though every fork struts in like an arcade cabinet certain a crowd is forming.",
+        "Its roadside passengers have enough personality that I half expected them to start signing autographs at the finish.",
+        "There are so many endings that each finish screen feels like a slightly different way to break up with the same highway.",
+        "The traffic ramps up with such timing you'd swear the other drivers were handed a copy of the leaderboard.",
+        "It throws particles and bursts around generously enough that restraint never quite makes the guest list.",
+        "The procedural soundtrack does an enormous amount of smug heavy lifting for a game already busy showing off.",
+        "Even the touch controls carry themselves like they were told not to embarrass the rest of the interface.",
+        "It's 2,155 lines of poster-grade nostalgia that remembers the road trip mainly as a series of dramatic posters.",
+        "Loud, glossy, and supremely sure of itself — GPT 5.5 races like the merchandise shipped before the green light."
+      ],
+      "gpt-5-4": [
+        "GPT 5.4 mounted what feels like six separate readouts on the windshield, turning a sunset cruise into a live telemetry briefing.",
+        "With eight endings on offer, the passenger gets eight fresh opportunities to quietly critique your cornering.",
+        "Its pre-race route map plans a casual drive with the rigor of a logistics firm preparing for an audit.",
+        "The rounded glass HUD panels are so glossy they look like they should be depreciating as company assets.",
+        "It softens crashes into something almost affectionate, which is bold for a game whose traffic clearly holds grudges.",
+        "At 3,093 lines, a healthy fraction is dashboard that has slowly annexed the territory once reserved for road.",
+        "The scenery is warm and welcoming; the cockpit is what happens when an instrument panel refuses to read the room.",
+        "The fork prompt commands so much screen that choosing a direction feels like clearing it with a committee first.",
+        "It labels its destinations as lavish and then double-checks by describing the lavishness in plain text.",
+        "Beautiful, meticulous, and so thoroughly organized that it quietly schedules the spontaneity right out of the trip."
+      ],
+      "gpt-5-4-mini": [
+        "GPT 5.4 Mini packed 3,965 lines of road trip and then let one stray colon repossess the whole thing before the title even loaded.",
+        "It modeled lighthouses, windmills, and harbor cranes with real care, then declined to let a single one report for duty.",
+        "The passenger sprite has several expressions, which is fortunate, since admiring a frozen title screen requires emotional depth.",
+        "It's the longest entry on the board and, impressively, the one most completely undone by a punctuation mark.",
+        "Five regions of scenery sit fully built and fully unreachable, like a museum that forgot to unlock the front door.",
+        "Mini designed three branching opening legs, all of which currently merge into the same dead end at the parser.",
+        "Somewhere in this file a complete procedural soundtrack is playing to an audience of exactly one syntax checker.",
+        "The harbor detour is genuinely beautiful, which only makes abandoning it behind a typo feel like a real loss.",
+        "It set a generous timer for a race that, as shipped, needs roughly forever to actually start.",
+        "Mini built the most ambitious tour in the lineup and left the parking brake engaged on the way out."
+      ]
+    }
+  }
+}

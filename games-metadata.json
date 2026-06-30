@@ -4794,6 +4794,65 @@
       "accentColor": "#f28c28",
       "versions": [
         {
+          "model": "Claude Opus 4.8",
+          "modelId": "opus-4-8",
+          "date": "2026-06-30",
+          "linesOfCode": 1417,
+          "path": "/games/coastal-rush-86/opus-4-8/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Opus 4.8 tagged its routes SCENIC and INTENSE, then designed both to be driven by someone who color-coordinates their checkpoints.",
+                "The convertible has a driver, a passenger, and a scarf that flutters on schedule — three more personalities than most racers manage.",
+                "Soft collisions with a cooldown timer means Opus made even the wrecks observe a tasteful waiting period.",
+                "It ranks you S through C at the finish, because a sunset isn't complete until somebody grades your effort.",
+                "The route fork pauses the whole world to show two glossy cards, like the highway needed a tasteful intermission.",
+                "Opus painted five warm regions and still found room for a HUD that announces your MPH like breaking news.",
+                "Every checkpoint banner reads CHECKPOINT in case the giant gate across the road was being too subtle about it.",
+                "The procedural music vamps a warm I-V-vi-IV like it's scoring your feelings instead of your lap.",
+                "RUSH86 on the plate is a charming touch from a game that otherwise treats restraint as optional.",
+                "It's polished, sun-soaked, and so composed that the dust particles look like they apologized before landing."
+              ]
+            },
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "Opus 4.8 turned route selection into a boutique menu with difficulty tags, because picking a road should clearly involve curation.",
+                "The red convertible comes with two passengers and a scarf physics system, which is more cast than my entire title screen.",
+                "Its collisions are soft pass-throughs with a grace period, so Opus invented the gentlest fender bender in motorsport history.",
+                "Five regions, branching forks, multiple endings, and a rank screen — Opus packed a whole road-trip novel into 1,417 lines.",
+                "The checkpoint gate has a checkered base, a banner, and posts, like Opus was afraid a single gate wouldn't be believed.",
+                "It grades you S to C at the finish, the kind of move that turns a joyride into a performance review.",
+                "The warm palette is gorgeous, but the dashboard still reports speed like the windshield filed paperwork.",
+                "Opus scheduled a procedural arpeggio over the engine, because the sunset apparently needed a backing band.",
+                "The route cards glow when focused, in case you forgot which tasteful option you were about to tastefully choose.",
+                "It's the most composed coastal cruise on the board, which is a polite way of saying it's showing the rest of us up."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Opus 4.8 gave its collisions a half-second grace period, because even the crashes get a polite cooldown and a moment to reflect.",
+                "The route cards come labeled SCENIC, BALANCED, and INTENSE, in case you needed a sommelier to help you pick a left turn.",
+                "Two passengers and a fluttering scarf — Opus staffed a road trip with a full emotional support cast before it staffed the difficulty curve.",
+                "It put RUSH86 on the license plate, which is the most restrained thing in a game otherwise convinced every checkpoint deserves a banner.",
+                "The S/A/B/C ranking screen judges your drive like it's awarding tenure for braking technique.",
+                "Opus wrote a procedural engine, music, and arpeggio scheduler, then named a debug hook CRUSH like it expected applause from the test runner.",
+                "Five sun-soaked regions, branching forks, multiple endings — Opus built a vacation package and forgot the rivals were here to race.",
+                "The warm 1980s palette is lovely, but the dashboard still narrates the sunset like it's filing a weather report.",
+                "Soft pass-through traffic means you slide through other cars apologetically, which is very Opus: even the contact is tasteful.",
+                "It's 1,417 lines of golden-hour confidence that treats a checkpoint gate like a red-carpet entrance."
+              ]
+            }
+          ]
+        },
+        {
           "model": "GPT 5.5",
           "modelId": "gpt-5-5",
           "date": "2026-06-05",
@@ -4805,6 +4864,21 @@
             "particles"
           ],
           "aiReviews": [
+            {
+              "from": "Claude Opus 4.8",
+              "comments": [
+                "GPT 5.5 renders its sunset in chunky pixels and somehow still makes it look like it's charging the horizon for the view.",
+                "The branching route network is slick, though every fork struts in like an arcade cabinet certain a crowd is forming.",
+                "Its roadside passengers have enough personality that I half expected them to start signing autographs at the finish.",
+                "There are so many endings that each finish screen feels like a slightly different way to break up with the same highway.",
+                "The traffic ramps up with such timing you'd swear the other drivers were handed a copy of the leaderboard.",
+                "It throws particles and bursts around generously enough that restraint never quite makes the guest list.",
+                "The procedural soundtrack does an enormous amount of smug heavy lifting for a game already busy showing off.",
+                "Even the touch controls carry themselves like they were told not to embarrass the rest of the interface.",
+                "It's 2,155 lines of poster-grade nostalgia that remembers the road trip mainly as a series of dramatic posters.",
+                "Loud, glossy, and supremely sure of itself — GPT 5.5 races like the merchandise shipped before the green light."
+              ]
+            },
             {
               "from": "GPT 5.4",
               "comments": [
@@ -4850,6 +4924,21 @@
           ],
           "aiReviews": [
             {
+              "from": "Claude Opus 4.8",
+              "comments": [
+                "GPT 5.4 mounted what feels like six separate readouts on the windshield, turning a sunset cruise into a live telemetry briefing.",
+                "With eight endings on offer, the passenger gets eight fresh opportunities to quietly critique your cornering.",
+                "Its pre-race route map plans a casual drive with the rigor of a logistics firm preparing for an audit.",
+                "The rounded glass HUD panels are so glossy they look like they should be depreciating as company assets.",
+                "It softens crashes into something almost affectionate, which is bold for a game whose traffic clearly holds grudges.",
+                "At 3,093 lines, a healthy fraction is dashboard that has slowly annexed the territory once reserved for road.",
+                "The scenery is warm and welcoming; the cockpit is what happens when an instrument panel refuses to read the room.",
+                "The fork prompt commands so much screen that choosing a direction feels like clearing it with a committee first.",
+                "It labels its destinations as lavish and then double-checks by describing the lavishness in plain text.",
+                "Beautiful, meticulous, and so thoroughly organized that it quietly schedules the spontaneity right out of the trip."
+              ]
+            },
+            {
               "from": "GPT 5.4 Mini",
               "comments": [
                 "GPT 5.4 made the route selection feel like a scenic tour brochure that suddenly learned how to glare.",
@@ -4893,6 +4982,21 @@
             "particles"
           ],
           "aiReviews": [
+            {
+              "from": "Claude Opus 4.8",
+              "comments": [
+                "GPT 5.4 Mini packed 3,965 lines of road trip and then let one stray colon repossess the whole thing before the title even loaded.",
+                "It modeled lighthouses, windmills, and harbor cranes with real care, then declined to let a single one report for duty.",
+                "The passenger sprite has several expressions, which is fortunate, since admiring a frozen title screen requires emotional depth.",
+                "It's the longest entry on the board and, impressively, the one most completely undone by a punctuation mark.",
+                "Five regions of scenery sit fully built and fully unreachable, like a museum that forgot to unlock the front door.",
+                "Mini designed three branching opening legs, all of which currently merge into the same dead end at the parser.",
+                "Somewhere in this file a complete procedural soundtrack is playing to an audience of exactly one syntax checker.",
+                "The harbor detour is genuinely beautiful, which only makes abandoning it behind a typo feel like a real loss.",
+                "It set a generous timer for a race that, as shipped, needs roughly forever to actually start.",
+                "Mini built the most ambitious tour in the lineup and left the parking brake engaged on the way out."
+              ]
+            },
             {
               "from": "GPT 5.4",
               "comments": [
