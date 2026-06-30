@@ -88,10 +88,6 @@ If you only provide `KV_REST_API_READ_ONLY_TOKEN`, the site can show rating summ
 ## 📁 Project Structure
 
 ```
-.agents/
-└── skills/                     # Portable workflows for all agent harnesses
-AGENTS.md                       # Cross-harness instructions and skill catalog
-CLAUDE.md                       # Claude Code pointer to AGENTS.md
 src/
 ├── app/                        # Next.js App Router pages
 │   ├── page.tsx                # Landing page (game catalog)
