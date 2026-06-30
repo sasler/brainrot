@@ -146,7 +146,13 @@ test.describe("Gameplay-first layout regressions", () => {
     await page.locator("#primaryButton").click();
     await page.waitForTimeout(1900);
 
-    await page.keyboard.press("ArrowUp");
+    await page.evaluate(() => {
+      player.x = tileCenter(12);
+      player.y = tileCenter(20);
+      player.dir = DIR.up;
+      player.wanted = DIR.up;
+      player.decisionTile = undefined;
+    });
     await expect.poll(() => page.evaluate(() => player.dir.name)).toBe("none");
 
     const stopped = await page.evaluate(() => ({ x: player.x, y: player.y }));
