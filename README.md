@@ -31,7 +31,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | Model | Snake | Minesweeper | Tetris | Reversi | Breakout | 2048 | Endless Runner | Marble Madness | 3D Maze | Mini Golf 3D | Tile Matching | Space Invaders | Pac-Man | Sudoku | Neon Horizon Racer | Coastal Rush '86 |
 |-------|-------|-------------|--------|---------|----------|------|----------------|----------------|---------|--------------|---------------|----------------|---------|--------|---------------------|------------------|
 | Claude Opus 4.6 | 852 lines | 1,009 lines | 1,166 lines | 1,467 lines | 1,133 lines | 984 lines | 1,092 lines | 1,101 lines | 1,162 lines | 1,347 lines | 1,820 lines | 1,547 lines | N/A | N/A | N/A | N/A |
-| Claude Opus 4.8 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,422 lines |
+| Claude Opus 4.8 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,421 lines |
 | Claude Sonnet 4.6 | 828 lines | 809 lines | 973 lines | 1,167 lines | 900 lines | 727 lines | 1,108 lines | 1,384 lines | 1,313 lines | 1,362 lines | 1,239 lines | 1,203 lines | 937 lines | 814 lines | 1,450 lines | N/A |
 | GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,401 lines | 2,852 lines | 3,116 lines | 2,135 lines | 3,371 lines | N/A | 3,093 lines |
 | GPT 5.5 | N/A | N/A | N/A | N/A | N/A | 2,031 lines | 2,369 lines | N/A | N/A | N/A | 2,413 lines | 1,643 lines | 2,058 lines | N/A | 1,398 lines | 2,155 lines |

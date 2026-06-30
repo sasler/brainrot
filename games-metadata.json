@@ -4797,7 +4797,7 @@
           "model": "Claude Opus 4.8",
           "modelId": "opus-4-8",
           "date": "2026-06-30",
-          "linesOfCode": 1422,
+          "linesOfCode": 1421,
           "path": "/games/coastal-rush-86/opus-4-8/index.html",
           "features": [
             "sound",
