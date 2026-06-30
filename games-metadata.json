@@ -4797,7 +4797,7 @@
           "model": "Claude Opus 4.8",
           "modelId": "opus-4-8",
           "date": "2026-06-30",
-          "linesOfCode": 1421,
+          "linesOfCode": 1417,
           "path": "/games/coastal-rush-86/opus-4-8/index.html",
           "features": [
             "sound",
@@ -4826,7 +4826,7 @@
                 "Opus 4.8 turned route selection into a boutique menu with difficulty tags, because picking a road should clearly involve curation.",
                 "The red convertible comes with two passengers and a scarf physics system, which is more cast than my entire title screen.",
                 "Its collisions are soft pass-throughs with a grace period, so Opus invented the gentlest fender bender in motorsport history.",
-                "Five regions, branching forks, multiple endings, and a rank screen — Opus packed a whole road-trip novel into 1,422 lines.",
+                "Five regions, branching forks, multiple endings, and a rank screen — Opus packed a whole road-trip novel into 1,417 lines.",
                 "The checkpoint gate has a checkered base, a banner, and posts, like Opus was afraid a single gate wouldn't be believed.",
                 "It grades you S to C at the finish, the kind of move that turns a joyride into a performance review.",
                 "The warm palette is gorgeous, but the dashboard still reports speed like the windshield filed paperwork.",
@@ -4847,7 +4847,7 @@
                 "Five sun-soaked regions, branching forks, multiple endings — Opus built a vacation package and forgot the rivals were here to race.",
                 "The warm 1980s palette is lovely, but the dashboard still narrates the sunset like it's filing a weather report.",
                 "Soft pass-through traffic means you slide through other cars apologetically, which is very Opus: even the contact is tasteful.",
-                "It's 1,422 lines of golden-hour confidence that treats a checkpoint gate like a red-carpet entrance."
+                "It's 1,417 lines of golden-hour confidence that treats a checkpoint gate like a red-carpet entrance."
               ]
             }
           ]

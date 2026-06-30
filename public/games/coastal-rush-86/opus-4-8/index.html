@@ -602,7 +602,6 @@ function recycleCar(c){
 function updateTraffic(dt){
   for(const c of cars){
     c.z += c.speed*dt;
-    if(c.z > position + 8000) c.z = position + 8000; // keep ahead-ish if needed
     // overtaken (player passed it)
     if(!c.counted && c.z < position + PLAYER_Z - 60){
       c.counted=true; overtakes++; score += 75; Audio.pass();
@@ -618,7 +617,7 @@ function updateTraffic(dt){
 function carOverlap(carOffset, carW){
   const px = playerX;
   const carCenter = carOffset;
-  const half = (carW/ROAD_WIDTH) + 0.42;
+  const half = carW/(2*ROAD_WIDTH) + 0.09 + 0.04;  // car half-width + player half-width + small fairness margin
   return Math.abs(px - carCenter) < half;
 }
 function checkCollisions(dt){
@@ -983,9 +982,12 @@ function renderRoad(){
     // traffic
     for(const c of seg.cars){
       const cp = ((c.z) % SEG_LEN)/SEG_LEN;
-      const scale = seg.p1.screen.scale;
-      const cxp = seg.p1.screen.x + scale * c.offset * ROAD_WIDTH * W/2;
-      drawTrafficCar(c, cxp, seg.p1.screen.y, scale);
+      const p1 = seg.p1.screen, p2 = seg.p2.screen;
+      const scale = p1.scale + (p2.scale - p1.scale) * cp;
+      const yy    = p1.y     + (p2.y     - p1.y)     * cp;
+      const baseX = p1.x     + (p2.x     - p1.x)     * cp;
+      const cxp   = baseX + scale * c.offset * ROAD_WIDTH * W/2;
+      drawTrafficCar(c, cxp, yy, scale);
     }
     seg.cars.length = 0;
   }
@@ -1181,13 +1183,7 @@ function reachCheckpoint(){
   Audio.stopMusic();
 
   legIndex++;
-  if(legIndex >= TOTAL_LEGS-1){
-    // build final leg automatically (no choice) toward a destination
-    const opts = ROUTE_GRAPH[currentTheme];
-    pendingChoices = opts;
-  } else {
-    pendingChoices = ROUTE_GRAPH[currentTheme];
-  }
+  pendingChoices = ROUTE_GRAPH[currentTheme];
   routeFocus = 0;
   showRouteScreen(bonus);
 }
