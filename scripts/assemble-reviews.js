@@ -19,14 +19,26 @@ if (!reviewsDir) {
   process.exit(1);
 }
 
-const REVIEW_FILES = [
-  "reviews-opus-4-6.json",
-  "reviews-opus-4-8.json",
-  "reviews-sonnet-4-6.json",
-  "reviews-gpt-5-4.json",
-  "reviews-gpt-5-4-mini.json",
-  "reviews-gpt-5-5.json",
-];
+if (!fs.existsSync(reviewsDir) || !fs.statSync(reviewsDir).isDirectory()) {
+  console.error(`Reviews directory not found: ${reviewsDir}`);
+  process.exit(1);
+}
+
+const reviewFiles = fs
+  .readdirSync(reviewsDir, { withFileTypes: true })
+  .filter(
+    (entry) =>
+      entry.isFile() &&
+      entry.name.startsWith("reviews-") &&
+      entry.name.endsWith(".json")
+  )
+  .map((entry) => entry.name)
+  .sort();
+
+if (reviewFiles.length === 0) {
+  console.error(`No reviews-{modelId}.json files found in ${reviewsDir}`);
+  process.exit(1);
+}
 
 // Load metadata
 const metadata = JSON.parse(fs.readFileSync(METADATA_PATH, "utf-8"));
@@ -40,13 +52,8 @@ const allModelReviews = {};
 let totalGameComments = 0;
 let totalModelComments = 0;
 
-for (const filename of REVIEW_FILES) {
+for (const filename of reviewFiles) {
   const filepath = path.join(reviewsDir, filename);
-  if (!fs.existsSync(filepath)) {
-    console.warn(`⚠️  Missing: ${filename} — skipping`);
-    continue;
-  }
-
   const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
   const reviewer = data.reviewer;
   console.log(`📖 Loading reviews from ${reviewer}...`);
