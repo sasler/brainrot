@@ -1,0 +1,55 @@
+{
+  "reviewer": "Claude Fable 5",
+  "gameReviews": {
+    "coastal-rush-86": {
+      "opus-4-8": [
+        "Opus paints a gorgeous sunset and then interrupts it with a DOM modal every ninety seconds — nothing says 1986 arcade like filling out a form to turn left.",
+        "The spec asked for collisions and spins; Opus interpreted both as a gentle sideways apology.",
+        "Its city towers re-roll their window lights every single frame, which is either a rendering bug or the world's fastest landlord.",
+        "Five endings and no route map — you discover where you're going the way you discover roadworks.",
+        "The road fades romantically into fog while palm trees materialize out of thin air, because fogging sprites was apparently someone else's job.",
+        "The soundtrack stops dead at every fork so you can contemplate your route in awkward silence.",
+        "Traffic never changes lanes; the entire highway has tenure.",
+        "1,417 lines is a lovely haiku, but this contest called for a novel.",
+        "The scarf flutter on the passenger is genuinely charming, which makes it stranger that the car cannot spin, skid, or do anything else a car does.",
+        "Beautiful warm palette, shame the route selection UI was borrowed from a tax filing portal."
+      ],
+      "gpt-5-5": [
+        "The brief said warm 1980s sunset; GPT 5.5 delivered a Windows default wallpaper.",
+        "The fork screen pauses the timer indefinitely — less a route choice, more a save state.",
+        "The end screen proudly reports PASSES: 0 every run, which is at least honest about its stat tracking.",
+        "No fog anywhere, so the scenery pops in at the horizon like it missed its cue.",
+        "The soundtrack is one brave square wave doing its very best.",
+        "Its stages loop with modulo arithmetic, making déjà vu a core game mechanic.",
+        "Its idea of golden hour is hex code #1188f2.",
+        "The traffic AI genuinely drifts between lanes — the cars received more art direction than the sky.",
+        "Checkpoints are invisible distance triggers; you celebrate by squinting at the timer.",
+        "It renders scanlines over a palette that has never once seen a CRT."
+      ],
+      "gpt-5-4": [
+        "Six HUD readouts plus a live status joke ticker — the road is a supporting character in its own racing game.",
+        "The title screen advertises eight endings; the code politely ships four.",
+        "There is technically music, at gain 0.01, performing nightly for an audience of nobody.",
+        "The car is hard-coded at 140 pixels wide: a monster truck on a phone, a Hot Wheels on a monitor.",
+        "It has the only route map in the field and rebuilds it from scratch every time an overlay opens.",
+        "Every stage ends in a full-stop modal, because nothing sustains adrenaline like reading.",
+        "3,093 lines and the frame clamp still turns lag into a slow-motion replay.",
+        "Hesitate at a fork and it chooses for you — helicopter parenting as game design.",
+        "The status bar heckles you mid-race, which is bold for a game with no fog and pop-in scenery.",
+        "It calls the checkpoint screen a tour, which is accurate, because the game keeps stopping to rest."
+      ],
+      "gpt-5-4-mini": [
+        "3,965 lines of code and the canvas still gets squashed into funhouse-mirror proportions on a phone.",
+        "Hold the gas and the game gently decays you back to the chapter's speed target — an arcade racer with a hall monitor.",
+        "Brake while steering above speed 140 and you spin instantly; the punishment for using both pedals is the tutorial.",
+        "It declares SAVE_KEY and never uses it — even the constants have abandonment issues.",
+        "Ten chapters, weather, and a damage model, all viewed through a stretched 960 by 540 letterbox.",
+        "Hesitate at a fork and it auto-picks option one, which is also how it approached its rendering architecture.",
+        "The audio bus architecture is genuinely superb, wasted on a renderer that squashes the sunset into an ellipse.",
+        "A setInterval pokes the DOM every 500 milliseconds like it is refreshing its email.",
+        "Top speed is 240 but the game only lets you borrow it briefly, with interest.",
+        "It seats two passengers this time — witnesses to the aspect ratio."
+      ]
+    }
+  }
+}

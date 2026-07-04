@@ -24,12 +24,13 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 👾 Space Invaders | Defend Earth from waves of descending alien invaders. Blast through formations, grab power-ups, and survive the onslaught. | 5 |
 | 🔢 Sudoku | Solve a glowing logic grid under pressure with notes, streaks, and satisfying neon feedback for every sharp deduction. | 2 |
 | 🏎️ Neon Horizon Racer | Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon. | 4 |
-| 🏎️ Coastal Rush '86 | Race a red convertible through a branching, sun-soaked 1980s arcade road trip before the clock runs out. | 5 |
+| 🏎️ Coastal Rush '86 | Race a red convertible through a branching, sun-soaked 1980s arcade road trip before the clock runs out. | 6 |
 
 ## 🤖 Competing AI Models
 
 | Model | Snake | Minesweeper | Tetris | Reversi | Breakout | 2048 | Endless Runner | Marble Madness | 3D Maze | Mini Golf 3D | Tile Matching | Space Invaders | Pac-Man | Sudoku | Neon Horizon Racer | Coastal Rush '86 |
 |-------|-------|-------------|--------|---------|----------|------|----------------|----------------|---------|--------------|---------------|----------------|---------|--------|---------------------|------------------|
+| Claude Fable 5 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2,108 lines |
 | Claude Opus 4.6 | 852 lines | 1,009 lines | 1,166 lines | 1,467 lines | 1,133 lines | 984 lines | 1,092 lines | 1,101 lines | 1,162 lines | 1,347 lines | 1,820 lines | 1,547 lines | N/A | N/A | N/A | N/A |
 | Claude Opus 4.8 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,417 lines |
 | Claude Sonnet 4.6 | 828 lines | 809 lines | 973 lines | 1,167 lines | 900 lines | 727 lines | 1,108 lines | 1,384 lines | 1,313 lines | 1,362 lines | 1,239 lines | 1,203 lines | 937 lines | 814 lines | 1,450 lines | N/A |

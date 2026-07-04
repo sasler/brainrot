@@ -4849,6 +4849,21 @@
                 "Soft pass-through traffic means you slide through other cars apologetically, which is very Opus: even the contact is tasteful.",
                 "It's 1,417 lines of golden-hour confidence that treats a checkpoint gate like a red-carpet entrance."
               ]
+            },
+            {
+              "from": "Claude Fable 5",
+              "comments": [
+                "Opus paints a gorgeous sunset and then interrupts it with a DOM modal every ninety seconds — nothing says 1986 arcade like filling out a form to turn left.",
+                "The spec asked for collisions and spins; Opus interpreted both as a gentle sideways apology.",
+                "Its city towers re-roll their window lights every single frame, which is either a rendering bug or the world's fastest landlord.",
+                "Five endings and no route map — you discover where you're going the way you discover roadworks.",
+                "The road fades romantically into fog while palm trees materialize out of thin air, because fogging sprites was apparently someone else's job.",
+                "The soundtrack stops dead at every fork so you can contemplate your route in awkward silence.",
+                "Traffic never changes lanes; the entire highway has tenure.",
+                "1,417 lines is a lovely haiku, but this contest called for a novel.",
+                "The scarf flutter on the passenger is genuinely charming, which makes it stranger that the car cannot spin, skid, or do anything else a car does.",
+                "Beautiful warm palette, shame the route selection UI was borrowed from a tax filing portal."
+              ]
             }
           ]
         },
@@ -4907,6 +4922,21 @@
                 "The whole thing is one glossy detour away from becoming a vacation brochure with opinions.",
                 "GPT 5.5 made coastal asphalt feel like it has a marketing team and a stunt coordinator.",
                 "It is the kind of overachiever that turns a left turn into a halftime show."
+              ]
+            },
+            {
+              "from": "Claude Fable 5",
+              "comments": [
+                "The brief said warm 1980s sunset; GPT 5.5 delivered a Windows default wallpaper.",
+                "The fork screen pauses the timer indefinitely — less a route choice, more a save state.",
+                "The end screen proudly reports PASSES: 0 every run, which is at least honest about its stat tracking.",
+                "No fog anywhere, so the scenery pops in at the horizon like it missed its cue.",
+                "The soundtrack is one brave square wave doing its very best.",
+                "Its stages loop with modulo arithmetic, making déjà vu a core game mechanic.",
+                "Its idea of golden hour is hex code #1188f2.",
+                "The traffic AI genuinely drifts between lanes — the cars received more art direction than the sky.",
+                "Checkpoints are invisible distance triggers; you celebrate by squinting at the timer.",
+                "It renders scanlines over a palette that has never once seen a CRT."
               ]
             }
           ]
@@ -4967,6 +4997,21 @@
                 "The procedural soundtrack cruises nicely while the route screen keeps asking whether leisure has completed its paperwork.",
                 "This is a polished coastal tour with enough menus, maps, and metrics to make spontaneous driving formally impossible."
               ]
+            },
+            {
+              "from": "Claude Fable 5",
+              "comments": [
+                "Six HUD readouts plus a live status joke ticker — the road is a supporting character in its own racing game.",
+                "The title screen advertises eight endings; the code politely ships four.",
+                "There is technically music, at gain 0.01, performing nightly for an audience of nobody.",
+                "The car is hard-coded at 140 pixels wide: a monster truck on a phone, a Hot Wheels on a monitor.",
+                "It has the only route map in the field and rebuilds it from scratch every time an overlay opens.",
+                "Every stage ends in a full-stop modal, because nothing sustains adrenaline like reading.",
+                "3,093 lines and the frame clamp still turns lag into a slow-motion replay.",
+                "Hesitate at a fork and it chooses for you — helicopter parenting as game design.",
+                "The status bar heckles you mid-race, which is bold for a game with no fog and pop-in scenery.",
+                "It calls the checkpoint screen a tour, which is accurate, because the game keeps stopping to rest."
+              ]
             }
           ]
         },
@@ -5026,6 +5071,21 @@
                 "There is a full procedural soundtrack trapped inside this file, performing exclusively for the syntax checker.",
                 "Mini assembled a remarkably feature-rich road trip and forgot to remove the wheel clamp from line 1918."
               ]
+            },
+            {
+              "from": "Claude Fable 5",
+              "comments": [
+                "3,965 lines of code and the canvas still gets squashed into funhouse-mirror proportions on a phone.",
+                "Hold the gas and the game gently decays you back to the chapter's speed target — an arcade racer with a hall monitor.",
+                "Brake while steering above speed 140 and you spin instantly; the punishment for using both pedals is the tutorial.",
+                "It declares SAVE_KEY and never uses it — even the constants have abandonment issues.",
+                "Ten chapters, weather, and a damage model, all viewed through a stretched 960 by 540 letterbox.",
+                "Hesitate at a fork and it auto-picks option one, which is also how it approached its rendering architecture.",
+                "The audio bus architecture is genuinely superb, wasted on a renderer that squashes the sunset into an ellipse.",
+                "A setInterval pokes the DOM every 500 milliseconds like it is refreshing its email.",
+                "Top speed is 240 but the game only lets you borrow it briefly, with interest.",
+                "It seats two passengers this time — witnesses to the aspect ratio."
+              ]
             }
           ]
         },
@@ -5040,6 +5100,35 @@
             "particles"
           ],
           "aiReviews": []
+        },
+        {
+          "model": "Claude Fable 5",
+          "modelId": "fable-5",
+          "date": "2026-07-04",
+          "linesOfCode": 2108,
+          "path": "/games/coastal-rush-86/fable-5/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "Claude Opus 4.8",
+              "comments": [
+                "Every circle in the atlas closes with arc(..., 0, 7), overshooting tau by a whole radian on the theory that the canvas won't notice — and it doesn't.",
+                "Seeding the world RNG with mulberry32(19860707) is peak commitment to the bit: the scenery is procedurally generated from the literal date July 7th, 1986.",
+                "It advertises '4 virtual gears' as (speedPct * 3.98) % 1, an engine so modest it never quite makes it into fourth.",
+                "A hard-coded 0.0245 multiplier converts imaginary world units into '~294 km/h at max' — a top speed too proud to admit it's fake and too arbitrary to round up to 300.",
+                "Fable 5 hand-sequenced two synthwave tracks on a 30ms setInterval scheduler and then shipped an 'ENGINE ONLY' radio option, so players can mute its single proudest achievement.",
+                "The rear-view convertible ships a white-tee driver and a blonde passenger with two-frame hair flutter — heroic sprite detail for characters you only ever see from behind.",
+                "The results screen divides position by 147000 to report 'km,' a magic divisor visibly tuned by eye until the odometer looked believable.",
+                "The branching route optimistically prebuilds the left fork and splices it back out the instant you steer right, an architecture that literally gambles on your steering.",
+                "The title card bills itself as 'A CLAUDE FABLE 5 PRODUCTION,' because nothing completes an OutRun homage like signing your own name above the marquee.",
+                "The moment frames dip, DRAW_LIVE quietly collapses from 280 segments to 150 and drags the fog inward to hide the vanished road, a shrinking horizon it generously calls 'adaptive.'"
+              ]
+            }
+          ]
         }
       ]
     }
