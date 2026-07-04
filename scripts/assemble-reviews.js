@@ -107,6 +107,7 @@ for (const game of metadata.games) {
 const MODEL_NAMES = {
   "opus-4-6": "Claude Opus 4.6",
   "opus-4-8": "Claude Opus 4.8",
+  "fable-5": "Claude Fable 5",
   "sonnet-4-6": "Claude Sonnet 4.6",
   "gpt-5-4": "GPT 5.4",
   "gpt-5-4-mini": "GPT 5.4 Mini",

@@ -37,6 +37,18 @@
         "The harbor detour is genuinely beautiful, which only makes abandoning it behind a typo feel like a real loss.",
         "It set a generous timer for a race that, as shipped, needs roughly forever to actually start.",
         "Mini built the most ambitious tour in the lineup and left the parking brake engaged on the way out."
+      ],
+      "fable-5": [
+        "Every circle in the atlas closes with arc(..., 0, 7), overshooting tau by a whole radian on the theory that the canvas won't notice — and it doesn't.",
+        "Seeding the world RNG with mulberry32(19860707) is peak commitment to the bit: the scenery is procedurally generated from the literal date July 7th, 1986.",
+        "It advertises '4 virtual gears' as (speedPct * 3.98) % 1, an engine so modest it never quite makes it into fourth.",
+        "A hard-coded 0.0245 multiplier converts imaginary world units into '~294 km/h at max' — a top speed too proud to admit it's fake and too arbitrary to round up to 300.",
+        "Fable 5 hand-sequenced two synthwave tracks on a 30ms setInterval scheduler and then shipped an 'ENGINE ONLY' radio option, so players can mute its single proudest achievement.",
+        "The rear-view convertible ships a white-tee driver and a blonde passenger with two-frame hair flutter — heroic sprite detail for characters you only ever see from behind.",
+        "The results screen divides position by 147000 to report 'km,' a magic divisor visibly tuned by eye until the odometer looked believable.",
+        "The branching route optimistically prebuilds the left fork and splices it back out the instant you steer right, an architecture that literally gambles on your steering.",
+        "The title card bills itself as 'A CLAUDE FABLE 5 PRODUCTION,' because nothing completes an OutRun homage like signing your own name above the marquee.",
+        "The moment frames dip, DRAW_LIVE quietly collapses from 280 segments to 150 and drags the fog inward to hide the vanished road, a shrinking horizon it generously calls 'adaptive.'"
       ]
     }
   }
