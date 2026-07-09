@@ -807,6 +807,8 @@
       z: CELL,
       yaw: 0,
       pitch: 0,
+      vx: 0,
+      vz: 0,
       stepTimer: 0
     };
 
@@ -868,14 +870,16 @@
       let wallCount = 0;
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] === 1) wallCount++;
 
-      const wallGeo = new THREE.BoxGeometry(CELL, WALL_HEIGHT, CELL);
+      const wallGeo = new THREE.BoxGeometry(CELL - 0.04, WALL_HEIGHT - 0.04, CELL - 0.04);
       const wallMat = new THREE.MeshStandardMaterial({ color: 0x2a3550, emissive: 0x16335c, emissiveIntensity: 1.0, roughness: 0.5, metalness: 0.3 });
       const walls = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
+      walls.frustumCulled = false;
 
-      // Neon top caps (glow regardless of lighting)
+      // Neon top caps (glow regardless of lighting) — lifted clear of the ceiling to avoid z-fighting
       const capGeo = new THREE.BoxGeometry(CELL * 0.98, 0.16, CELL * 0.98);
       const capMat = new THREE.MeshBasicMaterial({ color: 0x00ffd9, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending });
       const caps = new THREE.InstancedMesh(capGeo, capMat, wallCount);
+      caps.frustumCulled = false;
 
       const dummy = new THREE.Object3D();
       let i = 0;
@@ -884,10 +888,10 @@
           if (grid[y][x] !== 1) continue;
           const wx = x * CELL;
           const wz = y * CELL;
-          dummy.position.set(wx, WALL_HEIGHT / 2, wz);
+          dummy.position.set(wx, (WALL_HEIGHT - 0.04) / 2, wz);
           dummy.updateMatrix();
           walls.setMatrixAt(i, dummy.matrix);
-          dummy.position.set(wx, WALL_HEIGHT - 0.08, wz);
+          dummy.position.set(wx, WALL_HEIGHT - 0.22, wz);
           dummy.updateMatrix();
           caps.setMatrixAt(i, dummy.matrix);
           i++;
@@ -1270,6 +1274,10 @@
 
     function endGame(won) {
       state = won ? "won" : "lost";
+      // Release pointer lock so the cursor returns and the result buttons are clickable
+      if (document.pointerLockElement === canvas && document.exitPointerLock) {
+        document.exitPointerLock();
+      }
       audio.stopHum();
       if (won) {
         const timeBonus = Math.round(timeLeft * 10);
@@ -1335,10 +1343,20 @@
       const dirZ = (-cosY) * fwd + (-sinY) * str;
 
       const moveLen = Math.hypot(dirX, dirZ);
+      let tx = 0, tz = 0;
       if (moveLen > 0.0001) {
-        const step = speed * dt;
-        const nx = player.x + (dirX / moveLen) * step;
-        const nz = player.z + (dirZ / moveLen) * step;
+        tx = (dirX / moveLen) * speed;
+        tz = (dirZ / moveLen) * speed;
+      }
+      // Smooth acceleration / deceleration so motion eases in and out
+      const accel = 12;
+      player.vx += (tx - player.vx) * Math.min(1, accel * dt);
+      player.vz += (tz - player.vz) * Math.min(1, accel * dt);
+
+      const vLen = Math.hypot(player.vx, player.vz);
+      if (vLen > 0.0001) {
+        const nx = player.x + player.vx * dt;
+        const nz = player.z + player.vz * dt;
         if (canBeAt(nx, player.z)) player.x = nx;
         if (canBeAt(player.x, nz)) player.z = nz;
 
