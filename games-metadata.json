@@ -3280,6 +3280,19 @@
               ]
             }
           ]
+        },
+        {
+          "model": "Hy3",
+          "modelId": "hy3",
+          "date": "2026-07-09",
+          "linesOfCode": 1486,
+          "path": "/games/maze-3d/hy3/index.html",
+          "features": [
+            "sound",
+            "3d",
+            "particles"
+          ],
+          "aiReviews": []
         }
       ]
     },
