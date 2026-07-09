@@ -365,7 +365,13 @@ let player, exit, shards=[], hazards=[], particles=[], spores=[], trails=[], pul
 }
 , pointer=false, mouseX=0;
 
-let elapsed=0,limit=0,score=0,combo=0,lastShard=0,best=+sessionStorage.getItem('terraFaultlineBest')||0,shake=0;
+let elapsed=0,limit=0,score=0,combo=0,lastShard=0,best=0,shake=0;
+
+try{
+best=+sessionStorage.getItem('terraFaultlineBest')||0;
+}catch(_){
+// Sandboxed game iframes may use an opaque origin with storage disabled.
+}
 
 let audio=null, drone=null, nextStep=0;
 
@@ -589,7 +595,11 @@ sound('fail');
 ui.rTitle.textContent='THE FAULTLINE CLOSED';
 ui.rTitle.className='result bad'}
 best=Math.max(best,score);
+try{
 sessionStorage.setItem('terraFaultlineBest',best);
+}catch(_){
+// Keep the session score in memory when iframe storage is unavailable.
+}
 ui.best.textContent=best.toLocaleString();
 ui.rTag.textContent=win?'EXPEDITION COMPLETE':'SIGNAL LOST';
 ui.rStats.innerHTML=`SCORE <b>${score.toLocaleString()}</b><br>SHARDS ${shards.filter(s=>!s.alive)} / ${shards.length}<br>EXPEDITION LEVEL ${level}<br>SESSION BEST ${best.toLocaleString()}`;
