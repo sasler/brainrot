@@ -744,8 +744,8 @@
     // Three.js scene setup
     // ---------------------------------------------------------------------
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x04040c);
-    scene.fog = new THREE.Fog(0x04040c, 6, 46);
+    scene.background = new THREE.Color(0x0a0f1e);
+    scene.fog = new THREE.Fog(0x0a1020, 14, 78);
 
     const camera = new THREE.PerspectiveCamera(78, 1, 0.05, 200);
     camera.rotation.order = "YXZ";
@@ -755,16 +755,16 @@
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.35;
+    renderer.toneMappingExposure = 2.1;
     app.appendChild(renderer.domElement);
     const canvas = renderer.domElement;
 
     // Lights
-    const ambient = new THREE.AmbientLight(0x223355, 0.55);
+    const ambient = new THREE.AmbientLight(0x6f8fff, 1.15);
     scene.add(ambient);
-    const hemi = new THREE.HemisphereLight(0x335577, 0x0a0a14, 0.5);
+    const hemi = new THREE.HemisphereLight(0x8fd9ff, 0x2a2440, 1.0);
     scene.add(hemi);
-    const headlamp = new THREE.PointLight(0x9bffe0, 1.5, 22, 1.6);
+    const headlamp = new THREE.PointLight(0x9bffe0, 3.2, 34, 1.4);
     scene.add(headlamp);
 
     // Procedural neon grid floor texture
@@ -845,20 +845,20 @@
       const worldH = H * CELL;
 
       // Floor
-      const floorTex = makeGridTexture("#05060f", "rgba(0,217,255,0.55)", W, H);
+      const floorTex = makeGridTexture("#0c1430", "rgba(0,217,255,0.85)", W, H);
       const floor = new THREE.Mesh(
         new THREE.PlaneGeometry(worldW, worldH),
-        new THREE.MeshStandardMaterial({ map: floorTex, color: 0x223044, emissive: 0x06121f, emissiveIntensity: 0.6, roughness: 0.85, metalness: 0.1 })
+        new THREE.MeshStandardMaterial({ map: floorTex, color: 0x4a6a9c, emissive: 0x12304f, emissiveIntensity: 1.1, roughness: 0.7, metalness: 0.1 })
       );
       floor.rotation.x = -Math.PI / 2;
       floor.position.set((W - 1) * CELL / 2, 0, (H - 1) * CELL / 2);
       levelGroup.add(floor);
 
       // Ceiling
-      const ceilTex = makeGridTexture("#070612", "rgba(255,77,210,0.30)", W, H);
+      const ceilTex = makeGridTexture("#160f2e", "rgba(255,77,210,0.55)", W, H);
       const ceil = new THREE.Mesh(
         new THREE.PlaneGeometry(worldW, worldH),
-        new THREE.MeshStandardMaterial({ map: ceilTex, color: 0x141026, emissive: 0x140a1f, emissiveIntensity: 0.4, roughness: 0.9, metalness: 0.1 })
+        new THREE.MeshStandardMaterial({ map: ceilTex, color: 0x3a2a5c, emissive: 0x2a1840, emissiveIntensity: 0.9, roughness: 0.85, metalness: 0.1 })
       );
       ceil.rotation.x = Math.PI / 2;
       ceil.position.set((W - 1) * CELL / 2, WALL_HEIGHT, (H - 1) * CELL / 2);
@@ -869,7 +869,7 @@
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (grid[y][x] === 1) wallCount++;
 
       const wallGeo = new THREE.BoxGeometry(CELL, WALL_HEIGHT, CELL);
-      const wallMat = new THREE.MeshStandardMaterial({ color: 0x0a0e1c, emissive: 0x0a1830, emissiveIntensity: 0.5, roughness: 0.55, metalness: 0.35 });
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x2a3550, emissive: 0x16335c, emissiveIntensity: 1.0, roughness: 0.5, metalness: 0.3 });
       const walls = new THREE.InstancedMesh(wallGeo, wallMat, wallCount);
 
       // Neon top caps (glow regardless of lighting)
