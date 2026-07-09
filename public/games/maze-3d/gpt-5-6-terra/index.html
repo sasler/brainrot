@@ -602,7 +602,7 @@ sessionStorage.setItem('terraFaultlineBest',best);
 }
 ui.best.textContent=best.toLocaleString();
 ui.rTag.textContent=win?'EXPEDITION COMPLETE':'SIGNAL LOST';
-ui.rStats.innerHTML=`SCORE <b>${score.toLocaleString()}</b><br>SHARDS ${shards.filter(s=>!s.alive)} / ${shards.length}<br>EXPEDITION LEVEL ${level}<br>SESSION BEST ${best.toLocaleString()}`;
+ui.rStats.innerHTML=`SCORE <b>${score.toLocaleString()}</b><br>SHARDS ${shards.filter(s=>!s.alive).length} / ${shards.length}<br>EXPEDITION LEVEL ${level}<br>SESSION BEST ${best.toLocaleString()}`;
 resultScreen.classList.remove('off')}
 
 function update(dt){
@@ -651,6 +651,9 @@ particles=particles.filter(p=>p.life>0);
 trails.forEach(t=>t.life-=dt);
 trails=trails.filter(t=>t.life>0);
 shake=Math.max(0,shake-dt*1.8);
+ui.timer.textContent=fmt(limit-elapsed);
+ui.shards.textContent=shards.filter(s=>!s.alive).length+' / '+shards.length;
+ui.energy.style.width=Math.round(player.energy*100)+'%';
 }
 
 function ray(angle){
