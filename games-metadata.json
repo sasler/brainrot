@@ -437,6 +437,20 @@
             "particles"
           ],
           "aiReviews": []
+        },
+        {
+          "model": "Hy3",
+          "modelId": "hy3",
+          "date": "2026-07-09",
+          "linesOfCode": 1211,
+          "path": "/games/snake/hy3/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles",
+            "powerups"
+          ],
+          "aiReviews": []
         }
       ]
     },
