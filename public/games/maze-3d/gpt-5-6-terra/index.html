@@ -1,0 +1,929 @@
+<!doctype html>
+<!-- Three.js-free renderer: procedural canvas raycaster with native Web Audio -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TERRA//FAULTLINE</title>
+<style>
+:root{
+color-scheme:dark;
+--ink:#02090b;
+--teal:#41f2d0;
+--mint:#baffdf;
+--lava:#ff7149;
+--gold:#ffe189;
+--glass:rgba(2,17,19,.74)}
+
+*{
+box-sizing:border-box}
+html,body{
+margin:0;
+width:100%;
+height:100%;
+overflow:hidden;
+background:var(--ink);
+font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+color:#d9fff7;
+touch-action:none}
+
+#app{
+width:100%;
+height:100%;
+position:relative;
+overflow:hidden;
+background:radial-gradient(circle at 50% 20%,#12312f 0,#061112 38%,#010506 100%)}
+
+canvas{
+display:block;
+width:100%;
+height:100%;
+cursor:crosshair}
+button{
+font:inherit;
+color:inherit;
+cursor:pointer}
+
+.grain{
+position:absolute;
+inset:0;
+pointer-events:none;
+opacity:.16;
+background-image:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.15) 4px);
+mix-blend-mode:soft-light}
+
+#hud{
+position:absolute;
+inset:0;
+pointer-events:none;
+display:none;
+padding:clamp(10px,2vw,24px)}
+#hud.show{
+display:block}
+
+.top{
+display:flex;
+justify-content:space-between;
+gap:10px;
+align-items:flex-start}
+.badge{
+background:var(--glass);
+border:1px solid rgba(96,255,219,.32);
+border-radius:5px;
+padding:8px 10px;
+box-shadow:0 0 22px rgba(37,222,183,.1);
+backdrop-filter:blur(8px);
+font-size:11px;
+letter-spacing:.1em}
+.label{
+font-size:8px;
+letter-spacing:.18em;
+color:#7bb5ab}
+.value{
+margin-top:3px;
+color:#e4fff9;
+font-weight:800}
+.right{
+display:flex;
+gap:7px;
+align-items:flex-start}
+.pause{
+pointer-events:auto;
+border:1px solid rgba(96,255,219,.3);
+border-radius:5px;
+padding:8px;
+background:var(--glass);
+font-size:14px}
+
+#minimap{
+position:absolute;
+right:16px;
+top:82px;
+width:clamp(76px,16vw,118px);
+aspect-ratio:1;
+border:1px solid rgba(100,255,221,.38);
+background:rgba(1,12,13,.68);
+border-radius:50%;
+padding:7px;
+box-shadow:0 0 24px rgba(35,238,192,.14)}
+
+.bottom{
+position:absolute;
+bottom:18px;
+left:50%;
+transform:translateX(-50%);
+width:min(390px,64vw);
+text-align:center}
+.energy{
+height:4px;
+background:#12312c;
+border-radius:4px;
+overflow:hidden;
+border:1px solid rgba(154,255,225,.16)}
+#energyFill{
+height:100%;
+width:100%;
+background:linear-gradient(90deg,var(--teal),#d7fff1);
+box-shadow:0 0 12px var(--teal)}
+.hint{
+margin-top:7px;
+font-size:9px;
+color:#8dc6b9;
+letter-spacing:.12em;
+text-shadow:0 1px #000}
+
+#crosshair{
+position:absolute;
+left:50%;
+top:50%;
+width:16px;
+height:16px;
+transform:translate(-50%,-50%);
+opacity:.62}
+#crosshair:before,#crosshair:after{
+content:"";
+position:absolute;
+background:#d1fff5;
+box-shadow:0 0 6px var(--teal)}
+#crosshair:before{
+width:16px;
+height:1px;
+top:8px}
+#crosshair:after{
+height:16px;
+width:1px;
+left:8px}
+
+.screen{
+position:absolute;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:22px;
+background:radial-gradient(circle at 50% 40%,rgba(8,50,49,.52),rgba(0,5,6,.87));
+z-index:3}
+.screen.off{
+display:none}
+.panel{
+width:min(570px,100%);
+text-align:center;
+padding:clamp(24px,6vw,52px) clamp(20px,6vw,64px);
+border:1px solid rgba(88,250,209,.4);
+background:linear-gradient(145deg,rgba(8,31,32,.9),rgba(1,10,12,.96));
+box-shadow:0 0 70px rgba(24,246,195,.12),inset 0 0 40px rgba(51,230,194,.04);
+position:relative}
+.panel:before{
+content:"";
+position:absolute;
+inset:8px;
+border:1px solid rgba(255,128,73,.18);
+pointer-events:none}
+.eyebrow{
+font-size:10px;
+letter-spacing:.3em;
+color:var(--lava);
+margin-bottom:15px}
+.title{
+font-size:clamp(35px,9vw,76px);
+line-height:.85;
+letter-spacing:-.08em;
+color:#caffef;
+text-shadow:0 0 8px #5affdc,0 0 36px #13a78b;
+margin:0}
+.slash{
+color:var(--lava)}
+.sub{
+font-size:10px;
+line-height:1.8;
+letter-spacing:.12em;
+color:#a1d9cc;
+margin:25px auto;
+max-width:470px}
+.facts{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:8px;
+margin:20px 0;
+text-align:left}
+.fact{
+border-left:2px solid var(--teal);
+padding:6px 8px;
+background:rgba(48,188,159,.06);
+font-size:9px;
+color:#9fcec4}
+.fact strong{
+display:block;
+font-size:13px;
+color:#e1fff8;
+margin-top:3px}
+.start{
+pointer-events:auto;
+background:var(--teal);
+border:0;
+color:#02201d;
+font-weight:900;
+letter-spacing:.16em;
+padding:14px 24px;
+box-shadow:0 0 26px rgba(58,248,203,.43);
+transition:.2s}
+.start:hover{
+transform:translateY(-2px);
+box-shadow:0 0 40px rgba(58,248,203,.75)}
+.keys{
+margin-top:17px;
+color:#76a79d;
+font-size:9px;
+line-height:1.8}
+.result{
+font-size:clamp(19px,5vw,34px);
+letter-spacing:.08em;
+color:var(--gold);
+margin:12px 0}
+.result.bad{
+color:#ff987d}
+.stats{
+font-size:11px;
+line-height:1.9;
+color:#afded3;
+margin:18px auto}
+.small{
+font-size:9px;
+color:#6ca89d;
+margin-top:18px}
+
+#touch{
+position:absolute;
+inset:auto 0 12px;
+display:none;
+justify-content:space-between;
+padding:0 14px;
+pointer-events:none;
+z-index:2}
+.pad{
+display:grid;
+grid-template-columns:repeat(3,40px);
+grid-template-rows:repeat(3,34px);
+gap:3px;
+pointer-events:auto}
+.touchBtn{
+border:1px solid rgba(120,255,218,.25);
+background:rgba(2,25,26,.72);
+border-radius:8px;
+color:#bfffee;
+font-size:14px;
+backdrop-filter:blur(4px)}
+.touchBtn:active{
+background:rgba(55,231,193,.35)}
+.up{
+grid-column:2}
+.left{
+grid-column:1;
+grid-row:2}
+.down{
+grid-column:2;
+grid-row:2}
+.forward{
+grid-column:3;
+grid-row:2}
+.pulse{
+align-self:center;
+width:58px;
+height:58px;
+border-radius:50%;
+border:1px solid rgba(255,142,84,.55);
+background:rgba(51,17,11,.6);
+color:#ffd1bf;
+font-size:9px;
+letter-spacing:.1em;
+pointer-events:auto}
+.turn{
+grid-column:3;
+grid-row:1 / span 2;
+display:flex;
+gap:3px}
+.turn .touchBtn{
+width:35px}
+
+@media(max-width:560px){
+#hud{
+padding:8px}
+.badge{
+font-size:9px;
+padding:6px 7px}
+.top .badge:nth-child(2){
+display:none}
+#minimap{
+right:9px;
+top:58px;
+width:82px}
+.bottom{
+bottom:106px;
+width:56vw}
+.hint{
+font-size:8px}
+.panel{
+padding:28px 20px}
+.facts{
+gap:4px}
+.fact{
+font-size:8px;
+padding:5px}
+.fact strong{
+font-size:11px}
+#touch{
+display:flex}
+.keys{
+display:none}
+}
+
+</style>
+</head>
+<body>
+<main id="app"><canvas id="view"></canvas><div class="grain"></div>
+<div id="hud"><div class="top"><div class="badge"><div class="label">EXPEDITION</div><div class="value" id="level">01 · SEEDLING</div></div><div class="badge"><div class="label">TERRA SHARDS</div><div class="value" id="shards">0 / 0</div></div><div class="right"><div class="badge"><div class="label">FAULTLINE CLOCK</div><div class="value" id="timer">00:00</div></div><button class="pause" id="pause" aria-label="Pause">Ⅱ</button></div></div><canvas id="minimap" width="180" height="180"></canvas><div id="crosshair"></div><div class="bottom"><div class="energy"><div id="energyFill"></div></div><div class="hint" id="hint">FIND THE CELESTIAL EXIT · [E] ECHO PULSE</div></div></div>
+<div id="touch"><div class="pad"><button class="touchBtn up" data-key="KeyW">▲</button><button class="touchBtn left" data-key="KeyA">◀</button><button class="touchBtn down" data-key="KeyS">▼</button><button class="touchBtn forward" data-key="KeyD">▶</button></div><button class="pulse" id="touchPulse">ECHO</button><div class="turn"><button class="touchBtn" data-turn="-1">◀</button><button class="touchBtn" data-turn="1">▶</button></div></div>
+<section class="screen" id="startScreen"><div class="panel"><div class="eyebrow">BIOLOGICAL SURVEY // 09.07.26</div><h1 class="title">TERRA<span class="slash">//</span><br>FAULTLINE</h1><p class="sub">DESCEND INTO A LIVING MINERAL CAVE. HARVEST LUMINOUS SHARDS, OUTRUN THE SEAM, AND REACH THE CELESTIAL PORTAL.</p><div class="facts"><div class="fact">PROCEDURAL<strong>EVERY DESCENT</strong></div><div class="fact">RESONANCE<strong>ECHO NAVIGATION</strong></div><div class="fact">EXTRACTION<strong>SESSION BEST</strong></div></div><button class="start" id="start">BEGIN EXPEDITION</button><div class="keys">WASD / ARROWS · MOVE &nbsp; | &nbsp; MOUSE · LOOK &nbsp; | &nbsp; SHIFT · SPRINT<br>E · ECHO PULSE &nbsp; | &nbsp; P · PAUSE</div></div></section>
+<section class="screen off" id="resultScreen"><div class="panel"><div class="eyebrow" id="resultTag">EXPEDITION REPORT</div><div class="result" id="resultTitle">EXTRACTION COMPLETE</div><div class="stats" id="resultStats"></div><button class="start" id="restart">DESCEND AGAIN</button><div class="small">BEST SIGNAL: <span id="best">0</span></div></div></section>
+</main>
+<script>
+(() => {
+
+'use strict';
+
+const c=document.querySelector('#view'),x=c.getContext('2d'),mini=document.querySelector('#minimap'),mx=mini.getContext('2d');
+
+const $=s=>document.querySelector(s), hud=$('#hud'), startScreen=$('#startScreen'), resultScreen=$('#resultScreen');
+
+const ui={
+level:$('#level'),shards:$('#shards'),timer:$('#timer'),energy:$('#energyFill'),hint:$('#hint'),best:$('#best'),rTitle:$('#resultTitle'),rStats:$('#resultStats'),rTag:$('#resultTag')}
+;
+
+let W=0,H=0,DPR=1, state='title', last=0, raf=0, maze=[], cols=0,rows=0, cell=1, level=1;
+
+let player, exit, shards=[], hazards=[], particles=[], spores=[], trails=[], pulse=null, keys={
+}
+, pointer=false, mouseX=0;
+
+let elapsed=0,limit=0,score=0,combo=0,lastShard=0,best=0,shake=0;
+
+try{
+best=+sessionStorage.getItem('terraFaultlineBest')||0;
+}catch(_){
+// Sandboxed game iframes may use an opaque origin with storage disabled.
+}
+
+let audio=null, drone=null, nextStep=0;
+
+const TAU=Math.PI*2, FOV=Math.PI*.64, MAX=18;
+
+function clamp(v,a,b){
+return Math.max(a,Math.min(b,v))}
+function rand(a=1,b=0){
+return b+Math.random()*(a-b)}
+function lerp(a,b,t){
+return a+(b-a)*t}
+function fmt(n){
+n=Math.max(0,n);
+return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(Math.floor(n%60)).padStart(2,'0')}`}
+
+function resize(){
+DPR=Math.min(devicePixelRatio||1,2);
+W=innerWidth;
+H=innerHeight;
+c.width=W*DPR;
+c.height=H*DPR;
+x.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);
+resize();
+
+function audioOn(){
+if(audio)return;
+ audio=new (window.AudioContext||window.webkitAudioContext)();
+ const g=audio.createGain(),o=audio.createOscillator();
+o.type='sine';
+o.frequency.value=46;
+g.gain.value=.018;
+o.connect(g).connect(audio.destination);
+o.start();
+drone={
+o,g}
+;
+}
+
+function tone(f=.0,d=.12,type='sine',vol=.05,slide=0){
+if(!audio)return;
+let o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;
+o.type=type;
+o.frequency.setValueAtTime(Math.max(20,f),t);
+o.frequency.exponentialRampToValueAtTime(Math.max(20,f+slide),t+d);
+g.gain.setValueAtTime(.0001,t);
+g.gain.exponentialRampToValueAtTime(vol,t+.012);
+g.gain.exponentialRampToValueAtTime(.0001,t+d);
+o.connect(g).connect(audio.destination);
+o.start(t);
+o.stop(t+d+.02)}
+
+function sound(k){
+if(!audio)return;
+if(k==='step')tone(75,.04,'triangle',.018,12);
+if(k==='shard'){
+tone(540,.18,'sine',.07,440);
+setTimeout(()=>tone(880,.2,'sine',.04,370),70)}
+if(k==='pulse'){
+tone(110,.6,'sine',.08,600);
+tone(330,.45,'triangle',.035,700)}
+if(k==='hurt'){
+tone(150,.24,'sawtooth',.09,-110)}
+if(k==='win'){
+tone(310,.25,'sine',.09,280);
+setTimeout(()=>tone(620,.55,'sine',.09,600),130)}
+if(k==='fail'){
+tone(160,.8,'sawtooth',.09,-130)}
+}
+
+function makeMaze(){
+level=Math.min(9,1+Math.floor((best?Math.min(best,9000):0)/1500));
+cols=9+level*2;
+rows=9+level*2;
+if(!(cols&1))cols++;
+if(!(rows&1))rows++;
+maze=Array.from({
+length:rows}
+,()=>Array(cols).fill(1));
+let stack=[[1,1]],dirs=[[2,0],[-2,0],[0,2],[0,-2]];
+maze[1][1]=0;
+while(stack.length){
+let [cx,cy]=stack[stack.length-1],opts=dirs.map(d=>[cx+d[0],cy+d[1],d]).filter(([nx,ny])=>nx>0&&ny>0&&nx<cols-1&&ny<rows-1&&maze[ny][nx]);
+if(!opts.length){
+stack.pop();
+continue}
+let [nx,ny,d]=opts[Math.floor(Math.random()*opts.length)];
+maze[cy+d[1]/2][cx+d[0]/2]=0;
+maze[ny][nx]=0;
+stack.push([nx,ny])}
+let far=[1,1],dist=Array.from({
+length:rows}
+,()=>Array(cols).fill(-1)),q=[[1,1]];
+dist[1][1]=0;
+for(let i=0;
+i<q.length;
+i++){
+let [cx,cy]=q[i];
+if(dist[cy][cx]>dist[far[1]][far[0]])far=[cx,cy];
+for(const[dX,dY]of [[1,0],[-1,0],[0,1],[0,-1]]){
+let nx=cx+dX,ny=cy+dY;
+if(nx>=0&&ny>=0&&nx<cols&&ny<rows&&!maze[ny][nx]&&dist[ny][nx]<0){
+dist[ny][nx]=dist[cy][cx]+1;
+q.push([nx,ny])}
+}
+}
+exit={
+x:far[0]+.5,y:far[1]+.5}
+;
+let spaces=q.filter(([a,b])=>!(a===1&&b===1)&&!(a===far[0]&&b===far[1]));
+shards=[];
+hazards=[];
+shuffle(spaces);
+let shardN=7+level*3,hazardN=Math.max(2,level*2);
+spaces.slice(0,shardN).forEach(([a,b],i)=>shards.push({
+x:a+.5,y:b+.5,alive:true,phase:rand(TAU),id:i}
+));
+spaces.slice(shardN,shardN+hazardN).forEach(([a,b],i)=>hazards.push({
+x:a+.5,y:b+.5,phase:rand(TAU),cool:0,id:i}
+));
+}
+
+function shuffle(a){
+for(let i=a.length-1;
+i;
+i--){
+let j=Math.floor(Math.random()*(i+1));
+[a[i],a[j]]=[a[j],a[i]]}
+return a}
+
+function begin(){
+audioOn();
+audio.resume();
+makeMaze();
+player={
+x:1.5,y:1.5,a:0,energy:1,bob:0}
+;
+elapsed=0;
+limit=95+level*14;
+score=0;
+combo=0;
+lastShard=0;
+particles=[];
+trails=[];
+pulse=null;
+spores=Array.from({
+length:90}
+,()=>({
+x:rand(cols),y:rand(rows),z:rand(),p:rand(TAU),s:rand(.4,.08)}
+));
+state='play';
+startScreen.classList.add('off');
+resultScreen.classList.add('off');
+hud.classList.add('show');
+ui.level.textContent=`${String(level).padStart(2,'0')} · ${['SEEDLING','CINDER','CRYSTAL','DEEP','EMBER','RIFT','ANCIENT','ORBITAL','MYTHIC'][level-1]}`;
+ui.hint.textContent='FIND THE CELESTIAL EXIT · [E] ECHO PULSE';
+last=performance.now();
+cancelAnimationFrame(raf);
+raf=requestAnimationFrame(loop)}
+
+function wall(xp,yp){
+let ix=Math.floor(xp),iy=Math.floor(yp);
+return ix<0||iy<0||ix>=cols||iy>=rows||maze[iy][ix]===1}
+
+function move(dx,dy){
+let r=.18;
+if(!wall(player.x+dx+r*Math.sign(dx),player.y))player.x+=dx;
+if(!wall(player.x,player.y+dy+r*Math.sign(dy)))player.y+=dy}
+
+function emit(X,Y,n,col='rgba(104,255,220,'){
+for(let i=0;
+i<n;
+i++)particles.push({
+x:X,y:Y,vx:rand(2,-2),vy:rand(2,-2),life:rand(.8,.25),max:1,col,size:rand(4,1)}
+)}
+
+function echo(){
+if(state!=='play'||pulse)return;
+pulse={
+r:0,life:1}
+;
+sound('pulse');
+ui.hint.textContent='ECHO RETURNING · FOLLOW THE BRIGHTEST RESONANCE';
+}
+
+function collect(s){
+s.alive=false;
+let fast=elapsed-lastShard<7;
+combo=fast?combo+1:1;
+lastShard=elapsed;
+let gain=100+combo*35;
+score+=gain;
+limit+=4.5;
+emit(s.x,s.y,26,'rgba(150,255,231,');
+sound('shard');
+shake=.08;
+ui.hint.textContent=`TERRA SHARD +${gain} · RESONANCE ×${combo}`}
+
+function hurt(h){
+if(h.cool>0)return;
+h.cool=2.2;
+limit-=8;
+combo=0;
+shake=.32;
+emit(player.x,player.y,24,'rgba(255,103,70,');
+sound('hurt');
+ui.hint.textContent='FAULTLINE BURN · -08 SECONDS';
+}
+
+function finish(win){
+state=win?'win':'lose';
+hud.classList.remove('show');
+document.exitPointerLock?.();
+if(win){
+score+=Math.floor(Math.max(0,limit-elapsed)*18)+shards.filter(s=>!s.alive).length*90;
+sound('win');
+ui.rTitle.textContent='CELESTIAL EXTRACTION';
+ui.rTitle.className='result'}
+else{
+sound('fail');
+ui.rTitle.textContent='THE FAULTLINE CLOSED';
+ui.rTitle.className='result bad'}
+best=Math.max(best,score);
+try{
+sessionStorage.setItem('terraFaultlineBest',best);
+}catch(_){
+// Keep the session score in memory when iframe storage is unavailable.
+}
+ui.best.textContent=best.toLocaleString();
+ui.rTag.textContent=win?'EXPEDITION COMPLETE':'SIGNAL LOST';
+ui.rStats.innerHTML=`SCORE <b>${score.toLocaleString()}</b><br>SHARDS ${shards.filter(s=>!s.alive).length} / ${shards.length}<br>EXPEDITION LEVEL ${level}<br>SESSION BEST ${best.toLocaleString()}`;
+resultScreen.classList.remove('off')}
+
+function update(dt){
+if(state!=='play')return;
+elapsed+=dt;
+if(elapsed>=limit){
+finish(false);
+return}
+let turn=(keys.ArrowLeft||keys.KeyQ? -1:0)+(keys.ArrowRight||keys.KeyE&&keys.turn?1:0);
+if(keys.turn)turn+=keys.turn;
+player.a+=turn*dt*2.35;
+let f=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),side=(keys.KeyD?1:0)-(keys.KeyA?1:0);
+let sprint=(keys.ShiftLeft||keys.ShiftRight)&&f>0&&player.energy>.04;
+let sp=(sprint?3.6:2.15)*dt;
+if(sprint)player.energy-=dt*.26;
+else player.energy=Math.min(1,player.energy+dt*.16);
+if(f||side){
+let dx=(Math.cos(player.a)*f+Math.cos(player.a+Math.PI/2)*side)*sp,dy=(Math.sin(player.a)*f+Math.sin(player.a+Math.PI/2)*side)*sp;
+move(dx,dy);
+player.bob+=dt*(sprint?15:10);
+if(performance.now()>nextStep){
+sound('step');
+nextStep=performance.now()+ (sprint?230:360)}
+trails.push({
+x:player.x,y:player.y,life:.8}
+)}
+if(pulse){
+pulse.r+=dt*12;
+pulse.life-=dt;
+if(pulse.life<=0){
+pulse=null;
+ui.hint.textContent='FIND THE CELESTIAL EXIT · [E] ECHO PULSE'}
+}
+for(const s of shards)if(s.alive&&Math.hypot(s.x-player.x,s.y-player.y)<.48)collect(s);
+for(const h of hazards){
+h.cool-=dt;
+if(Math.hypot(h.x-player.x,h.y-player.y)<.56)hurt(h)}
+if(Math.hypot(exit.x-player.x,exit.y-player.y)<.5)finish(true);
+particles.forEach(p=>{
+p.x+=p.vx*dt;
+p.y+=p.vy*dt;
+p.vy+=.7*dt;
+p.life-=dt}
+);
+particles=particles.filter(p=>p.life>0);
+trails.forEach(t=>t.life-=dt);
+trails=trails.filter(t=>t.life>0);
+shake=Math.max(0,shake-dt*1.8);
+ui.timer.textContent=fmt(limit-elapsed);
+ui.shards.textContent=shards.filter(s=>!s.alive).length+' / '+shards.length;
+ui.energy.style.width=Math.round(player.energy*100)+'%';
+}
+
+function ray(angle){
+let sn=Math.sin(angle),cs=Math.cos(angle),d=0,hit=0,side=0;
+while(d<MAX){
+d+=.025;
+let xx=player.x+cs*d,yy=player.y+sn*d;
+if(wall(xx,yy)){
+hit=d;
+let fx=xx-Math.floor(xx),fy=yy-Math.floor(yy);
+side=Math.min(fx,1-fx)<Math.min(fy,1-fy)?0:1;
+break}
+}
+return {
+d:hit||MAX,side}
+}
+
+function gradSky(){
+let g=x.createLinearGradient(0,0,0,H*.54);
+g.addColorStop(0,'#061e22');
+g.addColorStop(.7,'#0c2828');
+g.addColorStop(1,'#102725');
+x.fillStyle=g;
+x.fillRect(0,0,W,H*.55);
+let f=x.createLinearGradient(0,H*.5,0,H);
+f.addColorStop(0,'#152221');
+f.addColorStop(1,'#020707');
+x.fillStyle=f;
+x.fillRect(0,H*.5,W,H*.5)}
+
+function render(){
+x.save();
+let sx=shake?rand(shake*15,-shake*15):0,sy=shake?rand(shake*10,-shake*10):0;
+x.translate(sx,sy);
+gradSky();
+let horizon=H*.5+Math.sin(player.bob)*3;
+for(let i=0;
+i<W;
+i+=2){
+let ang=player.a-FOV/2+i/W*FOV,r=ray(ang),d=r.d*Math.cos(ang-player.a),h=Math.min(H*1.55,H/d*.9),top=horizon-h/2;
+let fog=clamp(1-d/MAX,0,1),t=(Math.sin(elapsed*4+d*3)+1)/2;
+let teal=`rgba(${Math.floor(10+25*fog)},${Math.floor(55+146*fog)},${Math.floor(139+86*fog)},1)`;
+x.fillStyle=teal;
+x.fillRect(i,top,2,h);
+if(r.side){
+x.fillStyle=`rgba(0,0,0,${.25+(.18*(1-fog))})`;
+x.fillRect(i,top,2,h)}
+let fiss=(Math.sin(i*.17+d*12)+Math.sin(i*.06-d*8))>1.18;
+if(fiss&&d<9){
+x.fillStyle=`rgba(255,${Math.floor(68+65*t)},52,${fog*.75})`;
+x.fillRect(i,top+h*.65,2,Math.max(1,h*.025));
+}
+x.fillStyle=`rgba(5,7,10,${1-fog})`;
+x.fillRect(i,top,2,h)}
+renderEntities(horizon);
+renderVignette();
+x.restore();
+drawMini();
+}
+
+function project(wx,wy,horizon){
+let dx=wx-player.x,dy=wy-player.y,dist=Math.hypot(dx,dy),a=Math.atan2(dy,dx)-player.a;
+while(a>Math.PI)a-=TAU;
+while(a<-Math.PI)a+=TAU;
+if(Math.abs(a)>FOV*.65)return null;
+return{
+x:W/2+(a/FOV)*W,y:horizon+H*.12/dist,d:dist}
+}
+
+function diamond(p,size,col){
+x.save();
+x.translate(p.x,p.y);
+x.rotate(elapsed*1.6);
+x.shadowBlur=22;
+x.shadowColor=col;
+x.fillStyle=col;
+x.beginPath();
+x.moveTo(0,-size);
+x.lineTo(size*.68,0);
+x.lineTo(0,size);
+x.lineTo(-size*.68,0);
+x.closePath();
+x.fill();
+x.restore()}
+
+function renderEntities(h){
+let things=[];
+for(const s of shards)if(s.alive)things.push({
+o:s,type:'shard'}
+);
+for(const z of hazards)things.push({
+o:z,type:'hazard'}
+);
+things.push({
+o:exit,type:'exit'}
+);
+things.sort((a,b)=>Math.hypot(b.o.x-player.x,b.o.y-player.y)-Math.hypot(a.o.x-player.x,a.o.y-player.y));
+for(const t of things){
+let p=project(t.o.x,t.o.y,h);
+if(!p||p.d>MAX)continue;
+let size=clamp(230/p.d,11,160);
+if(t.type==='shard'){
+p.y-=size*.22;
+diamond(p,size*.22,'#a1ffe0');
+x.strokeStyle='#effff9';
+x.strokeRect(p.x-size*.12,p.y-size*.12,size*.24,size*.24)}
+else if(t.type==='hazard'){
+let r=size*.19*(.8+Math.sin(elapsed*6+t.o.phase)*.15);
+x.save();
+x.translate(p.x,p.y);
+x.shadowBlur=28;
+x.shadowColor='#ff502e';
+x.fillStyle='#ff5b36';
+x.beginPath();
+for(let k=0;
+k<8;
+k++){
+let a=k*TAU/8;
+let rr=k%2?r*.45:r;
+x.lineTo(Math.cos(a)*rr,Math.sin(a)*rr)}
+x.fill();
+x.restore()}
+else{
+let r=size*.37;
+for(let k=4;
+k>0;
+k--){
+x.beginPath();
+x.strokeStyle=`rgba(${120+k*25},${230-k*14},255,${.12+k*.12})`;
+x.lineWidth=Math.max(1,k*2);
+x.arc(p.x,p.y,Math.max(1,r*k/3+Math.sin(elapsed*2)*4),0,TAU);
+x.stroke()}
+x.fillStyle='#e6fcff';
+x.fillRect(p.x-r*.15,p.y-r*.65,r*.3,r*1.3)}
+}
+for(const t of trails){
+let p=project(t.x,t.y,h);
+if(p){
+x.fillStyle=`rgba(128,255,211,${t.life*.25})`;
+x.fillRect(p.x-2,p.y-2,4,4)}
+}
+for(const p0 of particles){
+let p=project(p0.x,p0.y,h);
+if(p){
+x.fillStyle=p0.col+p0.life+')';
+x.fillRect(p.x-p0.size/2,p.y-p0.size/2,p0.size,p0.size)}
+}
+if(pulse){
+let r=pulse.r*32;
+x.strokeStyle=`rgba(148,255,229,${pulse.life*.45})`;
+x.lineWidth=2;
+x.beginPath();
+x.arc(W/2,h,r,0,TAU);
+x.stroke()}
+ }
+
+function renderVignette(){
+let g=x.createRadialGradient(W/2,H/2,H*.1,W/2,H/2,H*.8);
+g.addColorStop(.4,'rgba(0,0,0,0)');
+g.addColorStop(1,'rgba(0,0,0,.68)');
+x.fillStyle=g;
+x.fillRect(0,0,W,H);
+x.fillStyle='rgba(120,255,225,.025)';
+for(let i=0;
+i<spores.length;
+i++){
+let s=spores[i],px=((s.x/cols)*W+(Math.sin(elapsed*s.s+s.p)*50))%W,py=((s.y/rows)*H+(Math.cos(elapsed*s.s+s.p)*30))%H;
+x.fillRect(px,py,1.5,1.5)}
+}
+
+function drawMini(){
+let q=mini.width,scale=(q-16)/Math.max(cols,rows);
+mx.clearRect(0,0,q,q);
+mx.save();
+mx.beginPath();
+mx.arc(q/2,q/2,q/2-2,0,TAU);
+mx.clip();
+mx.fillStyle='rgba(1,13,14,.95)';
+mx.fillRect(0,0,q,q);
+for(let y=0;
+y<rows;
+y++)for(let z=0;
+z<cols;
+z++)if(maze[y][z]){
+mx.fillStyle='#15514d';
+mx.fillRect(8+z*scale,8+y*scale,scale+1,scale+1)}
+for(const s of shards)if(s.alive){
+mx.fillStyle='#a0ffe0';
+mx.fillRect(8+s.x*scale-1,8+s.y*scale-1,2,2)}
+mx.fillStyle='#ff7654';
+mx.beginPath();
+mx.arc(8+exit.x*scale,8+exit.y*scale,3,0,TAU);
+mx.fill();
+mx.translate(8+player.x*scale,8+player.y*scale);
+mx.rotate(player.a);
+mx.fillStyle='#ecfff9';
+mx.beginPath();
+mx.moveTo(5,0);
+mx.lineTo(-4,3);
+mx.lineTo(-4,-3);
+mx.fill();
+mx.restore();
+}
+
+function loop(now){
+let dt=Math.min(.05,(now-last)/1000||0);
+last=now;
+update(dt);
+render();
+if(state==='play'||state==='pause')raf=requestAnimationFrame(loop)}
+
+function pause(){
+if(state==='play'){
+state='pause';
+ui.hint.textContent='PAUSED · PRESS P OR Ⅱ TO RESUME';
+$('#pause').textContent='▶'}
+else if(state==='pause'){
+state='play';
+last=performance.now();
+$('#pause').textContent='Ⅱ'}
+}
+
+addEventListener('keydown',e=>{
+if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
+if(e.code==='KeyP')pause();
+else if(e.code==='KeyE'&&!e.repeat)echo();
+else keys[e.code]=true}
+);
+addEventListener('keyup',e=>{
+keys[e.code]=false}
+);
+
+c.addEventListener('click',()=>{
+if(state==='play'){
+audioOn();
+audio.resume();
+c.requestPointerLock?.()}
+}
+);
+addEventListener('mousemove',e=>{
+if(document.pointerLockElement===c&&state==='play')player.a+=e.movementX*.0024}
+);
+
+document.addEventListener('pointerlockchange',()=>{
+if(state==='play'&&!document.pointerLockElement)ui.hint.textContent='MOUSE UNLOCKED · CLICK VIEW TO LOOK';
+}
+);
+
+document.querySelectorAll('[data-key]').forEach(b=>{
+let key=b.dataset.key;
+b.addEventListener('pointerdown',e=>{
+e.preventDefault();
+keys[key]=true}
+);
+['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,()=>keys[key]=false))}
+);
+document.querySelectorAll('[data-turn]').forEach(b=>{
+b.addEventListener('pointerdown',()=>keys.turn=+b.dataset.turn);
+['pointerup','pointerleave','pointercancel'].forEach(n=>b.addEventListener(n,()=>keys.turn=0))}
+);
+
+$('#touchPulse').onclick=echo;
+$('#start').onclick=begin;
+$('#restart').onclick=begin;
+$('#pause').onclick=pause;
+ui.best.textContent=best.toLocaleString();
+
+}
+)();
+
+</script>
+</body>
+</html>
