@@ -642,6 +642,7 @@
       legId: "coast",
       leg: ROUTES.coast,
       segments: [],
+      forkStart: -1,
       position: 0,
       playerX: 0,
       speed: 0,
@@ -713,6 +714,7 @@
         else addRoad(18, 12 + (r() * 12 | 0), 18, sign * (1.0 + r() * .7) * difficulty, (r() - .35) * 22);
       }
       const forkStart = leg.next ? G.segments.length : -1;
+      G.forkStart = forkStart;
       if (leg.next) {
         addRoad(10, 32, 8, 0, 0);
         for (let i = forkStart; i < Math.min(G.segments.length, forkStart + 42); i++) {
@@ -956,8 +958,7 @@
       }
 
       const segIndex = Math.floor(G.position / SEG_LEN);
-      const forkStart = G.segments.findIndex(s => s.special === "forkWarn");
-      if (forkStart >= 0 && segIndex >= forkStart && !G.forkActive) {
+      if (G.forkStart >= 0 && segIndex >= G.forkStart && !G.forkActive) {
         G.forkActive = true;
         G.forkPulse = 0;
         Audio.sfx("fork");
@@ -1483,7 +1484,7 @@
       label("ONE TOUR · FOUR ROUTES · YOUR ENDING",W/2,panelY+16,compact?8:11,"#efb65e");
       drawTitleMap(W/2,panelY+(compact?45:52),panelW*.76,compact?30:39);
       text("← → STEER    ↑ GAS    ↓ BRAKE",W/2,panelY+panelH-13,compact?8:10,"#ead5a6");
-      const blink=.55+.45*Math.sin(now*4);ctx.globalAlpha=blink;label(mobile?"TAP TO DROP THE TOP":"PRESS ENTER · CHASE THE SUN",W/2,playableBottom*(compact?.84:.86),compact?11:15,"#fff0c2");ctx.restore();
+      const blink=.55+.45*Math.sin(now*4);ctx.save();ctx.globalAlpha=blink;label(mobile?"TAP TO DROP THE TOP":"PRESS ENTER · CHASE THE SUN",W/2,playableBottom*(compact?.84:.86),compact?11:15,"#fff0c2");ctx.restore();
       label("GPT 5.6 SOL",14,playableBottom-14,compact?7:9,"rgba(255,231,180,.65)","left");
     }
 
