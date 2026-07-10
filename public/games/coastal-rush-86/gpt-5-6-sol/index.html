@@ -1,0 +1,1540 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Coastal Rush '86 — GPT 5.6 Sol</title>
+  <style>
+    :root {
+      --ink: #17120f;
+      --cream: #fff0c2;
+      --sun: #f7a23b;
+      --red: #c5362f;
+      --sea: #358c9a;
+      --sage: #76955c;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #100d0c;
+      color: var(--cream);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    #cabinet {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      background: #16100d;
+      isolation: isolate;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #grain {
+      position: absolute;
+      inset: -40%;
+      pointer-events: none;
+      opacity: .075;
+      mix-blend-mode: soft-light;
+      background-image:
+        repeating-radial-gradient(circle at 17% 23%, #fff 0 1px, transparent 1px 4px),
+        repeating-linear-gradient(13deg, transparent 0 3px, #000 3px 4px);
+      background-size: 9px 7px, 11px 13px;
+      animation: grain .22s steps(2) infinite;
+      z-index: 3;
+    }
+    #vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+      box-shadow: inset 0 0 min(13vw, 90px) rgba(25, 10, 5, .74);
+      background: linear-gradient(90deg, rgba(24, 10, 4, .22), transparent 9% 91%, rgba(24, 10, 4, .22));
+    }
+    #controls {
+      position: absolute;
+      z-index: 8;
+      left: max(8px, env(safe-area-inset-left));
+      right: max(8px, env(safe-area-inset-right));
+      bottom: max(7px, env(safe-area-inset-bottom));
+      height: 64px;
+      display: none;
+      align-items: end;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    #controls .bank { display: flex; gap: 7px; pointer-events: auto; }
+    #controls button {
+      width: 54px;
+      height: 54px;
+      padding: 0;
+      border: 2px solid rgba(255, 240, 194, .67);
+      border-radius: 50%;
+      color: var(--cream);
+      background: rgba(28, 20, 16, .55);
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,.05), 0 3px 12px rgba(0,0,0,.35);
+      backdrop-filter: blur(4px);
+      font: 900 19px/1 Georgia, serif;
+      text-shadow: 0 2px #4d271d;
+      pointer-events: auto;
+    }
+    #controls button.pedal {
+      width: 58px;
+      border-radius: 16px 16px 24px 24px;
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+    #controls button.active {
+      transform: translateY(2px) scale(.96);
+      background: rgba(197, 54, 47, .75);
+      border-color: #fff2bd;
+    }
+    #mute {
+      position: absolute;
+      z-index: 9;
+      top: max(8px, env(safe-area-inset-top));
+      right: max(8px, env(safe-area-inset-right));
+      width: 34px;
+      height: 30px;
+      border: 1px solid rgba(255,240,194,.42);
+      border-radius: 4px;
+      color: #fff0c2;
+      background: rgba(30,18,13,.34);
+      font-size: 14px;
+      opacity: .65;
+    }
+    #mute:hover { opacity: 1; }
+    @media (pointer: coarse), (max-width: 680px) {
+      #controls { display: flex; }
+    }
+    @media (max-height: 540px) and (orientation: landscape) {
+      #controls { height: 48px; }
+      #controls button { width: 44px; height: 44px; }
+      #controls button.pedal { width: 50px; }
+    }
+    @keyframes grain {
+      0% { transform: translate(0,0); }
+      25% { transform: translate(2%, -1%); }
+      50% { transform: translate(-1%, 2%); }
+      75% { transform: translate(1%, 1%); }
+    }
+  </style>
+</head>
+<body>
+  <main id="cabinet" aria-label="Coastal Rush '86 arcade driving game">
+    <canvas id="game"></canvas>
+    <div id="grain"></div>
+    <div id="vignette"></div>
+    <button id="mute" aria-label="Toggle sound">♪</button>
+    <div id="controls" aria-label="Touch driving controls">
+      <div class="bank">
+        <button data-key="left" aria-label="Steer left">◀</button>
+        <button data-key="right" aria-label="Steer right">▶</button>
+      </div>
+      <div class="bank">
+        <button class="pedal" data-key="brake" aria-label="Brake">BRAKE</button>
+        <button class="pedal" data-key="gas" aria-label="Accelerate">GAS</button>
+      </div>
+    </div>
+  </main>
+  <script>
+  (() => {
+    "use strict";
+
+    // -------------------------------------------------------------------------
+    // Canvas, sizing, constants, and tiny utilities
+    // -------------------------------------------------------------------------
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const muteButton = document.getElementById("mute");
+    const controls = document.getElementById("controls");
+    const DPR_LIMIT = 1.75;
+    const ROAD_W = 2000;
+    const SEG_LEN = 190;
+    const CAMERA_H = 930;
+    const CAMERA_D = 0.84;
+    const DRAW_DIST_DESKTOP = 245;
+    const DRAW_DIST_MOBILE = 185;
+    const MAX_SPEED = SEG_LEN * 78;
+    const ACCEL = MAX_SPEED / 5.1;
+    const BRAKE = -MAX_SPEED / 2.2;
+    const COAST = -MAX_SPEED / 10;
+    const OFFROAD = -MAX_SPEED / 2.7;
+    const CENTRIFUGAL = 0.29;
+    const TAU = Math.PI * 2;
+    let W = 960;
+    let H = 540;
+    let dpr = 1;
+    let compact = false;
+    let mobile = false;
+    let playableBottom = 540;
+    let now = 0;
+    let frameDt = 0;
+
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const ease = t => t * t * (3 - 2 * t);
+    const wrap = (v, m) => ((v % m) + m) % m;
+    const rand = (a = 1, b) => b === undefined ? Math.random() * a : a + Math.random() * (b - a);
+    const choose = list => list[(Math.random() * list.length) | 0];
+    const rgba = (hex, a) => {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`;
+    };
+
+    function resize() {
+      const box = canvas.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
+      W = Math.max(320, box.width);
+      H = Math.max(360, box.height);
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      compact = W < 560 || H < 520;
+      mobile = matchMedia("(pointer:coarse)").matches || W < 680;
+      playableBottom = mobile ? H - (H < 540 && W > H ? 42 : 68) : H;
+    }
+    addEventListener("resize", resize);
+    resize();
+
+    function seeded(seed) {
+      return function() {
+        seed |= 0;
+        seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function rr(x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function text(str, x, y, size, color = "#fff0c2", align = "center", weight = 700) {
+      ctx.save();
+      ctx.textAlign = align;
+      ctx.textBaseline = "middle";
+      ctx.font = `${weight} ${size}px Georgia, "Times New Roman", serif`;
+      ctx.fillStyle = color;
+      ctx.fillText(str, x, y);
+      ctx.restore();
+    }
+
+    function label(str, x, y, size, color = "#fff0c2", align = "center") {
+      ctx.save();
+      ctx.textAlign = align;
+      ctx.textBaseline = "middle";
+      ctx.font = `900 ${size}px "Trebuchet MS", sans-serif`;
+      ctx.letterSpacing = `${Math.max(1, size * .12)}px`;
+      ctx.fillStyle = color;
+      ctx.fillText(str, x, y);
+      ctx.restore();
+    }
+
+    function shadowTitle(str, x, y, size, color) {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `italic 900 ${size}px Georgia, serif`;
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(3, size * .075);
+      ctx.strokeStyle = "#3b1e18";
+      ctx.strokeText(str, x + 4, y + 6);
+      ctx.lineWidth = Math.max(1, size * .025);
+      ctx.strokeStyle = "#fff0c2";
+      ctx.strokeText(str, x, y);
+      ctx.fillStyle = color;
+      ctx.fillText(str, x, y);
+      ctx.restore();
+    }
+
+    // -------------------------------------------------------------------------
+    // Input — analog-feeling keyboard, pointer buttons, swipe steering
+    // -------------------------------------------------------------------------
+    const input = { left: false, right: false, gas: false, brake: false };
+    let steer = 0;
+    let pointerStart = null;
+    const keyMap = {
+      ArrowLeft: "left", a: "left", A: "left",
+      ArrowRight: "right", d: "right", D: "right",
+      ArrowUp: "gas", w: "gas", W: "gas",
+      ArrowDown: "brake", s: "brake", S: "brake"
+    };
+
+    function firstAction() {
+      Audio.start();
+      if (G.mode === "title" || G.mode === "finish" || G.mode === "gameover") startRun();
+    }
+
+    addEventListener("keydown", e => {
+      if (keyMap[e.key]) {
+        input[keyMap[e.key]] = true;
+        e.preventDefault();
+        Audio.start();
+      }
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        firstAction();
+      }
+      if (e.key === "m" || e.key === "M") Audio.toggle();
+    }, { passive: false });
+
+    addEventListener("keyup", e => {
+      if (keyMap[e.key]) {
+        input[keyMap[e.key]] = false;
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    for (const button of controls.querySelectorAll("button")) {
+      const key = button.dataset.key;
+      const down = e => {
+        e.preventDefault();
+        Audio.start();
+        if (G.mode !== "play") firstAction();
+        input[key] = true;
+        button.classList.add("active");
+        button.setPointerCapture?.(e.pointerId);
+      };
+      const up = e => {
+        e.preventDefault();
+        input[key] = false;
+        button.classList.remove("active");
+      };
+      button.addEventListener("pointerdown", down);
+      button.addEventListener("pointerup", up);
+      button.addEventListener("pointercancel", up);
+      button.addEventListener("pointerleave", up);
+    }
+
+    canvas.addEventListener("pointerdown", e => {
+      if (G.mode !== "play") {
+        firstAction();
+        return;
+      }
+      Audio.start();
+      pointerStart = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!pointerStart || pointerStart.id !== e.pointerId || G.mode !== "play") return;
+      const dx = e.clientX - pointerStart.x;
+      if (Math.abs(dx) > 8) {
+        input.left = dx < 0;
+        input.right = dx > 0;
+      }
+    });
+    const releaseSwipe = e => {
+      if (!pointerStart || pointerStart.id !== e.pointerId) return;
+      input.left = input.right = false;
+      pointerStart = null;
+    };
+    canvas.addEventListener("pointerup", releaseSwipe);
+    canvas.addEventListener("pointercancel", releaseSwipe);
+    canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+    // -------------------------------------------------------------------------
+    // Procedural background music and audio — engine, drums, bass, chords, stingers
+    // -------------------------------------------------------------------------
+    const Audio = {
+      ctx: null,
+      master: null,
+      music: null,
+      engine: null,
+      motorA: null,
+      motorB: null,
+      motorGain: null,
+      filter: null,
+      muted: false,
+      nextBeat: 0,
+      beat: 0,
+      started: false,
+
+      start() {
+        if (this.started) {
+          this.ctx?.resume();
+          return;
+        }
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        this.ctx = new AC();
+        this.master = this.ctx.createGain();
+        this.music = this.ctx.createGain();
+        this.engine = this.ctx.createGain();
+        this.master.gain.value = .56;
+        this.music.gain.value = .18;
+        this.engine.gain.value = .42;
+        this.music.connect(this.master);
+        this.engine.connect(this.master);
+        this.master.connect(this.ctx.destination);
+
+        this.filter = this.ctx.createBiquadFilter();
+        this.filter.type = "lowpass";
+        this.filter.frequency.value = 800;
+        this.motorGain = this.ctx.createGain();
+        this.motorGain.gain.value = 0;
+        this.motorA = this.ctx.createOscillator();
+        this.motorB = this.ctx.createOscillator();
+        this.motorA.type = "sawtooth";
+        this.motorB.type = "square";
+        this.motorA.frequency.value = 48;
+        this.motorB.frequency.value = 24;
+        this.motorA.detune.value = -5;
+        this.motorB.detune.value = 4;
+        this.motorA.connect(this.filter);
+        this.motorB.connect(this.filter);
+        this.filter.connect(this.motorGain);
+        this.motorGain.connect(this.engine);
+        this.motorA.start();
+        this.motorB.start();
+        this.nextBeat = this.ctx.currentTime + .06;
+        this.started = true;
+      },
+
+      toggle() {
+        this.start();
+        this.muted = !this.muted;
+        if (this.master) this.master.gain.setTargetAtTime(this.muted ? 0 : .56, this.ctx.currentTime, .025);
+        muteButton.textContent = this.muted ? "×" : "♪";
+      },
+
+      update() {
+        if (!this.started) return;
+        const t = this.ctx.currentTime;
+        const pct = G.speed / MAX_SPEED;
+        const gearWave = (pct * 4.25) % 1;
+        const rpm = 52 + pct * 128 - gearWave * 13;
+        this.motorA.frequency.setTargetAtTime(rpm, t, .035);
+        this.motorB.frequency.setTargetAtTime(rpm * .51, t, .045);
+        this.filter.frequency.setTargetAtTime(420 + pct * 1850, t, .05);
+        const motorLevel = G.mode === "play" ? .12 + pct * .2 : .025;
+        this.motorGain.gain.setTargetAtTime(motorLevel, t, .04);
+        while (this.nextBeat < t + .12) {
+          this.scheduleBeat(this.nextBeat, this.beat++);
+          this.nextBeat += .235;
+        }
+      },
+
+      tone(freq, time, duration, volume, type = "sine", bus = this.music, slide = 1) {
+        if (!this.started) return;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, time);
+        o.frequency.exponentialRampToValueAtTime(Math.max(20, freq * slide), time + duration);
+        g.gain.setValueAtTime(.0001, time);
+        g.gain.exponentialRampToValueAtTime(volume, time + .012);
+        g.gain.exponentialRampToValueAtTime(.0001, time + duration);
+        o.connect(g);
+        g.connect(bus);
+        o.start(time);
+        o.stop(time + duration + .03);
+      },
+
+      noise(time, duration, volume, highpass = 1000) {
+        if (!this.started) return;
+        const count = Math.ceil(this.ctx.sampleRate * duration);
+        const buffer = this.ctx.createBuffer(1, count, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < count; i++) data[i] = Math.random() * 2 - 1;
+        const src = this.ctx.createBufferSource();
+        const hp = this.ctx.createBiquadFilter();
+        const g = this.ctx.createGain();
+        hp.type = "highpass";
+        hp.frequency.value = highpass;
+        g.gain.setValueAtTime(volume, time);
+        g.gain.exponentialRampToValueAtTime(.0001, time + duration);
+        src.buffer = buffer;
+        src.connect(hp);
+        hp.connect(g);
+        g.connect(this.master);
+        src.start(time);
+      },
+
+      scheduleBeat(t, beat) {
+        if (G.mode === "title" || G.mode === "gameover") return;
+        const step = beat % 16;
+        const roots = [110, 87.31, 73.42, 98];
+        const root = roots[((beat / 16) | 0) % roots.length];
+        if (step % 4 === 0) {
+          this.tone(58, t, .09, .12, "sine", this.music, .43);
+          this.tone(root, t, .17, .09, "triangle");
+        }
+        if (step % 4 === 2) this.noise(t, .075, .04, 2600);
+        if (step % 2 === 0) this.noise(t, .025, .015, 6200);
+        const arp = [1, 1.25, 1.5, 2, 1.5, 1.25, 1.125, 1.5][beat % 8];
+        this.tone(root * 2 * arp, t + .015, .1, .027, "triangle");
+        if (step === 0 || step === 8) {
+          this.tone(root * 2, t, .78, .028, "sine");
+          this.tone(root * 2.5, t, .78, .021, "sine");
+          this.tone(root * 3, t, .78, .018, "sine");
+        }
+      },
+
+      sfx(name) {
+        if (!this.started) return;
+        const t = this.ctx.currentTime;
+        if (name === "pass") {
+          this.tone(520, t, .08, .13, "square", this.master, 1.35);
+          this.tone(780, t + .06, .12, .09, "triangle", this.master, 1.22);
+        } else if (name === "near") {
+          this.tone(340, t, .08, .11, "sawtooth", this.master, 1.6);
+          this.noise(t, .11, .045, 3300);
+        } else if (name === "hit") {
+          this.tone(90, t, .35, .25, "sawtooth", this.master, .28);
+          this.noise(t, .32, .22, 120);
+        } else if (name === "checkpoint") {
+          [392, 523, 659, 784].forEach((n, i) => this.tone(n, t + i * .075, .26, .12, "triangle", this.master));
+        } else if (name === "fork") {
+          this.tone(294, t, .18, .1, "triangle", this.master);
+          this.tone(440, t + .1, .24, .1, "triangle", this.master);
+        } else if (name === "finish") {
+          [262, 330, 392, 523, 659].forEach((n, i) => this.tone(n, t + i * .11, .6, .13, "triangle", this.master));
+        } else if (name === "tick") {
+          this.tone(700, t, .035, .07, "square", this.master, .8);
+        }
+      }
+    };
+    muteButton.addEventListener("click", e => { e.stopPropagation(); Audio.toggle(); });
+
+    // -------------------------------------------------------------------------
+    // Route atlas — every branch is a real leg with its own palette and ending
+    // -------------------------------------------------------------------------
+    const THEMES = {
+      coast: {
+        name: "AZURE COAST",
+        skyA: "#416f80", skyB: "#e4a35e", fog: "#efb86f", sun: "#ffe19a",
+        land: "#806849", land2: "#a78255", road: "#4d4944", road2: "#57514a",
+        rumble: "#efe0b5", accent: "#d55339", lane: "#f5e5b2", scenery: ["palm", "agave", "rock", "villa"],
+        water: true, weather: "gulls"
+      },
+      country: {
+        name: "CITRUS VALLEY",
+        skyA: "#6f9ba0", skyB: "#efbe73", fog: "#e9c482", sun: "#fff0b3",
+        land: "#668153", land2: "#8f9a5b", road: "#504b43", road2: "#5b554b",
+        rumble: "#f4e6ba", accent: "#c44b31", lane: "#f7e4aa", scenery: ["oak", "barn", "hay", "windmill"],
+        weather: "leaves"
+      },
+      mountain: {
+        name: "SIERRA PASS",
+        skyA: "#526d7a", skyB: "#d99b61", fog: "#cba579", sun: "#ffce77",
+        land: "#5e5546", land2: "#79624b", road: "#464541", road2: "#504d47",
+        rumble: "#d9cda9", accent: "#bd4a34", lane: "#ead8a5", scenery: ["pine", "boulder", "cabin", "pine"],
+        weather: "mist"
+      },
+      harbor: {
+        name: "GOLDEN HARBOR",
+        skyA: "#3f7184", skyB: "#e7a45f", fog: "#e8b877", sun: "#ffd98d",
+        land: "#6f6d5b", land2: "#8a8063", road: "#474744", road2: "#53504b",
+        rumble: "#eee0b7", accent: "#c64136", lane: "#f1e1ae", scenery: ["palm", "crane", "boat", "warehouse"],
+        water: true, weather: "gulls"
+      },
+      desert: {
+        name: "COPPER CANYON",
+        skyA: "#777b7d", skyB: "#eea761", fog: "#d79a5b", sun: "#ffd67f",
+        land: "#a6623e", land2: "#bd7849", road: "#4a4641", road2: "#554d46",
+        rumble: "#f0d9ac", accent: "#8f392d", lane: "#f2daa5", scenery: ["cactus", "mesa", "agave", "rock"],
+        weather: "dust"
+      },
+      city: {
+        name: "PACIFICA NIGHTS",
+        skyA: "#293f51", skyB: "#c16955", fog: "#a86857", sun: "#f5ae60",
+        land: "#3e4543", land2: "#4e514a", road: "#343638", road2: "#3d3e3f",
+        rumble: "#cbbf9e", accent: "#c54e3e", lane: "#e6d5a5", scenery: ["tower", "palm", "lamp", "hotel"],
+        weather: "lights"
+      }
+    };
+
+    const ROUTES = {
+      coast: {
+        id: "coast", theme: "coast", distance: 285, time: 52, difficulty: 1,
+        title: "THE OPENING MILES", subtitle: "Salt wind · radio loud",
+        next: [
+          { id: "country", label: "ORCHARD ROAD", side: -1, hint: "Fast & flowing" },
+          { id: "mountain", label: "SIERRA PASS", side: 1, hint: "Technical climb" }
+        ]
+      },
+      country: {
+        id: "country", theme: "country", distance: 300, time: 46, difficulty: 1.18,
+        title: "CITRUS VALLEY", subtitle: "Long bends · farm traffic",
+        next: [
+          { id: "harbor", label: "GOLDEN HARBOR", side: -1, hint: "Sea-level sprint" },
+          { id: "desert", label: "CANYON CUT", side: 1, hint: "Heat & hairpins" }
+        ]
+      },
+      mountain: {
+        id: "mountain", theme: "mountain", distance: 315, time: 49, difficulty: 1.28,
+        title: "SIERRA PASS", subtitle: "Cliffs · switchbacks · mist",
+        next: [
+          { id: "desert", label: "COPPER DESCENT", side: -1, hint: "Wild downhill" },
+          { id: "harbor", label: "OCEAN TUNNEL", side: 1, hint: "Nightfall route" }
+        ]
+      },
+      harbor: {
+        id: "harbor", theme: "harbor", distance: 325, time: 44, difficulty: 1.42,
+        title: "GOLDEN HARBOR", subtitle: "Docks · gulls · rush hour",
+        next: [
+          { id: "city", label: "PACIFICA", side: -1, hint: "Boulevard finale" },
+          { id: "coastFinal", label: "MOONLIGHT COAST", side: 1, hint: "Secret shoreline" }
+        ]
+      },
+      desert: {
+        id: "desert", theme: "desert", distance: 340, time: 46, difficulty: 1.55,
+        title: "COPPER CANYON", subtitle: "Dust · mesas · no guardrails",
+        next: [
+          { id: "coastFinal", label: "SUNSET TRACE", side: -1, hint: "Long way home" },
+          { id: "city", label: "CITY LIMITS", side: 1, hint: "Maximum traffic" }
+        ]
+      },
+      city: {
+        id: "city", theme: "city", distance: 365, time: 50, difficulty: 1.75,
+        title: "PACIFICA NIGHTS", subtitle: "Six lanes · last light",
+        ending: "NEON BOULEVARD"
+      },
+      coastFinal: {
+        id: "coastFinal", theme: "coast", distance: 350, time: 48, difficulty: 1.62,
+        title: "THE LAST COAST", subtitle: "Chase the edge of daylight",
+        ending: "COAST ROAD FOREVER"
+      }
+    };
+
+    const ENDINGS = {
+      "NEON BOULEVARD": {
+        title: "NEON BOULEVARD",
+        story: "You arrive with the city lights blinking awake behind the palms. The passenger laughs: we made every green light."
+      },
+      "COAST ROAD FOREVER": {
+        title: "COAST ROAD FOREVER",
+        story: "The highway runs out where the ocean turns copper. You park facing west and let the cassette finish."
+      },
+      "SUNSET OUTLAW": {
+        title: "SUNSET OUTLAW",
+        story: "No map, no clean fenders, no regrets. The canyon keeps your tire marks and the horizon keeps your name."
+      },
+      "POSTCARD PERFECT": {
+        title: "POSTCARD PERFECT",
+        story: "Every pass clean, every checkpoint early. Somewhere, this drive is already fading beautifully in a photo album."
+      }
+    };
+
+    // -------------------------------------------------------------------------
+    // Game state, generated road segments, cars, and particles
+    // -------------------------------------------------------------------------
+    const G = {
+      mode: "title",
+      legId: "coast",
+      leg: ROUTES.coast,
+      segments: [],
+      position: 0,
+      playerX: 0,
+      speed: 0,
+      timer: 60,
+      score: 0,
+      high: 0,
+      passes: 0,
+      nearMisses: 0,
+      combo: 1,
+      comboTime: 0,
+      damage: 0,
+      spin: 0,
+      spinDir: 1,
+      shake: 0,
+      flash: 0,
+      route: ["coast"],
+      checkpoint: 0,
+      forkActive: false,
+      forkChoice: null,
+      forkPulse: 0,
+      banner: "",
+      bannerSub: "",
+      bannerTime: 0,
+      rank: "",
+      ending: null,
+      totalTime: 0,
+      traffic: [],
+      particles: [],
+      motes: [],
+      lastTick: 99,
+      attractX: 0,
+      titlePhase: 0
+    };
+
+    function addSegment(curve, hill, special = null) {
+      const n = G.segments.length;
+      const y1 = n ? G.segments[n - 1].y2 : 0;
+      const y2 = y1 + hill * SEG_LEN;
+      G.segments.push({
+        index: n,
+        z1: n * SEG_LEN,
+        z2: (n + 1) * SEG_LEN,
+        y1,
+        y2,
+        curve,
+        special,
+        scenery: []
+      });
+    }
+
+    function addRoad(enter, hold, leave, curve, hill) {
+      const total = Math.max(1, enter + hold + leave);
+      for (let i = 0; i < enter; i++) addSegment(lerp(0, curve, ease(i / enter)), hill / total);
+      for (let i = 0; i < hold; i++) addSegment(curve, hill / total);
+      for (let i = 0; i < leave; i++) addSegment(lerp(curve, 0, ease(i / leave)), hill / total);
+    }
+
+    function buildRoad(legId) {
+      G.segments = [];
+      const leg = ROUTES[legId];
+      const r = seeded(8600 + [...legId].reduce((a, c) => a + c.charCodeAt(0), 0) * 17);
+      addRoad(12, 20, 12, 0, 0);
+      while (G.segments.length < leg.distance - 52) {
+        const roll = r();
+        const sign = r() < .5 ? -1 : 1;
+        const difficulty = leg.difficulty;
+        if (roll < .18) addRoad(12, 20 + (r() * 18 | 0), 12, 0, (r() - .45) * 9);
+        else if (roll < .74) addRoad(14, 16 + (r() * 22 | 0), 14, sign * (.38 + r() * .72) * difficulty, (r() - .48) * 15);
+        else addRoad(18, 12 + (r() * 12 | 0), 18, sign * (1.0 + r() * .7) * difficulty, (r() - .35) * 22);
+      }
+      const forkStart = leg.next ? G.segments.length : -1;
+      if (leg.next) {
+        addRoad(10, 32, 8, 0, 0);
+        for (let i = forkStart; i < Math.min(G.segments.length, forkStart + 42); i++) {
+          G.segments[i].special = i < forkStart + 7 ? "forkWarn" : "fork";
+        }
+      } else {
+        addRoad(10, 28, 10, 0, 0);
+      }
+      const gateIndex = G.segments.length - 12;
+      G.segments[gateIndex].special = "gate";
+      addRoad(6, 18, 6, 0, 0);
+
+      // Deterministic, staggered scenery with a protected road shoulder.
+      const theme = THEMES[leg.theme];
+      for (let i = 10; i < G.segments.length - 5; i++) {
+        const seg = G.segments[i];
+        if (r() < .32) {
+          const side = r() < .5 ? -1 : 1;
+          const count = r() < .12 ? 2 : 1;
+          for (let j = 0; j < count; j++) {
+            seg.scenery.push({
+              type: theme.scenery[(r() * theme.scenery.length) | 0],
+              side,
+              offset: 1.25 + r() * 2.4 + j * .34,
+              scale: .76 + r() * .52,
+              seed: r() * 100
+            });
+          }
+        }
+      }
+      return forkStart;
+    }
+
+    function spawnTraffic() {
+      G.traffic = [];
+      const leg = G.leg;
+      const rng = seeded(1986 + G.checkpoint * 413 + leg.id.length * 29);
+      const count = Math.floor(11 + leg.difficulty * 8);
+      const colors = ["#e7c569", "#4d8190", "#e8e0cb", "#8a5b49", "#5d7659", "#b95443", "#6c6680"];
+      for (let i = 0; i < count; i++) {
+        const z = (34 + i * ((G.segments.length - 62) / count) + rng() * 17) * SEG_LEN;
+        G.traffic.push({
+          z,
+          lane: [-.72, 0, .72][(rng() * 3) | 0] + (rng() - .5) * .1,
+          targetLane: 0,
+          speed: MAX_SPEED * (.22 + rng() * (.29 + leg.difficulty * .035)),
+          color: colors[(rng() * colors.length) | 0],
+          type: rng() < .14 ? "van" : rng() < .24 ? "wagon" : "car",
+          passed: false,
+          hitCooldown: 0,
+          changeClock: 1 + rng() * 5,
+          wobble: rng() * TAU,
+          id: i
+        });
+      }
+    }
+
+    function startRun() {
+      Audio.start();
+      G.mode = "play";
+      G.legId = "coast";
+      G.leg = ROUTES.coast;
+      G.position = 0;
+      G.playerX = 0;
+      G.speed = 0;
+      G.timer = 60;
+      G.score = 0;
+      G.passes = 0;
+      G.nearMisses = 0;
+      G.combo = 1;
+      G.comboTime = 0;
+      G.damage = 0;
+      G.spin = 0;
+      G.route = ["coast"];
+      G.checkpoint = 0;
+      G.totalTime = 0;
+      G.ending = null;
+      G.forkActive = false;
+      G.forkChoice = null;
+      G.lastTick = 99;
+      buildRoad("coast");
+      spawnTraffic();
+      showBanner("AZURE COAST", "60 SECONDS · FIND YOUR ROAD", 3.2);
+      burst(W * .5, playableBottom * .58, "#ffe6a6", 28, 1);
+    }
+
+    function showBanner(main, sub, duration = 2.4) {
+      G.banner = main;
+      G.bannerSub = sub;
+      G.bannerTime = duration;
+    }
+
+    function enterLeg(nextId) {
+      const option = G.leg.next.find(n => n.id === nextId);
+      G.score += Math.round(G.timer * 85 + 2500 * G.combo);
+      G.checkpoint++;
+      G.legId = nextId;
+      G.leg = ROUTES[nextId];
+      G.route.push(nextId);
+      G.position = 0;
+      G.playerX *= .45;
+      G.timer += G.leg.time;
+      G.damage = Math.max(0, G.damage - 14);
+      G.forkActive = false;
+      G.forkChoice = null;
+      buildRoad(nextId);
+      spawnTraffic();
+      Audio.sfx("checkpoint");
+      showBanner(G.leg.title, `+${G.leg.time} SEC · ${option ? option.hint.toUpperCase() : G.leg.subtitle.toUpperCase()}`, 3.1);
+      burst(W / 2, playableBottom * .36, "#fff0b0", 54, 1.4);
+      G.flash = .55;
+      G.shake = .32;
+    }
+
+    function finishRun() {
+      G.mode = "finish";
+      G.speed *= .72;
+      let endingName = G.leg.ending || "COAST ROAD FOREVER";
+      if (G.damage > 70) endingName = "SUNSET OUTLAW";
+      if (G.nearMisses >= 9 && G.damage < 30) endingName = "POSTCARD PERFECT";
+      G.ending = ENDINGS[endingName];
+      const pace = G.score / Math.max(1, G.totalTime);
+      G.rank = G.damage < 22 && pace > 1250 ? "S" : G.damage < 48 && pace > 850 ? "A" : G.damage < 75 ? "B" : "C";
+      G.score += Math.round(G.timer * 180 + (100 - G.damage) * 70);
+      G.high = Math.max(G.high, G.score);
+      Audio.sfx("finish");
+      burst(W / 2, playableBottom * .48, "#ffd77e", 100, 2.2);
+    }
+
+    function loseRun(reason) {
+      if (G.mode !== "play") return;
+      G.mode = "gameover";
+      G.speed *= .4;
+      G.high = Math.max(G.high, G.score);
+      G.bannerSub = reason;
+      Audio.sfx("hit");
+    }
+
+    function burst(x, y, color, count = 20, force = 1) {
+      for (let i = 0; i < count; i++) {
+        const a = rand(TAU);
+        const s = rand(35, 165) * force;
+        G.particles.push({
+          x, y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s - rand(10, 70),
+          life: rand(.35, 1.15),
+          max: 1,
+          color,
+          size: rand(1.5, 5.5),
+          kind: Math.random() < .35 ? "streak" : "dot"
+        });
+      }
+    }
+
+    function dust(side = 0) {
+      const carY = playableBottom * .81;
+      G.particles.push({
+        x: W / 2 + G.playerX * W * .13 + side * rand(16, 35),
+        y: carY + rand(10, 28),
+        vx: rand(-25, 25),
+        vy: rand(-80, -25),
+        life: rand(.3, .7), max: .7,
+        color: "#d5b17a", size: rand(4, 11), kind: "dust"
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // Simulation — driving feel, timer, fork commitment, traffic AI, collisions
+    // -------------------------------------------------------------------------
+    function currentSegment() {
+      return G.segments[Math.min(G.segments.length - 1, Math.floor(G.position / SEG_LEN))] || G.segments[0];
+    }
+
+    function update(dt) {
+      now += dt;
+      G.titlePhase += dt;
+      Audio.update();
+      updateParticles(dt);
+      G.flash = Math.max(0, G.flash - dt * 1.8);
+      G.shake = Math.max(0, G.shake - dt * 2.2);
+      G.bannerTime = Math.max(0, G.bannerTime - dt);
+
+      if (G.mode === "title") {
+        G.attractX = Math.sin(now * .47) * .42 + Math.sin(now * .19) * .16;
+        G.speed = lerp(G.speed, MAX_SPEED * .54, dt * .7);
+        return;
+      }
+      if (G.mode !== "play") {
+        G.speed = Math.max(0, G.speed + COAST * dt);
+        return;
+      }
+
+      G.totalTime += dt;
+      G.timer -= dt;
+      const whole = Math.ceil(G.timer);
+      if (whole <= 10 && whole !== G.lastTick && whole > 0) Audio.sfx("tick");
+      G.lastTick = whole;
+      if (G.timer <= 0) {
+        G.timer = 0;
+        loseRun("THE SUNSET WON THIS ROUND");
+        return;
+      }
+      if (G.damage >= 100) {
+        loseRun("THE ROADSTER NEEDS A LONG WEEKEND");
+        return;
+      }
+
+      const seg = currentSegment();
+      const speedPct = G.speed / MAX_SPEED;
+      const desired = (input.left ? -1 : 0) + (input.right ? 1 : 0);
+      steer = lerp(steer, desired, clamp(dt * 8.5, 0, 1));
+
+      if (G.spin > 0) {
+        G.spin -= dt;
+        G.playerX += Math.sin((1 - G.spin / 1.05) * Math.PI * 5) * dt * G.spinDir * 1.8;
+        G.speed += BRAKE * .42 * dt;
+      } else {
+        if (input.gas) G.speed += ACCEL * dt;
+        else G.speed += COAST * dt;
+        if (input.brake) G.speed += BRAKE * dt;
+        G.playerX += steer * dt * (1.45 + speedPct * 1.42);
+        G.playerX -= seg.curve * CENTRIFUGAL * speedPct * speedPct * dt;
+      }
+
+      const offroad = Math.abs(G.playerX) > 1.03;
+      if (offroad) {
+        G.speed += OFFROAD * dt;
+        G.damage = Math.min(100, G.damage + dt * (Math.abs(G.playerX) > 1.55 ? 2.8 : .65));
+        if (Math.random() < dt * 24) dust(Math.sign(G.playerX));
+        G.shake = Math.max(G.shake, .045);
+      }
+      G.speed = clamp(G.speed, 0, MAX_SPEED * (1 - G.damage * .0021));
+      G.playerX = clamp(G.playerX, -2.18, 2.18);
+      G.position += G.speed * dt;
+      if (speedPct > .04) G.score += Math.max(1, Math.floor(speedPct * speedPct * dt * 310));
+
+      if (G.comboTime > 0) {
+        G.comboTime -= dt;
+        if (G.comboTime <= 0) G.combo = 1;
+      }
+
+      const segIndex = Math.floor(G.position / SEG_LEN);
+      const forkStart = G.segments.findIndex(s => s.special === "forkWarn");
+      if (forkStart >= 0 && segIndex >= forkStart && !G.forkActive) {
+        G.forkActive = true;
+        G.forkPulse = 0;
+        Audio.sfx("fork");
+      }
+      if (G.forkActive) {
+        G.forkPulse += dt;
+        G.forkChoice = G.playerX < -.16 ? G.leg.next[0].id : G.playerX > .16 ? G.leg.next[1].id : null;
+      }
+
+      updateTraffic(dt);
+
+      const finishZ = (G.segments.length - 10) * SEG_LEN;
+      if (G.position >= finishZ) {
+        if (G.leg.next) {
+          const chosen = G.forkChoice || (G.playerX <= 0 ? G.leg.next[0].id : G.leg.next[1].id);
+          enterLeg(chosen);
+        } else finishRun();
+      }
+    }
+
+    function updateTraffic(dt) {
+      const playerZ = G.position + 350;
+      const difficulty = G.leg.difficulty;
+      for (const car of G.traffic) {
+        car.z += car.speed * dt;
+        car.hitCooldown = Math.max(0, car.hitCooldown - dt);
+        car.changeClock -= dt;
+        if (car.changeClock <= 0) {
+          car.changeClock = rand(2.2, 6.2) / difficulty;
+          const playerClosing = playerZ < car.z && car.z - playerZ < SEG_LEN * 32;
+          if (playerClosing && Math.random() < .55) {
+            const choices = [-.72, 0, .72].filter(l => Math.abs(l - car.lane) > .3);
+            car.targetLane = choose(choices);
+          } else car.targetLane = choose([-.72, 0, .72]);
+        }
+        car.lane = lerp(car.lane, car.targetLane, dt * (.18 + difficulty * .09));
+
+        const dz = car.z - playerZ;
+        const lateral = Math.abs(car.lane - G.playerX);
+        if (!car.passed && dz < -100 && dz > -SEG_LEN * 5) {
+          car.passed = true;
+          G.passes++;
+          G.combo = Math.min(8, G.combo + 1);
+          G.comboTime = 4.1;
+          G.score += 450 * G.combo;
+          if (lateral < .54 && G.speed > car.speed * 1.2) {
+            G.nearMisses++;
+            G.score += 900 * G.combo;
+            Audio.sfx("near");
+            showBanner("THREAD THE NEEDLE", `NEAR MISS · ×${G.combo}`, 1.1);
+            G.shake = .12;
+          } else Audio.sfx("pass");
+        }
+
+        if (Math.abs(dz) < SEG_LEN * .72 && lateral < (car.type === "van" ? .38 : .32) && car.hitCooldown <= 0 && G.spin <= 0) {
+          car.hitCooldown = 2;
+          G.spin = 1.05;
+          G.spinDir = G.playerX < car.lane ? -1 : 1;
+          G.damage = Math.min(100, G.damage + (car.type === "van" ? 23 : 17));
+          G.speed *= .49;
+          G.combo = 1;
+          G.comboTime = 0;
+          G.shake = .72;
+          G.flash = .72;
+          Audio.sfx("hit");
+          burst(W / 2 + G.playerX * W * .12, playableBottom * .72, "#ffd28a", 38, 1.6);
+          showBanner("FENDER BENDER", "COUNTERSTEER · KEEP MOVING", 1.4);
+        }
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = G.particles.length - 1; i >= 0; i--) {
+        const p = G.particles[i];
+        p.life -= dt;
+        if (p.life <= 0) {
+          G.particles.splice(i, 1);
+          continue;
+        }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += (p.kind === "dust" ? -8 : 120) * dt;
+        p.vx *= Math.pow(.7, dt);
+      }
+      if (G.mode === "play" && Math.random() < dt * 3) {
+        G.motes.push({ x: rand(W), y: rand(playableBottom * .15, playableBottom * .65), life: rand(1, 3), drift: rand(-12, 12) });
+      }
+      for (let i = G.motes.length - 1; i >= 0; i--) {
+        const p = G.motes[i];
+        p.life -= dt;
+        p.x += p.drift * dt;
+        p.y += 6 * dt;
+        if (p.life <= 0) G.motes.splice(i, 1);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Pseudo-3D projection and world rendering
+    // -------------------------------------------------------------------------
+    function project(worldX, worldY, worldZ, cameraX, cameraY, cameraZ) {
+      const dz = Math.max(1, worldZ - cameraZ);
+      const scale = CAMERA_D / dz;
+      return {
+        x: W / 2 + scale * (worldX - cameraX) * W / 2,
+        y: playableBottom * .52 - scale * (worldY - cameraY) * playableBottom / 2,
+        w: scale * ROAD_W * W / 2,
+        scale
+      };
+    }
+
+    function poly(x1, y1, w1, x2, y2, w2, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x1 - w1, y1);
+      ctx.lineTo(x2 - w2, y2);
+      ctx.lineTo(x2 + w2, y2);
+      ctx.lineTo(x1 + w1, y1);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function renderWorld(playerXOverride = null) {
+      const leg = G.leg || ROUTES.coast;
+      const theme = THEMES[leg.theme];
+      const pos = G.mode === "title" ? wrap(now * MAX_SPEED * .31, Math.max(SEG_LEN, G.segments.length * SEG_LEN - SEG_LEN * 30)) : G.position;
+      const playerX = playerXOverride === null ? G.playerX : playerXOverride;
+      const baseIndex = Math.floor(pos / SEG_LEN);
+      const basePct = wrap(pos, SEG_LEN) / SEG_LEN;
+      const baseSeg = G.segments[Math.min(baseIndex, G.segments.length - 1)] || { y1: 0, y2: 0, curve: 0 };
+      const cameraY = lerp(baseSeg.y1, baseSeg.y2, basePct) + CAMERA_H;
+      const drawDist = compact ? DRAW_DIST_MOBILE : DRAW_DIST_DESKTOP;
+      let x = 0;
+      let dx = -(baseSeg.curve || 0) * basePct;
+      let maxY = playableBottom;
+      const projected = [];
+
+      for (let n = 0; n < drawDist; n++) {
+        const index = baseIndex + n;
+        if (index >= G.segments.length) break;
+        const seg = G.segments[index];
+        const p1 = project(x, seg.y1, seg.z1, playerX * ROAD_W, cameraY, pos);
+        x += dx;
+        dx += seg.curve;
+        const p2 = project(x, seg.y2, seg.z2, playerX * ROAD_W, cameraY, pos);
+        p1.worldZ = seg.z1;
+        p2.worldZ = seg.z2;
+        projected.push({ seg, p1, p2, n, x });
+      }
+
+      drawSky(theme, baseSeg.curve || 0, pos);
+
+      for (let i = projected.length - 1; i >= 0; i--) {
+        const item = projected[i];
+        const { seg, p1, p2, n } = item;
+        if (p2.y >= p1.y) continue;
+        const fog = clamp((n - drawDist * .56) / (drawDist * .44), 0, 1);
+        const band = (Math.floor(seg.index / 3) & 1) === 0;
+        const grass = band ? theme.land : theme.land2;
+        const road = band ? theme.road : theme.road2;
+        ctx.fillStyle = mix(grass, theme.fog, fog * .72);
+        ctx.fillRect(0, p2.y, W, p1.y - p2.y + 1);
+
+        const rumble1 = p1.w * 1.16;
+        const rumble2 = p2.w * 1.16;
+        poly(p1.x, p1.y, rumble1, p2.x, p2.y, rumble2, mix(band ? theme.rumble : theme.accent, theme.fog, fog));
+        poly(p1.x, p1.y, p1.w, p2.x, p2.y, p2.w, mix(road, theme.fog, fog * .88));
+
+        // Three subtle lane markers, shortened into period-correct dashes.
+        if ((Math.floor(seg.index / 2) & 1) === 0) {
+          for (let lane = 1; lane < 3; lane++) {
+            const a = lane / 3 * 2 - 1;
+            const lw1 = Math.max(.45, p1.w * .008);
+            const lw2 = Math.max(.2, p2.w * .008);
+            poly(p1.x + p1.w * a, p1.y, lw1, p2.x + p2.w * a, p2.y, lw2, mix(theme.lane, theme.fog, fog));
+          }
+        }
+
+        if (seg.special === "fork") drawForkPaint(p1, p2, theme, fog);
+        if (seg.special === "gate") drawGate(p2, theme, fog, leg.ending ? "FINISH" : "CHECKPOINT");
+
+        // Scenery is drawn back-to-front and clipped naturally by the road crest.
+        for (const prop of seg.scenery) {
+          const sideX = p2.x + p2.w * prop.side * prop.offset;
+          const size = p2.w * .19 * prop.scale;
+          if (size > .8 && sideX > -size * 2 && sideX < W + size * 2) drawScenery(prop, sideX, p2.y, size, fog, theme);
+        }
+        maxY = p2.y;
+      }
+
+      drawTraffic(projected, pos, playerX, cameraY, theme);
+      drawAtmosphere(theme);
+      drawPlayerCar();
+      drawParticles();
+    }
+
+    function mix(a, b, t) {
+      t = clamp(t, 0, 1);
+      const aa = parseInt(a.slice(1), 16);
+      const bb = parseInt(b.slice(1), 16);
+      const ar = aa >> 16, ag = aa >> 8 & 255, ab = aa & 255;
+      const br = bb >> 16, bg = bb >> 8 & 255, bl = bb & 255;
+      return `rgb(${lerp(ar, br, t) | 0},${lerp(ag, bg, t) | 0},${lerp(ab, bl, t) | 0})`;
+    }
+
+    function drawSky(theme, curve, pos) {
+      const horizon = playableBottom * .515;
+      const grad = ctx.createLinearGradient(0, 0, 0, horizon);
+      grad.addColorStop(0, theme.skyA);
+      grad.addColorStop(.62, theme.skyB);
+      grad.addColorStop(1, theme.fog);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, horizon + 2);
+
+      // Sun and haze are intentionally matte, like ink on a faded cabinet side.
+      const sunX = W * .72 - curve * 18;
+      const sunY = horizon * .55;
+      const sunR = clamp(W * .055, 22, 58);
+      const glow = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunR * 2.4);
+      glow.addColorStop(0, rgba(theme.sun, .64));
+      glow.addColorStop(.45, rgba(theme.sun, .18));
+      glow.addColorStop(1, rgba(theme.sun, 0));
+      ctx.fillStyle = glow;
+      ctx.fillRect(sunX - sunR * 3, sunY - sunR * 3, sunR * 6, sunR * 6);
+      ctx.fillStyle = theme.sun;
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, sunR, 0, TAU);
+      ctx.fill();
+      ctx.save();
+      ctx.globalCompositeOperation = "destination-out";
+      for (let i = 0; i < 5; i++) ctx.fillRect(sunX - sunR, sunY + sunR * (.12 + i * .17), sunR * 2, Math.max(1, sunR * .035));
+      ctx.restore();
+
+      const parallax = pos * .00012 + curve * .035;
+      drawMountainLayer(horizon * .84, W * .055, parallax * .35, mix(theme.land, theme.skyA, .42), 15);
+      drawMountainLayer(horizon * .93, W * .085, parallax * .72, mix(theme.land, theme.fog, .25), 11);
+      if (theme.water) {
+        const waterX = G.leg.theme === "harbor" ? 0 : W * .56;
+        ctx.fillStyle = rgba("#5e9baa", .46);
+        ctx.fillRect(waterX, horizon * .93, W - waterX, horizon * .12);
+        ctx.strokeStyle = rgba("#ffe3a2", .35);
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+          const y = horizon * (.95 + i * .019);
+          ctx.beginPath();
+          ctx.moveTo(waterX + (i % 2) * 23, y);
+          ctx.lineTo(W, y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawMountainLayer(base, amp, scroll, color, peaks) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, base);
+      for (let i = 0; i <= peaks; i++) {
+        const x = i / peaks * W;
+        const phase = i * 2.17 + scroll;
+        const y = base - (Math.sin(phase) * .28 + Math.sin(phase * .47 + 2) * .3 + .48) * amp;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, playableBottom * .54);
+      ctx.lineTo(0, playableBottom * .54);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawForkPaint(p1, p2, theme, fog) {
+      const alpha = 1 - fog;
+      ctx.save();
+      ctx.globalAlpha = alpha * .82;
+      ctx.strokeStyle = theme.lane;
+      ctx.lineWidth = Math.max(1, p1.w * .018);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x - p2.w * .45, p2.y);
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x + p2.w * .45, p2.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawGate(p, theme, fog, caption) {
+      const h = p.w * .38;
+      const post = Math.max(1, p.w * .035);
+      ctx.save();
+      ctx.globalAlpha = 1 - fog;
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(p.x - p.w * .92, p.y - h, post, h);
+      ctx.fillRect(p.x + p.w * .92 - post, p.y - h, post, h);
+      ctx.fillStyle = "#efe3bd";
+      ctx.fillRect(p.x - p.w * .92, p.y - h, p.w * 1.84, h * .24);
+      ctx.fillStyle = "#4a2720";
+      ctx.font = `900 ${Math.max(3, p.w * .085)}px "Trebuchet MS",sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(caption, p.x, p.y - h * .88);
+      ctx.restore();
+    }
+
+    function drawScenery(prop, x, y, s, fog, theme) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.globalAlpha = 1 - fog * .94;
+      const flip = prop.side < 0 ? -1 : 1;
+      ctx.scale(flip, 1);
+      const dark = mix(theme.land, "#251914", .46);
+      const light = mix(theme.land2, "#eed28e", .32);
+      const t = prop.type;
+
+      if (t === "palm") {
+        ctx.strokeStyle = "#493528";
+        ctx.lineWidth = s * .12;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(s * .18, -s * 1.2, 0, -s * 2.2); ctx.stroke();
+        ctx.strokeStyle = "#466348";
+        ctx.lineWidth = s * .13;
+        for (let i = 0; i < 7; i++) {
+          const a = -Math.PI + i / 6 * Math.PI;
+          ctx.beginPath(); ctx.moveTo(0, -s * 2.18); ctx.quadraticCurveTo(Math.cos(a) * s * .55, -s * 2.5, Math.cos(a) * s * 1.05, -s * 2.18 + Math.sin(a) * s * .42); ctx.stroke();
+        }
+      } else if (t === "oak") {
+        ctx.fillStyle = "#5a4130"; ctx.fillRect(-s * .12, -s * 1.45, s * .24, s * 1.45);
+        ctx.fillStyle = "#526b43";
+        for (const [ox, oy, r] of [[0,-1.65,.62],[-.48,-1.45,.48],[.5,-1.4,.5],[.15,-2.08,.46]]) {
+          ctx.beginPath(); ctx.arc(ox*s, oy*s, r*s, 0, TAU); ctx.fill();
+        }
+      } else if (t === "pine") {
+        ctx.fillStyle = "#394c3e";
+        for (let i = 0; i < 3; i++) {
+          ctx.beginPath(); ctx.moveTo(0, -s * (2.45 - i*.5)); ctx.lineTo(-s * (.75 - i*.08), -s * (.55 + i*.42)); ctx.lineTo(s * (.75 - i*.08), -s * (.55 + i*.42)); ctx.closePath(); ctx.fill();
+        }
+        ctx.fillStyle = "#513c2c"; ctx.fillRect(-s*.09,-s*.55,s*.18,s*.55);
+      } else if (t === "cactus") {
+        ctx.fillStyle = "#4c7354"; rr(-s*.16,-s*1.75,s*.32,s*1.75,s*.15); ctx.fill();
+        rr(-s*.5,-s*1.15,s*.3,s*.25,s*.12); ctx.fill(); rr(-s*.5,-s*1.4,s*.18,s*.52,s*.09); ctx.fill();
+        rr(s*.2,-s*.93,s*.38,s*.23,s*.1); ctx.fill(); rr(s*.4,-s*1.23,s*.18,s*.5,s*.09); ctx.fill();
+      } else if (t === "agave") {
+        ctx.fillStyle = "#62806a";
+        for (let i = 0; i < 8; i++) { ctx.save(); ctx.rotate(i/8*TAU); ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(s*.13,-s*.45,0,-s*.95); ctx.quadraticCurveTo(-s*.08,-s*.35,0,0); ctx.fill(); ctx.restore(); }
+      } else if (t === "rock" || t === "boulder" || t === "mesa") {
+        ctx.fillStyle = t === "mesa" ? "#92553c" : dark;
+        ctx.beginPath();
+        if (t === "mesa") { ctx.moveTo(-s*1.2,0); ctx.lineTo(-s*.9,-s*.65); ctx.lineTo(-s*.48,-s*.83); ctx.lineTo(s*.63,-s*.78); ctx.lineTo(s*1.1,-s*.32); ctx.lineTo(s*1.25,0); }
+        else { ctx.moveTo(-s*.7,0); ctx.lineTo(-s*.5,-s*.62); ctx.lineTo(s*.08,-s*.92); ctx.lineTo(s*.7,-s*.35); ctx.lineTo(s*.82,0); }
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = rgba("#f0b070",.32); ctx.lineWidth=s*.07; ctx.stroke();
+      } else if (t === "barn" || t === "cabin" || t === "warehouse" || t === "villa") {
+        const w = t === "warehouse" ? 1.7 : 1.25;
+        ctx.fillStyle = t === "villa" ? "#e4d3aa" : t === "barn" ? "#8e3f31" : light;
+        ctx.fillRect(-s*w/2,-s*1.05,s*w,s*1.05);
+        ctx.fillStyle = dark;
+        ctx.beginPath(); ctx.moveTo(-s*w*.62,-s*1.03); ctx.lineTo(0,-s*1.62); ctx.lineTo(s*w*.62,-s*1.03); ctx.closePath(); ctx.fill();
+        ctx.fillStyle="#f2c66f"; ctx.fillRect(-s*.18,-s*.63,s*.36,s*.63);
+      } else if (t === "windmill") {
+        ctx.strokeStyle = dark; ctx.lineWidth=s*.07; ctx.beginPath(); ctx.moveTo(-s*.32,0);ctx.lineTo(0,-s*1.45);ctx.lineTo(s*.32,0);ctx.stroke();
+        ctx.translate(0,-s*1.52); ctx.rotate(now*.35+prop.seed);
+        for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.fillStyle="#e5d7ae";ctx.fillRect(0,-s*.05,s*.82,s*.1);ctx.strokeStyle=dark;ctx.strokeRect(0,-s*.05,s*.82,s*.1);}
+      } else if (t === "crane") {
+        ctx.strokeStyle="#6d4933";ctx.lineWidth=s*.1;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-s*2.2);ctx.lineTo(s*1.2,-s*2.2);ctx.stroke();ctx.lineWidth=s*.035;ctx.beginPath();ctx.moveTo(s*.9,-s*2.2);ctx.lineTo(s*.9,-s*.8);ctx.stroke();
+      } else if (t === "boat") {
+        ctx.fillStyle="#e8dfc5";ctx.beginPath();ctx.moveTo(-s*.75,0);ctx.lineTo(-s*.55,-s*.35);ctx.lineTo(s*.7,-s*.35);ctx.lineTo(s*.48,0);ctx.closePath();ctx.fill();ctx.strokeStyle=dark;ctx.lineWidth=s*.05;ctx.beginPath();ctx.moveTo(0,-s*.35);ctx.lineTo(0,-s*1.25);ctx.stroke();ctx.fillStyle="#d49355";ctx.beginPath();ctx.moveTo(0,-s*1.22);ctx.lineTo(s*.65,-s*.55);ctx.lineTo(0,-s*.55);ctx.closePath();ctx.fill();
+      } else if (t === "hay") {
+        ctx.fillStyle="#c99a4e";ctx.beginPath();ctx.arc(0,-s*.35,s*.4,0,TAU);ctx.fill();ctx.strokeStyle="#6f5530";ctx.lineWidth=s*.04;ctx.stroke();
+      } else if (t === "tower" || t === "hotel") {
+        const h = t === "hotel" ? 2.25 : 3.2;
+        ctx.fillStyle = t === "hotel" ? "#87604e" : "#46525a";
+        ctx.fillRect(-s*.48,-s*h,s*.96,s*h);
+        ctx.fillStyle="#edc171";
+        for(let yy=.28;yy<h-.15;yy+=.38)for(let xx=-.3;xx<=.3;xx+=.3)if(((yy*10+xx*10+prop.seed)|0)%3)ctx.fillRect(s*xx,-s*(h-yy),s*.11,s*.16);
+      } else if (t === "lamp") {
+        ctx.strokeStyle="#343532";ctx.lineWidth=s*.08;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-s*1.8);ctx.quadraticCurveTo(s*.5,-s*1.8,s*.52,-s*1.5);ctx.stroke();ctx.fillStyle="#ffd782";ctx.beginPath();ctx.arc(s*.52,-s*1.48,s*.15,0,TAU);ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawTraffic(projected, pos, playerX, cameraY, theme) {
+      const visible = [];
+      for (const car of G.traffic) {
+        const dz = car.z - pos;
+        if (dz < SEG_LEN * 2 || dz > SEG_LEN * (compact ? DRAW_DIST_MOBILE : DRAW_DIST_DESKTOP)) continue;
+        const index = Math.floor(car.z / SEG_LEN);
+        const seg = G.segments[index];
+        if (!seg) continue;
+        const item = projected.find(p => p.seg.index === index);
+        if (!item) continue;
+        const pct = wrap(car.z, SEG_LEN) / SEG_LEN;
+        const roadX = lerp(item.p1.x, item.p2.x, pct);
+        const roadW = lerp(item.p1.w, item.p2.w, pct);
+        const py = lerp(item.p1.y, item.p2.y, pct);
+        visible.push({ car, x: roadX + roadW * car.lane, y: py, s: roadW * .24, dz });
+      }
+      visible.sort((a,b)=>b.dz-a.dz);
+      for(const v of visible) drawTrafficCar(v.car,v.x,v.y,v.s,clamp(v.dz/(SEG_LEN*220),0,1),theme);
+    }
+
+    function drawTrafficCar(car, x, y, s, fog, theme) {
+      if(s<1)return;
+      ctx.save();ctx.translate(x,y);ctx.globalAlpha=1-fog*.92;
+      const h=s*(car.type==="van"?1.25:.78);const w=s*(car.type==="van"?.95:1.08);
+      ctx.fillStyle="rgba(20,13,10,.28)";ctx.beginPath();ctx.ellipse(0,s*.08,w*.72,s*.2,0,0,TAU);ctx.fill();
+      ctx.fillStyle="#25221f";ctx.fillRect(-w*.55,-h*.22,w*.16,h*.3);ctx.fillRect(w*.39,-h*.22,w*.16,h*.3);
+      ctx.fillStyle=car.color;rr(-w*.5,-h,w,h,s*.12);ctx.fill();
+      ctx.fillStyle=mix("#95b2b5",theme.fog,.2);rr(-w*.34,-h*.83,w*.68,h*.33,s*.08);ctx.fill();
+      ctx.fillStyle="#f4c46d";ctx.fillRect(-w*.39,-h*.22,w*.18,h*.12);ctx.fillRect(w*.21,-h*.22,w*.18,h*.12);
+      ctx.fillStyle="#7a201d";ctx.fillRect(-w*.43,-h*.38,w*.17,h*.11);ctx.fillRect(w*.26,-h*.38,w*.17,h*.11);
+      ctx.fillStyle="#ded2ad";ctx.fillRect(-w*.22,-h*.31,w*.44,h*.13);
+      ctx.restore();
+    }
+
+    function drawAtmosphere(theme) {
+      ctx.save();
+      if (theme.weather === "gulls") {
+        ctx.strokeStyle="rgba(54,43,34,.55)";ctx.lineWidth=1.4;
+        for(let i=0;i<4;i++){const x=wrap(i*173+now*8,W+80)-40;const y=playableBottom*(.15+i*.035);ctx.beginPath();ctx.arc(x-5,y,7,Math.PI*1.15,Math.PI*1.9);ctx.arc(x+7,y,7,Math.PI*1.1,Math.PI*1.85);ctx.stroke();}
+      }
+      if(theme.weather==="dust"&&G.mode==="play"){
+        ctx.fillStyle="rgba(226,166,96,.16)";for(let i=0;i<16;i++){const x=wrap(i*97-now*G.speed*.008,W);const y=playableBottom*(.34+((i*37)%60)/100);ctx.fillRect(x,y,2+i%4,1);}
+      }
+      if(theme.weather==="mist"){
+        const g=ctx.createLinearGradient(0,playableBottom*.32,0,playableBottom*.66);g.addColorStop(0,"rgba(210,205,181,0)");g.addColorStop(.5,"rgba(210,205,181,.12)");g.addColorStop(1,"rgba(210,205,181,0)");ctx.fillStyle=g;ctx.fillRect(0,playableBottom*.25,W,playableBottom*.45);
+      }
+      for(const p of G.motes){ctx.globalAlpha=clamp(p.life/2,0,.28);ctx.fillStyle="#fff0c2";ctx.fillRect(p.x,p.y,1.5,1.5);}
+      ctx.restore();
+    }
+
+    function drawPlayerCar() {
+      const speedPct=G.speed/MAX_SPEED;
+      const baseW=clamp(W*(compact?.23:.17),74,176);
+      const baseH=baseW*.56;
+      const x=W/2+G.playerX*W*.115+steer*baseW*.09;
+      const y=playableBottom*(mobile?.79:.84)+Math.sin(now*18)*speedPct*1.2;
+      const spinAngle=G.spin>0?Math.sin((1-G.spin/1.05)*Math.PI*2.5)*.36*G.spinDir:steer*.045;
+      ctx.save();ctx.translate(x,y);ctx.rotate(spinAngle);
+      ctx.fillStyle="rgba(24,15,10,.38)";ctx.beginPath();ctx.ellipse(0,baseH*.39,baseW*.58,baseH*.23,0,0,TAU);ctx.fill();
+      // Road spray and tire streaks at speed.
+      if(speedPct>.72){ctx.strokeStyle=`rgba(255,229,171,${(speedPct-.72)*.8})`;ctx.lineWidth=2;for(let i=-1;i<=1;i+=2){ctx.beginPath();ctx.moveTo(i*baseW*.38,baseH*.25);ctx.lineTo(i*baseW*.52,baseH*.9+rand(0,15));ctx.stroke();}}
+      ctx.fillStyle="#24201d";rr(-baseW*.49,baseH*.05,baseW*.15,baseH*.46,baseW*.04);ctx.fill();rr(baseW*.34,baseH*.05,baseW*.15,baseH*.46,baseW*.04);ctx.fill();
+      // Unbadged, original wedge-shaped convertible body.
+      ctx.fillStyle="#8f2424";ctx.beginPath();ctx.moveTo(-baseW*.52,baseH*.37);ctx.lineTo(-baseW*.46,-baseH*.08);ctx.lineTo(-baseW*.3,-baseH*.34);ctx.lineTo(baseW*.3,-baseH*.34);ctx.lineTo(baseW*.46,-baseH*.08);ctx.lineTo(baseW*.52,baseH*.37);ctx.closePath();ctx.fill();
+      const body=ctx.createLinearGradient(-baseW*.5,0,baseW*.5,0);body.addColorStop(0,"#8e2423");body.addColorStop(.42,"#d34a38");body.addColorStop(.72,"#bb332e");body.addColorStop(1,"#79211f");ctx.fillStyle=body;rr(-baseW*.5,-baseH*.05,baseW,baseH*.45,baseH*.12);ctx.fill();
+      ctx.strokeStyle="#f0835a";ctx.lineWidth=Math.max(1,baseW*.012);ctx.beginPath();ctx.moveTo(-baseW*.39,0);ctx.quadraticCurveTo(0,baseH*.13,baseW*.39,0);ctx.stroke();
+      // Cabin, driver, passenger, and the memorable striped scarf.
+      ctx.fillStyle="#352c28";rr(-baseW*.31,-baseH*.39,baseW*.62,baseH*.35,baseH*.1);ctx.fill();
+      ctx.fillStyle="#684b39";ctx.beginPath();ctx.arc(-baseW*.14,-baseH*.43,baseH*.11,0,TAU);ctx.fill();ctx.beginPath();ctx.arc(baseW*.14,-baseH*.43,baseH*.11,0,TAU);ctx.fill();
+      ctx.fillStyle="#27221e";ctx.beginPath();ctx.arc(-baseW*.14,-baseH*.48,baseH*.115,Math.PI,TAU);ctx.fill();
+      ctx.fillStyle="#d5b06e";ctx.beginPath();ctx.arc(baseW*.14,-baseH*.5,baseH*.13,Math.PI,TAU);ctx.fill();
+      ctx.strokeStyle="#fff0c2";ctx.lineWidth=baseW*.024;ctx.beginPath();ctx.moveTo(baseW*.18,-baseH*.38);for(let i=0;i<5;i++)ctx.lineTo(baseW*(.27+i*.08),-baseH*(.34+Math.sin(now*12+i)*.035));ctx.stroke();
+      ctx.strokeStyle="#b83c32";ctx.lineWidth=baseW*.012;ctx.stroke();
+      ctx.fillStyle="#f3d79c";ctx.fillRect(-baseW*.39,baseH*.18,baseW*.17,baseH*.1);ctx.fillRect(baseW*.22,baseH*.18,baseW*.17,baseH*.1);
+      ctx.fillStyle="#6f1c1c";ctx.fillRect(-baseW*.42,baseH*.05,baseW*.19,baseH*.08);ctx.fillRect(baseW*.23,baseH*.05,baseW*.19,baseH*.08);
+      ctx.fillStyle="#eee0b9";rr(-baseW*.16,baseH*.18,baseW*.32,baseH*.1,2);ctx.fill();
+      ctx.fillStyle="#3d3027";ctx.font=`900 ${baseH*.11}px sans-serif`;ctx.textAlign="center";ctx.fillText("SOL 86",0,baseH*.26);
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for(const p of G.particles){const a=clamp(p.life/p.max,0,1);ctx.globalAlpha=a*.9;ctx.fillStyle=p.color;if(p.kind==="streak"){ctx.strokeStyle=p.color;ctx.lineWidth=p.size;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x-p.vx*.035,p.y-p.vy*.035);ctx.stroke();}else{ctx.beginPath();ctx.arc(p.x,p.y,p.size*(p.kind==="dust"?(1.5-a):1),0,TAU);ctx.fill();}}
+      ctx.restore();
+    }
+
+    // -------------------------------------------------------------------------
+    // HUD, route ribbon, fork signage, banners, title and result screens
+    // -------------------------------------------------------------------------
+    function drawHUD() {
+      if(G.mode!=="play")return;
+      const pad=compact?10:18;
+      const timerSize=compact?27:38;
+      ctx.save();
+      ctx.fillStyle="rgba(28,18,13,.42)";rr(pad,pad,compact?112:148,compact?50:62,6);ctx.fill();
+      label("TIME",pad+12,pad+(compact?12:16),compact?8:10,"#f2d9a3","left");
+      text(Math.ceil(G.timer).toString().padStart(2,"0"),pad+12,pad+(compact?34:43),timerSize,G.timer<10&&Math.floor(now*6)%2?"#d74938":"#fff0c2","left",900);
+      const sx=W-pad;
+      label("KM/H",sx,pad+12,compact?8:10,"#e6c892","right");
+      text(String(Math.round(G.speed/MAX_SPEED*298)),sx,pad+(compact?35:43),timerSize,"#fff0c2","right",900);
+      label(`${G.score.toString().padStart(7,"0")}  ·  ×${G.combo}`,W/2,pad+13,compact?9:12,"#fff0c2");
+      drawRouteRibbon(W/2,pad+(compact?32:40));
+
+      // Damage is a thin dashboard needle, not another giant panel.
+      const dw=compact?86:124;const dx=W-pad-dw;const dy=pad+(compact?54:68);
+      ctx.fillStyle="rgba(29,19,14,.45)";ctx.fillRect(dx,dy,dw,4);
+      ctx.fillStyle=G.damage>70?"#d54435":G.damage>40?"#e49b43":"#7f9c62";ctx.fillRect(dx,dy,dw*G.damage/100,4);
+      label("BODY",dx-5,dy+2,compact?7:8,"#e3c99a","right");
+
+      if(G.combo>1&&G.comboTime>0){const a=clamp(G.comboTime,0,1);ctx.globalAlpha=.55+.45*a;label(`${G.combo}× SUNSET STREAK`,W/2,playableBottom*(compact?.17:.15),compact?10:14,"#ffd477");}
+      ctx.restore();
+    }
+
+    function drawRouteRibbon(cx,y) {
+      const nodes=["coast",G.route[1]||"?",G.route[2]||"?",G.route[3]||"?"];
+      const gap=compact?22:31;const start=cx-gap*1.5;
+      ctx.save();ctx.strokeStyle="rgba(255,232,181,.34)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(start,y);ctx.lineTo(start+gap*3,y);ctx.stroke();
+      nodes.forEach((n,i)=>{ctx.fillStyle=i<=G.checkpoint?"#f1b45d":"rgba(255,238,192,.3)";ctx.beginPath();ctx.arc(start+i*gap,y,i===G.checkpoint?4.5:3,0,TAU);ctx.fill();});ctx.restore();
+    }
+
+    function drawForkOverlay() {
+      if(!G.forkActive||G.mode!=="play"||!G.leg.next)return;
+      const top=playableBottom*(compact?.19:.18);const h=compact?63:78;const gap=8;const total=Math.min(W-20,compact?300:520);const card=(total-gap)/2;const x=(W-total)/2;
+      ctx.save();
+      G.leg.next.forEach((opt,i)=>{const selected=G.forkChoice===opt.id;const ox=x+i*(card+gap);ctx.globalAlpha=selected?1:.72;ctx.fillStyle=selected?"rgba(173,61,43,.84)":"rgba(32,22,17,.7)";rr(ox,top,card,h,5);ctx.fill();ctx.strokeStyle=selected?"#ffe4a0":"rgba(255,235,186,.45)";ctx.lineWidth=selected?2:1;ctx.stroke();label(i===0?"◀ LEFT":"RIGHT ▶",ox+card/2,top+14,compact?8:10,"#f0bf70");label(opt.label,ox+card/2,top+(compact?34:41),compact?10:14,"#fff0c2");text(opt.hint,ox+card/2,top+h-12,compact?8:10,"#e0c08d");});
+      label("CHOOSE WITH THE ROAD · NO PAUSE",W/2,top+h+13,compact?7:9,"#f8dca4");
+      ctx.restore();
+    }
+
+    function drawBanner() {
+      if(G.bannerTime<=0||G.mode!=="play")return;
+      const life=Math.min(1,G.bannerTime*2);const y=playableBottom*(compact?.33:.31);const w=Math.min(W*.84,620);const h=compact?58:76;
+      ctx.save();ctx.globalAlpha=ease(life);ctx.translate(0,(1-life)*-14);
+      const g=ctx.createLinearGradient(W/2-w/2,0,W/2+w/2,0);g.addColorStop(0,"rgba(32,20,14,0)");g.addColorStop(.18,"rgba(32,20,14,.75)");g.addColorStop(.82,"rgba(32,20,14,.75)");g.addColorStop(1,"rgba(32,20,14,0)");ctx.fillStyle=g;ctx.fillRect(W/2-w/2,y-h/2,w,h);
+      label(G.banner,W/2,y-(compact?9:12),compact?16:24,"#fff0c2");text(G.bannerSub,W/2,y+(compact?15:20),compact?8:11,"#efb861");ctx.restore();
+    }
+
+    function drawTitle() {
+      if(G.mode!=="title")return;
+      const centerY=playableBottom*(compact?.29:.28);const s=clamp(W*(compact?.1:.082),34,76);
+      ctx.fillStyle="rgba(32,18,12,.23)";ctx.fillRect(0,0,W,playableBottom);
+      shadowTitle("COASTAL",W/2,centerY,s,"#f5d594");
+      shadowTitle("RUSH '86",W/2,centerY+s*.9,s*1.08,"#cf4935");
+      label("A SUN-FADED ARCADE ROAD MOVIE",W/2,centerY+s*1.62,compact?8:12,"#ffe3a6");
+
+      const panelY=playableBottom*(compact?.56:.58);const panelW=Math.min(W-34,compact?290:500);const panelH=compact?86:102;
+      ctx.fillStyle="rgba(34,22,16,.66)";rr(W/2-panelW/2,panelY,panelW,panelH,6);ctx.fill();ctx.strokeStyle="rgba(255,231,177,.42)";ctx.stroke();
+      label("ONE TOUR · FOUR ROUTES · YOUR ENDING",W/2,panelY+16,compact?8:11,"#efb65e");
+      drawTitleMap(W/2,panelY+(compact?45:52),panelW*.76,compact?30:39);
+      text("← → STEER    ↑ GAS    ↓ BRAKE",W/2,panelY+panelH-13,compact?8:10,"#ead5a6");
+      const blink=.55+.45*Math.sin(now*4);ctx.globalAlpha=blink;label(mobile?"TAP TO DROP THE TOP":"PRESS ENTER · CHASE THE SUN",W/2,playableBottom*(compact?.84:.86),compact?11:15,"#fff0c2");ctx.restore();
+      label("GPT 5.6 SOL",14,playableBottom-14,compact?7:9,"rgba(255,231,180,.65)","left");
+    }
+
+    function drawTitleMap(cx,cy,w,h) {
+      const xs=[cx-w*.43,cx-w*.14,cx+w*.14,cx+w*.43];
+      ctx.save();ctx.strokeStyle="rgba(247,197,112,.55)";ctx.lineWidth=2;
+      const lines=[[0,1],[0,1.4],[1,2],[1.4,2],[2,3],[2,3]];
+      ctx.beginPath();ctx.moveTo(xs[0],cy);ctx.lineTo(xs[1],cy-h*.33);ctx.lineTo(xs[2],cy-h*.22);ctx.lineTo(xs[3],cy);ctx.moveTo(xs[0],cy);ctx.lineTo(xs[1],cy+h*.33);ctx.lineTo(xs[2],cy+h*.22);ctx.lineTo(xs[3],cy);ctx.stroke();
+      [xs[0],...xs.slice(1,-1),xs[3]].forEach((x,i)=>{ctx.fillStyle=i===0?"#cf4935":"#f4c06d";ctx.beginPath();ctx.arc(x,cy,i===0?5:3.5,0,TAU);ctx.fill();});ctx.restore();
+    }
+
+    function drawEndScreen() {
+      if(G.mode!=="finish"&&G.mode!=="gameover")return;
+      ctx.fillStyle="rgba(24,14,10,.63)";ctx.fillRect(0,0,W,playableBottom);
+      const win=G.mode==="finish";const pw=Math.min(W-30,compact?300:590);const ph=compact?250:310;const px=W/2-pw/2;const py=playableBottom/2-ph/2;
+      ctx.fillStyle="rgba(47,30,21,.91)";rr(px,py,pw,ph,8);ctx.fill();ctx.strokeStyle="#d7a55e";ctx.lineWidth=2;ctx.stroke();
+      label(win?"THE ROAD REMEMBERS":"LAST CHANCE MOTEL",W/2,py+25,compact?10:14,"#eebc6b");
+      shadowTitle(win?G.ending.title:"TIME'S UP",W/2,py+(compact?62:78),compact?24:38,win?"#d24a36":"#e6b065");
+      if(win){text(G.ending.story,W/2,py+(compact?96:126),compact?6.5:Math.min(12,(pw-28)/Math.max(30,G.ending.story.length)*1.65),"#f1d9aa");if(!compact)text("",W/2,py+145,11);}
+      else text(G.bannerSub,W/2,py+(compact?98:130),compact?9:12,"#f1d9aa");
+      const statsY=py+(compact?133:178);label(`RANK ${win?G.rank:"—"}`,W/2,statsY,compact?18:25,"#fff0c2");
+      text(`SCORE ${G.score.toString().padStart(7,"0")}   ·   BEST ${G.high.toString().padStart(7,"0")}`,W/2,statsY+(compact?28:35),compact?9:12,"#e8bf79");
+      text(`PASSES ${G.passes}   ·   NEAR MISSES ${G.nearMisses}   ·   DAMAGE ${Math.round(G.damage)}%`,W/2,statsY+(compact?49:60),compact?8:11,"#d9c093");
+      if(win)drawResultRoute(W/2,statsY+(compact?69:89),Math.min(pw*.68,360));
+      const blink=.5+.5*Math.sin(now*4);ctx.globalAlpha=.55+.45*blink;label(mobile?"TAP TO DRIVE AGAIN":"ENTER · DRIVE AGAIN",W/2,py+ph-18,compact?10:13,"#fff0c2");ctx.globalAlpha=1;
+    }
+
+    function drawResultRoute(cx,y,w) {
+      const route=G.route;const gap=w/Math.max(1,route.length-1);const start=cx-w/2;ctx.save();ctx.strokeStyle="#b9854f";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(start,y);ctx.lineTo(start+w,y);ctx.stroke();route.forEach((id,i)=>{const th=THEMES[ROUTES[id].theme];ctx.fillStyle=th.accent;ctx.beginPath();ctx.arc(start+i*gap,y,4,0,TAU);ctx.fill();});ctx.restore();
+    }
+
+    function render() {
+      const shakeX=G.shake?rand(-1,1)*G.shake*12:0;const shakeY=G.shake?rand(-1,1)*G.shake*8:0;
+      ctx.save();ctx.translate(shakeX,shakeY);
+      if(!G.segments.length){G.leg=ROUTES.coast;buildRoad("coast");spawnTraffic();}
+      renderWorld(G.mode==="title"?G.attractX:null);
+      drawHUD();drawForkOverlay();drawBanner();drawTitle();drawEndScreen();
+      ctx.restore();
+      if(G.flash>0){ctx.fillStyle=`rgba(255,233,180,${G.flash*.34})`;ctx.fillRect(0,0,W,H);}
+      // Fine horizontal cabinet scan, warm and nearly invisible.
+      ctx.save();ctx.globalAlpha=.045;ctx.fillStyle="#1f0e08";for(let y=1;y<H;y+=4)ctx.fillRect(0,y,W,1);ctx.restore();
+    }
+
+    let last=performance.now();
+    function loop(t) {
+      frameDt=clamp((t-last)/1000,0,.05);last=t;
+      update(frameDt);render();requestAnimationFrame(loop);
+    }
+    window.__SOL86 = () => ({ mode: G.mode, leg: G.legId, position: Math.round(G.position), speed: Math.round(G.speed), timer: +G.timer.toFixed(1), score: G.score, damage: Math.round(G.damage), fork: G.forkActive, route: [...G.route] });
+    requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>

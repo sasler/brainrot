@@ -62,7 +62,7 @@ async function expectFullyInViewport(page: Page, locator: Locator) {
 }
 
 test.describe("Gameplay-first layout regressions", () => {
-  for (const model of ["gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "opus-4-8", "fable-5"]) {
+  for (const model of ["gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-6-sol", "opus-4-8", "fable-5"]) {
     test(`Coastal Rush '86 ${model} keeps the road and touch controls reachable`, async ({
       page,
     }) => {
