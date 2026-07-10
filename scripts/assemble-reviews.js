@@ -112,6 +112,7 @@ const MODEL_NAMES = {
   "gpt-5-4": "GPT 5.4",
   "gpt-5-4-mini": "GPT 5.4 Mini",
   "gpt-5-5": "GPT 5.5",
+  "gpt-5-6-sol": "GPT 5.6 Sol",
   "gemini-3-1-pro": "Gemini 3.1 Pro",
   "qwen3.6-35b-a3b": "Qwen3.6 35B A3B",
 };
