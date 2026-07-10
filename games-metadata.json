@@ -3926,7 +3926,7 @@
           "model": "GPT 5.6 Sol",
           "modelId": "gpt-5-6-sol",
           "date": "2026-07-10",
-          "linesOfCode": 2740,
+          "linesOfCode": 2954,
           "path": "/games/tile-matching/gpt-5-6-sol/index.html",
           "features": [
             "sound",

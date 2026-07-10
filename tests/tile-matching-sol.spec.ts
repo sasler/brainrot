@@ -13,6 +13,9 @@ type SolSnapshot = {
   screen: string;
   matchCount: number;
   hasMove: boolean;
+  hint: { a: { r: number; c: number }; b: { r: number; c: number }; score: number; reason: string } | null;
+  eclipse: number[][];
+  flow: number;
 };
 
 type SolTestApi = {
@@ -34,7 +37,10 @@ type SolTestApi = {
   activateSurge(): void;
   startRun(): void;
   endRun(): void;
-  completeLevel(): void;
+  completeOrbit(): Promise<void>;
+  finishTurn(): Promise<void>;
+  requestHint(force?: boolean): Promise<{ a: { r: number; c: number }; b: { r: number; c: number }; score: number; reason: string } | null>;
+  bestMove(): { a: { r: number; c: number }; b: { r: number; c: number }; score: number; reason: string } | null;
 };
 
 declare global {
@@ -172,7 +178,8 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     const state = await snapshot(page);
 
     expect(accepted).toBe(true);
-    expect(state.moves).toBe(9);
+    expect(state.moves).toBeGreaterThan(9);
+    expect(state.level).toBe(2);
     expect(state.score).toBeGreaterThan(1_000);
     expect(state.surge).toBeGreaterThan(0);
     expect(state.board.every((row) => row.every(Boolean))).toBe(true);
@@ -191,15 +198,69 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     expect((await snapshot(page)).surgeTime).toBeGreaterThan(0);
   });
 
-  test("shows level-clear and game-over restart flows", async ({ page }) => {
+  test("ranks high-value special fusion above scan-order matches", async ({ page }) => {
     await openGame(page);
-    await page.evaluate(() => {
-      window.__solFlareTest.startRun();
-      window.__solFlareTest.completeLevel();
-    });
-    await expect(page.locator("#levelScreen")).toHaveClass(/active/);
-    await page.locator("#nextButton").click();
-    expect((await snapshot(page)).level).toBe(2);
+    const board = stableBoard.map((row) => row.slice());
+    board[3] = [1, 1, 2, 1, 4, 5, 6, 0];
+    board[2][2] = 1;
+    await page.evaluate((matrix) => {
+      const { CORE, BEAM_ROW } = window.__solFlareTest.constants;
+      window.__solFlareTest.setBoard(matrix, [
+        { r: 7, c: 5, special: CORE },
+        { r: 7, c: 6, special: BEAM_ROW },
+      ]);
+    }, board);
+
+    const best = await page.evaluate(() => window.__solFlareTest.bestMove());
+
+    expect(best).not.toBeNull();
+    expect(best?.a.r).toBe(7);
+    expect(best?.b.r).toBe(7);
+    expect(best?.reason).toBe("core fusion");
+  });
+
+  test("auto-shuffles a dead board before returning a legal hint", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate((board) => {
+      window.__solFlareTest.setSeed(77);
+      window.__solFlareTest.setBoard(board);
+      window.__solFlareTest.setMoves(12);
+    }, stableBoard);
+    expect((await snapshot(page)).hasMove).toBe(false);
+
+    const hint = await page.evaluate(() => window.__solFlareTest.requestHint(true));
+    const afterShuffle = await snapshot(page);
+
+    expect(afterShuffle.hasMove).toBe(true);
+    expect(hint).not.toBeNull();
+    const accepted = await page.evaluate((move) => {
+      if (!move) return false;
+      return window.__solFlareTest.swap(move.a.r, move.a.c, move.b.r, move.b.c);
+    }, hint);
+    expect(accepted).toBe(true);
+  });
+
+  test("advances orbit in place with moves, eclipse, and persistent specials", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate((board) => {
+      const { CORE } = window.__solFlareTest.constants;
+      window.__solFlareTest.setBoard(board, [{ r: 4, c: 3, special: CORE }]);
+      window.__solFlareTest.setMoves(3);
+    }, stableBoard);
+    const before = await snapshot(page);
+    const coreBefore = before.board[4][3];
+
+    await page.evaluate(() => window.__solFlareTest.completeOrbit());
+    const after = await snapshot(page);
+
+    expect(after.level).toBe(2);
+    expect(after.moves).toBeGreaterThan(3);
+    expect(after.active).toBe(true);
+    expect(after.screen).toBe("play");
+    expect(after.board[4][3]?.id).toBe(coreBefore?.id);
+    expect(after.board[4][3]?.special).toBe(4);
+    expect(after.eclipse.flat().some((layers) => layers > 0)).toBe(true);
+    await expect(page.locator("#levelScreen")).toHaveCount(0);
 
     await page.evaluate(() => window.__solFlareTest.endRun());
     await expect(page.locator("#gameOverScreen")).toHaveClass(/active/);
@@ -207,7 +268,6 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     await expect(page.locator("#gameOverScreen")).not.toHaveClass(/active/);
     expect((await snapshot(page)).level).toBe(1);
   });
-
   test("keeps board and essential controls visible at 320 by 480", async ({ page }) => {
     await openGame(page, { width: 320, height: 480 });
     await page.locator("#startButton").click();

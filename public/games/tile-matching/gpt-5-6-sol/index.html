@@ -683,11 +683,11 @@
         <p class="subtitle">Forge constellations from living light. Chain impossible reactions. Turn the whole board into a sunrise.</p>
         <div class="feature-line">
           <div class="feature"><strong>7 facets</strong>Distinct silhouettes</div>
-          <div class="feature"><strong>4 specials</strong>Combine everything</div>
-          <div class="feature"><strong>Surge</strong>Double radiance</div>
+          <div class="feature"><strong>4 specials</strong>Fuse for chaos</div>
+          <div class="feature"><strong>Momentum</strong>Board never resets</div>
         </div>
         <button id="startButton" class="primary" type="button">Ignite the board</button>
-        <div class="instructions">Tap or drag adjacent facets · Arrow keys + space/enter<br>Match 4+ to forge specials · Clear eclipse glass before moves expire</div>
+        <div class="instructions">Tap or drag adjacent facets · Arrow keys + space/enter<br>Clear each orbit in-place · Earn moves and forged specials · Keep every powerup</div>
       </div>
     </section>
 
@@ -697,19 +697,6 @@
         <h2 id="pauseHeading">Hold the sun</h2>
         <p class="subtitle">The forge is stable. Your cascade will wait.</p>
         <button id="resumeButton" class="primary" type="button">Resume orbit</button>
-      </div>
-    </section>
-
-    <section id="levelScreen" class="screen" aria-labelledby="levelHeading">
-      <div class="panel">
-        <div class="eyebrow">Orbit stabilized</div>
-        <h2 id="levelHeading">A brighter star</h2>
-        <div class="result-grid">
-          <div class="result"><span>Score</span><strong id="levelScore">0</strong></div>
-          <div class="result"><span>Best chain</span><strong id="levelChain">×1</strong></div>
-          <div class="result"><span>Moves left</span><strong id="levelMoves">0</strong></div>
-        </div>
-        <button id="nextButton" class="primary" type="button">Enter next orbit</button>
       </div>
     </section>
 
@@ -751,15 +738,10 @@
       shuffle: document.getElementById("shuffleButton"),
       title: document.getElementById("titleScreen"),
       pauseScreen: document.getElementById("pauseScreen"),
-      levelScreen: document.getElementById("levelScreen"),
       gameOver: document.getElementById("gameOverScreen"),
       start: document.getElementById("startButton"),
       resume: document.getElementById("resumeButton"),
-      next: document.getElementById("nextButton"),
       restart: document.getElementById("restartButton"),
-      levelScore: document.getElementById("levelScore"),
-      levelChain: document.getElementById("levelChain"),
-      levelMoves: document.getElementById("levelMoves"),
       finalScore: document.getElementById("finalScore"),
       bestScore: document.getElementById("bestScore"),
       finalLevel: document.getElementById("finalLevel"),
@@ -900,12 +882,15 @@
         cascades: 0,
         shuffles: 0
       },
+      flow: 0,
+      lastClearSize: 0,
       random: Math.random
     };
 
     let lastFrame = performance.now();
     let toastTimer = 0;
     let audio = null;
+    const gemSpriteCache = new Map();
 
     function readBest() {
       try {
@@ -1009,6 +994,9 @@
         alpha: 1,
         rotation: random(-0.08, 0.08),
         pulse: random(0, Math.PI * 2),
+        lift: 0,
+        squash: spawnRows ? 0.12 : 0,
+        shine: random(0, Math.PI * 2),
         dying: false
       };
     }
@@ -1281,6 +1269,7 @@
       state.width = Math.max(1, rect.width);
       state.height = Math.max(1, rect.height);
       state.dpr = Math.min(devicePixelRatio || 1, 2);
+      gemSpriteCache.clear();
       canvas.width = Math.round(state.width * state.dpr);
       canvas.height = Math.round(state.height * state.dpr);
       ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
@@ -1384,23 +1373,23 @@
     function configureLevel(level, keepScore = true) {
       state.runId++;
       state.level = level;
-      state.moves = Math.max(18, 27 - Math.floor(level * 0.75));
-      state.target = state.score + 3600 + level * 1050 + Math.floor(level * level * 140);
-      state.stageStartScore = state.score;
+      state.moves = 30;
+      state.target = 4200;
+      state.stageStartScore = 0;
       state.combo = 0;
       state.bestCombo = 1;
-      state.surge = Math.min(state.surge, 45);
-      state.surgeTime = 0;
+      state.flow = 0;
+      state.lastClearSize = 0;
       state.selected = null;
       state.keyboardAnchor = null;
       state.hint = null;
       if (!keepScore) {
         state.score = 0;
-        state.stageStartScore = 0;
-        state.target = 4200;
+        state.surge = 0;
+        state.surgeTime = 0;
       }
       generateBoard();
-      generateEclipse(level);
+      generateEclipse(1);
       updateHud();
     }
 
@@ -1412,7 +1401,6 @@
       state.paused = false;
       state.locked = false;
       state.screen = "play";
-      state.surge = 0;
       configureLevel(1, false);
       closeScreens();
       showToast("Orbit 01 · ignite", 1100);
@@ -1422,7 +1410,6 @@
     function closeScreens() {
       ui.title.classList.remove("active");
       ui.pauseScreen.classList.remove("active");
-      ui.levelScreen.classList.remove("active");
       ui.gameOver.classList.remove("active");
     }
 
@@ -1430,13 +1417,12 @@
       closeScreens();
       if (name === "title") ui.title.classList.add("active");
       if (name === "pause") ui.pauseScreen.classList.add("active");
-      if (name === "level") ui.levelScreen.classList.add("active");
       if (name === "over") ui.gameOver.classList.add("active");
       state.screen = name;
     }
 
     function togglePause(force) {
-      if (!state.active || state.locked || state.screen === "over" || state.screen === "level") return;
+      if (!state.active || state.locked || state.screen === "over") return;
       const next = typeof force === "boolean" ? force : !state.paused;
       state.paused = next;
       if (next) {
@@ -1448,40 +1434,83 @@
       }
     }
 
-    function completeLevel() {
-      state.active = false;
-      state.locked = false;
+    function seedNextEclipse(level) {
+      const candidates = [];
+      for (let r = 0; r < GRID; r++) {
+        for (let c = 0; c < GRID; c++) {
+          if (state.eclipse[r][c] === 0) candidates.push({ r, c });
+        }
+      }
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = randomInt(i + 1);
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+      }
+      const count = Math.min(candidates.length, 4 + level * 2);
+      for (let i = 0; i < count; i++) {
+        const cell = candidates[i];
+        state.eclipse[cell.r][cell.c] = level >= 5 && i < Math.ceil(count / 4) ? 2 : 1;
+        const p = cellCenter(cell.r, cell.c);
+        ring(p.x, p.y, "#8eeaff", state.cell * 0.72, 2);
+      }
+    }
+
+    function awardOrbitSpecials(level) {
+      const available = [];
+      for (const row of state.board) {
+        for (const tile of row) {
+          if (tile && tile.special === NONE) available.push(tile);
+        }
+      }
+      for (let i = available.length - 1; i > 0; i--) {
+        const j = randomInt(i + 1);
+        [available[i], available[j]] = [available[j], available[i]];
+      }
+      const rewardCount = level >= 4 ? 2 : 1;
+      for (let i = 0; i < Math.min(rewardCount, available.length); i++) {
+        const tile = available[i];
+        const cycle = level % 4;
+        tile.special = cycle === 0 ? CORE : cycle === 1 ? BEAM_ROW : cycle === 2 ? BEAM_COL : CORONA;
+        tile.scale = 1.5;
+        tile.targetScale = 1;
+        tile.lift = state.cell * 0.12;
+        ring(tile.x, tile.y, tile.special === CORE ? "#fff4a8" : gemStyles[tile.type].color, state.cell * 1.45, 5);
+        burst(tile.x, tile.y, "#fff1a8", 28, 175);
+      }
+    }
+
+    async function completeOrbit() {
+      const clearedOrbit = state.level;
+      state.level++;
+      const bonusMoves = 4 + Math.min(3, Math.floor(clearedOrbit / 3));
+      state.moves += bonusMoves;
+      state.stageStartScore = state.score;
+      state.target = state.score + 4200 + state.level * 1250 + Math.floor(state.level * state.level * 110);
       state.best = Math.max(state.best, state.score);
+      state.flow = Math.min(5, state.flow + 2);
+      state.surge = Math.min(100, state.surge + 32);
       writeBest();
-      ui.levelScore.textContent = state.score.toLocaleString();
-      ui.levelChain.textContent = "×" + state.bestCombo;
-      ui.levelMoves.textContent = String(state.moves);
-      showScreen("level");
+      seedNextEclipse(state.level);
+      awardOrbitSpecials(state.level);
+      updateHud();
       sound.level();
-      const celebrationCount = TEST_MODE ? 2 : 100;
+      showToast("ORBIT " + String(state.level).padStart(2, "0") + " · +" + bonusMoves + " MOVES · SPECIAL FORGED", 2200);
+      state.flash = 0.78;
+      state.shake = 0.45;
+      const celebrationCount = TEST_MODE ? 3 : 72;
       for (let i = 0; i < celebrationCount; i++) {
         const x = random(state.boardX, state.boardX + state.boardSize);
         const y = random(state.boardY, state.boardY + state.boardSize);
         createParticle(x, y, choose(["#ffc14a", "#ff5e3a", "#43f2e4", "#fff0b1"]), {
-          vx: random(-150, 150),
-          vy: random(-230, -50),
-          gravity: 180,
-          life: random(0.8, 1.8),
-          size: random(2, 6)
+          vx: random(-130, 130),
+          vy: random(-200, -35),
+          gravity: 170,
+          life: random(0.65, 1.45),
+          size: random(2, 5)
         });
       }
+      await wait(REDUCED_MOTION ? 20 : 360);
+      if (state.surge >= 100 && state.surgeTime <= 0) activateSurge();
     }
-
-    function nextLevel() {
-      resumeAudio();
-      state.active = true;
-      state.locked = false;
-      state.screen = "play";
-      configureLevel(state.level + 1, true);
-      closeScreens();
-      showToast("Orbit " + String(state.level).padStart(2, "0") + " · eclipse rising", 1400);
-    }
-
     function endRun(message = "The eclipse held this orbit. Rekindle the forge and break it.") {
       state.active = false;
       state.locked = false;
@@ -1507,7 +1536,7 @@
       const eclipse = eclipseRemaining();
       ui.eclipse.textContent = eclipse ? eclipse + " eclipse" : "clear sky";
       ui.surgeFill.style.width = clamp(state.surge, 0, 100).toFixed(1) + "%";
-      ui.surgeState.textContent = state.surgeTime > 0 ? "×2 " + state.surgeTime.toFixed(1) + "s" : Math.floor(state.surge) + "%";
+      ui.surgeState.textContent = state.surgeTime > 0 ? "×2 " + state.surgeTime.toFixed(1) + "s" : (state.flow ? "F" + state.flow + " · " : "") + Math.floor(state.surge) + "%";
       ui.hint.disabled = !state.active || state.locked;
       ui.shuffle.disabled = !state.active || state.locked || state.moves <= 2;
       document.body.classList.toggle("surge-active", state.surgeTime > 0);
@@ -1572,12 +1601,52 @@
       };
     }
 
+    function isSpecialCombo(a, b) {
+      if (!a || !b) return false;
+      return a.special === CORE ||
+        b.special === CORE ||
+        (a.special !== NONE && b.special !== NONE);
+    }
+
+    function analyzeMove(a, b) {
+      if (!a || !b || !adjacent(a, b)) return null;
+      const specialCombo = isSpecialCombo(a, b);
+      swapBoard(a, b);
+      const matches = findMatches();
+      let score = -Infinity;
+      let reason = "match";
+      if (specialCombo) {
+        const coreCount = Number(a.special === CORE) + Number(b.special === CORE);
+        const specialCount = Number(a.special !== NONE) + Number(b.special !== NONE);
+        score = 1600 + coreCount * 1800 + specialCount * 520;
+        reason = coreCount === 2 ? "double core" : coreCount ? "core fusion" : "special fusion";
+      }
+      if (matches.tiles.length) {
+        const creation = chooseSpecial(matches, b);
+        const eclipseHits = matches.tiles.reduce((sum, tile) => sum + (state.eclipse[tile.r]?.[tile.c] || 0), 0);
+        const triggered = matches.tiles.filter(tile => tile.special !== NONE).length;
+        score = Math.max(score, 0) +
+          matches.tiles.length * 115 +
+          eclipseHits * 430 +
+          triggered * 360;
+        if (creation) {
+          const creationValue = creation.special === CORE ? 1450 : creation.special === CORONA ? 900 : 580;
+          score += creationValue;
+          reason = creation.special === CORE ? "forge core" : creation.special === CORONA ? "forge corona" : "forge beam";
+        } else if (eclipseHits) {
+          reason = "break eclipse";
+        } else if (matches.tiles.length >= 6) {
+          reason = "wide clear";
+        }
+      }
+      swapBoard(a, b);
+      if (!Number.isFinite(score)) return null;
+      const centerBias = 22 - (Math.abs(a.r - 3.5) + Math.abs(a.c - 3.5) + Math.abs(b.r - 3.5) + Math.abs(b.c - 3.5));
+      return { a, b, score: score + centerBias, reason };
+    }
+
     function wouldSwapMatch(a, b) {
-      if (!a || !b || !adjacent(a, b)) return false;
-      swapBoard(a, b);
-      const matched = findMatches().tiles.length > 0;
-      swapBoard(a, b);
-      return matched || a.special !== NONE || b.special !== NONE;
+      return Boolean(analyzeMove(a, b));
     }
 
     function findAnyMove() {
@@ -1586,13 +1655,27 @@
           const tile = tileAt(r, c);
           const right = tileAt(r, c + 1);
           const down = tileAt(r + 1, c);
-          if (right && wouldSwapMatch(tile, right)) return { a: tile, b: right };
-          if (down && wouldSwapMatch(tile, down)) return { a: tile, b: down };
+          if (right && analyzeMove(tile, right)) return { a: tile, b: right };
+          if (down && analyzeMove(tile, down)) return { a: tile, b: down };
         }
       }
       return null;
     }
 
+    function findBestMove() {
+      let best = null;
+      for (let r = 0; r < GRID; r++) {
+        for (let c = 0; c < GRID; c++) {
+          const tile = tileAt(r, c);
+          const candidates = [tileAt(r, c + 1), tileAt(r + 1, c)];
+          for (const candidate of candidates) {
+            const move = analyzeMove(tile, candidate);
+            if (move && (!best || move.score > best.score)) best = move;
+          }
+        }
+      }
+      return best;
+    }
     function chooseSpecial(matches, preferred) {
       if (!matches.groups.length) return null;
       const memberships = new Map();
@@ -1763,7 +1846,7 @@
       swapBoard(a, b);
       sound.swap();
       await wait(SWAP_TIME);
-      const specialSwap = a.special !== NONE && b.special !== NONE || a.special === CORE || b.special === CORE;
+      const specialSwap = isSpecialCombo(a, b);
       const matches = findMatches();
       if (!matches.tiles.length && !specialSwap) {
         swapBoard(a, b);
@@ -1828,9 +1911,16 @@
       const surgeMultiplier = state.surgeTime > 0 ? 2 : 1;
       const comboMultiplier = 1 + Math.max(0, state.combo - 1) * 0.42;
       const specialCount = removed.filter(tile => tile.special !== NONE).length;
-      const points = Math.round((removed.length * 95 + specialCount * 240) * comboMultiplier * surgeMultiplier * (1 + state.level * 0.05));
+      if (state.combo === 1) {
+        state.flow = removed.length >= 4 || specialCount > 0 ? Math.min(5, state.flow + 1) : Math.max(0, state.flow - 1);
+      } else {
+        state.flow = Math.min(5, state.flow + 1);
+      }
+      state.lastClearSize = removed.length;
+      const flowMultiplier = 1 + state.flow * 0.12;
+      const points = Math.round((removed.length * 95 + specialCount * 240) * comboMultiplier * surgeMultiplier * flowMultiplier * (1 + state.level * 0.05));
       state.score += points;
-      state.surge += removed.length * 2.4 + specialCount * 7 + Math.max(0, state.combo - 1) * 5;
+      state.surge += removed.length * 2.4 + specialCount * 7 + Math.max(0, state.combo - 1) * 5 + state.flow * 0.8;
       if (state.surge >= 100 && state.surgeTime <= 0) activateSurge();
       const center = removed.reduce((sum, tile) => ({ x: sum.x + tile.x, y: sum.y + tile.y }), { x: 0, y: 0 });
       center.x /= removed.length;
@@ -1921,16 +2011,16 @@
 
     async function finishTurn() {
       if (state.score >= state.target && eclipseRemaining() === 0) {
-        completeLevel();
-        return;
+        await completeOrbit();
       }
       if (state.moves <= 0) {
         endRun();
         return;
       }
       if (!findAnyMove()) {
-        showToast("No reactions · auto shuffle", 1300);
+        showToast("No valid reactions · realigning orbit", 1500);
         await shuffleBoard(false);
+        return;
       }
       state.combo = 0;
       state.lastAction = performance.now();
@@ -1947,7 +2037,7 @@
       }
       tiles.forEach((tile, index) => {
         tile.type = types[index];
-        tile.special = NONE;
+        // Preserve earned specials while the facet colors are realigned.
         if (animate) {
           tile.rotation += random(-2.5, 2.5);
           tile.scale = 0.55;
@@ -1983,23 +2073,28 @@
       return true;
     }
 
-    function requestHint(force = false) {
-      if (!state.active || state.locked || state.paused) return;
-      const move = findAnyMove();
+    async function requestHint(force = false) {
+      if (!state.active || state.locked || state.paused) return null;
+      state.lastAction = performance.now();
+      let move = findBestMove();
       if (!move) {
-        shuffleBoard(false);
-        return;
+        showToast("No valid reactions · auto shuffle", 1400);
+        await shuffleBoard(false);
+        if (!state.active || state.paused) return null;
+        move = findBestMove();
       }
+      if (!move) return null;
       state.hint = {
         a: { r: move.a.r, c: move.a.c },
-        b: { r: move.b.r, c: move.b.c }
+        b: { r: move.b.r, c: move.b.c },
+        score: move.score,
+        reason: move.reason
       };
-      state.hintTime = 2.2;
-      state.lastAction = performance.now();
-      if (force) showToast("Solar path revealed", 800);
+      state.hintTime = 2.5;
+      if (force) showToast("Best move · " + move.reason, 1000);
       sound.hint();
+      return state.hint;
     }
-
     function boardCellFromPoint(x, y) {
       const c = Math.floor((x - state.boardX) / state.cell);
       const r = Math.floor((y - state.boardY) / state.cell);
@@ -2152,9 +2247,21 @@
         for (const tile of row) {
           if (!tile) continue;
           const amount = 1 - Math.exp(-speed * dt);
+          const beforeY = tile.y;
           tile.x = lerp(tile.x, tile.tx, amount);
           tile.y = lerp(tile.y, tile.ty, amount);
           tile.scale = lerp(tile.scale, tile.targetScale, amount);
+          const selected = state.selected && state.selected.r === tile.r && state.selected.c === tile.c;
+          const hinted = state.hint && (
+            state.hint.a.r === tile.r && state.hint.a.c === tile.c ||
+            state.hint.b.r === tile.r && state.hint.b.c === tile.c
+          );
+          const desiredLift = selected ? state.cell * 0.12 : hinted ? state.cell * 0.07 : 0;
+          tile.lift = lerp(tile.lift, desiredLift, 1 - Math.exp(-12 * dt));
+          if (Math.abs(beforeY - tile.ty) > 1 && Math.abs(tile.y - tile.ty) < 0.7) {
+            tile.squash = Math.max(tile.squash, 0.13);
+          }
+          tile.squash = lerp(tile.squash, 0, 1 - Math.exp(-9 * dt));
         }
       }
     }
@@ -2366,55 +2473,150 @@
       for (const tile of tiles) drawTile(tile);
     }
 
-    function drawTile(tile) {
-      const style = gemStyles[tile.type];
-      const radius = state.cell * 0.355;
-      const breathe = 1 + Math.sin(state.time * 2.1 + tile.pulse) * 0.015;
-      const scale = tile.scale * breathe;
-      ctx.save();
-      ctx.translate(tile.x, tile.y);
-      ctx.rotate(tile.rotation + (tile.special === CORE ? state.time * 0.22 : 0));
-      ctx.scale(scale, scale);
-      ctx.globalAlpha = tile.alpha;
-      ctx.shadowColor = style.glow;
-      ctx.shadowBlur = tile.special === NONE ? state.cell * 0.18 : state.cell * 0.34;
-
-      if (tile.special === CORE) {
-        starPath(10, radius, radius * 0.56, -Math.PI / 2 + state.time * 0.35);
-      } else if (tile.type === 2) {
-        roundedRectPath(-radius * 0.78, -radius * 0.78, radius * 1.56, radius * 1.56, radius * 0.22);
+    function spriteGemPath(g, type, core, radius, yOffset = 0, inset = 1) {
+      const style = gemStyles[type];
+      const r = radius * inset;
+      g.beginPath();
+      if (core) {
+        for (let i = 0; i < 20; i++) {
+          const pointRadius = i % 2 ? r * 0.56 : r;
+          const angle = -Math.PI / 2 + i / 20 * Math.PI * 2;
+          const x = Math.cos(angle) * pointRadius;
+          const y = yOffset + Math.sin(angle) * pointRadius;
+          if (i === 0) g.moveTo(x, y);
+          else g.lineTo(x, y);
+        }
+        g.closePath();
+      } else if (type === 2) {
+        g.roundRect(-r * 0.78, yOffset - r * 0.78, r * 1.56, r * 1.56, r * 0.22);
       } else {
-        polygonPath(style.sides, radius, style.rotation);
+        for (let i = 0; i < style.sides; i++) {
+          const angle = style.rotation + i / style.sides * Math.PI * 2;
+          const x = Math.cos(angle) * r;
+          const y = yOffset + Math.sin(angle) * r;
+          if (i === 0) g.moveTo(x, y);
+          else g.lineTo(x, y);
+        }
+        g.closePath();
       }
-
-      const fill = ctx.createRadialGradient(-radius * 0.3, -radius * 0.36, radius * 0.06, 0, 0, radius * 1.15);
-      fill.addColorStop(0, style.light);
-      fill.addColorStop(0.24, style.color);
-      fill.addColorStop(0.73, style.dark);
-      fill.addColorStop(1, "#090b0e");
-      ctx.fillStyle = fill;
-      ctx.fill();
-
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = style.light;
-      ctx.globalAlpha = tile.alpha * 0.55;
-      ctx.lineWidth = Math.max(1, state.cell * 0.018);
-      ctx.stroke();
-
-      ctx.globalAlpha = tile.alpha * 0.42;
-      ctx.beginPath();
-      ctx.moveTo(-radius * 0.52, -radius * 0.12);
-      ctx.lineTo(-radius * 0.17, -radius * 0.55);
-      ctx.lineTo(radius * 0.18, -radius * 0.22);
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = Math.max(1, state.cell * 0.025);
-      ctx.stroke();
-
-      ctx.globalAlpha = tile.alpha;
-      drawSpecialMark(tile, radius, style);
-      ctx.restore();
     }
 
+    function getGemSprite(tile) {
+      const core = tile.special === CORE;
+      const key = tile.type + ":" + Number(core) + ":" + Math.round(state.cell * 10) + ":" + state.dpr;
+      if (gemSpriteCache.has(key)) return gemSpriteCache.get(key);
+      const style = gemStyles[tile.type];
+      const radius = state.cell * 0.36;
+      const depth = state.cell * (core ? 0.135 : 0.105);
+      const cssWidth = Math.ceil(state.cell * 1.08);
+      const cssHeight = Math.ceil(state.cell * 1.18);
+      const surface = document.createElement("canvas");
+      surface.width = Math.max(1, Math.ceil(cssWidth * state.dpr));
+      surface.height = Math.max(1, Math.ceil(cssHeight * state.dpr));
+      const g = surface.getContext("2d");
+      g.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+      g.translate(cssWidth / 2, cssHeight / 2 - depth * 0.35);
+
+      g.save();
+      g.scale(1.08, 0.34);
+      g.beginPath();
+      g.arc(0, radius * 1.78 + depth, radius * 0.74, 0, Math.PI * 2);
+      g.fillStyle = "rgba(0,0,0,.48)";
+      g.shadowColor = style.glow;
+      g.shadowBlur = core ? 16 : 8;
+      g.fill();
+      g.restore();
+
+      for (let step = 3; step >= 1; step--) {
+        spriteGemPath(g, tile.type, core, radius, depth * step / 3);
+        g.fillStyle = step % 2 ? "#090b0e" : style.dark;
+        g.globalAlpha = 0.78 + step * 0.045;
+        g.fill();
+      }
+
+      g.globalAlpha = 1;
+      g.shadowColor = style.glow;
+      g.shadowBlur = core ? state.cell * 0.38 : state.cell * 0.2;
+      spriteGemPath(g, tile.type, core, radius, 0);
+      const fill = g.createRadialGradient(-radius * 0.34, -radius * 0.42, radius * 0.04, 0, radius * 0.08, radius * 1.18);
+      fill.addColorStop(0, "#fffbe9");
+      fill.addColorStop(0.16, style.light);
+      fill.addColorStop(0.43, style.color);
+      fill.addColorStop(0.82, style.dark);
+      fill.addColorStop(1, "#090b0e");
+      g.fillStyle = fill;
+      g.fill();
+
+      g.save();
+      spriteGemPath(g, tile.type, core, radius, 0);
+      g.clip();
+      const facets = Math.max(4, style.sides);
+      for (let i = 0; i < facets; i++) {
+        const a0 = style.rotation + i / facets * Math.PI * 2;
+        const a1 = style.rotation + (i + 1) / facets * Math.PI * 2;
+        g.beginPath();
+        g.moveTo(0, radius * 0.08);
+        g.lineTo(Math.cos(a0) * radius * 1.12, Math.sin(a0) * radius * 1.12);
+        g.lineTo(Math.cos(a1) * radius * 1.12, Math.sin(a1) * radius * 1.12);
+        g.closePath();
+        g.fillStyle = i % 3 === 0
+          ? "rgba(255,255,255,.18)"
+          : i % 3 === 1
+            ? "rgba(0,0,0,.17)"
+            : "rgba(255,255,255,.05)";
+        g.fill();
+      }
+      g.beginPath();
+      g.ellipse(-radius * 0.25, -radius * 0.34, radius * 0.22, radius * 0.075, -0.5, 0, Math.PI * 2);
+      g.fillStyle = "rgba(255,255,255,.72)";
+      g.shadowColor = "#ffffff";
+      g.shadowBlur = 8;
+      g.fill();
+      g.restore();
+
+      g.shadowBlur = 0;
+      spriteGemPath(g, tile.type, core, radius, 0);
+      g.strokeStyle = style.light;
+      g.globalAlpha = 0.74;
+      g.lineWidth = Math.max(1, state.cell * 0.022);
+      g.stroke();
+      spriteGemPath(g, tile.type, core, radius, 0, 0.78);
+      g.strokeStyle = "rgba(255,255,255,.22)";
+      g.lineWidth = Math.max(0.8, state.cell * 0.012);
+      g.stroke();
+
+      const sprite = { surface, cssWidth, cssHeight, radius };
+      gemSpriteCache.set(key, sprite);
+      return sprite;
+    }
+
+    function drawTile(tile) {
+      const style = gemStyles[tile.type];
+      const sprite = getGemSprite(tile);
+      const breathe = 1 + Math.sin(state.time * 2.1 + tile.pulse) * 0.012;
+      const scale = tile.scale * breathe;
+      const selected = state.selected && state.selected.r === tile.r && state.selected.c === tile.c;
+      const tilt = selected ? Math.sin(state.time * 6.5) * 0.045 : 0;
+      ctx.save();
+      ctx.translate(tile.x, tile.y - tile.lift);
+      ctx.rotate(tile.rotation + tilt + (tile.special === CORE ? state.time * 0.22 : 0));
+      ctx.scale(scale * (1 + tile.squash), scale * (1 - tile.squash * 0.72));
+      ctx.globalAlpha = tile.alpha;
+      ctx.drawImage(sprite.surface, -sprite.cssWidth / 2, -sprite.cssHeight / 2, sprite.cssWidth, sprite.cssHeight);
+
+      const glint = 0.42 + Math.sin(state.time * 1.8 + tile.shine) * 0.2;
+      ctx.globalAlpha = tile.alpha * glint;
+      ctx.fillStyle = "#ffffff";
+      ctx.shadowColor = "#ffffff";
+      ctx.shadowBlur = 7;
+      ctx.beginPath();
+      ctx.arc(-sprite.radius * 0.28, -sprite.radius * 0.3, Math.max(1, sprite.radius * 0.055), 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = tile.alpha;
+      drawSpecialMark(tile, sprite.radius, style);
+      ctx.restore();
+    }
     function drawSpecialMark(tile, radius, style) {
       if (tile.special === NONE) return;
       ctx.save();
@@ -2641,7 +2843,9 @@
         locked: state.locked,
         screen: state.screen,
         matchCount: findMatches().tiles.length,
-        hasMove: Boolean(findAnyMove())
+        hasMove: Boolean(findAnyMove()),
+        hint: state.hint ? { ...state.hint, a: { ...state.hint.a }, b: { ...state.hint.b } } : null,
+        flow: state.flow
       };
     }
 
@@ -2694,7 +2898,18 @@
         activateSurge,
         startRun,
         endRun,
-        completeLevel
+        completeOrbit,
+        finishTurn,
+        requestHint,
+        bestMove() {
+          const move = findBestMove();
+          return move ? {
+            a: { r: move.a.r, c: move.a.c },
+            b: { r: move.b.r, c: move.b.c },
+            score: move.score,
+            reason: move.reason
+          } : null;
+        }
       };
     }
 
@@ -2707,7 +2922,6 @@
       canvas.addEventListener("pointercancel", () => { state.pointerDown = null; });
       ui.start.addEventListener("click", startRun);
       ui.restart.addEventListener("click", startRun);
-      ui.next.addEventListener("click", nextLevel);
       ui.pause.addEventListener("click", () => togglePause());
       ui.resume.addEventListener("click", () => togglePause(false));
       ui.audio.addEventListener("click", () => {
