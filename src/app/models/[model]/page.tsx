@@ -38,14 +38,14 @@ export default async function ModelPage({ params }: ModelPageProps) {
           <div className="absolute top-8 right-8 hidden font-display text-[9rem] leading-none font-black text-[var(--model-color)] opacity-[0.035] lg:block" aria-hidden="true">AI</div>
           <div className="relative max-w-4xl">
             <div className="mb-5 flex items-center gap-3 font-mono text-[10px] font-semibold tracking-[0.24em] uppercase" style={{ color: model.color }}>
-              <span className="h-2 w-2 rounded-full bg-[var(--model-color)] shadow-[0_0_14px_var(--model-color)]" />{model.family} / active contender
+              <span className="h-2 w-2 rounded-full bg-[var(--model-color)] shadow-[0_0_14px_var(--model-color)]" />{model.company} / {model.family} / active contender
             </div>
             <h1 className="font-display text-4xl leading-tight font-black tracking-[-0.04em] text-foreground sm:text-6xl lg:text-7xl">{model.displayName}</h1>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">One model, every artifact. This is the complete BrainRot Games record for <span className="text-foreground/80">{model.displayName}</span>.</p>
             <div className="mt-9 grid max-w-lg grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
               <div className="bg-surface/90 p-4"><strong className="font-display block text-2xl text-foreground">{model.games.length}</strong><span className="font-mono text-[9px] tracking-widest text-muted uppercase">games</span></div>
               <div className="bg-surface/90 p-4"><strong className="font-display block text-2xl text-foreground">{model.totalLinesOfCode.toLocaleString()}</strong><span className="font-mono text-[9px] tracking-widest text-muted uppercase">lines shipped</span></div>
-              <div className="col-span-2 bg-surface/90 p-4 sm:col-span-1"><strong className="font-display block truncate text-lg text-foreground">{model.family}</strong><span className="font-mono text-[9px] tracking-widest text-muted uppercase">family</span></div>
+              <div className="col-span-2 bg-surface/90 p-4 sm:col-span-1"><strong className="font-display block truncate text-lg text-foreground">{model.company}</strong><span className="font-mono text-[9px] tracking-widest text-muted uppercase">company</span></div>
             </div>
           </div>
         </header>

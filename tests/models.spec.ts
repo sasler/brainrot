@@ -1,11 +1,24 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Model explorer", () => {
-  test("groups participating models and shows contribution counts", async ({ page }) => {
+  test("groups models by company with frontier labs first", async ({ page }) => {
     await page.goto("/models");
     await expect(page.getByRole("heading", { name: "Meet the minds behind the games." })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "OpenAI GPT", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Claude", exact: true })).toBeVisible();
+    const companies = await page.locator("[data-company]").evaluateAll((sections) =>
+      sections.map((section) => section.getAttribute("data-company")),
+    );
+    expect(companies).toEqual([
+      "Anthropic",
+      "Google",
+      "OpenAI",
+      "Alibaba",
+      "Microsoft",
+      "MiniMax",
+      "Tencent",
+    ]);
+    await expect(page.locator('[data-company="Google"] [data-model-id="gemini-3-1-pro"]')).toBeVisible();
+    await expect(page.locator('[data-company="Google"] [data-model-id="gemma-4-12b"]')).toBeVisible();
+    await expect(page.locator('[data-company="OpenAI"] [data-model-id="gpt-5-4"]')).toBeVisible();
     const gpt = page.locator('[data-model-id="gpt-5-4"]');
     await expect(gpt).toContainText("OpenAI GPT 5.4");
     await expect(gpt).toContainText("15");

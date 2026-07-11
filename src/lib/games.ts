@@ -140,18 +140,20 @@ export interface ModelContribution {
   modelId: string;
   displayName: string;
   family: string;
+  company: string;
   color: string;
   games: ModelGameContribution[];
   totalLinesOfCode: number;
 }
 
-export interface ModelFamily {
+export interface ModelCompany {
   name: string;
   models: ModelContribution[];
   gameCount: number;
 }
 
-const familyCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+const companyCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+const FRONTIER_COMPANIES = ["Anthropic", "Google", "OpenAI"];
 
 export function getModelContributions(): ModelContribution[] {
   const contributions = new Map<string, ModelGameContribution[]>();
@@ -170,6 +172,7 @@ export function getModelContributions(): ModelContribution[] {
       modelId,
       displayName: model.displayName,
       family: model.family,
+      company: model.company,
       color: model.color,
       games,
       totalLinesOfCode: games.reduce(
@@ -184,23 +187,30 @@ export function getModelContribution(modelId: string): ModelContribution | undef
   return getModelContributions().find((model) => model.modelId === modelId);
 }
 
-export function getModelFamilies(): ModelFamily[] {
-  const families = new Map<string, ModelContribution[]>();
+export function getModelCompanies(): ModelCompany[] {
+  const companies = new Map<string, ModelContribution[]>();
 
   for (const model of getModelContributions()) {
-    const existing = families.get(model.family) ?? [];
+    const existing = companies.get(model.company) ?? [];
     existing.push(model);
-    families.set(model.family, existing);
+    companies.set(model.company, existing);
   }
 
-  return Array.from(families, ([name, models]) => ({
+  return Array.from(companies, ([name, models]) => ({
     name,
     models,
     gameCount: models.reduce((total, model) => total + model.games.length, 0),
   })).sort((a, b) => {
+    const aFrontier = FRONTIER_COMPANIES.indexOf(a.name);
+    const bFrontier = FRONTIER_COMPANIES.indexOf(b.name);
+    if (aFrontier !== -1 || bFrontier !== -1) {
+      if (aFrontier === -1) return 1;
+      if (bFrontier === -1) return -1;
+      return aFrontier - bFrontier;
+    }
     if (a.name === "Other") return 1;
     if (b.name === "Other") return -1;
-    return familyCollator.compare(a.name, b.name);
+    return companyCollator.compare(a.name, b.name);
   });
 }
 
