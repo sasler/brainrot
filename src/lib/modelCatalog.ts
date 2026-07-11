@@ -1,26 +1,27 @@
 export interface ModelInfo {
   displayName: string;
   family: string;
+  company: string;
   color: string;
 }
 
 export const MODEL_CATALOG = {
-  "gpt-5-4": { displayName: "OpenAI GPT 5.4", family: "OpenAI GPT", color: "#10A37F" },
-  "gpt-5-4-mini": { displayName: "OpenAI GPT 5.4 Mini", family: "OpenAI GPT", color: "#74AA9C" },
-  "gpt-5-5": { displayName: "OpenAI GPT 5.5", family: "OpenAI GPT", color: "#22C7A9" },
-  "gpt-5-6-sol": { displayName: "OpenAI GPT 5.6 Sol", family: "OpenAI GPT", color: "#37F6E7" },
-  "gpt-5-6-terra": { displayName: "OpenAI GPT 5.6 Terra", family: "OpenAI GPT", color: "#2DD4BF" },
-  "fable-5": { displayName: "Claude Fable 5", family: "Claude", color: "#C96656" },
-  "sonnet-4-6": { displayName: "Claude Sonnet 4.6", family: "Claude", color: "#D97757" },
-  "opus-4-6": { displayName: "Claude Opus 4.6", family: "Claude", color: "#E58A65" },
-  "opus-4-8": { displayName: "Claude Opus 4.8", family: "Claude", color: "#F2A07B" },
-  "gemini-3-1-pro": { displayName: "Google Gemini 3.1 Pro", family: "Google Gemini", color: "#4285F4" },
-  "gemma-4-12b": { displayName: "Google Gemma 4 12B", family: "Google Gemma", color: "#34A853" },
-  "qwen-3-6-27b": { displayName: "Qwen3.6-27B", family: "Qwen", color: "#B86CFF" },
-  "qwen3.6-35b-a3b": { displayName: "Qwen3.6-35B-A3B", family: "Qwen", color: "#D946EF" },
-  "mai-code-1-flash": { displayName: "Microsoft MAI-Code-1-Flash", family: "Microsoft MAI", color: "#00A4EF" },
-  "minimax-m2-7": { displayName: "MiniMax M2.7", family: "MiniMax", color: "#FF4D6D" },
-  hy3: { displayName: "Tencent Hy3", family: "Tencent Hy", color: "#00B8A9" },
+  "gpt-5-4": { displayName: "OpenAI GPT 5.4", family: "OpenAI GPT", company: "OpenAI", color: "#10A37F" },
+  "gpt-5-4-mini": { displayName: "OpenAI GPT 5.4 Mini", family: "OpenAI GPT", company: "OpenAI", color: "#74AA9C" },
+  "gpt-5-5": { displayName: "OpenAI GPT 5.5", family: "OpenAI GPT", company: "OpenAI", color: "#22C7A9" },
+  "gpt-5-6-sol": { displayName: "OpenAI GPT 5.6 Sol", family: "OpenAI GPT", company: "OpenAI", color: "#37F6E7" },
+  "gpt-5-6-terra": { displayName: "OpenAI GPT 5.6 Terra", family: "OpenAI GPT", company: "OpenAI", color: "#2DD4BF" },
+  "fable-5": { displayName: "Claude Fable 5", family: "Claude", company: "Anthropic", color: "#C96656" },
+  "sonnet-4-6": { displayName: "Claude Sonnet 4.6", family: "Claude", company: "Anthropic", color: "#D97757" },
+  "opus-4-6": { displayName: "Claude Opus 4.6", family: "Claude", company: "Anthropic", color: "#E58A65" },
+  "opus-4-8": { displayName: "Claude Opus 4.8", family: "Claude", company: "Anthropic", color: "#F2A07B" },
+  "gemini-3-1-pro": { displayName: "Google Gemini 3.1 Pro", family: "Google Gemini", company: "Google", color: "#4285F4" },
+  "gemma-4-12b": { displayName: "Google Gemma 4 12B", family: "Google Gemma", company: "Google", color: "#34A853" },
+  "qwen-3-6-27b": { displayName: "Qwen3.6-27B", family: "Qwen", company: "Alibaba", color: "#B86CFF" },
+  "qwen3.6-35b-a3b": { displayName: "Qwen3.6-35B-A3B", family: "Qwen", company: "Alibaba", color: "#D946EF" },
+  "mai-code-1-flash": { displayName: "Microsoft MAI-Code-1-Flash", family: "Microsoft MAI", company: "Microsoft", color: "#00A4EF" },
+  "minimax-m2-7": { displayName: "MiniMax M2.7", family: "MiniMax", company: "MiniMax", color: "#FF4D6D" },
+  hy3: { displayName: "Tencent Hy3", family: "Tencent Hy", company: "Tencent", color: "#00B8A9" },
 } as const satisfies Record<string, ModelInfo>;
 
 export type KnownModelId = keyof typeof MODEL_CATALOG;
@@ -75,6 +76,7 @@ export function getModelInfo(modelId: string, fallbackName?: string): ModelInfo 
   return {
     displayName: fallbackName || fallbackDisplayName(modelId),
     family: "Other",
+    company: "Other",
     color: FALLBACK_COLOR,
   };
 }

@@ -2,6 +2,7 @@ import gamesData from "../../games-metadata.json";
 import {
   compareModels,
   getModelDisplayName,
+  getModelInfo,
   resolveModelName,
 } from "./modelCatalog";
 
@@ -128,6 +129,89 @@ export function getUniqueModels(): string[] {
     game.versions.forEach((v) => models.add(v.model)),
   );
   return Array.from(models);
+}
+
+export interface ModelGameContribution {
+  game: Game;
+  version: GameVersion;
+}
+
+export interface ModelContribution {
+  modelId: string;
+  displayName: string;
+  family: string;
+  company: string;
+  color: string;
+  games: ModelGameContribution[];
+  totalLinesOfCode: number;
+}
+
+export interface ModelCompany {
+  name: string;
+  models: ModelContribution[];
+  gameCount: number;
+}
+
+const companyCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+const FRONTIER_COMPANIES = ["Anthropic", "Google", "OpenAI"];
+
+export function getModelContributions(): ModelContribution[] {
+  const contributions = new Map<string, ModelGameContribution[]>();
+
+  for (const game of getGames()) {
+    for (const version of game.versions) {
+      const existing = contributions.get(version.modelId) ?? [];
+      existing.push({ game, version });
+      contributions.set(version.modelId, existing);
+    }
+  }
+
+  return Array.from(contributions, ([modelId, games]) => {
+    const model = getModelInfo(modelId, games[0]?.version.model);
+    return {
+      modelId,
+      displayName: model.displayName,
+      family: model.family,
+      company: model.company,
+      color: model.color,
+      games,
+      totalLinesOfCode: games.reduce(
+        (total, contribution) => total + contribution.version.linesOfCode,
+        0,
+      ),
+    };
+  }).sort((a, b) => compareModels(a, b));
+}
+
+export function getModelContribution(modelId: string): ModelContribution | undefined {
+  return getModelContributions().find((model) => model.modelId === modelId);
+}
+
+export function getModelCompanies(): ModelCompany[] {
+  const companies = new Map<string, ModelContribution[]>();
+
+  for (const model of getModelContributions()) {
+    const existing = companies.get(model.company) ?? [];
+    existing.push(model);
+    companies.set(model.company, existing);
+  }
+
+  return Array.from(companies, ([name, models]) => ({
+    name,
+    models,
+    gameCount: models.reduce((total, model) => total + model.games.length, 0),
+  })).sort((a, b) => {
+    const aFrontier = FRONTIER_COMPANIES.indexOf(a.name);
+    const bFrontier = FRONTIER_COMPANIES.indexOf(b.name);
+    if (aFrontier !== -1 || bFrontier !== -1) {
+      if (aFrontier === -1) return 1;
+      if (bFrontier === -1) return -1;
+      return aFrontier - bFrontier;
+    }
+    if (a.name === "Other") return 1;
+    if (b.name === "Other") return -1;
+    return companyCollator.compare(a.name, b.name);
+  });
 }
 
 export function getModelReviews(): ModelReviewEntry[] {
