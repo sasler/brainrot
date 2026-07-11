@@ -127,16 +127,16 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       ).toBeVisible();
 
       if (["outrun-racer", "coastal-rush-86"].includes(game)) {
-        await expect(page.getByRole("heading", { name: "GPT 5.5", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "OpenAI GPT 5.5", exact: true })).toBeVisible();
         continue;
       }
 
       await expect(page.getByRole("heading", { name: "Claude Sonnet 4.6" })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "GPT 5.4", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "OpenAI GPT 5.4", exact: true })).toBeVisible();
 
       if (!["pac-man", "sudoku"].includes(game)) {
         await expect(page.getByRole("heading", { name: "Claude Opus 4.6" })).toBeVisible();
-        await expect(page.getByRole("heading", { name: "GPT 5.4 Mini" })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "OpenAI GPT 5.4 Mini" })).toBeVisible();
       }
     }
   });

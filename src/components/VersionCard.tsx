@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MODEL_COLORS } from "@/lib/modelColors";
+import { getModelInfo } from "@/lib/modelCatalog";
 import type { Game, GameVersion } from "@/lib/games";
 import RatingSummary from "./RatingSummary";
 import { useVersionRating } from "./RatingsProvider";
@@ -30,7 +30,8 @@ const FEATURE_COLORS: Record<string, string> = {
 };
 
 export default function VersionCard({ game, version, index }: VersionCardProps) {
-  const modelColor = MODEL_COLORS[version.modelId] || game.accentColor;
+  const model = getModelInfo(version.modelId, version.model);
+  const modelColor = model.color;
   const { rating } = useVersionRating(game.id, version.modelId);
   const [review, setReview] = useState<{ from: string; comment: string } | null>(null);
 
@@ -46,7 +47,9 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
   return (
     <Link
       href={`/games/${game.id}/${version.modelId}`}
-      className="card-glow group relative flex flex-col overflow-hidden rounded-2xl bg-card p-6 transition-all duration-300 hover:bg-card-hover hover:-translate-y-1"
+      className="card-glow group relative flex flex-col overflow-hidden rounded-2xl bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-card-hover focus-visible:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4"
+      data-model-id={version.modelId}
+      data-model-color={modelColor}
       style={
         {
           "--glow-color": modelColor,
@@ -61,14 +64,23 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
       />
 
       {/* Model name */}
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-5 flex items-start gap-3">
         <div
-          className="h-2.5 w-2.5 rounded-full"
+          className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full shadow-[0_0_12px_currentColor]"
+          aria-hidden="true"
           style={{ backgroundColor: modelColor }}
         />
-        <h3 className="font-display text-lg font-bold tracking-wide text-foreground">
-          {version.model}
-        </h3>
+        <div className="min-w-0">
+          <span
+            className="mb-1 block font-mono text-[9px] font-semibold tracking-[0.22em] uppercase"
+            style={{ color: modelColor }}
+          >
+            {model.family}
+          </span>
+          <h3 className="font-display text-lg leading-snug font-bold tracking-wide text-foreground">
+            {model.displayName}
+          </h3>
+        </div>
       </div>
 
       {/* Stats grid */}
@@ -125,8 +137,11 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
       )}
 
       {/* Play button */}
-      <div className="mt-auto flex items-center justify-between">
-        <span className="font-mono text-xs text-muted">{version.modelId}</span>
+      <div className="mt-auto flex items-center justify-end sm:justify-between">
+        <span className="hidden font-mono text-[10px] text-muted sm:inline">
+          {version.modelId}
+        </span>
+
         <span
           className="rounded-full border px-4 py-1.5 font-display text-xs font-semibold tracking-widest transition-all group-hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]"
           style={{

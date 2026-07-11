@@ -1,4 +1,9 @@
 import gamesData from "../../games-metadata.json";
+import {
+  compareModels,
+  getModelDisplayName,
+  resolveModelName,
+} from "./modelCatalog";
 
 export type FeatureId =
   | "sound"
@@ -56,7 +61,7 @@ type LegacyReview = {
 
 function normalizeReview(review: LegacyReview): AiReview {
   return {
-    from: review.from,
+    from: resolveModelName(review.from),
     comments:
       review.comments ?? (review.comment !== undefined ? [review.comment] : []),
   };
@@ -77,15 +82,21 @@ function normalizeGamesData(data: RawGamesData): GamesData {
   return {
     games: data.games.map((game) => ({
       ...game,
-      versions: game.versions.map((version) => ({
-        ...version,
-        aiReviews: version.aiReviews?.map(normalizeReview),
-      })),
+      versions: game.versions
+        .map((version) => ({
+          ...version,
+          model: getModelDisplayName(version.modelId, version.model),
+          aiReviews: version.aiReviews?.map(normalizeReview),
+        }))
+        .sort(compareModels),
     })),
-    modelReviews: data.modelReviews?.map((entry) => ({
-      ...entry,
-      reviews: entry.reviews.map(normalizeReview),
-    })),
+    modelReviews: data.modelReviews
+      ?.map((entry) => ({
+        ...entry,
+        model: getModelDisplayName(entry.modelId, entry.model),
+        reviews: entry.reviews.map(normalizeReview),
+      }))
+      .sort(compareModels),
   };
 }
 
@@ -139,7 +150,7 @@ export function getAllTrashTalk(): TrashTalkQuote[] {
         for (const comment of review.comments) {
           quotes.push({
             text: comment,
-            from: review.from,
+            from: resolveModelName(review.from),
             about: `${version.model}'s ${game.name}`,
           });
         }
@@ -152,7 +163,7 @@ export function getAllTrashTalk(): TrashTalkQuote[] {
       for (const comment of review.comments) {
         quotes.push({
           text: comment,
-          from: review.from,
+          from: resolveModelName(review.from),
           about: entry.model,
         });
       }
