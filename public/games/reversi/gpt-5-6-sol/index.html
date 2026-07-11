@@ -671,7 +671,7 @@
           <div class="game">
             <div class="scoreline">
               <div class="score">
-                <i class="mini-disc dark"></i><span>You</span
+                <i class="mini-disc dark"></i><span id="blackLabel">You</span
                 ><strong id="blackScore">2</strong>
               </div>
               <div class="turn">
@@ -680,7 +680,7 @@
               </div>
               <div class="score">
                 <i class="mini-disc light"></i
-                ><span id="aiLabel">Tactician</span
+                ><span id="whiteLabel">Tactician</span
                 ><strong id="whiteScore">2</strong>
               </div>
             </div>
@@ -806,7 +806,8 @@
           white: document.querySelector("#whiteScore"),
           turn: document.querySelector("#turnText"),
           phase: document.querySelector("#phaseLabel"),
-          aiLabel: document.querySelector("#aiLabel"),
+          blackLabel: document.querySelector("#blackLabel"),
+          whiteLabel: document.querySelector("#whiteLabel"),
           thinking: document.querySelector("#thinking"),
           hint: document.querySelector("#hintBtn"),
           title: document.querySelector("#titleOverlay"),
@@ -1200,7 +1201,9 @@
           aiToken++;
           ui.title.classList.remove("show");
           ui.end.classList.remove("show");
-          ui.aiLabel.textContent = DIFFICULTY[ui.difficulty.value].name;
+          const opponentName = DIFFICULTY[ui.difficulty.value].name;
+          ui.blackLabel.textContent = human === BLACK ? "You" : opponentName;
+          ui.whiteLabel.textContent = human === WHITE ? "You" : opponentName;
           updateUI();
           if (turn === ai) setTimeout(aiTurn, 450);
         }
@@ -1411,8 +1414,11 @@
         }
         function burstCell(r, c, color, count) {
           const p = cellCenter(r, c);
+          const rect = canvas.getBoundingClientRect();
           for (let i = 0; i < count; i++)
-            particles.push(makeParticle(p.x, p.y, color));
+            particles.push(
+              makeParticle(rect.left + p.x, rect.top + p.y, color),
+            );
         }
         function cellCenter(r, c) {
           return {
