@@ -100,7 +100,9 @@ src/
 ├── app/                        # Next.js App Router pages
 │   ├── page.tsx                # Landing page (game catalog)
 │   ├── games/[game]/           # Game detail page
-│   └── games/[game]/[model]/   # Play page (iframe)
+│   ├── games/[game]/[model]/   # Play page (iframe)
+│   ├── models/                 # Model family roster
+│   └── models/[model]/         # Model contribution profile
 ├── components/                 # UI components
 └── lib/                        # Game registry & types
 public/

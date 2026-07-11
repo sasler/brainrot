@@ -126,6 +126,26 @@ body {
   animation: fade-up 0.6s ease forwards;
 }
 
+/* ═══ Model Roster ═══ */
+@keyframes model-tile-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.model-tile {
+  opacity: 0;
+  animation: model-tile-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.models-atmosphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(circle at center, transparent 0, var(--background) 82%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

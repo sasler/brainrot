@@ -2,6 +2,7 @@ import gamesData from "../../games-metadata.json";
 import {
   compareModels,
   getModelDisplayName,
+  getModelInfo,
   resolveModelName,
 } from "./modelCatalog";
 
@@ -128,6 +129,79 @@ export function getUniqueModels(): string[] {
     game.versions.forEach((v) => models.add(v.model)),
   );
   return Array.from(models);
+}
+
+export interface ModelGameContribution {
+  game: Game;
+  version: GameVersion;
+}
+
+export interface ModelContribution {
+  modelId: string;
+  displayName: string;
+  family: string;
+  color: string;
+  games: ModelGameContribution[];
+  totalLinesOfCode: number;
+}
+
+export interface ModelFamily {
+  name: string;
+  models: ModelContribution[];
+  gameCount: number;
+}
+
+const familyCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+
+export function getModelContributions(): ModelContribution[] {
+  const contributions = new Map<string, ModelGameContribution[]>();
+
+  for (const game of getGames()) {
+    for (const version of game.versions) {
+      const existing = contributions.get(version.modelId) ?? [];
+      existing.push({ game, version });
+      contributions.set(version.modelId, existing);
+    }
+  }
+
+  return Array.from(contributions, ([modelId, games]) => {
+    const model = getModelInfo(modelId, games[0]?.version.model);
+    return {
+      modelId,
+      displayName: model.displayName,
+      family: model.family,
+      color: model.color,
+      games,
+      totalLinesOfCode: games.reduce(
+        (total, contribution) => total + contribution.version.linesOfCode,
+        0,
+      ),
+    };
+  }).sort((a, b) => compareModels(a, b));
+}
+
+export function getModelContribution(modelId: string): ModelContribution | undefined {
+  return getModelContributions().find((model) => model.modelId === modelId);
+}
+
+export function getModelFamilies(): ModelFamily[] {
+  const families = new Map<string, ModelContribution[]>();
+
+  for (const model of getModelContributions()) {
+    const existing = families.get(model.family) ?? [];
+    existing.push(model);
+    families.set(model.family, existing);
+  }
+
+  return Array.from(families, ([name, models]) => ({
+    name,
+    models,
+    gameCount: models.reduce((total, model) => total + model.games.length, 0),
+  })).sort((a, b) => {
+    if (a.name === "Other") return 1;
+    if (b.name === "Other") return -1;
+    return familyCollator.compare(a.name, b.name);
+  });
 }
 
 export function getModelReviews(): ModelReviewEntry[] {
