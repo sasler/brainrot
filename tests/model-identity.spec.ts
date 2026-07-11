@@ -17,6 +17,8 @@ test.describe("Model identity system", () => {
     ]);
 
     for (const modelId of modelIds) expect(isKnownModelId(modelId)).toBe(true);
+    expect(isKnownModelId("toString")).toBe(false);
+    expect(isKnownModelId("constructor")).toBe(false);
   });
 
   test("normalized game and review models are alphabetized", () => {
@@ -47,6 +49,7 @@ test.describe("Model identity system", () => {
     await expect(page.locator('[data-model-id="gpt-5-6-sol"]')).toContainText(
       "OpenAI GPT",
     );
+    await expect(page.getByText("MODEL ENTRY", { exact: true })).toHaveCount(0);
   });
 
   for (const viewport of [

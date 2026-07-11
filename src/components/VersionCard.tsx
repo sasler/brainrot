@@ -137,13 +137,11 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
       )}
 
       {/* Play button */}
-      <div className="mt-auto flex items-center justify-between">
+      <div className="mt-auto flex items-center justify-end sm:justify-between">
         <span className="hidden font-mono text-[10px] text-muted sm:inline">
           {version.modelId}
         </span>
-        <span className="font-mono text-[10px] tracking-wider text-muted sm:hidden">
-          MODEL ENTRY
-        </span>
+
         <span
           className="rounded-full border px-4 py-1.5 font-display text-xs font-semibold tracking-widest transition-all group-hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]"
           style={{

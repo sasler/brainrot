@@ -61,7 +61,7 @@ function fallbackDisplayName(modelId: string): string {
 }
 
 export function isKnownModelId(modelId: string): modelId is KnownModelId {
-  return modelId in MODEL_CATALOG;
+  return Object.prototype.hasOwnProperty.call(MODEL_CATALOG, modelId);
 }
 
 export function getModelInfo(modelId: string, fallbackName?: string): ModelInfo {
