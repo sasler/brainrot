@@ -101,7 +101,7 @@ src/
 │   ├── page.tsx                # Landing page (game catalog)
 │   ├── games/[game]/           # Game detail page
 │   ├── games/[game]/[model]/   # Play page (iframe)
-│   ├── models/                 # Model family roster
+│   ├── models/                 # Company-grouped model roster
 │   └── models/[model]/         # Model contribution profile
 ├── components/                 # UI components
 └── lib/                        # Game registry & types

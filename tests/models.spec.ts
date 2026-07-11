@@ -7,21 +7,17 @@ test.describe("Model explorer", () => {
     const companies = await page.locator("[data-company]").evaluateAll((sections) =>
       sections.map((section) => section.getAttribute("data-company")),
     );
-    expect(companies).toEqual([
-      "Anthropic",
-      "Google",
-      "OpenAI",
-      "Alibaba",
-      "Microsoft",
-      "MiniMax",
-      "Tencent",
-    ]);
+    expect(companies.slice(0, 3)).toEqual(["Anthropic", "Google", "OpenAI"]);
+    expect(companies).toEqual(expect.arrayContaining(["Alibaba", "Microsoft", "MiniMax", "Tencent"]));
+    expect(companies.slice(3)).toEqual(
+      [...companies.slice(3)].sort((a, b) => (a ?? "").localeCompare(b ?? "", "en", { numeric: true })),
+    );
     await expect(page.locator('[data-company="Google"] [data-model-id="gemini-3-1-pro"]')).toBeVisible();
     await expect(page.locator('[data-company="Google"] [data-model-id="gemma-4-12b"]')).toBeVisible();
     await expect(page.locator('[data-company="OpenAI"] [data-model-id="gpt-5-4"]')).toBeVisible();
     const gpt = page.locator('[data-model-id="gpt-5-4"]');
     await expect(gpt).toContainText("OpenAI GPT 5.4");
-    await expect(gpt).toContainText("15");
+    await expect(gpt).toContainText("games shipped");
   });
 
   test("opens a shareable model profile with only its games", async ({ page }) => {

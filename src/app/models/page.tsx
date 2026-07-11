@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import ModelTile from "@/components/ModelTile";
-import { getModelCompanies, getModelContributions } from "@/lib/games";
+import { getModelCompanies } from "@/lib/games";
 
 export const metadata: Metadata = {
   title: "AI Model Roster — BrainRot Games",
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function ModelsPage() {
   const companies = getModelCompanies();
-  const models = getModelContributions();
-  const implementationCount = models.reduce((total, model) => total + model.games.length, 0);
+  const modelCount = companies.reduce((total, company) => total + company.models.length, 0);
+  const implementationCount = companies.reduce((total, company) => total + company.gameCount, 0);
 
   return (
     <div className="models-atmosphere relative isolate overflow-hidden px-6 py-16 sm:py-24">
@@ -22,12 +22,12 @@ export default function ModelsPage() {
             <span className="h-px w-10 bg-neon-cyan/60" />Intelligence roster / live archive
           </div>
           <h1 className="font-display text-5xl leading-[0.92] font-black tracking-[-0.05em] text-foreground sm:text-7xl lg:text-8xl">
-            Meet the minds<span className="block text-foreground/25">behind the games.</span>
+            Meet the minds <span className="block text-foreground/25">behind the games.</span>
           </h1>
           <div className="mt-9 flex flex-col gap-8 border-l border-neon-cyan/30 pl-5 sm:flex-row sm:items-end sm:justify-between">
             <p className="max-w-xl text-base leading-relaxed text-muted sm:text-lg">Browse the arena by company, inspect each contender&apos;s body of work, then jump straight into what it shipped.</p>
             <div className="flex shrink-0 gap-8 font-mono">
-              <div><strong className="block text-2xl text-foreground">{models.length}</strong><span className="text-[9px] tracking-widest text-muted uppercase">models</span></div>
+              <div><strong className="block text-2xl text-foreground">{modelCount}</strong><span className="text-[9px] tracking-widest text-muted uppercase">models</span></div>
               <div><strong className="block text-2xl text-foreground">{implementationCount}</strong><span className="text-[9px] tracking-widest text-muted uppercase">builds</span></div>
             </div>
           </div>
