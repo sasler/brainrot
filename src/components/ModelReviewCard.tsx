@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MODEL_COLORS } from "@/lib/modelColors";
+import { getModelInfo } from "@/lib/modelCatalog";
 import type { ModelReviewEntry } from "@/lib/games";
 
 interface ModelReviewCardProps {
@@ -10,7 +10,8 @@ interface ModelReviewCardProps {
 }
 
 export default function ModelReviewCard({ entry, index }: ModelReviewCardProps) {
-  const modelColor = MODEL_COLORS[entry.modelId] || "#888";
+  const model = getModelInfo(entry.modelId, entry.model);
+  const modelColor = model.color;
   const [review, setReview] = useState<{ from: string; comment: string } | null>(null);
 
   useEffect(() => {
@@ -27,6 +28,8 @@ export default function ModelReviewCard({ entry, index }: ModelReviewCardProps) 
   return (
     <div
       className="card-glow relative overflow-hidden rounded-2xl bg-card p-6 transition-all duration-300 hover:bg-card-hover"
+      data-model-id={entry.modelId}
+      data-model-color={modelColor}
       style={
         {
           "--glow-color": modelColor,
@@ -41,17 +44,23 @@ export default function ModelReviewCard({ entry, index }: ModelReviewCardProps) 
       />
 
       {/* Model name */}
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex items-start gap-2.5">
         <div
-          className="h-2 w-2 rounded-full"
+          className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
+          aria-hidden="true"
           style={{ backgroundColor: modelColor }}
         />
-        <span
-          className="font-display text-sm font-bold tracking-wide"
-          style={{ color: modelColor }}
-        >
-          {entry.model}
-        </span>
+        <div>
+          <span className="block font-mono text-[9px] tracking-[0.2em] text-muted uppercase">
+            {model.family}
+          </span>
+          <span
+            className="font-display text-sm font-bold tracking-wide"
+            style={{ color: modelColor }}
+          >
+            {model.displayName}
+          </span>
+        </div>
       </div>
 
       {/* Sarcastic quote */}

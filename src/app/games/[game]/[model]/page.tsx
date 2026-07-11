@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getGame, getGames, getGameVersion } from "@/lib/games";
 import RatingsProvider from "@/components/RatingsProvider";
 import RatingInput from "@/components/RatingInput";
+import { getModelInfo } from "@/lib/modelCatalog";
 import type { Metadata } from "next";
 
 interface PlayPageProps {
@@ -38,12 +39,17 @@ export default async function PlayPage({ params }: PlayPageProps) {
   const version = game ? getGameVersion(gameId, modelId) : undefined;
 
   if (!game || !version) notFound();
+  const model = getModelInfo(version.modelId, version.model);
 
   return (
     <div className="fixed inset-0 top-16 flex flex-col bg-background">
       {/* Compact top bar */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface/80 px-4 py-2">
-        <div className="flex items-center gap-3">
+      <div
+        className="flex shrink-0 items-center justify-between border-b border-border bg-surface/80 px-4 py-2"
+        data-model-id={modelId}
+        data-model-color={model.color}
+      >
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             href={`/games/${game.id}`}
             className="flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
@@ -67,11 +73,14 @@ export default async function PlayPage({ params }: PlayPageProps) {
           <span className="text-sm" role="img" aria-label={game.name}>
             {game.icon}
           </span>
-          <span className="font-display text-xs font-semibold tracking-wide text-foreground">
+          <span className="hidden font-display text-xs font-semibold tracking-wide text-foreground sm:inline">
             {game.name}
           </span>
-          <span className="rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[10px] text-muted">
-            {version.model}
+          <span
+            className="truncate rounded-full border bg-card px-2 py-0.5 font-mono text-[10px]"
+            style={{ borderColor: `${model.color}55`, color: model.color }}
+          >
+            {model.displayName}
           </span>
         </div>
         <div className="hidden items-center gap-4 font-mono text-[10px] text-muted sm:flex">
@@ -90,7 +99,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
         <iframe
           src={version.path}
           sandbox="allow-scripts allow-pointer-lock"
-          title={`${game.name} by ${version.model}`}
+          title={`${game.name} by ${model.displayName}`}
           className="absolute inset-0 h-full w-full border-0"
         />
       </div>
@@ -101,7 +110,7 @@ export default async function PlayPage({ params }: PlayPageProps) {
           <RatingInput
             gameId={gameId}
             modelId={modelId}
-            accentColor={game.accentColor}
+            accentColor={model.color}
           />
         </div>
       </RatingsProvider>

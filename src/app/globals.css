@@ -101,6 +101,15 @@ body {
   border-color: color-mix(in srgb, var(--glow-color, var(--neon-cyan)) 40%, transparent);
 }
 
+.card-glow:focus-visible {
+  border-color: color-mix(in srgb, var(--glow-color, var(--neon-cyan)) 65%, transparent);
+  outline-color: color-mix(in srgb, var(--glow-color, var(--neon-cyan)) 70%, transparent);
+}
+
+.card-glow:focus-visible::after {
+  opacity: 0.14;
+}
+
 /* ═══ Stagger Animation ═══ */
 @keyframes fade-up {
   from {
@@ -115,6 +124,17 @@ body {
 
 .animate-fade-up {
   animation: fade-up 0.6s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ═══ Neon Glow ═══ */
