@@ -12,7 +12,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 🐍 Snake | Navigate the serpent through a digital grid. Consume pixels to grow, but one wrong move means total annihilation. | 9 |
 | 👻 Pac-Man | Dash through a neon maze, gobble pellets, outsmart relentless ghosts, and flip the hunt with power surges. | 4 |
 | 💣 Minesweeper | Every click is a calculated gamble. Use logic to uncover safe tiles while avoiding hidden explosives. | 5 |
-| 🧱 Tetris | Falling tetrominoes demand split-second decisions. Stack them perfectly or watch entropy consume the board. | 5 |
+| 🧱 Tetris | Falling tetrominoes demand split-second decisions. Stack them perfectly or watch entropy consume the board. | 6 |
 | ⚫ Reversi | A war of strategic placement. Flip your opponent's pieces and dominate the 8×8 battlefield. | 6 |
 | 🏓 Breakout | Shatter neon bricks with a blazing ball. Catch power-ups, chain combos, and clear every level before your lives run out. | 6 |
 | 🔢 2048 | Slide, merge, and strategize on a 4×4 grid. Chase the elusive 2048 tile before the board fills up. | 7 |
@@ -37,6 +37,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | OpenAI GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,401 lines | 2,852 lines | 3,116 lines | 2,135 lines | 3,371 lines | N/A | 3,093 lines |
 | OpenAI GPT 5.5 | N/A | N/A | N/A | N/A | N/A | 2,031 lines | 2,369 lines | N/A | N/A | N/A | 2,413 lines | 1,643 lines | 2,058 lines | N/A | 1,398 lines | 2,155 lines |
 | OpenAI GPT 5.6 Terra | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 930 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| OpenAI GPT 5.6 Luna | N/A | N/A | 1,444 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | OpenAI GPT 5.6 Sol | N/A | N/A | N/A | 1,736 lines | N/A | N/A | N/A | N/A | N/A | N/A | 2,954 lines | N/A | N/A | N/A | N/A | 1,542 lines |
 | OpenAI GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 1,035 lines | N/A | N/A | 2,734 lines | 3,965 lines |
 | Google Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |

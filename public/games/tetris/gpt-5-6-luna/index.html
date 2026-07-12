@@ -1,0 +1,1443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#040414">
+  <title>LUNAR ECLIPSE // TETRIS</title>
+  <style>
+    :root {
+      --void: #040414;
+      --void-deep: #010107;
+      --panel: rgba(13, 16, 39, .82);
+      --panel-strong: rgba(19, 20, 52, .94);
+      --line: rgba(167, 191, 235, .22);
+      --silver: #dce8ff;
+      --silver-dim: #8792b0;
+      --cyan: #52f5ff;
+      --cyan-soft: rgba(82, 245, 255, .24);
+      --violet: #a98bff;
+      --lunar: #d7ccff;
+      --pink: #ff73d2;
+      --gold: #f4d77c;
+      --danger: #ff6e9f;
+      --display: "Trebuchet MS", "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--void-deep);
+      color: var(--silver);
+      font-family: var(--mono);
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 480px;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    button { font: inherit; }
+
+    #space {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: .94;
+      pointer-events: none;
+    }
+
+    .aurora,
+    .aurora::before,
+    .aurora::after {
+      position: fixed;
+      inset: auto;
+      content: "";
+      pointer-events: none;
+    }
+
+    .aurora {
+      width: 68vw;
+      height: 68vw;
+      right: -20vw;
+      top: -24vw;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(104, 74, 218, .22), rgba(26, 18, 83, .08) 42%, transparent 68%);
+      filter: blur(18px);
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .aurora::before {
+      width: 42vw;
+      height: 42vw;
+      right: 38vw;
+      top: 52vh;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(24, 226, 248, .09), transparent 70%);
+    }
+
+    .aurora::after {
+      width: 24vw;
+      height: 24vw;
+      right: 52vw;
+      top: 2vh;
+      border-radius: 50%;
+      border: 1px solid rgba(169, 139, 255, .1);
+      box-shadow: 0 0 80px rgba(107, 83, 255, .13);
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(-2vw, 1vh, 0) scale(.96); }
+      to { transform: translate3d(2vw, -1vh, 0) scale(1.05); }
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, 100%);
+      height: 100%;
+      margin: 0 auto;
+      padding: clamp(10px, 2vw, 24px);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(8px, 1.6vh, 16px);
+    }
+
+    .masthead {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      min-height: 58px;
+      border-bottom: 1px solid rgba(167, 191, 235, .19);
+      padding: 0 2px 10px;
+    }
+
+    .eyebrow {
+      margin: 0 0 5px;
+      color: var(--cyan);
+      font-size: 10px;
+      letter-spacing: .26em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      color: #f5f4ff;
+      font-family: var(--display);
+      font-size: clamp(21px, 4vw, 38px);
+      font-weight: 700;
+      letter-spacing: .12em;
+      line-height: .95;
+      text-shadow: 0 0 18px rgba(181, 159, 255, .38);
+    }
+
+    .status-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(82, 245, 255, .3);
+      border-radius: 999px;
+      color: var(--cyan);
+      font-size: 10px;
+      letter-spacing: .12em;
+      white-space: nowrap;
+      background: rgba(13, 21, 47, .55);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan);
+      animation: blink 1.8s ease-in-out infinite;
+    }
+
+    @keyframes blink { 50% { opacity: .3; transform: scale(.72); } }
+
+    .layout {
+      min-height: 0;
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(132px, 175px) minmax(245px, 350px) minmax(145px, 190px);
+      justify-content: center;
+      align-items: center;
+      gap: clamp(10px, 2vw, 24px);
+    }
+
+    .rail {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(23, 24, 56, .8), rgba(6, 8, 22, .73));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 12px 42px rgba(0,0,0,.22);
+    }
+
+    .panel::before {
+      position: absolute;
+      top: 0;
+      left: 12px;
+      width: 36px;
+      height: 1px;
+      content: "";
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+    }
+
+    .label {
+      margin-bottom: 6px;
+      color: var(--silver-dim);
+      font-size: 9px;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+
+    .big-number {
+      color: #fff;
+      font-family: var(--display);
+      font-size: clamp(18px, 3vw, 28px);
+      letter-spacing: .08em;
+    }
+
+    .stat-grid { display: grid; gap: 10px; }
+
+    .stat-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--silver-dim);
+      font-size: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .stat-row strong {
+      color: var(--silver);
+      font-size: 13px;
+      letter-spacing: .05em;
+    }
+
+    .mission {
+      min-height: 66px;
+      color: var(--lunar);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .mission strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--cyan);
+      font-size: 9px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .meter {
+      height: 7px;
+      overflow: hidden;
+      border: 1px solid rgba(82, 245, 255, .33);
+      border-radius: 99px;
+      background: rgba(4, 6, 20, .9);
+    }
+
+    .meter > span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--violet), var(--cyan));
+      box-shadow: 0 0 12px var(--cyan);
+      transition: width .35s ease;
+    }
+
+    .meter-caption {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      color: var(--silver-dim);
+      font-size: 9px;
+    }
+
+    .board-zone {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .board-frame {
+      position: relative;
+      width: min(100%, 350px);
+      aspect-ratio: 1 / 2;
+      padding: 9px;
+      border: 1px solid rgba(181, 159, 255, .42);
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(53, 35, 112, .52), rgba(6, 7, 21, .92) 35%, rgba(7, 16, 39, .96));
+      box-shadow: 0 0 0 1px rgba(82, 245, 255, .08), 0 0 28px rgba(104, 74, 218, .3), 0 22px 60px rgba(0,0,0,.38);
+      transform: translateZ(0);
+    }
+
+    .board-frame::before,
+    .board-frame::after {
+      position: absolute;
+      width: 24%;
+      height: 14px;
+      content: "";
+      border-color: var(--cyan);
+      border-style: solid;
+      opacity: .8;
+      pointer-events: none;
+    }
+
+    .board-frame::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-radius: 16px 0 0; }
+    .board-frame::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 16px; }
+
+    #board {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 9px;
+      background: rgba(2, 4, 16, .88);
+      touch-action: none;
+    }
+
+    .board-badge {
+      position: absolute;
+      top: -18px;
+      right: 8px;
+      padding: 4px 7px;
+      border: 1px solid rgba(82, 245, 255, .26);
+      border-radius: 4px;
+      color: rgba(82, 245, 255, .72);
+      background: rgba(4, 4, 19, .84);
+      font-size: 8px;
+      letter-spacing: .17em;
+    }
+
+    .preview-box { display: flex; align-items: center; justify-content: center; min-height: 78px; }
+    .preview-box canvas { width: 110px; height: 70px; }
+
+    .controls-hint { color: var(--silver-dim); font-size: 9px; line-height: 1.65; }
+    .controls-hint b { color: var(--silver); }
+
+    .icon-button,
+    .touch-button,
+    .primary-button {
+      border: 1px solid rgba(82, 245, 255, .33);
+      color: var(--silver);
+      background: rgba(14, 21, 47, .8);
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, transform .12s ease, box-shadow .18s ease;
+    }
+
+    .icon-button:hover,
+    .touch-button:hover,
+    .primary-button:hover { border-color: var(--cyan); background: rgba(24, 40, 73, .9); box-shadow: 0 0 16px rgba(82, 245, 255, .16); }
+    .icon-button:active, .touch-button:active, .primary-button:active { transform: translateY(1px) scale(.97); }
+    .icon-button:focus-visible, .touch-button:focus-visible, .primary-button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    .icon-button { width: 32px; height: 29px; border-radius: 6px; color: var(--cyan); }
+
+    .footer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 30px;
+      color: rgba(135, 146, 176, .74);
+      font-size: 8px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .footer-bar span:last-child { color: rgba(169, 139, 255, .8); }
+
+    .touch-pad {
+      display: none;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      width: min(100%, 350px);
+      margin: 0 auto;
+    }
+
+    .mobile-utility {
+      display: none;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      width: min(100%, 350px);
+      margin: 0 auto;
+    }
+
+    .touch-button {
+      min-height: 39px;
+      border-radius: 7px;
+      color: var(--silver);
+      font-size: 14px;
+    }
+
+    .touch-button[data-action="drop"] { color: var(--cyan); }
+    .touch-button[data-action="rotate"] { color: var(--violet); }
+
+    .mobile-utility .touch-button {
+      min-height: 31px;
+      color: var(--silver-dim);
+      font-size: 10px;
+      letter-spacing: .1em;
+    }
+
+    .mobile-utility .touch-button[data-action="hold"] { color: var(--gold); }
+    .mobile-utility .touch-button[data-action="pause"] { color: var(--cyan); }
+    .mobile-utility .touch-button[data-action="audio"] { color: var(--violet); }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      border-radius: 9px;
+      background: radial-gradient(circle at 50% 35%, rgba(51, 40, 127, .76), rgba(3, 4, 16, .96) 65%);
+      text-align: center;
+      transition: opacity .3s ease, visibility .3s ease;
+    }
+
+    .overlay.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .overlay-card { max-width: 280px; animation: reveal .55s cubic-bezier(.2,.8,.2,1) both; }
+
+    @keyframes reveal { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+
+    .moon-mark {
+      width: 66px;
+      height: 66px;
+      margin: 0 auto 15px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 34%, #efeaff 0 14%, #c0b4ff 32%, #33246d 55%, #070718 68%);
+      box-shadow: 0 0 0 6px rgba(169, 139, 255, .08), 0 0 34px rgba(169, 139, 255, .5), inset -12px -7px 15px rgba(0,0,0,.56);
+    }
+
+    .overlay h2 {
+      margin: 0;
+      color: #fff;
+      font-family: var(--display);
+      font-size: clamp(24px, 5vw, 35px);
+      letter-spacing: .12em;
+      line-height: 1.05;
+      text-shadow: 0 0 22px rgba(169, 139, 255, .5);
+    }
+
+    .overlay p { margin: 12px 0 18px; color: var(--silver-dim); font-size: 10px; line-height: 1.7; }
+
+    .primary-button {
+      min-width: 170px;
+      padding: 11px 16px;
+      border-radius: 7px;
+      color: var(--void);
+      font-weight: 700;
+      letter-spacing: .15em;
+      background: linear-gradient(100deg, var(--cyan), var(--lunar));
+      box-shadow: 0 0 22px rgba(82, 245, 255, .28);
+    }
+
+    .overlay-meta { margin-top: 15px; color: rgba(135, 146, 176, .75); font-size: 8px; letter-spacing: .11em; }
+
+    .flash {
+      position: fixed;
+      inset: 0;
+      z-index: 7;
+      background: rgba(169, 139, 255, .12);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .flash.active { animation: flash .46s ease-out; }
+    @keyframes flash { 0% { opacity: .95; } 100% { opacity: 0; } }
+
+    @media (max-width: 760px) {
+      #app { padding: 8px; gap: 7px; }
+      .masthead { min-height: 45px; padding-bottom: 7px; }
+      .eyebrow { margin-bottom: 3px; font-size: 8px; }
+      h1 { font-size: clamp(17px, 6vw, 25px); }
+      .status-chip { padding: 5px 7px; font-size: 8px; }
+      .layout { grid-template-columns: 1fr; gap: 7px; align-content: center; }
+      .rail.left { display: none; }
+      .rail.right { display: none; }
+      .overlay { z-index: 20; }
+      .touch-pad { position: relative; z-index: 12; }
+      .mobile-utility { display: grid; position: relative; z-index: 12; }
+      .rail.right .panel { padding: 7px; }
+      .rail.right .panel:nth-child(3) { display: none; }
+      .preview-box { min-height: 47px; }
+      .preview-box canvas { width: 90px; height: 50px; }
+      .touch-pad { display: grid; }
+      .footer-bar { min-height: 18px; font-size: 7px; }
+      .board-frame { width: min(54vw, 278px); padding: 7px; }
+      .board-badge { top: -14px; font-size: 7px; }
+    }
+
+    @media (max-height: 580px) and (max-width: 760px) {
+      .masthead { min-height: 36px; }
+      .layout { gap: 4px; }
+      .board-frame { width: min(47vw, 226px); }
+      .touch-button { min-height: 32px; }
+      .mobile-utility .touch-button { min-height: 28px; }
+      .rail.right .panel { min-height: 40px; }
+      .preview-box { min-height: 36px; }
+      .preview-box canvas { height: 38px; }
+      .footer-bar { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="space" aria-hidden="true"></canvas>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="flash" id="flash" aria-hidden="true"></div>
+  <main id="app">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">OBSERVATORY LOG 05.6 / LUNAR ARRAY</p>
+        <h1>LUNAR ECLIPSE <span>// TETRIS</span></h1>
+      </div>
+      <div class="status-chip" id="statusChip" data-testid="status-chip"><span class="status-dot"></span><span id="statusText">AWAITING SIGNAL</span></div>
+    </header>
+
+    <section class="layout" aria-label="Tetris game">
+      <aside class="rail left" aria-label="Run statistics">
+        <div class="panel">
+          <div class="label">Mission score</div>
+          <div class="big-number" id="scoreValue">000000</div>
+        </div>
+        <div class="panel stat-grid">
+          <div class="stat-row"><span>Level</span><strong id="levelValue">01</strong></div>
+          <div class="stat-row"><span>Lines</span><strong id="linesValue">000</strong></div>
+          <div class="stat-row"><span>Combo</span><strong id="comboValue">—</strong></div>
+          <div class="stat-row"><span>Best</span><strong id="bestValue">000000</strong></div>
+        </div>
+        <div class="panel mission" id="missionPanel"><strong>Current objective</strong><span id="missionText">Awaiting launch sequence.</span></div>
+        <div class="panel">
+          <div class="label">Lunar Surge</div>
+          <div class="meter"><span id="surgeFill"></span></div>
+          <div class="meter-caption"><span id="surgeState">DORMANT</span><span id="surgeValue">0%</span></div>
+        </div>
+      </aside>
+
+      <div class="board-zone">
+        <div class="board-frame" id="boardFrame">
+          <div class="board-badge">10 × 20 / SRS ARRAY</div>
+          <canvas id="board" data-testid="tetris-board" aria-label="Tetris playfield"></canvas>
+          <div class="overlay" id="startOverlay">
+            <div class="overlay-card">
+              <div class="moon-mark" aria-hidden="true"></div>
+              <h2>THE ECLIPSE<br><span>BEGINS</span></h2>
+              <p>Stack the seven lunar fragments.<br>Clear lines. Hold the orbit.</p>
+              <button class="primary-button" id="startButton" data-action="start" data-testid="start-button">INITIATE RUN</button>
+              <div class="overlay-meta">ARROWS / WASD · SPACE DROP · C HOLD · P PAUSE</div>
+            </div>
+          </div>
+          <div class="overlay is-hidden" id="pauseOverlay">
+            <div class="overlay-card">
+              <div class="moon-mark" aria-hidden="true"></div>
+              <h2>ORBIT<br><span>PAUSED</span></h2>
+              <p id="pauseCopy">The observatory is holding position.</p>
+              <button class="primary-button" id="resumeButton" data-action="resume">RESUME SIGNAL</button>
+            </div>
+          </div>
+          <div class="overlay is-hidden" id="gameOverOverlay">
+            <div class="overlay-card">
+              <div class="moon-mark" aria-hidden="true"></div>
+              <h2>SIGNAL<br><span>LOST</span></h2>
+              <p>Orbital integrity failed.<br><strong id="finalScore">000000</strong> points logged.</p>
+              <button class="primary-button" id="restartButton" data-action="restart" data-testid="restart-button">RECALIBRATE</button>
+              <div class="overlay-meta" id="finalMission">The moon will remember.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="rail right" aria-label="Piece telemetry">
+        <div class="panel">
+          <div class="label">Hold chamber</div>
+          <div class="preview-box"><canvas id="holdCanvas" aria-label="Held tetromino"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="label">Approaching</div>
+          <div class="preview-box"><canvas id="nextCanvas" aria-label="Next tetromino queue"></canvas></div>
+        </div>
+        <div class="panel controls-hint">
+          <div class="label">Flight controls</div>
+          <div><b>← →</b> translate</div><div><b>↑ / X</b> rotate</div><div><b>↓</b> soft descent</div><div><b>SPACE</b> hard drop</div><div><b>C</b> hold · <b>P</b> pause</div>
+        </div>
+        <button class="icon-button" id="pauseButton" data-action="pause" data-testid="pause-button" aria-label="Pause game">Ⅱ</button>
+        <button class="icon-button" id="audioButton" data-action="audio" data-testid="audio-button" aria-label="Toggle audio">♫</button>
+      </aside>
+    </section>
+
+    <nav class="touch-pad" id="touchPad" aria-label="Touch controls">
+      <button class="touch-button" data-action="left" data-testid="touch-left" aria-label="Move left">◀</button>
+      <button class="touch-button" data-action="down" data-testid="touch-down" aria-label="Soft drop">▼</button>
+      <button class="touch-button" data-action="rotate" data-testid="touch-rotate" aria-label="Rotate">↻</button>
+      <button class="touch-button" data-action="drop" data-testid="touch-drop" aria-label="Hard drop">⇣</button>
+      <button class="touch-button" data-action="right" data-testid="touch-right" aria-label="Move right">▶</button>
+    </nav>
+    <nav class="mobile-utility" aria-label="Mobile utility controls">
+      <button class="touch-button" data-action="hold" aria-label="Hold piece">HOLD</button>
+      <button class="touch-button" data-action="pause" aria-label="Pause game">PAUSE</button>
+      <button class="touch-button" data-action="audio" aria-label="Toggle audio">AUDIO</button>
+    </nav>
+    <footer class="footer-bar"><span>GPT 5.6 LUNA // OBSERVATION DECK</span><span>SEVEN-BAG / LOCK DELAY / SURGE ONLINE</span></footer>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const COLS = 10;
+      const ROWS = 20;
+      const CELL_GAP = 0.08;
+      const LOCK_DELAY = 520;
+      const DAS = 145;
+      const ARR = 42;
+      const TYPES = ["I", "O", "T", "S", "Z", "J", "L"];
+      const COLORS = {
+        I: "#55f3ff",
+        O: "#f3d66f",
+        T: "#c49aff",
+        S: "#62f4ac",
+        Z: "#ff75c9",
+        J: "#749bff",
+        L: "#ffad70"
+      };
+
+      const $ = (id) => document.getElementById(id);
+      const boardCanvas = $("board");
+      const boardContext = boardCanvas.getContext("2d");
+      const spaceCanvas = $("space");
+      const spaceContext = spaceCanvas.getContext("2d");
+      const holdCanvas = $("holdCanvas");
+      const holdContext = holdCanvas.getContext("2d");
+      const nextCanvas = $("nextCanvas");
+      const nextContext = nextCanvas.getContext("2d");
+
+      const state = {
+        mode: "title",
+        board: [],
+        current: null,
+        next: [],
+        hold: null,
+        canHold: true,
+        score: 0,
+        best: 0,
+        lines: 0,
+        level: 1,
+        combo: -1,
+        backToBack: false,
+        surge: 0,
+        dropDistance: 0,
+        lockClock: 0,
+        grounded: false,
+        lastAction: "spawn",
+        lastTime: 0,
+        accumulator: 0,
+        shake: 0,
+        clearSweep: 0,
+        clearRows: [],
+        mission: "Awaiting launch sequence.",
+        muted: false,
+        audio: null,
+        keys: Object.create(null),
+        keyTimers: { left: 0, right: 0 },
+        stars: [],
+        particles: [],
+        constellation: [],
+        raf: 0
+      };
+
+      const BASE_SHAPES = {
+        I: [
+          [0,0,0,0],
+          [1,1,1,1],
+          [0,0,0,0],
+          [0,0,0,0]
+        ],
+        O: [
+          [0,1,1,0],
+          [0,1,1,0],
+          [0,0,0,0],
+          [0,0,0,0]
+        ],
+        T: [
+          [0,1,0,0],
+          [1,1,1,0],
+          [0,0,0,0],
+          [0,0,0,0]
+        ],
+        S: [
+          [0,1,1,0],
+          [1,1,0,0],
+          [0,0,0,0],
+          [0,0,0,0]
+        ],
+        Z: [
+          [1,1,0,0],
+          [0,1,1,0],
+          [0,0,0,0],
+          [0,0,0,0]
+        ],
+        J: [
+          [1,0,0,0],
+          [1,1,1,0],
+          [0,0,0,0],
+          [0,0,0,0]
+        ],
+        L: [
+          [0,0,1,0],
+          [1,1,1,0],
+          [0,0,0,0],
+          [0,0,0,0]
+        ]
+      };
+
+      const KICKS_JLSTZ = {
+        "0>1": [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+        "1>0": [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+        "1>2": [[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+        "2>1": [[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+        "2>3": [[0,0],[1,0],[1,-1],[0,2],[1,2]],
+        "3>2": [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+        "3>0": [[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+        "0>3": [[0,0],[1,0],[1,-1],[0,2],[1,2]]
+      };
+
+      const KICKS_I = {
+        "0>1": [[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
+        "1>0": [[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+        "1>2": [[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
+        "2>1": [[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+        "2>3": [[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+        "3>2": [[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
+        "3>0": [[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+        "0>3": [[0,0],[-1,0],[2,0],[-1,-2],[2,1]]
+      };
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const fmt = (value, size = 6) => Math.max(0, Math.floor(value)).toString().padStart(size, "0");
+      const random = (min, max) => min + Math.random() * (max - min);
+
+      function makeBoard() {
+        return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+      }
+
+      function rotateMatrix(matrix) {
+        return matrix[0].map((_, column) => matrix.map(row => row[column]).reverse());
+      }
+
+      function shapeFor(type, rotation) {
+        let shape = BASE_SHAPES[type].map(row => row.slice());
+        if (type === "O") return shape;
+        for (let i = 0; i < rotation; i += 1) shape = rotateMatrix(shape);
+        return shape;
+      }
+
+      function cellsOf(piece) {
+        const cells = [];
+        const shape = shapeFor(piece.type, piece.rotation);
+        shape.forEach((row, y) => row.forEach((filled, x) => {
+          if (filled) cells.push({ x: piece.x + x, y: piece.y + y });
+        }));
+        return cells;
+      }
+
+      function collides(piece, board = state.board) {
+        return cellsOf(piece).some(cell => {
+          if (cell.x < 0 || cell.x >= COLS || cell.y >= ROWS) return true;
+          return cell.y >= 0 && board[cell.y][cell.x] !== null;
+        });
+      }
+
+      function freshBag() {
+        const bag = TYPES.slice();
+        for (let i = bag.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [bag[i], bag[j]] = [bag[j], bag[i]];
+        }
+        return bag;
+      }
+
+      function refillQueue() {
+        while (state.next.length < 7) state.next.push(...freshBag());
+      }
+
+      function makePiece(type) {
+        return { type, rotation: 0, x: type === "I" ? 3 : 3, y: type === "I" ? -1 : 0 };
+      }
+
+      function spawnPiece(type = null) {
+        refillQueue();
+        const nextType = type || state.next.shift();
+        refillQueue();
+        state.current = makePiece(nextType);
+        state.canHold = true;
+        state.grounded = false;
+        state.lockClock = 0;
+        state.lastAction = "spawn";
+        if (collides(state.current)) endGame();
+      }
+
+      function resetRun() {
+        state.board = makeBoard();
+        state.next = [];
+        state.hold = null;
+        state.score = 0;
+        state.lines = 0;
+        state.level = 1;
+        state.combo = -1;
+        state.backToBack = false;
+        state.surge = 0;
+        state.dropDistance = 0;
+        state.clearRows = [];
+        state.clearSweep = 0;
+        state.shake = 0;
+        state.particles = [];
+        state.mission = "Clear four lines to chart a perfect orbit.";
+        refillQueue();
+        spawnPiece();
+        updateHUD();
+        setMode("playing");
+        playSound("start");
+      }
+
+      function startRun() {
+        ensureAudio();
+        resetRun();
+      }
+
+      function setMode(mode) {
+        state.mode = mode;
+        $("startOverlay").classList.toggle("is-hidden", mode !== "title");
+        $("pauseOverlay").classList.toggle("is-hidden", mode !== "paused");
+        $("gameOverOverlay").classList.toggle("is-hidden", mode !== "gameover");
+        const labels = { title: "AWAITING SIGNAL", playing: "ORBITAL LOCK", paused: "HOLDING POSITION", gameover: "SIGNAL LOST" };
+        $("statusText").textContent = labels[mode] || "ORBITAL LOCK";
+        if (mode === "gameover") {
+          $("finalScore").textContent = fmt(state.score);
+          $("finalMission").textContent = state.mission;
+        }
+      }
+
+      function ensureAudio() {
+        if (state.audio) {
+          if (state.audio.state === "suspended") state.audio.resume();
+          return state.audio;
+        }
+        try {
+          const AudioCtor = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtor) return null;
+          state.audio = new AudioCtor();
+          state.audio.resume();
+        } catch (error) {
+          state.audio = null;
+        }
+        return state.audio;
+      }
+
+      function playSound(event) {
+        if (state.muted) return;
+        const audio = state.audio || ensureAudio();
+        if (!audio) return;
+        const now = audio.currentTime;
+        const recipes = {
+          start: [[220, .08, "sine", .02], [330, .12, "triangle", .035], [554, .2, "sine", .025]],
+          move: [[150, .035, "square", .009]],
+          rotate: [[330, .045, "triangle", .025], [495, .08, "sine", .014]],
+          hold: [[246, .07, "sine", .018], [369, .1, "triangle", .02]],
+          drop: [[105, .08, "square", .026], [72, .12, "sine", .02]],
+          lock: [[92, .045, "triangle", .018]],
+          clear: [[390, .1, "triangle", .03], [585, .16, "sine", .035], [780, .22, "sine", .025]],
+          tetris: [[392, .1, "triangle", .04], [523, .1, "triangle", .04], [784, .3, "sine", .035]],
+          combo: [[520, .08, "square", .02], [690, .12, "triangle", .025]],
+          level: [[330, .1, "sine", .03], [495, .1, "sine", .03], [660, .2, "triangle", .035]],
+          surge: [[261, .08, "sine", .025], [392, .08, "sine", .025], [784, .28, "triangle", .035]],
+          gameover: [[240, .18, "sawtooth", .03], [160, .25, "sawtooth", .025], [90, .38, "sine", .02]],
+          pause: [[280, .08, "sine", .02]]
+        };
+        (recipes[event] || recipes.move).forEach(([frequency, duration, type, gainAmount], index) => {
+          const oscillator = audio.createOscillator();
+          const gain = audio.createGain();
+          oscillator.type = type;
+          oscillator.frequency.setValueAtTime(frequency, now + index * .035);
+          gain.gain.setValueAtTime(.0001, now + index * .035);
+          gain.gain.exponentialRampToValueAtTime(gainAmount, now + index * .035 + .012);
+          gain.gain.exponentialRampToValueAtTime(.0001, now + index * .035 + duration);
+          oscillator.connect(gain).connect(audio.destination);
+          oscillator.start(now + index * .035);
+          oscillator.stop(now + index * .035 + duration + .03);
+        });
+      }
+
+      function toggleAudio() {
+        state.muted = !state.muted;
+        $("audioButton").textContent = state.muted ? "×" : "♫";
+        $("audioButton").setAttribute("aria-label", state.muted ? "Enable audio" : "Mute audio");
+        if (!state.muted) { ensureAudio(); playSound("start"); }
+      }
+
+      function moveHorizontal(direction) {
+        if (state.mode !== "playing" || !state.current) return false;
+        const moved = { ...state.current, x: state.current.x + direction };
+        if (collides(moved)) {
+          playSound("move");
+          return false;
+        }
+        state.current = moved;
+        state.lastAction = "move";
+        state.lockClock = Math.max(0, state.lockClock - 55);
+        playSound("move");
+        return true;
+      }
+
+      function rotateCurrent(direction = 1) {
+        if (state.mode !== "playing" || !state.current || state.current.type === "O") return false;
+        const from = state.current.rotation;
+        const to = (from + direction + 4) % 4;
+        const key = `${from}>${to}`;
+        const kicks = state.current.type === "I" ? KICKS_I[key] : KICKS_JLSTZ[key];
+        for (const [dx, dy] of kicks) {
+          const candidate = { ...state.current, rotation: to, x: state.current.x + dx, y: state.current.y - dy };
+          if (!collides(candidate)) {
+            state.current = candidate;
+            state.lastAction = "rotate";
+            state.lockClock = Math.max(0, state.lockClock - 85);
+            playSound("rotate");
+            emitBurst(candidate.x + 1.5, candidate.y + 1.5, COLORS[candidate.type], 5, .7);
+            return true;
+          }
+        }
+        playSound("move");
+        return false;
+      }
+
+      function softDrop(playerInitiated = true) {
+        if (state.mode !== "playing" || !state.current) return false;
+        const candidate = { ...state.current, y: state.current.y + 1 };
+        if (!collides(candidate)) {
+          state.current = candidate;
+          if (playerInitiated) state.score += 1;
+          state.dropDistance += 1;
+          state.lastAction = "drop";
+          return true;
+        }
+        state.grounded = true;
+        return false;
+      }
+
+      function hardDrop() {
+        if (state.mode !== "playing" || !state.current) return;
+        let distance = 0;
+        while (!collides({ ...state.current, y: state.current.y + 1 })) {
+          state.current.y += 1;
+          distance += 1;
+        }
+        state.score += distance * 2;
+        state.dropDistance = distance;
+        state.shake = Math.max(state.shake, 4);
+        emitBurst(state.current.x + 1.5, state.current.y + 1.5, COLORS[state.current.type], 12, 1.4);
+        playSound("drop");
+        lockPiece();
+      }
+
+      function gravityInterval() {
+        return Math.max(75, 850 * Math.pow(.84, state.level - 1));
+      }
+
+      function getGhost() {
+        if (!state.current) return null;
+        const ghost = { ...state.current };
+        while (!collides({ ...ghost, y: ghost.y + 1 })) ghost.y += 1;
+        return ghost;
+      }
+
+      function isTSpin(piece) {
+        if (!piece || piece.type !== "T" || state.lastAction !== "rotate") return null;
+        const pivotX = piece.x + 1;
+        const pivotY = piece.y + 1;
+        let corners = 0;
+        [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx, dy]) => {
+          const x = pivotX + dx;
+          const y = pivotY + dy;
+          if (x < 0 || x >= COLS || y >= ROWS || (y >= 0 && state.board[y][x])) corners += 1;
+        });
+        if (corners < 3) return null;
+        return corners === 3 ? "mini" : "full";
+      }
+
+      function lockPiece() {
+        if (!state.current || state.mode !== "playing") return;
+        const locked = { ...state.current, rotation: state.current.rotation };
+        cellsOf(locked).forEach(({ x, y }) => {
+          if (y >= 0 && y < ROWS && x >= 0 && x < COLS) state.board[y][x] = locked.type;
+        });
+        const spin = isTSpin(locked);
+        playSound("lock");
+        emitBurst(locked.x + 1.5, Math.max(0, locked.y + 1), COLORS[locked.type], 7, .9);
+        state.current = null;
+        const fullRows = [];
+        state.board.forEach((row, index) => { if (row.every(Boolean)) fullRows.push(index); });
+        if (fullRows.length) {
+          clearLines(fullRows, spin);
+        } else {
+          if (spin) {
+            state.combo = -1;
+            awardSpin(spin, 0, true);
+          } else {
+            state.combo = -1;
+            state.mission = "Orbit stable. Find a clean four-line trajectory.";
+          }
+          spawnPiece();
+        }
+        updateHUD();
+      }
+
+      function awardSpin(spin, lines, awardBase = false) {
+        const full = spin === "full";
+        if (awardBase) {
+          const base = full ? [400, 800, 1200, 1600][lines] || 400 : [100, 200, 400][lines] || 100;
+          state.score += base * state.level;
+        }
+        // clearLines awards the T-spin line-clear base with combo and back-to-back modifiers.
+        // Zero-line T-spins opt into the base above, so line clears can never double-score.
+        state.surge = clamp(state.surge + (full ? 22 : 11), 0, 100);
+        state.mission = full ? `T-SPIN ${lines ? lines + " LINE" : "ZERO"} // moon geometry confirmed.` : "T-SPIN MINI // a narrow eclipse passage.";
+        state.shake = Math.max(state.shake, full ? 9 : 5);
+        emitBurst(5, 8, full ? varColor("--pink") : varColor("--violet"), full ? 30 : 16, full ? 2.2 : 1.2);
+        playSound(full ? "tetris" : "combo");
+      }
+
+      function clearLines(rows, spin) {
+        state.clearRows = rows.slice();
+        state.clearSweep = 1;
+        const count = rows.length;
+        state.lines += count;
+        const oldLevel = state.level;
+        state.level = Math.floor(state.lines / 10) + 1;
+        state.combo += 1;
+        const perfect = state.board.every((row, y) => rows.includes(y) || row.every(cell => cell === null));
+        const difficult = count === 4 || Boolean(spin);
+        const b2bBonus = difficult && state.backToBack ? 1.5 : 1;
+        const base = spin ? ([400, 800, 1200, 1600][count] || 400) : [0, 100, 300, 500, 800][count];
+        let earned = Math.floor(base * state.level * b2bBonus);
+        if (state.combo > 0) earned += state.combo * 50 * state.level;
+        if (perfect) earned += 1200 * state.level;
+        state.score += earned;
+        if (difficult) state.backToBack = true;
+        else if (count) state.backToBack = false;
+        state.surge = clamp(state.surge + count * 16 + (perfect ? 34 : 0), 0, 100);
+        state.shake = Math.max(state.shake, count === 4 ? 14 : 6 + count * 2);
+        if (spin) awardSpin(spin, count);
+        if (perfect) state.mission = "PERFECT CLEAR // the observatory is silent.";
+        else if (count === 4) state.mission = "LUNAR TETRIS // eclipse phase complete.";
+        else if (state.combo > 0) state.mission = `COMBO ×${state.combo + 1} // keep the orbit alive.`;
+        else state.mission = `${count} line${count > 1 ? "s" : ""} swept from the lunar array.`;
+        playSound(count === 4 ? "tetris" : "clear");
+        if (state.combo > 0) playSound("combo");
+        if (oldLevel !== state.level) { state.mission = `LEVEL ${state.level} // gravity has intensified.`; playSound("level"); }
+        if (state.surge >= 100) { state.mission = "LUNAR SURGE // presentation field fully charged."; playSound("surge"); state.surge = 35; }
+        setTimeout(() => {
+          const survivors = state.board.filter((_, index) => !rows.includes(index));
+          while (survivors.length < ROWS) survivors.unshift(Array(COLS).fill(null));
+          state.board = survivors;
+          state.clearRows = [];
+          state.clearSweep = 0;
+          spawnPiece();
+          updateHUD();
+        }, 125);
+      }
+
+      function holdPiece() {
+        if (state.mode !== "playing" || !state.current || !state.canHold) return;
+        const outgoing = state.current.type;
+        const incoming = state.hold;
+        state.hold = outgoing;
+        state.canHold = false;
+        state.current = null;
+        spawnPiece(incoming || null);
+        state.mission = `HOLD CHAMBER // ${outgoing} fragment archived.`;
+        playSound("hold");
+        updateHUD();
+      }
+
+      function endGame() {
+        if (state.mode === "gameover") return;
+        state.best = Math.max(state.best, state.score);
+        state.mode = "gameover";
+        setMode("gameover");
+        state.shake = 14;
+        emitBurst(5, 10, varColor("--danger"), 42, 2.8);
+        playSound("gameover");
+        updateHUD();
+      }
+
+      function updateHUD() {
+        $("scoreValue").textContent = fmt(state.score);
+        $("bestValue").textContent = fmt(state.best);
+        $("linesValue").textContent = fmt(state.lines, 3);
+        $("levelValue").textContent = String(state.level).padStart(2, "0");
+        $("comboValue").textContent = state.combo > 0 ? `×${state.combo + 1}` : "—";
+        $("missionText").textContent = state.mission;
+        $("surgeFill").style.width = `${state.surge}%`;
+        $("surgeValue").textContent = `${Math.round(state.surge)}%`;
+        $("surgeState").textContent = state.surge > 70 ? "LUMINOUS" : state.surge > 30 ? "CHARGING" : "DORMANT";
+        drawPreview(holdContext, holdCanvas, state.hold, false);
+        drawPreview(nextContext, nextCanvas, state.next[0], true);
+      }
+
+      function varColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      }
+
+      function resizeCanvas(canvas, context, width, height) {
+        const ratio = Math.min(2, window.devicePixelRatio || 1);
+        canvas.width = Math.max(1, Math.floor(width * ratio));
+        canvas.height = Math.max(1, Math.floor(height * ratio));
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+        return { width, height };
+      }
+
+      function drawPreview(context, canvas, type, queue) {
+        const rect = canvas.getBoundingClientRect();
+        const { width, height } = resizeCanvas(canvas, context, Math.max(30, rect.width), Math.max(30, rect.height));
+        context.clearRect(0, 0, width, height);
+        if (!type) {
+          context.fillStyle = "rgba(135, 146, 176, .22)";
+          context.font = "9px monospace";
+          context.textAlign = "center";
+          context.fillText(queue ? "NEXT ARRAY" : "EMPTY", width / 2, height / 2 + 3);
+          return;
+        }
+        const shape = shapeFor(type, 0);
+        const occupied = [];
+        shape.forEach((row, y) => row.forEach((filled, x) => { if (filled) occupied.push({ x, y }); }));
+        const cell = Math.min(width / 5, height / 3.4);
+        const minX = Math.min(...occupied.map(c => c.x));
+        const maxX = Math.max(...occupied.map(c => c.x));
+        const minY = Math.min(...occupied.map(c => c.y));
+        const maxY = Math.max(...occupied.map(c => c.y));
+        const offsetX = (width - (maxX - minX + 1) * cell) / 2 - minX * cell;
+        const offsetY = (height - (maxY - minY + 1) * cell) / 2 - minY * cell;
+        occupied.forEach(({ x, y }) => drawCell(context, offsetX + x * cell, offsetY + y * cell, cell, COLORS[type], 1));
+      }
+
+      function drawCell(context, x, y, size, color, alpha = 1, ghost = false) {
+        const gap = size * CELL_GAP;
+        const w = size - gap * 2;
+        context.save();
+        context.globalAlpha = alpha;
+        if (ghost) {
+          context.strokeStyle = color;
+          context.lineWidth = Math.max(1, size * .08);
+          context.setLineDash([size * .15, size * .14]);
+          context.strokeRect(x + gap * 1.4, y + gap * 1.4, w - gap * .8, w - gap * .8);
+          context.restore();
+          return;
+        }
+        const gradient = context.createLinearGradient(x, y, x + size, y + size);
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(.11, color);
+        gradient.addColorStop(.75, color);
+        gradient.addColorStop(1, "#17122f");
+        context.shadowColor = color;
+        context.shadowBlur = size * .32;
+        context.fillStyle = gradient;
+        context.beginPath();
+        context.roundRect(x + gap, y + gap, w, w, Math.max(2, size * .12));
+        context.fill();
+        context.shadowBlur = 0;
+        context.fillStyle = "rgba(255,255,255,.28)";
+        context.fillRect(x + gap * 2, y + gap * 2, w * .65, Math.max(1, size * .06));
+        context.restore();
+      }
+
+      function renderBoard(time) {
+        const rect = boardCanvas.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        resizeCanvas(boardCanvas, boardContext, width, height);
+        const shakeX = state.shake > 0 ? random(-state.shake, state.shake) : 0;
+        const shakeY = state.shake > 0 ? random(-state.shake, state.shake) : 0;
+        boardContext.save();
+        boardContext.translate(shakeX, shakeY);
+        boardContext.clearRect(-20, -20, width + 40, height + 40);
+        const cell = Math.min(width / COLS, height / ROWS);
+        const boardWidth = cell * COLS;
+        const boardHeight = cell * ROWS;
+        const ox = (width - boardWidth) / 2;
+        const oy = (height - boardHeight) / 2;
+        const backdrop = boardContext.createLinearGradient(0, oy, 0, oy + boardHeight);
+        backdrop.addColorStop(0, "rgba(20, 17, 54, .68)");
+        backdrop.addColorStop(1, "rgba(3, 8, 26, .94)");
+        boardContext.fillStyle = backdrop;
+        boardContext.fillRect(ox, oy, boardWidth, boardHeight);
+        boardContext.strokeStyle = "rgba(82,245,255,.07)";
+        boardContext.lineWidth = 1;
+        for (let x = 0; x <= COLS; x += 1) { boardContext.beginPath(); boardContext.moveTo(ox + x * cell, oy); boardContext.lineTo(ox + x * cell, oy + boardHeight); boardContext.stroke(); }
+        for (let y = 0; y <= ROWS; y += 1) { boardContext.beginPath(); boardContext.moveTo(ox, oy + y * cell); boardContext.lineTo(ox + boardWidth, oy + y * cell); boardContext.stroke(); }
+        state.board.forEach((row, y) => row.forEach((type, x) => {
+          if (type) drawCell(boardContext, ox + x * cell, oy + y * cell, cell, COLORS[type], state.clearRows.includes(y) ? .45 + state.clearSweep * .55 : 1);
+        }));
+        if (state.current) {
+          const ghost = getGhost();
+          cellsOf(ghost).forEach(({ x, y }) => { if (y >= 0) drawCell(boardContext, ox + x * cell, oy + y * cell, cell, COLORS[ghost.type], .42, true); });
+          cellsOf(state.current).forEach(({ x, y }) => { if (y >= 0) drawCell(boardContext, ox + x * cell, oy + y * cell, cell, COLORS[state.current.type], 1); });
+        }
+        if (state.clearSweep > 0) {
+          const sweepY = oy + boardHeight * (1 - state.clearSweep);
+          const sweep = boardContext.createLinearGradient(ox, sweepY - 18, ox, sweepY + 18);
+          sweep.addColorStop(0, "rgba(82,245,255,0)");
+          sweep.addColorStop(.5, `rgba(210,247,255,${state.clearSweep * .95})`);
+          sweep.addColorStop(1, "rgba(169,139,255,0)");
+          boardContext.fillStyle = sweep;
+          boardContext.fillRect(ox, sweepY - 18, boardWidth, 36);
+        }
+        boardContext.restore();
+        state.shake *= .86;
+        if (state.shake < .15) state.shake = 0;
+        updateParticles(boardContext, width, height, ox, oy, cell, time);
+      }
+
+      function emitBurst(gridX, gridY, color, amount = 8, force = 1) {
+        for (let i = 0; i < amount; i += 1) {
+          state.particles.push({
+            x: gridX,
+            y: gridY,
+            vx: random(-1.3, 1.3) * force,
+            vy: random(-1.7, .4) * force,
+            life: random(340, 760),
+            maxLife: 760,
+            size: random(1.5, 4.5),
+            color
+          });
+        }
+      }
+
+      function updateParticles(context, width, height, ox, oy, cell, now) {
+        const elapsed = Math.min(34, now - (state.particleTime || now));
+        state.particleTime = now;
+        state.particles = state.particles.filter(particle => particle.life > 0);
+        state.particles.forEach(particle => {
+          particle.life -= elapsed;
+          particle.x += particle.vx * elapsed / 120;
+          particle.y += particle.vy * elapsed / 120;
+          particle.vy += .04 * elapsed / 16;
+          const alpha = clamp(particle.life / particle.maxLife, 0, 1);
+          context.save();
+          context.globalAlpha = alpha;
+          context.fillStyle = particle.color;
+          context.shadowColor = particle.color;
+          context.shadowBlur = 8;
+          context.beginPath();
+          context.arc(ox + particle.x * cell, oy + particle.y * cell, particle.size, 0, Math.PI * 2);
+          context.fill();
+          context.restore();
+        });
+      }
+
+      function makeStars() {
+        state.stars = Array.from({ length: 110 }, () => ({ x: Math.random(), y: Math.random(), r: random(.35, 1.45), phase: random(0, Math.PI * 2), speed: random(.4, 1.4) }));
+        state.constellation = Array.from({ length: 12 }, () => ({ x: random(.05, .95), y: random(.08, .92) }));
+      }
+
+      function renderSpace(time) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        if (spaceCanvas.width !== Math.floor(width * dpr) || spaceCanvas.height !== Math.floor(height * dpr)) {
+          spaceCanvas.width = Math.floor(width * dpr);
+          spaceCanvas.height = Math.floor(height * dpr);
+        }
+        spaceContext.setTransform(dpr, 0, 0, dpr, 0, 0);
+        spaceContext.clearRect(0, 0, width, height);
+        const gradient = spaceContext.createRadialGradient(width * .72, height * .1, 0, width * .72, height * .1, Math.max(width, height) * .7);
+        gradient.addColorStop(0, "rgba(45, 24, 107, .18)");
+        gradient.addColorStop(.45, "rgba(16, 15, 57, .06)");
+        gradient.addColorStop(1, "rgba(0,0,0,0)");
+        spaceContext.fillStyle = gradient;
+        spaceContext.fillRect(0, 0, width, height);
+        state.stars.forEach(star => {
+          const alpha = .28 + .5 * ((Math.sin(time * .001 * star.speed + star.phase) + 1) / 2);
+          spaceContext.globalAlpha = alpha;
+          spaceContext.fillStyle = star.r > 1 ? "#c9eaff" : "#8792c7";
+          spaceContext.beginPath();
+          spaceContext.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2);
+          spaceContext.fill();
+        });
+        spaceContext.globalAlpha = .17;
+        spaceContext.strokeStyle = "#7e76d6";
+        spaceContext.lineWidth = 1;
+        for (let i = 0; i < state.constellation.length - 1; i += 1) {
+          const a = state.constellation[i];
+          const b = state.constellation[i + 1];
+          spaceContext.beginPath();
+          spaceContext.moveTo(a.x * width, a.y * height);
+          spaceContext.lineTo(b.x * width, b.y * height);
+          spaceContext.stroke();
+        }
+        spaceContext.globalAlpha = 1;
+      }
+
+      function handleHeldKeys(delta) {
+        if (state.mode !== "playing") return;
+        ["left", "right"].forEach(direction => {
+          if (!state.keys[direction]) { state.keyTimers[direction] = 0; return; }
+          state.keyTimers[direction] += delta;
+          const threshold = state.keyTimers[direction] < DAS ? DAS : ARR;
+          if (state.keyTimers[direction] >= threshold) {
+            state.keyTimers[direction] -= threshold;
+            moveHorizontal(direction === "left" ? -1 : 1);
+          }
+        });
+      }
+
+      function updateGame(delta) {
+        if (state.mode !== "playing") return;
+        handleHeldKeys(delta);
+        state.accumulator += delta;
+        const gravity = state.keys.down ? Math.max(32, gravityInterval() / 14) : gravityInterval();
+        while (state.accumulator >= gravity) {
+          state.accumulator -= gravity;
+          if (!softDrop(false)) { state.grounded = true; break; }
+        }
+        if (state.current && state.grounded) {
+          state.lockClock += delta;
+          if (state.lockClock >= LOCK_DELAY) lockPiece();
+        }
+        if (state.surge > 0) state.surge = Math.max(0, state.surge - delta * .0018);
+        if (state.clearSweep > 0) state.clearSweep = Math.max(0, state.clearSweep - delta / 170);
+      }
+
+      function frame(time) {
+        const delta = state.lastTime ? Math.min(50, time - state.lastTime) : 16;
+        state.lastTime = time;
+        renderSpace(time);
+        updateGame(delta);
+        renderBoard(time);
+        if (state.mode === "playing") updateHUD();
+        state.raf = requestAnimationFrame(frame);
+      }
+
+      function handleKeyDown(event) {
+        const key = event.key.toLowerCase();
+        if (["arrowleft", "arrowright", "arrowdown", "arrowup", " "].includes(event.key) || ["a", "d", "s", "w", "x", "z", "c", "p", "enter"].includes(key)) event.preventDefault();
+        if (state.mode === "title" && (key === "enter" || event.key === " ")) { startRun(); return; }
+        if (state.mode === "gameover" && (key === "enter" || event.key === " ")) { startRun(); return; }
+        if (key === "p" || key === "escape") { togglePause(); return; }
+        if (state.mode !== "playing") return;
+        if (event.repeat && ["arrowup", "w", "x", "z", "c", " "].includes(key)) return;
+        if (key === "arrowleft" || key === "a") { state.keys.left = true; moveHorizontal(-1); }
+        else if (key === "arrowright" || key === "d") { state.keys.right = true; moveHorizontal(1); }
+        else if (key === "arrowdown" || key === "s") { state.keys.down = true; softDrop(); }
+        else if (key === "arrowup" || key === "w" || key === "x") rotateCurrent(1);
+        else if (key === "z") rotateCurrent(-1);
+        else if (key === "c") holdPiece();
+        else if (event.key === " ") hardDrop();
+      }
+
+      function handleKeyUp(event) {
+        const key = event.key.toLowerCase();
+        if (key === "arrowleft" || key === "a") state.keys.left = false;
+        if (key === "arrowright" || key === "d") state.keys.right = false;
+        if (key === "arrowdown" || key === "s") state.keys.down = false;
+      }
+
+      function togglePause() {
+        if (state.mode === "playing") { setMode("paused"); playSound("pause"); }
+        else if (state.mode === "paused") { setMode("playing"); ensureAudio(); playSound("start"); }
+      }
+
+      function handleAction(action) {
+        if (action === "start" || action === "restart") startRun();
+        else if (action === "resume") { setMode("playing"); ensureAudio(); playSound("start"); }
+        else if (action === "pause") togglePause();
+        else if (action === "audio") toggleAudio();
+        else if (state.mode === "playing") ({ left: () => moveHorizontal(-1), right: () => moveHorizontal(1), down: softDrop, rotate: () => rotateCurrent(1), drop: hardDrop, hold: holdPiece }[action] || (() => {}))();
+      }
+
+      function installTouch() {
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        boardCanvas.addEventListener("touchstart", event => {
+          const touch = event.changedTouches[0];
+          startX = touch.clientX;
+          startY = touch.clientY;
+          startTime = performance.now();
+          ensureAudio();
+        }, { passive: true });
+        boardCanvas.addEventListener("touchend", event => {
+          const touch = event.changedTouches[0];
+          const dx = touch.clientX - startX;
+          const dy = touch.clientY - startY;
+          const elapsed = performance.now() - startTime;
+          const distance = Math.hypot(dx, dy);
+          if (state.mode === "title") { startRun(); return; }
+          if (state.mode !== "playing") return;
+          if (distance < 18 && elapsed < 280) rotateCurrent(1);
+          else if (Math.abs(dx) > Math.abs(dy)) moveHorizontal(dx > 0 ? 1 : -1);
+          else if (dy > 38) hardDrop();
+          else if (dy < -28) rotateCurrent(1);
+        }, { passive: true });
+      }
+
+      function installEvents() {
+        window.addEventListener("keydown", handleKeyDown, { passive: false });
+        window.addEventListener("keyup", handleKeyUp, { passive: true });
+        document.querySelectorAll("[data-action]").forEach(button => {
+          button.addEventListener("click", () => handleAction(button.dataset.action));
+          button.addEventListener("touchstart", () => ensureAudio(), { passive: true });
+        });
+        installTouch();
+        window.addEventListener("resize", () => { updateHUD(); });
+      }
+
+      function init() {
+        makeStars();
+        state.board = makeBoard();
+        state.best = 0;
+        installEvents();
+        updateHUD();
+        setMode("title");
+        state.raf = requestAnimationFrame(frame);
+        globalThis.__LUNA_GAME__ = { state, startRun, hardDrop, rotateCurrent, holdPiece, togglePause };
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
