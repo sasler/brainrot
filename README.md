@@ -38,7 +38,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | OpenAI GPT 5.5 | N/A | N/A | N/A | N/A | N/A | 2,031 lines | 2,369 lines | N/A | N/A | N/A | 2,413 lines | 1,643 lines | 2,058 lines | N/A | 1,398 lines | 2,155 lines |
 | OpenAI GPT 5.6 Terra | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 930 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | OpenAI GPT 5.6 Luna | N/A | N/A | 1,444 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| OpenAI GPT 5.6 Sol | N/A | N/A | N/A | 1,736 lines | N/A | N/A | N/A | N/A | N/A | 2,048 lines | 2,954 lines | N/A | N/A | N/A | N/A | 1,542 lines |
+| OpenAI GPT 5.6 Sol | N/A | N/A | N/A | 1,736 lines | N/A | N/A | N/A | N/A | N/A | 2,132 lines | 2,954 lines | N/A | N/A | N/A | N/A | 1,542 lines |
 | OpenAI GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 1,035 lines | N/A | N/A | 2,734 lines | 3,965 lines |
 | Google Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Google Gemma 4 12B | 514 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 337 lines | N/A |

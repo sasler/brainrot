@@ -98,6 +98,28 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
     expect(await page.evaluate(() => window.__miniGolfTest.strokeCount)).toBe(1);
   });
 
+  test("carries a full-power drive across the first fairway", async ({ page }) => {
+    await openGame(page);
+    await startGame(page);
+    const startZ = await page.evaluate(() => {
+      window.__miniGolfTest.loadHole(0);
+      const z = window.__miniGolfTest.ballPosition.z;
+      window.__miniGolfTest.launchShot({ x: 0, z: 1 }, 1);
+      return z;
+    });
+
+    await expect.poll(
+      () => page.evaluate(() => {
+        const snapshot = window.__miniGolfTest.snapshot();
+        return snapshot.state === "result" || snapshot.ball.stopped;
+      }),
+      { timeout: 8000 },
+    ).toBe(true);
+    const finish = await page.evaluate(() => window.__miniGolfTest.snapshot());
+    expect(finish.ball.z - startZ).toBeGreaterThan(14.5);
+    expect(finish.strokes).toBe(1);
+  });
+
   test("applies exactly one penalty and safely recovers from Umbra water", async ({ page }) => {
     await openGame(page);
     await startGame(page);
