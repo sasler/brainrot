@@ -47,6 +47,14 @@ test.describe("GPT 5.6 Luna Tetris", () => {
     await expect(page.locator("#statusText")).toHaveText("ORBITAL LOCK");
     await expect.poll(() => page.evaluate(() => (window as typeof window & { __lunaAudioStarts?: number }).__lunaAudioStarts ?? 0)).toBeGreaterThan(0);
 
+    const utility = page.locator(".mobile-utility");
+    await expect(utility).toBeVisible();
+    await expect(utility.locator("button")).toHaveCount(3);
+    await utility.getByRole("button", { name: "Hold piece" }).click();
+    await utility.getByRole("button", { name: "Pause game" }).click();
+    await expect(page.locator("#statusText")).toHaveText("HOLDING POSITION");
+    await utility.getByRole("button", { name: "Pause game" }).click();
+    await utility.getByRole("button", { name: "Toggle audio" }).click();
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("ArrowUp");
     await page.keyboard.press("Space");

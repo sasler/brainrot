@@ -382,6 +382,14 @@
       margin: 0 auto;
     }
 
+    .mobile-utility {
+      display: none;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      width: min(100%, 350px);
+      margin: 0 auto;
+    }
+
     .touch-button {
       min-height: 39px;
       border-radius: 7px;
@@ -391,6 +399,17 @@
 
     .touch-button[data-action="drop"] { color: var(--cyan); }
     .touch-button[data-action="rotate"] { color: var(--violet); }
+
+    .mobile-utility .touch-button {
+      min-height: 31px;
+      color: var(--silver-dim);
+      font-size: 10px;
+      letter-spacing: .1em;
+    }
+
+    .mobile-utility .touch-button[data-action="hold"] { color: var(--gold); }
+    .mobile-utility .touch-button[data-action="pause"] { color: var(--cyan); }
+    .mobile-utility .touch-button[data-action="audio"] { color: var(--violet); }
 
     .overlay {
       position: absolute;
@@ -468,6 +487,7 @@
       .rail.right { display: none; }
       .overlay { z-index: 20; }
       .touch-pad { position: relative; z-index: 12; }
+      .mobile-utility { display: grid; position: relative; z-index: 12; }
       .rail.right .panel { padding: 7px; }
       .rail.right .panel:nth-child(3) { display: none; }
       .preview-box { min-height: 47px; }
@@ -483,6 +503,7 @@
       .layout { gap: 4px; }
       .board-frame { width: min(47vw, 226px); }
       .touch-button { min-height: 32px; }
+      .mobile-utility .touch-button { min-height: 28px; }
       .rail.right .panel { min-height: 40px; }
       .preview-box { min-height: 36px; }
       .preview-box canvas { height: 38px; }
@@ -584,6 +605,11 @@
       <button class="touch-button" data-action="rotate" data-testid="touch-rotate" aria-label="Rotate">↻</button>
       <button class="touch-button" data-action="drop" data-testid="touch-drop" aria-label="Hard drop">⇣</button>
       <button class="touch-button" data-action="right" data-testid="touch-right" aria-label="Move right">▶</button>
+    </nav>
+    <nav class="mobile-utility" aria-label="Mobile utility controls">
+      <button class="touch-button" data-action="hold" aria-label="Hold piece">HOLD</button>
+      <button class="touch-button" data-action="pause" aria-label="Pause game">PAUSE</button>
+      <button class="touch-button" data-action="audio" aria-label="Toggle audio">AUDIO</button>
     </nav>
     <footer class="footer-bar"><span>GPT 5.6 LUNA // OBSERVATION DECK</span><span>SEVEN-BAG / LOCK DELAY / SURGE ONLINE</span></footer>
   </main>
@@ -918,12 +944,12 @@
         return false;
       }
 
-      function softDrop() {
+      function softDrop(playerInitiated = true) {
         if (state.mode !== "playing" || !state.current) return false;
         const candidate = { ...state.current, y: state.current.y + 1 };
         if (!collides(candidate)) {
           state.current = candidate;
-          state.score += 1;
+          if (playerInitiated) state.score += 1;
           state.dropDistance += 1;
           state.lastAction = "drop";
           return true;
@@ -989,7 +1015,7 @@
         } else {
           if (spin) {
             state.combo = -1;
-            awardSpin(spin, 0);
+            awardSpin(spin, 0, true);
           } else {
             state.combo = -1;
             state.mission = "Orbit stable. Find a clean four-line trajectory.";
@@ -999,10 +1025,14 @@
         updateHUD();
       }
 
-      function awardSpin(spin, lines) {
+      function awardSpin(spin, lines, awardBase = false) {
         const full = spin === "full";
-        const base = full ? [400, 800, 1200, 1600][lines] || 400 : [100, 200, 400][lines] || 100;
-        state.score += base * state.level;
+        if (awardBase) {
+          const base = full ? [400, 800, 1200, 1600][lines] || 400 : [100, 200, 400][lines] || 100;
+          state.score += base * state.level;
+        }
+        // clearLines awards the T-spin line-clear base with combo and back-to-back modifiers.
+        // Zero-line T-spins opt into the base above, so line clears can never double-score.
         state.surge = clamp(state.surge + (full ? 22 : 11), 0, 100);
         state.mission = full ? `T-SPIN ${lines ? lines + " LINE" : "ZERO"} // moon geometry confirmed.` : "T-SPIN MINI // a narrow eclipse passage.";
         state.shake = Math.max(state.shake, full ? 9 : 5);
@@ -1301,7 +1331,7 @@
         const gravity = state.keys.down ? Math.max(32, gravityInterval() / 14) : gravityInterval();
         while (state.accumulator >= gravity) {
           state.accumulator -= gravity;
-          if (!softDrop()) { state.grounded = true; break; }
+          if (!softDrop(false)) { state.grounded = true; break; }
         }
         if (state.current && state.grounded) {
           state.lockClock += delta;
@@ -1355,7 +1385,7 @@
         else if (action === "resume") { setMode("playing"); ensureAudio(); playSound("start"); }
         else if (action === "pause") togglePause();
         else if (action === "audio") toggleAudio();
-        else if (state.mode === "playing") ({ left: () => moveHorizontal(-1), right: () => moveHorizontal(1), down: softDrop, rotate: () => rotateCurrent(1), drop: hardDrop }[action] || (() => {}))();
+        else if (state.mode === "playing") ({ left: () => moveHorizontal(-1), right: () => moveHorizontal(1), down: softDrop, rotate: () => rotateCurrent(1), drop: hardDrop, hold: holdPiece }[action] || (() => {}))();
       }
 
       function installTouch() {
