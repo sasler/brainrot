@@ -2054,31 +2054,33 @@
         game.accumulator = 0;
       });
 
-      window.__miniGolfTest = {
-        get currentHole() { return game.currentHole; },
-        get state() { return game.mode; },
-        get ballPosition() { return { x: ball.position.x, y: ball.position.y, z: ball.position.z }; },
-        get ballVelocity() { return { x: ball.velocity.x, y: ball.velocity.y, z: ball.velocity.z }; },
-        get strokeCount() { return game.holeStrokes; },
-        loadHole(index) { loadHole(index, { silentIntro: true }); },
-        launchShot(direction, power) { return launchShot(direction, power, { silent: true }); },
-        completeCurrentHole() { completeHole(); },
-        snapshot() {
-          const hole = holes[game.currentHole];
-          return {
-            state: game.mode,
-            currentHole: game.currentHole,
-            holeCount: holes.length,
-            holeName: hole.name,
-            par: hole.par,
-            strokes: game.holeStrokes,
-            totalStrokes: game.totalStrokes,
-            ball: { x: ball.position.x, y: ball.position.y, z: ball.position.z, speed: ball.velocity.length(), stopped: ball.stopped },
-            cup: { ...hole.cup },
-            mechanics: { rails: hole.rails.length, bumpers: hole.bumpers.length, waters: hole.waters.length, movers: hole.movers.length, portals: hole.portals.length }
-          };
-        }
-      };
+      if (new URLSearchParams(location.search).get("test") === "1") {
+        window.__miniGolfTest = {
+          get currentHole() { return game.currentHole; },
+          get state() { return game.mode; },
+          get ballPosition() { return { x: ball.position.x, y: ball.position.y, z: ball.position.z }; },
+          get ballVelocity() { return { x: ball.velocity.x, y: ball.velocity.y, z: ball.velocity.z }; },
+          get strokeCount() { return game.holeStrokes; },
+          loadHole(index) { loadHole(index, { silentIntro: true }); },
+          launchShot(direction, power) { return launchShot(direction, power, { silent: true }); },
+          completeCurrentHole() { completeHole(); },
+          snapshot() {
+            const hole = holes[game.currentHole];
+            return {
+              state: game.mode,
+              currentHole: game.currentHole,
+              holeCount: holes.length,
+              holeName: hole.name,
+              par: hole.par,
+              strokes: game.holeStrokes,
+              totalStrokes: game.totalStrokes,
+              ball: { x: ball.position.x, y: ball.position.y, z: ball.position.z, speed: ball.velocity.length(), stopped: ball.stopped },
+              cup: { ...hole.cup },
+              mechanics: { rails: hole.rails.length, bumpers: hole.bumpers.length, waters: hole.waters.length, movers: hole.movers.length, portals: hole.portals.length }
+            };
+          }
+        };
+      }
 
       function animate(now) {
         requestAnimationFrame(animate);

@@ -31,7 +31,7 @@ declare global {
 
 async function openGame(page: Page, viewport = { width: 1280, height: 720 }) {
   await page.setViewportSize(viewport);
-  await page.goto("/games/mini-golf/gpt-5-6-sol/index.html");
+  await page.goto("/games/mini-golf/gpt-5-6-sol/index.html?test=1");
   await expect(page.locator("#startButton")).toBeVisible();
   await expect.poll(() => page.evaluate(() => Boolean(window.__miniGolfTest))).toBe(true);
 }
@@ -47,7 +47,8 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
     const externalRequests: string[] = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
-      if (url.protocol.startsWith("http") && !["localhost", "127.0.0.1"].includes(url.hostname)) {
+      const isLoopback = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname);
+      if (url.protocol.startsWith("http") && !isLoopback) {
         externalRequests.push(request.url());
       }
     });
@@ -57,6 +58,13 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
     await expect(page.locator("#gameCanvas")).toBeVisible();
     await expect(page.locator("#titleScreen")).toContainText("TOTALITY");
     expect(externalRequests).toEqual([]);
+  });
+
+  test("does not expose test controls during normal gameplay", async ({ page }) => {
+    await page.goto("/games/mini-golf/gpt-5-6-sol/index.html");
+    await expect(page.locator("#startButton")).toBeVisible();
+    await page.waitForTimeout(250);
+    expect(await page.evaluate(() => "__miniGolfTest" in window)).toBe(false);
   });
 
   test("registers nine progressively varied, reachable course definitions", async ({ page }) => {
@@ -135,6 +143,8 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
       { timeout: 6000 },
     ).toBe(2);
     await expect.poll(() => page.evaluate(() => window.__miniGolfTest.snapshot().ball.stopped)).toBe(true);
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(() => window.__miniGolfTest.strokeCount)).toBe(2);
     const recovered = await page.evaluate(() => window.__miniGolfTest.ballPosition);
     expect(Math.hypot(recovered.x - start.x, recovered.z - start.z)).toBeLessThan(4.5);
   });
