@@ -9,9 +9,9 @@ export const MODEL_CATALOG = {
   "gpt-5-4": { displayName: "OpenAI GPT 5.4", family: "OpenAI GPT", company: "OpenAI", color: "#10A37F" },
   "gpt-5-4-mini": { displayName: "OpenAI GPT 5.4 Mini", family: "OpenAI GPT", company: "OpenAI", color: "#74AA9C" },
   "gpt-5-5": { displayName: "OpenAI GPT 5.5", family: "OpenAI GPT", company: "OpenAI", color: "#22C7A9" },
-  "gpt-5-6-luna": { displayName: "OpenAI GPT 5.6 Luna", family: "OpenAI GPT", company: "OpenAI", color: "#A98BFF" },
   "gpt-5-6-sol": { displayName: "OpenAI GPT 5.6 Sol", family: "OpenAI GPT", company: "OpenAI", color: "#37F6E7" },
   "gpt-5-6-terra": { displayName: "OpenAI GPT 5.6 Terra", family: "OpenAI GPT", company: "OpenAI", color: "#2DD4BF" },
+  "gpt-5-6-luna": { displayName: "OpenAI GPT 5.6 Luna", family: "OpenAI GPT", company: "OpenAI", color: "#14B8A6" },
   "fable-5": { displayName: "Claude Fable 5", family: "Claude", company: "Anthropic", color: "#C96656" },
   "sonnet-4-6": { displayName: "Claude Sonnet 4.6", family: "Claude", company: "Anthropic", color: "#D97757" },
   "opus-4-6": { displayName: "Claude Opus 4.6", family: "Claude", company: "Anthropic", color: "#E58A65" },
@@ -31,6 +31,11 @@ const FALLBACK_COLOR = "#8B8BA7";
 const warnedModelIds = new Set<string>();
 const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
 const MODEL_NAME_ALIASES = new Map<string, string>();
+const MODEL_SORT_ORDER = new Map([
+  ["gpt-5-6-sol", 0],
+  ["gpt-5-6-terra", 1],
+  ["gpt-5-6-luna", 2],
+]);
 
 for (const [modelId, model] of Object.entries(MODEL_CATALOG)) {
   MODEL_NAME_ALIASES.set(modelId.toLowerCase(), model.displayName);
@@ -96,6 +101,15 @@ export function resolveModelName(name: string): string {
 }
 
 export function compareModelIds(a: string, b: string): number {
+  const aOrder = MODEL_SORT_ORDER.get(a);
+  const bOrder = MODEL_SORT_ORDER.get(b);
+
+  if (aOrder !== undefined || bOrder !== undefined) {
+    if (aOrder === undefined) return -1;
+    if (bOrder === undefined) return 1;
+    return aOrder - bOrder;
+  }
+
   return collator.compare(getModelDisplayName(a), getModelDisplayName(b)) || a.localeCompare(b);
 }
 
