@@ -1,22 +1,34 @@
 import { expect, test, type Page } from "@playwright/test";
 
+type Tile = { type: number; special: number; id: number } | null;
+
 type SolSnapshot = {
-  board: Array<Array<{ type: number; special: number; id: number } | null>>;
+  board: Tile[][];
+  eclipse: number[][];
   score: number;
   moves: number;
   level: number;
+  target: number;
+  stageStartScore: number;
+  stageGoal: number;
   combo: number;
   surge: number;
-  surgeTime: number;
+  surgeTurns: number;
+  eclipseTotal: number;
+  eclipseBonusAwarded: boolean;
+  reducedMotion: boolean;
+  particleCount: number;
+  effectBudget: number;
   active: boolean;
   locked: boolean;
   screen: string;
   matchCount: number;
   hasMove: boolean;
-  hint: { a: { r: number; c: number }; b: { r: number; c: number }; score: number; reason: string } | null;
-  eclipse: number[][];
-  flow: number;
+  hint: { a: Cell; b: Cell; score: number; reason: string } | null;
+  layout: { width: number; height: number; boardX: number; boardY: number; boardSize: number; cell: number };
 };
+
+type Cell = { r: number; c: number };
 
 type SolTestApi = {
   constants: {
@@ -25,22 +37,29 @@ type SolTestApi = {
     BEAM_COL: number;
     CORONA: number;
     CORE: number;
+    START_MOVES: number;
+    FIRST_ORBIT_GOAL: number;
+    ORBIT_MOVE_REWARD: number;
+    ECLIPSE_MOVE_REWARD: number;
+    SURGE_TURN_COUNT: number;
   };
   snapshot(): SolSnapshot;
   setSeed(seed: number): boolean;
-  setBoard(matrix: number[][], specials?: Array<{ r: number; c: number; special: number }>): boolean;
+  setBoard(matrix: number[][], specials?: Array<Cell & { special: number }>): boolean;
   setMoves(moves: number): void;
-  setObjective(target: number, eclipse?: Array<{ r: number; c: number; layers?: number }>): void;
+  setScore(score: number): void;
+  setLevel(level: number): void;
+  setObjective(target: number, eclipse?: Array<Cell & { layers?: number }>): void;
   swap(r1: number, c1: number, r2: number, c2: number): Promise<boolean>;
   resolve(): Promise<SolSnapshot>;
   shuffle(charge?: boolean): Promise<boolean>;
   activateSurge(): void;
   startRun(): void;
-  endRun(): void;
+  endRun(message?: string): void;
   completeOrbit(): Promise<void>;
   finishTurn(): Promise<void>;
-  requestHint(force?: boolean): Promise<{ a: { r: number; c: number }; b: { r: number; c: number }; score: number; reason: string } | null>;
-  bestMove(): { a: { r: number; c: number }; b: { r: number; c: number }; score: number; reason: string } | null;
+  requestHint(force?: boolean): Promise<{ a: Cell; b: Cell; score: number; reason: string } | null>;
+  bestMove(): { a: Cell; b: Cell; score: number; reason: string } | null;
 };
 
 declare global {
@@ -61,6 +80,13 @@ const stableBoard = [
   [0, 1, 2, 3, 4, 5, 6, 0],
 ];
 
+function fourMatchBoard() {
+  const board = stableBoard.map((row) => row.slice());
+  board[3] = [1, 1, 2, 1, 4, 5, 6, 0];
+  board[2][2] = 1;
+  return board;
+}
+
 async function openGame(page: Page, viewport = { width: 900, height: 760 }) {
   await page.setViewportSize(viewport);
   await page.goto("/games/tile-matching/gpt-5-6-sol/index.html?test=1");
@@ -73,7 +99,7 @@ async function snapshot(page: Page) {
 }
 
 test.describe("GPT 5.6 Sol Tile Matching", () => {
-  test("starts with procedural audio and a playable board", async ({ page }) => {
+  test("starts with 36 moves, clear rewards, audio, and a deterministic legal board", async ({ page }) => {
     await page.addInitScript(() => {
       window.__solAudioStarts = 0;
       if (!("OscillatorNode" in window)) return;
@@ -86,57 +112,53 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     });
     await openGame(page);
 
-    await page.locator("#startButton").click();
+    for (const seed of [1, 42, 2026]) {
+      await page.evaluate((value) => {
+        window.__solFlareTest.setSeed(value);
+        window.__solFlareTest.startRun();
+      }, seed);
+      const state = await snapshot(page);
+      expect(state.moves).toBe(36);
+      expect(state.target).toBe(6_500);
+      expect(state.stageGoal).toBe(6_500);
+      expect(state.matchCount).toBe(0);
+      expect(state.hasMove).toBe(true);
+      expect(state.board).toHaveLength(8);
+      expect(state.board.every((row) => row.length === 8 && row.every(Boolean))).toBe(true);
+    }
 
-    await expect(page.locator("#titleScreen")).not.toHaveClass(/active/);
+    await expect(page.locator("#objectiveCopy")).toContainText("0 / 6,500");
+    await expect(page.locator("#rewardCopy")).toContainText("+12 moves");
+    await expect(page.locator("#eclipseCopy")).toContainText("orbit 02");
     await expect.poll(() => page.evaluate(() => window.__solAudioStarts ?? 0)).toBeGreaterThan(0);
-    const state = await snapshot(page);
-    expect(state.active).toBe(true);
-    expect(state.moves).toBeGreaterThan(0);
-    expect(state.board).toHaveLength(8);
-    expect(state.board.every((row) => row.length === 8 && row.every(Boolean))).toBe(true);
-    expect(state.matchCount).toBe(0);
-    expect(state.hasMove).toBe(true);
+    await page.evaluate(() => window.__solFlareTest.setObjective(0));
+    expect((await snapshot(page)).stageGoal).toBe(1);
   });
 
-  test("rejects an invalid swap without spending a move", async ({ page }) => {
+  test("charges one move only for valid swaps and nothing for rejection", async ({ page }) => {
     await openGame(page);
     await page.evaluate((board) => {
       window.__solFlareTest.setBoard(board);
       window.__solFlareTest.setMoves(12);
     }, stableBoard);
 
-    const accepted = await page.evaluate(() => window.__solFlareTest.swap(0, 0, 0, 1));
-    const state = await snapshot(page);
+    expect(await page.evaluate(() => window.__solFlareTest.swap(0, 0, 0, 1))).toBe(false);
+    expect((await snapshot(page)).moves).toBe(12);
 
-    expect(accepted).toBe(false);
-    expect(state.moves).toBe(12);
-    expect(state.board[0][0]?.type).toBe(0);
-    expect(state.board[0][1]?.type).toBe(1);
-  });
-
-  test("creates a beam from a four-match and resolves cascades", async ({ page }) => {
-    await openGame(page);
-    const board = stableBoard.map((row) => row.slice());
-    board[3] = [1, 1, 2, 1, 4, 5, 6, 0];
-    board[2][2] = 1;
-    await page.evaluate((matrix) => {
+    await page.evaluate((board) => {
       window.__solFlareTest.setSeed(55);
-      window.__solFlareTest.setBoard(matrix);
-      window.__solFlareTest.setMoves(9);
-    }, board);
-
-    const accepted = await page.evaluate(() => window.__solFlareTest.swap(2, 2, 3, 2));
+      window.__solFlareTest.setBoard(board);
+      window.__solFlareTest.setObjective(999_999);
+    }, fourMatchBoard());
+    expect(await page.evaluate(() => window.__solFlareTest.swap(2, 2, 3, 2))).toBe(true);
     const state = await snapshot(page);
-
-    expect(accepted).toBe(true);
-    expect(state.moves).toBe(8);
+    expect(state.moves).toBe(11);
     expect(state.score).toBeGreaterThan(0);
     expect(state.board.flat().some((tile) => tile?.special === 1)).toBe(true);
     expect(state.matchCount).toBe(0);
   });
 
-  test("forges corona and Sol-core specials from T and five matches", async ({ page }) => {
+  test("forges corona and Sol Core specials", async ({ page }) => {
     await openGame(page);
     const coronaBoard = stableBoard.map((row) => row.slice());
     coronaBoard[3][2] = 1;
@@ -162,7 +184,7 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     expect(state.matchCount).toBe(0);
   });
 
-  test("combines a Sol core with a beam into a board-scale reaction", async ({ page }) => {
+  test("keeps special-to-special fusion reactions", async ({ page }) => {
     await openGame(page);
     await page.evaluate((board) => {
       const { CORE, BEAM_ROW } = window.__solFlareTest.constants;
@@ -172,75 +194,19 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
         { r: 4, c: 4, special: BEAM_ROW },
       ]);
       window.__solFlareTest.setMoves(10);
+      window.__solFlareTest.setObjective(999_999);
     }, stableBoard);
 
-    const accepted = await page.evaluate(() => window.__solFlareTest.swap(4, 3, 4, 4));
+    expect(await page.evaluate(() => window.__solFlareTest.swap(4, 3, 4, 4))).toBe(true);
     const state = await snapshot(page);
-
-    expect(accepted).toBe(true);
-    expect(state.moves).toBeGreaterThan(9);
-    expect(state.level).toBe(2);
+    expect(state.moves).toBe(9);
+    expect(state.level).toBe(1);
     expect(state.score).toBeGreaterThan(1_000);
-    expect(state.surge).toBeGreaterThan(0);
     expect(state.board.every((row) => row.every(Boolean))).toBe(true);
     expect(state.matchCount).toBe(0);
   });
 
-  test("activates Solar Surge and doubles the live-state presentation", async ({ page }) => {
-    await openGame(page);
-    await page.evaluate(() => {
-      window.__solFlareTest.startRun();
-      window.__solFlareTest.activateSurge();
-    });
-
-    await expect(page.locator("body")).toHaveClass(/surge-active/);
-    await expect(page.locator("#surgeState")).toContainText("×2");
-    expect((await snapshot(page)).surgeTime).toBeGreaterThan(0);
-  });
-
-  test("ranks high-value special fusion above scan-order matches", async ({ page }) => {
-    await openGame(page);
-    const board = stableBoard.map((row) => row.slice());
-    board[3] = [1, 1, 2, 1, 4, 5, 6, 0];
-    board[2][2] = 1;
-    await page.evaluate((matrix) => {
-      const { CORE, BEAM_ROW } = window.__solFlareTest.constants;
-      window.__solFlareTest.setBoard(matrix, [
-        { r: 7, c: 5, special: CORE },
-        { r: 7, c: 6, special: BEAM_ROW },
-      ]);
-    }, board);
-
-    const best = await page.evaluate(() => window.__solFlareTest.bestMove());
-
-    expect(best).not.toBeNull();
-    expect(best?.a.r).toBe(7);
-    expect(best?.b.r).toBe(7);
-    expect(best?.reason).toBe("core fusion");
-  });
-
-  test("auto-shuffles a dead board before returning a legal hint", async ({ page }) => {
-    await openGame(page);
-    await page.evaluate((board) => {
-      window.__solFlareTest.setSeed(77);
-      window.__solFlareTest.setBoard(board);
-      window.__solFlareTest.setMoves(12);
-    }, stableBoard);
-    expect((await snapshot(page)).hasMove).toBe(false);
-
-    const hint = await page.evaluate(() => window.__solFlareTest.requestHint(true));
-    const afterShuffle = await snapshot(page);
-
-    expect(afterShuffle.hasMove).toBe(true);
-    expect(hint).not.toBeNull();
-    const accepted = await page.evaluate((move) => {
-      if (!move) return false;
-      return window.__solFlareTest.swap(move.a.r, move.a.c, move.b.r, move.b.c);
-    }, hint);
-    expect(accepted).toBe(true);
-  });
-
-  test("advances orbit in place with moves, eclipse, and persistent specials", async ({ page }) => {
+  test("awards exactly +12, preserves the board, and scales orbit targets", async ({ page }) => {
     await openGame(page);
     await page.evaluate((board) => {
       const { CORE } = window.__solFlareTest.constants;
@@ -251,45 +217,221 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     const coreBefore = before.board[4][3];
 
     await page.evaluate(() => window.__solFlareTest.completeOrbit());
-    const after = await snapshot(page);
-
+    let after = await snapshot(page);
     expect(after.level).toBe(2);
-    expect(after.moves).toBeGreaterThan(3);
-    expect(after.active).toBe(true);
-    expect(after.screen).toBe("play");
+    expect(after.moves).toBe(15);
+    expect(after.stageGoal).toBe(10_600);
     expect(after.board[4][3]?.id).toBe(coreBefore?.id);
     expect(after.board[4][3]?.special).toBe(4);
-    expect(after.eclipse.flat().some((layers) => layers > 0)).toBe(true);
-    await expect(page.locator("#levelScreen")).toHaveCount(0);
+    expect(after.eclipseTotal).toBeGreaterThan(0);
+    expect(after.active).toBe(true);
 
-    await page.evaluate(() => window.__solFlareTest.endRun());
+    await page.evaluate(() => window.__solFlareTest.completeOrbit());
+    after = await snapshot(page);
+    expect(after.level).toBe(3);
+    expect(after.moves).toBe(27);
+    expect(after.stageGoal).toBe(13_300);
+    expect(after.board[4][3]?.id).toBe(coreBefore?.id);
+  });
+
+  test("eclipse is optional and its +3 reward is one-time", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate((board) => {
+      window.__solFlareTest.setSeed(55);
+      window.__solFlareTest.setBoard(board);
+      window.__solFlareTest.setLevel(2);
+      window.__solFlareTest.setMoves(10);
+      window.__solFlareTest.setObjective(999_999, [{ r: 3, c: 0, layers: 1 }]);
+    }, fourMatchBoard());
+
+    await page.evaluate(() => window.__solFlareTest.swap(2, 2, 3, 2));
+    let state = await snapshot(page);
+    expect(state.moves).toBe(12);
+    expect(state.eclipseBonusAwarded).toBe(true);
+    expect(state.eclipse.flat().reduce((sum, layers) => sum + layers, 0)).toBe(0);
+    await page.evaluate(() => window.__solFlareTest.resolve());
+    state = await snapshot(page);
+    expect(state.moves).toBe(12);
+
+    await page.evaluate((board) => {
+      const { CORE } = window.__solFlareTest.constants;
+      window.__solFlareTest.setLevel(1);
+      window.__solFlareTest.setBoard(board, [{ r: 4, c: 3, special: CORE }]);
+      window.__solFlareTest.setMoves(5);
+      window.__solFlareTest.setScore(6_500);
+      window.__solFlareTest.setObjective(6_500, [{ r: 0, c: 0, layers: 2 }]);
+    }, stableBoard);
+    await page.evaluate(() => window.__solFlareTest.finishTurn());
+    state = await snapshot(page);
+    expect(state.level).toBe(2);
+    expect(state.moves).toBe(17);
+    expect(state.board[4][3]?.special).toBe(4);
+  });
+
+  test("Solar Surge doubles three successful turns only", async ({ page }) => {
+    await openGame(page);
+    const board = fourMatchBoard();
+    await page.evaluate((matrix) => {
+      window.__solFlareTest.setSeed(88);
+      window.__solFlareTest.setBoard(matrix);
+      window.__solFlareTest.setMoves(20);
+      window.__solFlareTest.setScore(0);
+      window.__solFlareTest.setObjective(999_999);
+    }, board);
+    await page.evaluate(() => window.__solFlareTest.swap(2, 2, 3, 2));
+    const baseline = (await snapshot(page)).score;
+
+    await page.evaluate((matrix) => {
+      window.__solFlareTest.setSeed(88);
+      window.__solFlareTest.setBoard(matrix);
+      window.__solFlareTest.setMoves(20);
+      window.__solFlareTest.setScore(0);
+      window.__solFlareTest.activateSurge();
+    }, stableBoard);
+    await page.evaluate(() => window.__solFlareTest.requestHint(true));
+    expect(await page.evaluate(() => window.__solFlareTest.swap(0, 0, 0, 1))).toBe(false);
+    expect((await snapshot(page)).surgeTurns).toBe(3);
+
+    for (const remaining of [2, 1, 0]) {
+      await page.evaluate((matrix) => {
+        window.__solFlareTest.setSeed(88);
+        window.__solFlareTest.setBoard(matrix);
+      }, board);
+      await page.evaluate(() => window.__solFlareTest.swap(2, 2, 3, 2));
+      expect((await snapshot(page)).surgeTurns).toBe(remaining);
+    }
+    const surged = await snapshot(page);
+    expect(surged.score).toBeGreaterThanOrEqual(baseline * 6);
+    expect(surged.surge).toBe(0);
+    await expect(page.locator("body")).not.toHaveClass(/surge-active/);
+  });
+
+  test("keeps hints free, charges manual shuffle two, and auto-shuffles dead boards free", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate((board) => {
+      window.__solFlareTest.setSeed(77);
+      window.__solFlareTest.setBoard(board);
+      window.__solFlareTest.setMoves(12);
+    }, stableBoard);
+    expect((await snapshot(page)).hasMove).toBe(false);
+    expect(await page.evaluate(() => window.__solFlareTest.requestHint(true))).not.toBeNull();
+    let state = await snapshot(page);
+    expect(state.moves).toBe(12);
+    expect(state.hasMove).toBe(true);
+
+    await page.evaluate((board) => {
+      window.__solFlareTest.setSeed(91);
+      window.__solFlareTest.setBoard(board);
+      window.__solFlareTest.setMoves(2);
+    }, stableBoard);
+    await expect(page.locator("#shuffleButton")).toBeEnabled();
+    expect(await page.evaluate(() => window.__solFlareTest.shuffle(true))).toBe(true);
+    state = await snapshot(page);
+    expect(state.moves).toBe(0);
+    expect(state.hasMove).toBe(true);
+    expect(state.matchCount).toBe(0);
+  });
+
+  test("ranks high-value fusion above scan-order matches", async ({ page }) => {
+    await openGame(page);
+    const board = fourMatchBoard();
+    await page.evaluate((matrix) => {
+      const { CORE, BEAM_ROW } = window.__solFlareTest.constants;
+      window.__solFlareTest.setBoard(matrix, [
+        { r: 7, c: 5, special: CORE },
+        { r: 7, c: 6, special: BEAM_ROW },
+      ]);
+    }, board);
+    const best = await page.evaluate(() => window.__solFlareTest.bestMove());
+    expect(best?.a.r).toBe(7);
+    expect(best?.b.r).toBe(7);
+    expect(best?.reason).toBe("core fusion");
+  });
+
+  test("supports drag and keyboard swaps", async ({ page }) => {
+    await openGame(page);
+    const board = fourMatchBoard();
+    await page.evaluate((matrix) => {
+      window.__solFlareTest.setBoard(matrix);
+      window.__solFlareTest.setMoves(10);
+      window.__solFlareTest.setObjective(999_999);
+    }, board);
+    const state = await snapshot(page);
+    const from = { x: state.layout.boardX + 2.5 * state.layout.cell, y: state.layout.boardY + 2.5 * state.layout.cell };
+    const to = { x: state.layout.boardX + 2.5 * state.layout.cell, y: state.layout.boardY + 3.5 * state.layout.cell };
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 4 });
+    await page.mouse.up();
+    await expect.poll(async () => (await snapshot(page)).moves).toBe(9);
+
+    await page.evaluate((matrix) => {
+      window.__solFlareTest.setBoard(matrix);
+      window.__solFlareTest.setMoves(10);
+    }, board);
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect.poll(async () => (await snapshot(page)).moves).toBe(9);
+  });
+
+  test("recovers cleanly from game over", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate((board) => {
+      window.__solFlareTest.setBoard(board);
+      window.__solFlareTest.setMoves(0);
+    }, stableBoard);
+    await page.evaluate(() => window.__solFlareTest.finishTurn());
     await expect(page.locator("#gameOverScreen")).toHaveClass(/active/);
+    await expect(page.locator("#gameOverCopy")).toContainText("ran out of moves");
     await page.locator("#restartButton").click();
     await expect(page.locator("#gameOverScreen")).not.toHaveClass(/active/);
-    expect((await snapshot(page)).level).toBe(1);
+    const state = await snapshot(page);
+    expect(state.level).toBe(1);
+    expect(state.moves).toBe(36);
+    expect(state.active).toBe(true);
   });
-  test("keeps board and essential controls visible at 320 by 480", async ({ page }) => {
+
+  test("keeps the full HUD and controls visible at 320 by 480 without errors", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(message.text());
+    });
     await openGame(page, { width: 320, height: 480 });
     await page.locator("#startButton").click();
 
-    const viewport = page.viewportSize();
-    const canvasBox = await page.locator("#game").boundingBox();
-    const hintBox = await page.locator("#hintButton").boundingBox();
-    const shuffleBox = await page.locator("#shuffleButton").boundingBox();
-
-    expect(viewport).not.toBeNull();
-    expect(canvasBox).not.toBeNull();
-    expect(hintBox).not.toBeNull();
-    expect(shuffleBox).not.toBeNull();
-    expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
-    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(481);
-    if (viewport && canvasBox && hintBox && shuffleBox) {
-      for (const box of [canvasBox, hintBox, shuffleBox]) {
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.y).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
-        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
+    const state = await snapshot(page);
+    expect(state.layout.boardX).toBeGreaterThanOrEqual(0);
+    expect(state.layout.boardY).toBeGreaterThanOrEqual(0);
+    expect(state.layout.boardX + state.layout.boardSize).toBeLessThanOrEqual(320);
+    expect(state.layout.boardY + state.layout.boardSize).toBeLessThanOrEqual(480);
+    for (const selector of ["#game", "#objectiveCopy", "#eclipseBadge", "#surgeState", "#hintButton", "#shuffleButton"]) {
+      const box = await page.locator(selector).boundingBox();
+      expect(box, selector).not.toBeNull();
+      if (box) {
+        expect(box.x).toBeGreaterThanOrEqual(-1);
+        expect(box.y).toBeGreaterThanOrEqual(-1);
+        expect(box.x + box.width).toBeLessThanOrEqual(321);
+        expect(box.y + box.height).toBeLessThanOrEqual(481);
       }
     }
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(481);
+    expect(state.effectBudget).toBe(320);
+    expect(errors).toEqual([]);
+  });
+
+  test("honors reduced motion and its 120-particle budget", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await openGame(page, { width: 900, height: 760 });
+    await page.locator("#startButton").click();
+    const state = await snapshot(page);
+    expect(state.reducedMotion).toBe(true);
+    expect(state.effectBudget).toBe(120);
+    expect(state.particleCount).toBeLessThanOrEqual(120);
+    await expect(page.locator("#app")).toHaveCSS("animation-duration", "0.001s");
   });
 });
