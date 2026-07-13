@@ -131,6 +131,8 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     await expect(page.locator("#rewardCopy")).toContainText("+12 moves");
     await expect(page.locator("#eclipseCopy")).toContainText("orbit 02");
     await expect.poll(() => page.evaluate(() => window.__solAudioStarts ?? 0)).toBeGreaterThan(0);
+    await page.evaluate(() => window.__solFlareTest.setObjective(0));
+    expect((await snapshot(page)).stageGoal).toBe(1);
   });
 
   test("charges one move only for valid swaps and nothing for rejection", async ({ page }) => {
@@ -383,6 +385,7 @@ test.describe("GPT 5.6 Sol Tile Matching", () => {
     }, stableBoard);
     await page.evaluate(() => window.__solFlareTest.finishTurn());
     await expect(page.locator("#gameOverScreen")).toHaveClass(/active/);
+    await expect(page.locator("#gameOverCopy")).toContainText("ran out of moves");
     await page.locator("#restartButton").click();
     await expect(page.locator("#gameOverScreen")).not.toHaveClass(/active/);
     const state = await snapshot(page);

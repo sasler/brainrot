@@ -857,7 +857,7 @@
       <div class="panel">
         <div class="eyebrow">The corona cools</div>
         <h2 id="gameOverHeading">Light spent</h2>
-        <p class="subtitle" id="gameOverCopy">The eclipse held this orbit. Rekindle the forge and break it.</p>
+        <p class="subtitle" id="gameOverCopy">The forge ran out of moves. Rekindle it and chase the next orbit.</p>
         <div class="result-grid">
           <div class="result"><span>Final score</span><strong id="finalScore">0</strong></div>
           <div class="result"><span>Best</span><strong id="bestScore">0</strong></div>
@@ -1591,7 +1591,7 @@
         state.turnSurgeActive = false;
       }
       generateBoard();
-      generateEclipse(1);
+      generateEclipse(level);
       updateHud();
     }
 
@@ -1673,7 +1673,7 @@
       updateHud();
       sound.level();
       celebrateMoveReward(ORBIT_MOVE_REWARD, "#ffc14a");
-      showToast("ORBIT " + String(state.level).padStart(2, "0") + " · +12 MOVES · " + (state.level >= 4 ? "2 SPECIALS" : "SPECIAL") + " FORGED", 2400);
+      showToast("ORBIT " + String(state.level).padStart(2, "0") + " · +" + ORBIT_MOVE_REWARD + " MOVES · " + (state.level >= 4 ? "2 SPECIALS" : "SPECIAL") + " FORGED", 2400);
       state.flash = 0.78;
       state.shake = 0.45;
       const celebrationCount = TEST_MODE ? 3 : 72;
@@ -1691,7 +1691,7 @@
       await wait(REDUCED_MOTION ? 20 : 360);
       if (state.surge >= 100 && state.surgeTurns <= 0) activateSurge();
     }
-    function endRun(message = "The eclipse held this orbit. Rekindle the forge and break it.") {
+    function endRun(message = "The forge ran out of moves. Rekindle it and chase the next orbit.") {
       state.active = false;
       state.locked = false;
       state.best = Math.max(state.best, state.score);
@@ -1713,7 +1713,7 @@
       const progress = clamp(stageScore / stageGoal, 0, 1);
       ui.objective.textContent = "Orbit light " + Math.min(stageScore, stageGoal).toLocaleString() + " / " + stageGoal.toLocaleString();
       ui.objectiveFill.style.width = (progress * 100).toFixed(1) + "%";
-      ui.reward.textContent = "Goal reward +12 moves";
+      ui.reward.textContent = "Goal reward +" + ORBIT_MOVE_REWARD + " moves";
       const eclipse = eclipseRemaining();
       if (state.level < 2) {
         ui.eclipse.textContent = "Eclipse bonus unlocks orbit 02";
@@ -2871,14 +2871,22 @@
       ctx.fill();
 
       if (!REDUCED_MOTION) {
-        const sweep = ((state.time * 0.52 + tile.shine) % 1) * sprite.radius * 2.4 - sprite.radius * 1.2;
-        ctx.globalAlpha = tile.alpha * 0.28;
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = Math.max(1, state.cell * 0.025);
-        ctx.beginPath();
-        ctx.moveTo(sweep - sprite.radius * 0.24, -sprite.radius * 0.58);
-        ctx.lineTo(sweep + sprite.radius * 0.24, sprite.radius * 0.48);
-        ctx.stroke();
+        const sweepPhase = (state.time * 0.34 + tile.shine / (Math.PI * 2)) % 1;
+        const sweep = sweepPhase * sprite.radius * 2.4 - sprite.radius * 1.2;
+        ctx.save();
+        spriteGemPath(ctx, tile.type, tile.special === CORE, sprite.radius, 0, 0.91);
+        ctx.clip();
+        ctx.globalCompositeOperation = "screen";
+        ctx.globalAlpha = tile.alpha * 0.34;
+        ctx.translate(sweep, 0);
+        ctx.rotate(-0.32);
+        const refraction = ctx.createLinearGradient(-sprite.radius * 0.22, 0, sprite.radius * 0.22, 0);
+        refraction.addColorStop(0, "rgba(255,255,255,0)");
+        refraction.addColorStop(0.5, "rgba(255,255,255,.72)");
+        refraction.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = refraction;
+        ctx.fillRect(-sprite.radius * 0.22, -sprite.radius, sprite.radius * 0.44, sprite.radius * 2);
+        ctx.restore();
       }
 
       ctx.globalAlpha = tile.alpha;
@@ -3108,7 +3116,7 @@
         level: state.level,
         target: state.target,
         stageStartScore: state.stageStartScore,
-        stageGoal: state.target - state.stageStartScore,
+        stageGoal: Math.max(1, state.target - state.stageStartScore),
         combo: state.combo,
         surge: state.surge,
         surgeTurns: state.surgeTurns,
