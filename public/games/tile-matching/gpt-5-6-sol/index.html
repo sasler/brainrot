@@ -17,7 +17,10 @@
       --cyan: #43f2e4;
       --cream: #fff1c9;
       --muted: #9e9b91;
-      --line: rgba(255, 204, 99, 0.22);
+      --line: rgba(255, 204, 99, 0.32);
+      --solar-white: #fff9df;
+      --ember: #ff3e22;
+      --deep-cyan: #0b777d;
     }
 
     * {
@@ -36,7 +39,7 @@
     }
 
     body {
-      font-family: "Arial Narrow", "Franklin Gothic Condensed", sans-serif;
+      font-family: "Bahnschrift Condensed", "DIN Condensed", "Trebuchet MS", sans-serif;
       color: var(--cream);
       user-select: none;
       touch-action: none;
@@ -53,9 +56,36 @@
       min-height: 100%;
       isolation: isolate;
       background:
-        radial-gradient(circle at 50% 28%, rgba(255, 107, 35, 0.12), transparent 34%),
-        radial-gradient(circle at 15% 80%, rgba(67, 242, 228, 0.07), transparent 28%),
+        radial-gradient(circle at 50% 30%, rgba(255, 107, 35, 0.2), transparent 38%),
+        radial-gradient(circle at 15% 80%, rgba(67, 242, 228, 0.11), transparent 30%),
         #050607;
+    }
+
+    #app::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      left: 50%;
+      top: 46%;
+      width: min(88vmin, 780px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background:
+        conic-gradient(from 0deg, transparent 0 7%, rgba(255, 92, 33, .08) 9%, transparent 13% 26%, rgba(255, 210, 95, .08) 29%, transparent 34% 100%),
+        radial-gradient(circle, rgba(255, 177, 60, .13), rgba(255, 89, 31, .045) 45%, transparent 69%);
+      filter: blur(2px);
+      opacity: .82;
+      animation: heliograph 28s linear infinite, solarBreath 4.8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes heliograph {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    @keyframes solarBreath {
+      to { opacity: 1; filter: blur(5px) saturate(1.25); }
     }
 
     #game {
@@ -118,11 +148,23 @@
     .stat {
       min-width: 58px;
       padding: 5px 8px 4px;
-      border: 1px solid rgba(255, 218, 145, 0.15);
+      border: 1px solid rgba(255, 218, 145, 0.23);
       border-radius: 9px;
-      background: linear-gradient(180deg, rgba(29, 27, 23, 0.88), rgba(8, 10, 12, 0.88));
-      box-shadow: inset 0 1px rgba(255, 255, 255, 0.04), 0 8px 22px rgba(0, 0, 0, 0.24);
+      background: linear-gradient(180deg, rgba(42, 31, 21, 0.9), rgba(8, 10, 12, 0.92));
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 8px 22px rgba(0, 0, 0, 0.34), 0 0 18px rgba(255, 137, 47, .06);
       text-align: center;
+      transition: border-color 180ms, transform 180ms, box-shadow 180ms;
+    }
+
+    .stat.reward-pulse {
+      border-color: var(--gold);
+      transform: translateY(-2px) scale(1.08);
+      box-shadow: 0 0 32px rgba(255, 177, 56, .55), inset 0 0 18px rgba(255, 235, 170, .13);
+      animation: rewardPulse 680ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    @keyframes rewardPulse {
+      45% { transform: translateY(-4px) scale(1.16); }
     }
 
     .stat-label {
@@ -183,13 +225,14 @@
       position: absolute;
       top: calc(max(7px, env(safe-area-inset-top)) + 48px);
       left: 50%;
-      width: min(94vw, 560px);
+      width: min(95vw, 650px);
       transform: translateX(-50%);
       display: flex;
       align-items: center;
       gap: 7px;
       color: rgba(255, 241, 201, 0.72);
       font-size: 9px;
+      font-weight: 800;
       line-height: 1;
       letter-spacing: 0.14em;
       text-transform: uppercase;
@@ -201,6 +244,13 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .reward-copy {
+      flex: 0 0 auto;
+      color: var(--gold);
+      white-space: nowrap;
+      text-shadow: 0 0 12px rgba(255, 177, 65, .34);
     }
 
     .objective-track {
@@ -218,9 +268,33 @@
       inset: 0 auto 0 0;
       width: 0%;
       border-radius: inherit;
-      background: linear-gradient(90deg, var(--sun), var(--gold), #fff3b0);
-      box-shadow: 0 0 12px rgba(255, 177, 65, 0.5);
+      background: linear-gradient(90deg, var(--ember), var(--sun), var(--gold), #fff7cc);
+      box-shadow: 0 0 16px rgba(255, 177, 65, 0.72);
       transition: width 280ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    .eclipse-badge {
+      position: absolute;
+      z-index: 4;
+      top: calc(max(7px, env(safe-area-inset-top)) + 67px);
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: min(76vw, 390px);
+      padding: 5px 12px 4px;
+      border: 1px solid rgba(128, 236, 255, .22);
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(6, 22, 28, .76), rgba(18, 14, 12, .8));
+      color: #bff9ff;
+      box-shadow: inset 0 1px rgba(255,255,255,.05), 0 5px 20px rgba(0,0,0,.36), 0 0 18px rgba(67,242,228,.08);
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
     }
 
     .surge {
@@ -332,8 +406,8 @@
       padding: 16px;
       overflow: hidden;
       background:
-        radial-gradient(circle at 50% 31%, rgba(255, 111, 40, 0.16), transparent 31%),
-        linear-gradient(180deg, rgba(5, 6, 7, 0.78), rgba(5, 6, 7, 0.97));
+        radial-gradient(circle at 50% 31%, rgba(255, 111, 40, 0.24), transparent 38%),
+        linear-gradient(180deg, rgba(5, 6, 7, 0.62), rgba(5, 6, 7, 0.94));
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
@@ -383,13 +457,25 @@
       border: 1px solid rgba(255, 222, 153, 0.18);
       border-radius: 28px 8px 28px 8px;
       background:
-        linear-gradient(135deg, rgba(255, 193, 74, 0.05), transparent 42%),
-        rgba(8, 10, 12, 0.91);
+        linear-gradient(135deg, rgba(255, 193, 74, 0.12), transparent 42%),
+        linear-gradient(315deg, rgba(67, 242, 228, .055), transparent 36%),
+        rgba(8, 10, 12, 0.89);
       box-shadow:
         inset 0 1px rgba(255, 255, 255, 0.05),
         0 34px 90px rgba(0, 0, 0, 0.56),
-        0 0 80px rgba(255, 106, 40, 0.08);
+        0 0 95px rgba(255, 106, 40, 0.16);
       text-align: center;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: -70% -20%;
+      z-index: -1;
+      background: conic-gradient(from 20deg, transparent, rgba(255,188,73,.08), transparent 22%, rgba(67,242,228,.045), transparent 48%);
+      animation: heliograph 22s linear infinite;
+      pointer-events: none;
     }
 
     .eyebrow {
@@ -404,7 +490,7 @@
     h1,
     h2 {
       margin: 0;
-      font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+      font-family: Copperplate, "Bahnschrift Condensed", Impact, sans-serif;
       font-weight: 900;
       letter-spacing: 0.035em;
       text-transform: uppercase;
@@ -414,7 +500,7 @@
       font-size: clamp(48px, 15vw, 92px);
       line-height: 0.78;
       color: var(--cream);
-      text-shadow: 0 0 34px rgba(255, 171, 63, 0.2);
+      text-shadow: 0 0 12px rgba(255, 247, 211, .2), 0 0 38px rgba(255, 132, 43, .38);
     }
 
     h1 .slash {
@@ -446,9 +532,9 @@
 
     .feature {
       padding: 9px 5px;
-      border-top: 1px solid rgba(255, 218, 145, 0.16);
+      border-top: 1px solid rgba(255, 218, 145, 0.25);
       border-bottom: 1px solid rgba(255, 218, 145, 0.09);
-      color: var(--muted);
+      color: rgba(216, 210, 193, .7);
       font-size: 8px;
       letter-spacing: 0.11em;
       text-transform: uppercase;
@@ -493,6 +579,32 @@
       line-height: 1.6;
       letter-spacing: 0.12em;
       text-transform: uppercase;
+    }
+
+    .rules-compact {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+      max-width: 420px;
+      margin: 15px auto 18px;
+      text-align: left;
+    }
+
+    .rule-chip {
+      padding: 8px 10px;
+      border-left: 2px solid var(--gold);
+      background: rgba(255,255,255,.026);
+      color: rgba(255,241,201,.66);
+      font-size: 8px;
+      line-height: 1.35;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .rule-chip strong {
+      display: block;
+      color: var(--solar-white);
+      font-size: 9px;
     }
 
     .result-grid {
@@ -569,6 +681,24 @@
 
       .objective {
         top: calc(max(6px, env(safe-area-inset-top)) + 40px);
+        width: 96vw;
+        gap: 4px;
+        font-size: 7px;
+      }
+
+      .objective-copy {
+        max-width: 43%;
+      }
+
+      .reward-copy {
+        font-size: 7px;
+      }
+
+      .eclipse-badge {
+        top: calc(max(6px, env(safe-area-inset-top)) + 56px);
+        max-width: 72vw;
+        padding: 3px 8px;
+        font-size: 6.5px;
       }
 
       .surge {
@@ -595,7 +725,17 @@
       }
 
       .feature-line {
-        margin-bottom: 15px;
+        margin-bottom: 9px;
+      }
+
+      .rules-compact {
+        gap: 4px;
+        margin: 7px auto 9px;
+      }
+
+      .rule-chip {
+        padding: 5px 6px;
+        font-size: 6.5px;
       }
 
       .primary {
@@ -643,7 +783,7 @@
           </div>
           <div class="stat">
             <span class="stat-label">Moves</span>
-            <span class="stat-value" id="movesValue">26</span>
+            <span class="stat-value" id="movesValue">36</span>
           </div>
           <div class="stat">
             <span class="stat-label">Orbit</span>
@@ -657,10 +797,11 @@
       </div>
 
       <div class="objective">
-        <span class="objective-copy" id="objectiveCopy">Forge 4,200 light</span>
+        <span class="objective-copy" id="objectiveCopy">Orbit light 0 / 6,500</span>
         <div class="objective-track" aria-hidden="true"><div id="objectiveFill"></div></div>
-        <span id="eclipseCopy">Clear sky</span>
+        <span class="reward-copy" id="rewardCopy">Goal reward +12 moves</span>
       </div>
+      <div class="eclipse-badge" id="eclipseBadge"><span id="eclipseCopy">Eclipse bonus unlocks orbit 02</span></div>
 
       <div class="surge">
         <span>Solar surge</span>
@@ -682,12 +823,18 @@
         <h1 id="titleHeading">SOL<span class="slash">//</span><br>FLARE</h1>
         <p class="subtitle">Forge constellations from living light. Chain impossible reactions. Turn the whole board into a sunrise.</p>
         <div class="feature-line">
-          <div class="feature"><strong>7 facets</strong>Distinct silhouettes</div>
-          <div class="feature"><strong>4 specials</strong>Fuse for chaos</div>
-          <div class="feature"><strong>Momentum</strong>Board never resets</div>
+          <div class="feature"><strong>36 moves</strong>To start the run</div>
+          <div class="feature"><strong>+12 moves</strong>Every orbit goal</div>
+          <div class="feature"><strong>+3 moves</strong>Optional eclipse</div>
+        </div>
+        <div class="rules-compact">
+          <div class="rule-chip"><strong>Swap</strong> Valid −1 · invalid free</div>
+          <div class="rule-chip"><strong>Match 4</strong> Directional beam</div>
+          <div class="rule-chip"><strong>Cross</strong> Corona</div>
+          <div class="rule-chip"><strong>Match 5</strong> Sol Core</div>
         </div>
         <button id="startButton" class="primary" type="button">Ignite the board</button>
-        <div class="instructions">Tap or drag adjacent facets · Arrow keys + space/enter<br>Clear each orbit in-place · Earn moves and forged specials · Keep every powerup</div>
+        <div class="instructions">Goal: +12 moves + forged special · Eclipse: optional +3 once<br>Solar Surge doubles the next 3 successful turns · Hint free · Shuffle −2</div>
       </div>
     </section>
 
@@ -696,6 +843,12 @@
         <div class="eyebrow">Orbit suspended</div>
         <h2 id="pauseHeading">Hold the sun</h2>
         <p class="subtitle">The forge is stable. Your cascade will wait.</p>
+        <div class="rules-compact">
+          <div class="rule-chip"><strong>Goal</strong> +12 moves · board persists</div>
+          <div class="rule-chip"><strong>Eclipse</strong> Optional +3 moves</div>
+          <div class="rule-chip"><strong>Surge</strong> ×2 for 3 valid turns</div>
+          <div class="rule-chip"><strong>Costs</strong> Swap −1 · shuffle −2</div>
+        </div>
         <button id="resumeButton" class="primary" type="button">Resume orbit</button>
       </div>
     </section>
@@ -728,7 +881,9 @@
       level: document.getElementById("levelValue"),
       objective: document.getElementById("objectiveCopy"),
       objectiveFill: document.getElementById("objectiveFill"),
+      reward: document.getElementById("rewardCopy"),
       eclipse: document.getElementById("eclipseCopy"),
+      eclipseBadge: document.getElementById("eclipseBadge"),
       surgeFill: document.getElementById("surgeFill"),
       surgeState: document.getElementById("surgeState"),
       toast: document.getElementById("toast"),
@@ -757,6 +912,11 @@
     const CORE = 4;
     const HINT_DELAY = 4300;
     const SWAP_TIME = 185;
+    const START_MOVES = 36;
+    const FIRST_ORBIT_GOAL = 6500;
+    const ORBIT_MOVE_REWARD = 12;
+    const ECLIPSE_MOVE_REWARD = 3;
+    const SURGE_TURN_COUNT = 3;
     const POWERUP_SOLAR_SURGE = "solar-surge";
     const TEST_MODE = new URLSearchParams(location.search).get("test") === "1";
     const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -852,8 +1012,8 @@
       level: 1,
       score: 0,
       stageStartScore: 0,
-      target: 4200,
-      moves: 26,
+      target: FIRST_ORBIT_GOAL,
+      moves: START_MOVES,
       selected: null,
       cursor: { r: 3, c: 3 },
       keyboardAnchor: null,
@@ -866,7 +1026,10 @@
       combo: 0,
       bestCombo: 1,
       surge: 0,
-      surgeTime: 0,
+      surgeTurns: 0,
+      turnSurgeActive: false,
+      eclipseTotal: 0,
+      eclipseBonusAwarded: false,
       shake: 0,
       flash: 0,
       time: 0,
@@ -882,7 +1045,6 @@
         cascades: 0,
         shuffles: 0
       },
-      flow: 0,
       lastClearSize: 0,
       random: Math.random
     };
@@ -1174,6 +1336,17 @@
           tone(frequency, 0.45, "triangle", 0.08, index * 0.09, 80);
         });
       },
+      reward() {
+        [523.3, 659.3, 784, 1046.5].forEach((frequency, index) => {
+          tone(frequency, 0.22, "sine", 0.07, index * 0.055, 95);
+        });
+      },
+      eclipse() {
+        tone(174, 0.42, "sawtooth", 0.055, 0, 420);
+        tone(698, 0.5, "sine", 0.075, 0.08, 520);
+        tone(1046, 0.38, "triangle", 0.06, 0.18, 260);
+        noise(0.28, 0.055, 0.05, true);
+      },
       over() {
         [330, 277, 220, 165].forEach((frequency, index) => {
           tone(frequency, 0.35, "sine", 0.07, index * 0.12, -35);
@@ -1184,6 +1357,10 @@
         tone(988, 0.19, "sine", 0.04, 0.09, 80);
       }
     };
+
+    function particleLimit() {
+      return REDUCED_MOTION ? 120 : (state.width <= 420 || state.height <= 580 ? 320 : 700);
+    }
 
     function createParticle(x, y, color, options = {}) {
       const life = options.life ?? random(0.35, 0.85);
@@ -1201,7 +1378,8 @@
         shape: options.shape ?? (state.random() > 0.6 ? "diamond" : "spark"),
         glow: options.glow ?? 10
       });
-      if (state.particles.length > 850) state.particles.splice(0, state.particles.length - 850);
+      const limit = particleLimit();
+      if (state.particles.length > limit) state.particles.splice(0, state.particles.length - limit);
     }
 
     function burst(x, y, color, count = 18, power = 130) {
@@ -1255,6 +1433,27 @@
         life: 0.95,
         maxLife: 0.95
       });
+    }
+
+    function celebrateMoveReward(amount, color) {
+      sound.reward();
+      const stat = ui.moves.closest(".stat");
+      if (stat) {
+        stat.classList.remove("reward-pulse");
+        void stat.offsetWidth;
+        stat.classList.add("reward-pulse");
+        setTimeout(() => stat.classList.remove("reward-pulse"), 900);
+      }
+      const canvasRect = canvas.getBoundingClientRect();
+      const movesRect = ui.moves.getBoundingClientRect();
+      const targetX = (movesRect.left + movesRect.width / 2 - canvasRect.left) * state.width / Math.max(1, canvasRect.width);
+      const targetY = (movesRect.top + movesRect.height / 2 - canvasRect.top) * state.height / Math.max(1, canvasRect.height);
+      const startX = state.boardX + state.boardSize / 2;
+      const startY = state.boardY + state.boardSize / 2;
+      beam(startX, startY, targetX, targetY, color, Math.max(7, state.cell * 0.14));
+      ring(targetX, targetY, color, state.cell * 0.82, 4);
+      floater(targetX, targetY + state.cell * 0.4, "+" + amount + " MOVES", color, clamp(state.cell * 0.25, 12, 22));
+      burst(targetX, targetY, color, 34, 190);
     }
 
     function showToast(message, duration = 1200) {
@@ -1344,6 +1543,8 @@
 
     function generateEclipse(level) {
       state.eclipse = Array.from({ length: GRID }, () => Array(GRID).fill(0));
+      state.eclipseTotal = 0;
+      state.eclipseBonusAwarded = false;
       if (level < 2) return;
       const amount = Math.min(6 + level * 2, 26);
       const candidates = [];
@@ -1360,6 +1561,7 @@
         const cell = candidates[i];
         state.eclipse[cell.r][cell.c] = level >= 4 && i < Math.floor(amount / 4) ? 2 : 1;
       }
+      state.eclipseTotal = eclipseRemaining();
     }
 
     function eclipseRemaining() {
@@ -1373,12 +1575,11 @@
     function configureLevel(level, keepScore = true) {
       state.runId++;
       state.level = level;
-      state.moves = 30;
-      state.target = 4200;
+      state.moves = START_MOVES;
+      state.target = FIRST_ORBIT_GOAL;
       state.stageStartScore = 0;
       state.combo = 0;
       state.bestCombo = 1;
-      state.flow = 0;
       state.lastClearSize = 0;
       state.selected = null;
       state.keyboardAnchor = null;
@@ -1386,7 +1587,8 @@
       if (!keepScore) {
         state.score = 0;
         state.surge = 0;
-        state.surgeTime = 0;
+        state.surgeTurns = 0;
+        state.turnSurgeActive = false;
       }
       generateBoard();
       generateEclipse(1);
@@ -1434,26 +1636,6 @@
       }
     }
 
-    function seedNextEclipse(level) {
-      const candidates = [];
-      for (let r = 0; r < GRID; r++) {
-        for (let c = 0; c < GRID; c++) {
-          if (state.eclipse[r][c] === 0) candidates.push({ r, c });
-        }
-      }
-      for (let i = candidates.length - 1; i > 0; i--) {
-        const j = randomInt(i + 1);
-        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-      }
-      const count = Math.min(candidates.length, 4 + level * 2);
-      for (let i = 0; i < count; i++) {
-        const cell = candidates[i];
-        state.eclipse[cell.r][cell.c] = level >= 5 && i < Math.ceil(count / 4) ? 2 : 1;
-        const p = cellCenter(cell.r, cell.c);
-        ring(p.x, p.y, "#8eeaff", state.cell * 0.72, 2);
-      }
-    }
-
     function awardOrbitSpecials(level) {
       const available = [];
       for (const row of state.board) {
@@ -1479,21 +1661,19 @@
     }
 
     async function completeOrbit() {
-      const clearedOrbit = state.level;
       state.level++;
-      const bonusMoves = 4 + Math.min(3, Math.floor(clearedOrbit / 3));
-      state.moves += bonusMoves;
+      state.moves += ORBIT_MOVE_REWARD;
       state.stageStartScore = state.score;
-      state.target = state.score + 4200 + state.level * 1250 + Math.floor(state.level * state.level * 110);
+      state.target = state.score + 5200 + state.level * 2700;
       state.best = Math.max(state.best, state.score);
-      state.flow = Math.min(5, state.flow + 2);
       state.surge = Math.min(100, state.surge + 32);
       writeBest();
-      seedNextEclipse(state.level);
+      generateEclipse(state.level);
       awardOrbitSpecials(state.level);
       updateHud();
       sound.level();
-      showToast("ORBIT " + String(state.level).padStart(2, "0") + " · +" + bonusMoves + " MOVES · SPECIAL FORGED", 2200);
+      celebrateMoveReward(ORBIT_MOVE_REWARD, "#ffc14a");
+      showToast("ORBIT " + String(state.level).padStart(2, "0") + " · +12 MOVES · " + (state.level >= 4 ? "2 SPECIALS" : "SPECIAL") + " FORGED", 2400);
       state.flash = 0.78;
       state.shake = 0.45;
       const celebrationCount = TEST_MODE ? 3 : 72;
@@ -1509,7 +1689,7 @@
         });
       }
       await wait(REDUCED_MOTION ? 20 : 360);
-      if (state.surge >= 100 && state.surgeTime <= 0) activateSurge();
+      if (state.surge >= 100 && state.surgeTurns <= 0) activateSurge();
     }
     function endRun(message = "The eclipse held this orbit. Rekindle the forge and break it.") {
       state.active = false;
@@ -1531,15 +1711,24 @@
       const stageGoal = Math.max(1, state.target - state.stageStartScore);
       const stageScore = Math.max(0, state.score - state.stageStartScore);
       const progress = clamp(stageScore / stageGoal, 0, 1);
-      ui.objective.textContent = "Forge " + state.target.toLocaleString() + " light";
+      ui.objective.textContent = "Orbit light " + Math.min(stageScore, stageGoal).toLocaleString() + " / " + stageGoal.toLocaleString();
       ui.objectiveFill.style.width = (progress * 100).toFixed(1) + "%";
+      ui.reward.textContent = "Goal reward +12 moves";
       const eclipse = eclipseRemaining();
-      ui.eclipse.textContent = eclipse ? eclipse + " eclipse" : "clear sky";
+      if (state.level < 2) {
+        ui.eclipse.textContent = "Eclipse bonus unlocks orbit 02";
+      } else if (state.eclipseBonusAwarded) {
+        ui.eclipse.textContent = "Eclipse cleared · +3 moves claimed";
+      } else if (eclipse) {
+        ui.eclipse.textContent = "Optional eclipse " + eclipse + " / " + state.eclipseTotal + " layers · bonus +3";
+      } else {
+        ui.eclipse.textContent = "Eclipse clear · bonus +3 ready";
+      }
       ui.surgeFill.style.width = clamp(state.surge, 0, 100).toFixed(1) + "%";
-      ui.surgeState.textContent = state.surgeTime > 0 ? "×2 " + state.surgeTime.toFixed(1) + "s" : (state.flow ? "F" + state.flow + " · " : "") + Math.floor(state.surge) + "%";
+      ui.surgeState.textContent = state.surgeTurns > 0 ? "×2 · " + state.surgeTurns + " turns" : Math.floor(state.surge) + "%";
       ui.hint.disabled = !state.active || state.locked;
-      ui.shuffle.disabled = !state.active || state.locked || state.moves <= 2;
-      document.body.classList.toggle("surge-active", state.surgeTime > 0);
+      ui.shuffle.disabled = !state.active || state.locked || state.moves < 2;
+      document.body.classList.toggle("surge-active", state.surgeTurns > 0);
     }
 
     function swapBoard(a, b) {
@@ -1843,6 +2032,9 @@
       state.selected = null;
       state.hint = null;
       state.lastAction = performance.now();
+      beam(a.x, a.y, b.x, b.y, "#fff2ad", Math.max(4, state.cell * 0.09), 0.24);
+      a.squash = 0.28;
+      b.squash = 0.28;
       swapBoard(a, b);
       sound.swap();
       await wait(SWAP_TIME);
@@ -1854,10 +2046,12 @@
         sound.reject();
         await wait(SWAP_TIME);
         state.locked = false;
+        state.turnSurgeActive = false;
         showToast("No reaction", 700);
         updateHud();
         return false;
       }
+      state.turnSurgeActive = state.surgeTurns > 0;
       state.moves = Math.max(0, state.moves - 1);
       state.combo = 0;
       updateHud();
@@ -1870,6 +2064,7 @@
         await resolveCascades(b);
       }
       state.locked = false;
+      consumeSurgeTurn();
       await finishTurn();
       return true;
     }
@@ -1908,24 +2103,30 @@
       }
       const removed = Array.from(unique.values());
       if (!removed.length) return;
-      const surgeMultiplier = state.surgeTime > 0 ? 2 : 1;
-      const comboMultiplier = 1 + Math.max(0, state.combo - 1) * 0.42;
+      const eclipseBefore = eclipseRemaining();
+      const surgeMultiplier = state.turnSurgeActive ? 2 : 1;
       const specialCount = removed.filter(tile => tile.special !== NONE).length;
-      if (state.combo === 1) {
-        state.flow = removed.length >= 4 || specialCount > 0 ? Math.min(5, state.flow + 1) : Math.max(0, state.flow - 1);
-      } else {
-        state.flow = Math.min(5, state.flow + 1);
-      }
       state.lastClearSize = removed.length;
-      const flowMultiplier = 1 + state.flow * 0.12;
-      const points = Math.round((removed.length * 95 + specialCount * 240) * comboMultiplier * surgeMultiplier * flowMultiplier * (1 + state.level * 0.05));
+      const basePoints = removed.length * 90;
+      const cascadeBonus = Math.max(0, state.combo - 1) * removed.length * 55;
+      const specialBonus = specialCount * 300;
+      const levelMultiplier = 1 + state.level * 0.06;
+      const points = Math.round((basePoints + cascadeBonus + specialBonus) * levelMultiplier * surgeMultiplier);
       state.score += points;
-      state.surge += removed.length * 2.4 + specialCount * 7 + Math.max(0, state.combo - 1) * 5 + state.flow * 0.8;
-      if (state.surge >= 100 && state.surgeTime <= 0) activateSurge();
+      state.surge += removed.length * 2.4 + specialCount * 7 + Math.max(0, state.combo - 1) * 5;
+      if (state.surge >= 100 && state.surgeTurns <= 0) activateSurge();
       const center = removed.reduce((sum, tile) => ({ x: sum.x + tile.x, y: sum.y + tile.y }), { x: 0, y: 0 });
       center.x /= removed.length;
       center.y /= removed.length;
-      floater(center.x, center.y, "+" + points.toLocaleString(), state.surgeTime > 0 ? "#fff1a4" : "#ffffff", clamp(16 + state.combo * 2, 16, 28));
+      floater(center.x, center.y, "+" + points.toLocaleString(), state.turnSurgeActive ? "#fff1a4" : "#ffffff", clamp(16 + state.combo * 2, 16, 28));
+      if (state.combo > 1 || specialCount || state.turnSurgeActive) {
+        const breakdown = "BASE " + basePoints +
+          (cascadeBonus ? " · CASCADE +" + cascadeBonus : "") +
+          (specialBonus ? " · SPECIAL +" + specialBonus : "") +
+          " · ORBIT ×" + levelMultiplier.toFixed(2) +
+          (state.turnSurgeActive ? " · SURGE ×2" : "");
+        floater(center.x, center.y + state.cell * 0.38, breakdown, "#ffd77d", clamp(8 + state.combo, 8, 13));
+      }
       if (label) {
         floater(state.width / 2, state.boardY - 5, label, state.combo >= 4 ? "#43f2e4" : "#ffc14a", clamp(17 + state.combo * 2, 17, 31));
       }
@@ -1941,6 +2142,7 @@
           burst(tile.x, tile.y, "#bafcff", 12, 120);
         }
       }
+      if (eclipseBefore > 0 && eclipseRemaining() === 0) awardEclipseBonus();
       state.shake = Math.min(1, 0.12 + removed.length * 0.018 + specialCount * 0.16);
       state.flash = Math.min(0.72, removed.length * 0.015 + specialCount * 0.1);
       updateHud();
@@ -1953,11 +2155,11 @@
     function activateSurge() {
       void POWERUP_SOLAR_SURGE;
       state.surge = 100;
-      state.surgeTime = 8;
+      state.surgeTurns = SURGE_TURN_COUNT;
       state.flash = 1;
       state.shake = 0.8;
       sound.surge();
-      showToast("SOLAR SURGE · radiance ×2", 1700);
+      showToast("SOLAR SURGE · ×2 FOR 3 TURNS", 1900);
       const surgeParticleCount = TEST_MODE ? 3 : 90;
       for (let i = 0; i < surgeParticleCount; i++) {
         const angle = random(0, Math.PI * 2);
@@ -1970,6 +2172,27 @@
           size: random(2, 6)
         });
       }
+    }
+
+    function consumeSurgeTurn() {
+      if (!state.turnSurgeActive) return;
+      state.turnSurgeActive = false;
+      state.surgeTurns = Math.max(0, state.surgeTurns - 1);
+      if (state.surgeTurns === 0) {
+        state.surge = 0;
+        showToast("SOLAR SURGE SPENT", 900);
+      }
+      updateHud();
+    }
+
+    function awardEclipseBonus() {
+      if (!state.eclipseTotal || state.eclipseBonusAwarded) return;
+      state.eclipseBonusAwarded = true;
+      state.moves += ECLIPSE_MOVE_REWARD;
+      sound.eclipse();
+      celebrateMoveReward(ECLIPSE_MOVE_REWARD, "#43f2e4");
+      showToast("ECLIPSE CLEARED · +3 MOVES", 1800);
+      updateHud();
     }
 
     async function collapseBoard() {
@@ -2010,7 +2233,7 @@
     }
 
     async function finishTurn() {
-      if (state.score >= state.target && eclipseRemaining() === 0) {
+      if (state.score >= state.target) {
         await completeOrbit();
       }
       if (state.moves <= 0) {
@@ -2047,7 +2270,7 @@
     }
 
     async function shuffleBoard(charge = true) {
-      if (!state.active || state.locked || state.moves <= (charge ? 2 : 0)) return false;
+      if (!state.active || state.locked || (charge && state.moves < 2)) return false;
       resumeAudio();
       state.locked = true;
       state.selected = null;
@@ -2222,10 +2445,6 @@
     function update(dt) {
       state.time += dt;
       if (state.paused) return;
-      if (state.surgeTime > 0 && state.active) {
-        state.surgeTime = Math.max(0, state.surgeTime - dt);
-        if (state.surgeTime === 0) state.surge = 0;
-      }
       if (state.hintTime > 0) {
         state.hintTime = Math.max(0, state.hintTime - dt);
         if (state.hintTime === 0) state.hint = null;
@@ -2256,7 +2475,8 @@
             state.hint.a.r === tile.r && state.hint.a.c === tile.c ||
             state.hint.b.r === tile.r && state.hint.b.c === tile.c
           );
-          const desiredLift = selected ? state.cell * 0.12 : hinted ? state.cell * 0.07 : 0;
+          const idleLift = REDUCED_MOTION ? 0 : (0.018 + Math.sin(state.time * 1.7 + tile.pulse) * 0.014) * state.cell;
+          const desiredLift = (selected ? state.cell * 0.12 : hinted ? state.cell * 0.07 : 0) + idleLift;
           tile.lift = lerp(tile.lift, desiredLift, 1 - Math.exp(-12 * dt));
           if (Math.abs(beforeY - tile.ty) > 1 && Math.abs(tile.y - tile.ty) < 0.7) {
             tile.squash = Math.max(tile.squash, 0.13);
@@ -2288,7 +2508,8 @@
     }
 
     function spawnAmbient(dt) {
-      const rate = state.surgeTime > 0 ? 13 : 3.2;
+      if (REDUCED_MOTION) return;
+      const rate = state.surgeTurns > 0 ? 13 : 4.8;
       if (state.random() > dt * rate) return;
       const r = randomInt(GRID);
       const c = randomInt(GRID);
@@ -2331,7 +2552,7 @@
 
     function drawBackground() {
       const gradient = ctx.createRadialGradient(state.width * 0.5, state.height * 0.35, 20, state.width * 0.5, state.height * 0.45, Math.max(state.width, state.height) * 0.72);
-      gradient.addColorStop(0, state.surgeTime > 0 ? "#24120d" : "#15100d");
+      gradient.addColorStop(0, state.surgeTurns > 0 ? "#2d130a" : "#18100b");
       gradient.addColorStop(0.52, "#080a0c");
       gradient.addColorStop(1, "#030405");
       ctx.fillStyle = gradient;
@@ -2342,7 +2563,32 @@
         const pulse = 0.55 + Math.sin(state.time * star.speed + star.phase) * 0.45;
         ctx.globalAlpha = star.alpha * pulse;
         ctx.fillStyle = star.size > 1.25 ? "#ffd897" : "#a8dcd9";
-        ctx.fillRect(star.x, star.y, star.size, star.size);
+        const parallaxX = REDUCED_MOTION ? 0 : Math.sin(state.time * 0.08 + star.phase) * star.size * 3;
+        const parallaxY = REDUCED_MOTION ? 0 : Math.cos(state.time * 0.06 + star.phase) * star.size * 2;
+        ctx.fillRect(star.x + parallaxX, star.y + parallaxY, star.size, star.size);
+      }
+      ctx.restore();
+
+      const sunX = state.boardX + state.boardSize * 0.5;
+      const sunY = state.boardY + state.boardSize * 0.48;
+      const sunRadius = state.boardSize * (0.55 + (REDUCED_MOTION ? 0 : Math.sin(state.time * 0.55) * 0.008));
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const sun = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, sunRadius);
+      sun.addColorStop(0, "rgba(255, 236, 158, .12)");
+      sun.addColorStop(0.48, "rgba(255, 124, 42, .075)");
+      sun.addColorStop(0.75, "rgba(255, 58, 27, .028)");
+      sun.addColorStop(1, "rgba(255, 58, 27, 0)");
+      ctx.fillStyle = sun;
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 178, 76, .13)";
+      ctx.lineWidth = Math.max(1, state.cell * 0.025);
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, sunRadius * (0.72 + i * 0.08), -1.4 + i * 0.7 + state.time * 0.018, -0.25 + i * 0.7 + state.time * 0.018);
+        ctx.stroke();
       }
       ctx.restore();
 
@@ -2379,13 +2625,15 @@
       const y = state.boardY;
       const size = state.boardSize;
       ctx.save();
-      ctx.shadowColor = state.surgeTime > 0 ? "rgba(255, 126, 53, .5)" : "rgba(0, 0, 0, .7)";
-      ctx.shadowBlur = state.surgeTime > 0 ? 36 : 22;
+      const framePulse = REDUCED_MOTION ? 0 : Math.sin(state.time * 1.15) * 5;
+      ctx.shadowColor = state.surgeTurns > 0 ? "rgba(255, 126, 53, .72)" : "rgba(255, 148, 54, .34)";
+      ctx.shadowBlur = (state.surgeTurns > 0 ? 42 : 27) + framePulse;
       roundedRectPath(x - 5, y - 5, size + 10, size + 10, state.cell * 0.22);
       const frame = ctx.createLinearGradient(x, y, x + size, y + size);
-      frame.addColorStop(0, "rgba(255, 205, 105, .24)");
-      frame.addColorStop(0.45, "rgba(24, 27, 29, .92)");
-      frame.addColorStop(1, "rgba(67, 242, 228, .14)");
+      frame.addColorStop(0, "rgba(255, 221, 132, .58)");
+      frame.addColorStop(0.27, "rgba(255, 91, 31, .18)");
+      frame.addColorStop(0.56, "rgba(18, 24, 26, .94)");
+      frame.addColorStop(1, "rgba(67, 242, 228, .38)");
       ctx.fillStyle = frame;
       ctx.fill();
       ctx.shadowBlur = 0;
@@ -2398,11 +2646,12 @@
           const px = x + c * state.cell;
           const py = y + r * state.cell;
           const radial = ctx.createRadialGradient(px + state.cell * 0.5, py + state.cell * 0.45, 0, px + state.cell * 0.5, py + state.cell * 0.5, state.cell * 0.7);
-          radial.addColorStop(0, (r + c) % 2 ? "rgba(255, 191, 82, .038)" : "rgba(67, 242, 228, .025)");
-          radial.addColorStop(1, "rgba(0, 0, 0, .18)");
+          radial.addColorStop(0, (r + c) % 2 ? "rgba(255, 191, 82, .09)" : "rgba(67, 242, 228, .065)");
+          radial.addColorStop(0.62, "rgba(17, 26, 27, .32)");
+          radial.addColorStop(1, "rgba(0, 0, 0, .38)");
           ctx.fillStyle = radial;
           ctx.fillRect(px, py, state.cell, state.cell);
-          ctx.strokeStyle = "rgba(255, 231, 181, .035)";
+          ctx.strokeStyle = "rgba(255, 231, 181, .085)";
           ctx.lineWidth = 1;
           ctx.strokeRect(px + 0.5, py + 0.5, state.cell - 1, state.cell - 1);
         }
@@ -2506,10 +2755,10 @@
       const key = tile.type + ":" + Number(core) + ":" + Math.round(state.cell * 10) + ":" + state.dpr;
       if (gemSpriteCache.has(key)) return gemSpriteCache.get(key);
       const style = gemStyles[tile.type];
-      const radius = state.cell * 0.36;
+      const radius = state.cell * 0.39;
       const depth = state.cell * (core ? 0.135 : 0.105);
-      const cssWidth = Math.ceil(state.cell * 1.08);
-      const cssHeight = Math.ceil(state.cell * 1.18);
+      const cssWidth = Math.ceil(state.cell * 1.16);
+      const cssHeight = Math.ceil(state.cell * 1.24);
       const surface = document.createElement("canvas");
       surface.width = Math.max(1, Math.ceil(cssWidth * state.dpr));
       surface.height = Math.max(1, Math.ceil(cssHeight * state.dpr));
@@ -2593,15 +2842,23 @@
     function drawTile(tile) {
       const style = gemStyles[tile.type];
       const sprite = getGemSprite(tile);
-      const breathe = 1 + Math.sin(state.time * 2.1 + tile.pulse) * 0.012;
+      const breathe = REDUCED_MOTION ? 1 : 1 + Math.sin(state.time * 2.1 + tile.pulse) * 0.025;
       const scale = tile.scale * breathe;
       const selected = state.selected && state.selected.r === tile.r && state.selected.c === tile.c;
-      const tilt = selected ? Math.sin(state.time * 6.5) * 0.045 : 0;
+      const tilt = REDUCED_MOTION ? 0 : (selected ? Math.sin(state.time * 6.5) * 0.055 : Math.sin(state.time * 1.25 + tile.pulse) * 0.018);
       ctx.save();
       ctx.translate(tile.x, tile.y - tile.lift);
       ctx.rotate(tile.rotation + tilt + (tile.special === CORE ? state.time * 0.22 : 0));
       ctx.scale(scale * (1 + tile.squash), scale * (1 - tile.squash * 0.72));
       ctx.globalAlpha = tile.alpha;
+      const aura = ctx.createRadialGradient(0, 0, sprite.radius * 0.3, 0, 0, sprite.radius * 1.35);
+      aura.addColorStop(0, style.glow.replace(/\.\d+\)$/, ".22)"));
+      aura.addColorStop(0.62, style.glow.replace(/\.\d+\)$/, ".11)"));
+      aura.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = aura;
+      ctx.beginPath();
+      ctx.arc(0, 0, sprite.radius * 1.35, 0, Math.PI * 2);
+      ctx.fill();
       ctx.drawImage(sprite.surface, -sprite.cssWidth / 2, -sprite.cssHeight / 2, sprite.cssWidth, sprite.cssHeight);
 
       const glint = 0.42 + Math.sin(state.time * 1.8 + tile.shine) * 0.2;
@@ -2612,6 +2869,17 @@
       ctx.beginPath();
       ctx.arc(-sprite.radius * 0.28, -sprite.radius * 0.3, Math.max(1, sprite.radius * 0.055), 0, Math.PI * 2);
       ctx.fill();
+
+      if (!REDUCED_MOTION) {
+        const sweep = ((state.time * 0.52 + tile.shine) % 1) * sprite.radius * 2.4 - sprite.radius * 1.2;
+        ctx.globalAlpha = tile.alpha * 0.28;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = Math.max(1, state.cell * 0.025);
+        ctx.beginPath();
+        ctx.moveTo(sweep - sprite.radius * 0.24, -sprite.radius * 0.58);
+        ctx.lineTo(sweep + sprite.radius * 0.24, sprite.radius * 0.48);
+        ctx.stroke();
+      }
 
       ctx.globalAlpha = tile.alpha;
       drawSpecialMark(tile, sprite.radius, style);
@@ -2820,6 +3088,8 @@
         if (tile) tile.special = item.special;
       }
       state.eclipse = Array.from({ length: GRID }, () => Array(GRID).fill(0));
+      state.eclipseTotal = 0;
+      state.eclipseBonusAwarded = false;
       state.active = true;
       state.locked = false;
       state.paused = false;
@@ -2836,16 +3106,31 @@
         score: state.score,
         moves: state.moves,
         level: state.level,
+        target: state.target,
+        stageStartScore: state.stageStartScore,
+        stageGoal: state.target - state.stageStartScore,
         combo: state.combo,
         surge: state.surge,
-        surgeTime: state.surgeTime,
+        surgeTurns: state.surgeTurns,
+        eclipseTotal: state.eclipseTotal,
+        eclipseBonusAwarded: state.eclipseBonusAwarded,
+        reducedMotion: REDUCED_MOTION,
+        particleCount: state.particles.length,
+        effectBudget: particleLimit(),
         active: state.active,
         locked: state.locked,
         screen: state.screen,
         matchCount: findMatches().tiles.length,
         hasMove: Boolean(findAnyMove()),
         hint: state.hint ? { ...state.hint, a: { ...state.hint.a }, b: { ...state.hint.b } } : null,
-        flow: state.flow
+        layout: {
+          width: state.width,
+          height: state.height,
+          boardX: state.boardX,
+          boardY: state.boardY,
+          boardSize: state.boardSize,
+          cell: state.cell
+        }
       };
     }
 
@@ -2859,7 +3144,12 @@
           BEAM_ROW,
           BEAM_COL,
           CORONA,
-          CORE
+          CORE,
+          START_MOVES,
+          FIRST_ORBIT_GOAL,
+          ORBIT_MOVE_REWARD,
+          ECLIPSE_MOVE_REWARD,
+          SURGE_TURN_COUNT
         },
         snapshot: testSnapshot,
         setSeed(seed) {
@@ -2871,12 +3161,23 @@
           state.moves = Math.max(0, Number(moves) || 0);
           updateHud();
         },
+        setScore(score) {
+          state.score = Math.max(0, Number(score) || 0);
+          updateHud();
+        },
+        setLevel(level) {
+          state.level = Math.max(1, Math.floor(Number(level) || 1));
+          updateHud();
+        },
         setObjective(target, eclipse = []) {
-          state.target = Number(target) || state.target;
+          const nextTarget = Number(target);
+          if (Number.isFinite(nextTarget)) state.target = nextTarget;
           state.eclipse = Array.from({ length: GRID }, () => Array(GRID).fill(0));
           for (const item of eclipse) {
             if (inBounds(item.r, item.c)) state.eclipse[item.r][item.c] = item.layers || 1;
           }
+          state.eclipseTotal = eclipseRemaining();
+          state.eclipseBonusAwarded = false;
           updateHud();
         },
         async swap(r1, c1, r2, c2) {
