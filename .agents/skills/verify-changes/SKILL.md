@@ -19,7 +19,7 @@ Verification-only commands may run without creating a branch. Before applying an
 
 1. Inspect the diff and map each changed behavior to the smallest relevant test file or browser probe.
 2. Run only tests that exercise changed files and behavior. For games, run that game's focused spec plus a filtered load probe for the changed model; do not load every unrelated game.
-3. Verify game controls and essential UI at 320×480 and a desktop viewport. Reuse one managed server/browser session when possible.
+3. Verify game controls and essential UI at the primary 1280×720 desktop viewport, including keyboard input and mouse input where appropriate. Test mobile or touch layouts only when the implementation provides or claims that support. Reuse one managed server/browser session when possible.
 4. For Next.js code, read the relevant local documentation under node_modules/next/dist/docs/ before evaluating API usage.
 5. Before a PR, run lint and the production build, then affected Playwright specs:
 

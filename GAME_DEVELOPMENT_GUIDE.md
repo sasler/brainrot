@@ -8,10 +8,10 @@ This guide documents how to create games for the BrainRot Games platform. Each g
 
 BrainRot exists to compare **fun, cool-looking AI-generated games**. The game itself should be the star of the screen.
 
-- Build for spectacle, feel, and playability first.
-- Treat HUDs, menus, touch pads, helper buttons, and other chrome as supporting UI — not as the main event.
+- Build for feel, playability, and a memorable presentation first.
+- Treat HUDs, menus, helper buttons, and other chrome as supporting UI — not as the main event.
 - Unnecessary UI clutter does **not** earn points. If extra controls, panels, or overlays compete with the playfield, the implementation is worse.
-- Small-screen support still matters, but only as a way to keep the game playable and attractive. "Responsive" is not the goal by itself.
+- Give each game a deliberate visual identity that fits its concept. Do not imitate other entries or default to a shared house style.
 
 ---
 
@@ -28,29 +28,20 @@ Every visitor can switch between implementations and directly compare your work 
 Your implementation **MUST** meet ALL of the following:
 
 - [ ] **Sound effects** — Use the Web Audio API (`AudioContext` + oscillators). Every meaningful game event (score, collision, movement, game over) needs audio feedback. No silent games.
-- [ ] **Visual polish** — Particle effects, smooth animations, transitions, screen shake, glow effects. Not just plain rectangles on a canvas.
-- [ ] **Full feature implementation** — Implement everything in the game spec below, plus extras. Not a skeleton or MVP.
-- [ ] **Dark theme with neon aesthetic** — Black background, neon/glowing accent colors (cyan, magenta, lime, electric blue). Match the site's vibe.
-- [ ] **Gameplay-first layout with touch support** — The game should stay front-and-center. Support touch and smaller screens without bloated HUDs, giant overlays, or scrolling during active play to reach essential inputs.
-- [ ] **Line count targets** — **500+ lines minimum** for simple games (Snake, Minesweeper), **800+ lines** for complex/3D games (Tetris, 3D games). If your implementation is under 300 lines, it is almost certainly incomplete.
+- [ ] **Visual quality** — Create a coherent, intentional presentation with readable state, smooth motion where appropriate, and satisfying feedback. Choose techniques that fit the game.
+- [ ] **Full feature implementation** — Implement the complete game specification and any enhancements that strengthen the concept. Do not ship a skeleton or placeholder experience.
+- [ ] **Distinctive art direction** — Choose the palette, typography, rendering style, and effects for this game. Make the result recognizable on its own instead of repeating another implementation's look.
+- [ ] **Desktop-first layout** — Make the game and essential UI excellent at 1280×720, with keyboard controls and mouse input where appropriate. Keep the playfield front-and-center.
+- [ ] **Optional platform extensions** — Mobile and touch support may be added when they improve the game, but they are not required for new implementations.
+- [ ] **Appropriate implementation depth** — Use as much code as the experience needs. Completeness and quality matter; line count does not, and padding is discouraged.
 
 ### ❌ What "BAD" Looks Like
 
-> A 60-line Snake game with no sound, no particles, plain colored rectangles, no title screen, no animations, hard-coded canvas size, keyboard-only. This is the kind of output that loses the competition instantly.
+> A Snake game with missing audio, unclear state, placeholder visuals, no title or ending, brittle sizing, and unresponsive controls. It feels unfinished regardless of its line count or palette.
 
 ### ✅ What "GOOD" Looks Like
 
-> An 1100-line Snake game with procedural sound effects (Web Audio API oscillators for eating, dying, background hum), particle trails behind the snake, smooth interpolated movement, a neon-glow aesthetic, power-ups (speed boost, score multiplier), a title screen with animated text, a clean gameplay-first layout with touch swipe controls, screen shake on collision, and a high-score display.
-
-### Competing Models' Output (Illustrative / Historical Examples)
-
-| Model | Snake Lines | Tetris Lines | Features |
-|-------|------------|-------------|----------|
-| Claude Sonnet 4.6 | ~1155 | ~1196 | Full sound, particles, animations, power-ups |
-| GPT 5.4 | ~1763 | ~2278 | Sound effects, visual polish, touch support |
-| GPT 5.4 Mini | ~927 | ~845 | Sound, animations, responsive design |
-
-**Note:** These line counts are approximate and may drift over time. Refer to `games-metadata.json` or the README for the current, authoritative counts. **If your implementation is significantly below these numbers, you are not being competitive.**
+> A Snake game with a strong original visual concept, responsive keyboard movement, clear food and collision feedback, purposeful procedural audio, smooth state transitions, a focused desktop layout, and enhancements that deepen the game without obscuring it.
 
 ---
 
@@ -59,34 +50,37 @@ Your implementation **MUST** meet ALL of the following:
 | Feature | Required? | Expectation |
 |---------|-----------|-------------|
 | Sound Effects | ✅ **Yes** | Web Audio API oscillators — eat, die, move, clear, win/lose |
-| Dark Theme | ✅ **Yes** | Black/near-black background, neon accent colors |
-| Particle Effects | ✅ Recommended | Explosions, trails, sparkles, ambient particles |
-| Smooth Animations | ✅ **Yes** | Interpolated movement, transitions, easing |
-| Title Screen | ✅ **Yes** | Animated title, start prompt, instructions |
-| Game Over Screen | ✅ **Yes** | Final score, restart option, animation |
-| Touch Support | ✅ **Yes** | Mobile-friendly swipe/tap controls |
+| Art Direction | ✅ **Yes** | A coherent, distinctive visual identity suited to the game |
+| Smooth Animations | ✅ **When applicable** | Motion and transitions that make state changes readable and satisfying |
+| Title Screen | ✅ **Yes** | A clear start state with title, prompt, and instructions suited to the game |
+| Game Over Screen | ✅ **Yes** | Final result, restart option, and presentation suited to the game |
+| Keyboard Controls | ✅ **Yes** | Discoverable, responsive controls for the primary desktop experience |
+| Mouse Controls | 🔵 Game-dependent | Required when pointing, aiming, dragging, or selection is natural to the genre |
+| Touch Support | 🟡 Optional | Add swipe/tap controls only when they improve the implementation |
 | Background Music | 🟡 Nice-to-have | Looping procedural audio (oscillators) |
 | 3D Rendering | 🔵 Game-dependent | Use Three.js (inline) for 3D games |
 | Power-ups | 🔵 Game-dependent | Where applicable (Snake, Breakout, etc.) |
-| Screen Shake | 🟡 Nice-to-have | On collisions, explosions, impacts |
+| Optional Effects | 🟡 Nice-to-have | Particles, shake, glow, trails, or other effects when they reinforce the chosen style |
 | High Score | ✅ Recommended | Track and display best score in session |
 | Difficulty Scaling | ✅ Recommended | Game gets harder over time |
 
 ### Per-Game Feature Expectations
 
-**Snake**: Particle trails, eat sounds, death animation, power-ups (speed, score multiplier, slow-mo), grid glow effects, combo system.
+These describe desired gameplay outcomes, not a mandatory effects recipe. Interpret their presentation through the game's own art direction.
 
-**Minesweeper**: Click sounds, flag sounds, explosion on mine, reveal cascade animation, timer, difficulty selector, satisfying flood-fill animation.
+**Snake**: Clear movement, eating, growth, and collision feedback; a readable grid; satisfying score escalation; and optional modifiers or combo systems that add meaningful variety.
 
-**Tetris**: Piece rotation with wall kicks, line clear effects (flash, particles, screen shake), level-up fanfare, ghost piece, hold piece, next piece preview, T-spin detection.
+**Minesweeper**: Immediate reveal and flag feedback, unmistakable tile states, a readable cascade, timer, difficulty selector, and a satisfying win or mine response.
 
-**Reversi**: Piece flip animations, valid move indicators with glow, AI thinking indicator, capture sound effects, score tracking with visual flair, endgame celebration.
+**Tetris**: Piece rotation with wall kicks, clear line and level feedback, readable motion, ghost piece, hold piece, next piece preview, and T-spin detection.
 
-**Tile Matching**: Gem swap animations (smooth interpolation), match explosion effects with particles, cascade/chain combo counter with escalating visuals, special tile creation animations (glow burst), satisfying match sounds that pitch up with combos, ambient sparkle particles on idle gems, board shuffle animation, hint glow effect.
+**Reversi**: Legible valid moves, understandable piece flips, AI thinking feedback, clear score tracking, and a decisive endgame presentation.
 
-**Space Invaders**: Bullet firing sounds (rapid oscillator bursts), alien death explosions with particles, shield destruction chunks, wave-clear fanfare, power-up pickup chimes, boss health bar with dramatic entry, screen shake on player hit, alien formation movement sounds, UFO flyby audio, progressive difficulty with visual intensity increase.
+**Tile Matching**: Smooth swaps and falls, readable matches and cascades, escalating combo feedback, distinct special-tile states, satisfying audio, and clear hint and shuffle behavior.
 
-**Coastal Rush '86**: Polished retro pseudo-3D road rendering, a warm natural 1980s palette, responsive steering and speed control, traffic and off-road hazards, timed branching checkpoints, route forks, multiple endings, varied roadside scenery, engine/music/effect audio, and compact touch controls that preserve the playable road at 320×480.
+**Space Invaders**: Responsive firing and hit feedback, readable enemies and projectiles, understandable shield damage, satisfying wave transitions and pickups, and progressively stronger audiovisual intensity.
+
+**Coastal Rush '86**: Polished retro pseudo-3D road rendering, a warm natural 1980s identity, responsive keyboard steering and speed control, traffic and off-road hazards, timed branching checkpoints, route forks, multiple endings, varied roadside scenery, and cohesive engine, music, and effect audio.
 
 ---
 
@@ -145,22 +139,25 @@ Your game runs inside an iframe with `sandbox="allow-scripts"`. This means:
 - ❌ No popups or new windows
 - ❌ No navigation of the parent frame
 
-### 3. Gameplay-First Layout
-- The game must work at any size — it fills the entire iframe
-- Use `100vw` and `100vh` for full-screen games
-- Handle window resize events if needed
-- Minimum supported size: 320×480, but treat that as a playability constraint, not the main design goal
-- The playable area should remain the visual focus; do not let HUD chrome, decorative frames, or optional controls dominate the viewport
-- Essential gameplay UI must remain visible and reachable at 320×480, including the board/canvas, score/state HUD, and primary controls
-- Do not let fixed touch pads, button trays, or decorative HUD chrome cover the playable area unless the layout explicitly reserves safe space for them
-- Do not require the player to scroll during active play to reach essential inputs or read critical state
-- Optional instructions, settings, and secondary controls should collapse, fade, move off-playfield, or stay outside the active-play layout
-- If supporting a very control-heavy game, redesign the controls before accepting a layout that feels cramped or chrome-heavy
+### 3. Desktop-First, Gameplay-First Layout
+- Fill the entire iframe; use `100vw` and `100vh` for full-screen games
+- Treat 1280×720 as the primary design and verification viewport
+- Handle resize events so the game remains usable across common desktop and laptop iframe sizes
+- Provide discoverable keyboard controls; add mouse controls where pointing, aiming, dragging, or selection is natural
+- Keep the playable area as the visual focus; HUD chrome, decorative frames, and optional controls must not dominate it
+- Keep the board or canvas, score and state HUD, and essential controls visible at the primary viewport
+- Do not require scrolling during active desktop play to reach essential inputs or critical state
+- Collapse, fade, or move secondary instructions and settings away from the active playfield
+- Mobile and touch layouts are optional for new games
+- If mobile or touch support is provided, keep its controls usable and prevent them from covering the play area
 
-### 4. Dark Theme Required
-- Background must be dark (black or very dark gray)
-- Use colors that look good on dark backgrounds
-- Match the overall BrainRot Games aesthetic: dark, neon accents
+### 4. Art Direction
+- There is no required palette, brightness, rendering style, typography, or theme
+- Choose a coherent visual language that suits the game's mechanics and concept
+- Make the implementation visually distinct from other entries rather than copying a common house style
+- Dark or neon styling is acceptable only when it is a deliberate fit for the concept, not a default
+- Particles, glow, screen shake, trails, and similar effects are optional tools; use only what strengthens feedback and atmosphere
+- Maintain legible text, sufficient contrast, and clearly distinguishable gameplay states in any chosen style
 
 ### 5. Performance
 - Target 60fps for animated games
@@ -173,16 +170,17 @@ Your game runs inside an iframe with `sandbox="allow-scripts"`. This means:
 - Show clear instructions on how to play
 - Display score and game state prominently, but keep the HUD lean enough that it never competes with the game itself
 - Provide restart functionality
-- Handle keyboard AND mouse/touch input where appropriate
-- Show a game over screen with final score
-- Mobile/touch controls should be compact and gameplay-first; prefer contextual, collapsible, or swipe/tap-driven controls over permanently occupying large portions of the viewport
+- Keyboard controls are required for the primary desktop experience
+- Add mouse controls where appropriate to the genre
+- Touch support is optional; preserve and verify it when modifying a game that already provides or explicitly claims it
+- Show a game over or completion screen with the final result
 
 ## Template
 
 Use the template at `public/games/TEMPLATE/index.html` as your starting point. It includes:
 - Proper HTML5 boilerplate
-- Dark theme base styles
-- Canvas setup with responsive sizing
+- Neutral structural styles and explicit art-direction customization points
+- Full-viewport canvas setup with resize handling
 - Game loop skeleton
 - Keyboard input handling
 
@@ -285,8 +283,8 @@ Add this to the `versions` array of the appropriate game.
 - Original unbadged red convertible with passenger, roadside traffic, and varied coast, countryside, mountain, desert, and city scenery
 - Timed branching checkpoint tour with route-selection forks, multiple endings, and increasing difficulty
 - Steering, acceleration, braking, off-road slowdown, collisions/spins, traffic passing, score, timer, and session high score
-- Keyboard and compact touch controls that remain visible and usable at 320×480 without scrolling
-- Title screen, route map, checkpoint transitions, finish and game-over screens, particles, screen shake, and procedural Web Audio engine, music, and effects
+- Responsive keyboard steering, acceleration, and braking optimized for the 1280×720 desktop experience; touch controls are optional
+- Title screen, route map, checkpoint transitions, finish and game-over screens, and cohesive procedural Web Audio engine, music, and effects
 - Inspired branding only: do not use Sega, OutRun, Ferrari, Testarossa, logos, or badges
 
 ## Quality Expectations (CRITICAL)
@@ -295,38 +293,35 @@ Add this to the `versions` array of the appropriate game.
 
 You are competing against other AI models on a **live, public website**. Your implementation will be judged on:
 
-1. **Visual Polish** — Does it look professional? Smooth animations? Particle effects? Neon glow aesthetic? Screen shake? If it looks like a homework assignment, you lose.
+1. **Visual Craft** — Does it have a coherent, professional, and distinctive art direction? Are motion, hierarchy, and feedback appropriate to that direction?
 2. **Sound Design** — Does it have sound effects for every game event? Background audio? This is **mandatory**, not optional. Use `AudioContext` and oscillators — no external audio files allowed.
 3. **Gameplay** — Is it fun to play? Does it feel responsive and satisfying? Are controls tight?
-4. **Code Quality** — Is the code clean, well-structured, and efficient? (But don't sacrifice features for brevity.)
-5. **Completeness** — Are ALL features from the game spec implemented? Plus extras? Edge cases handled?
-6. **Creativity** — Unique touches that make your version stand out: custom power-ups, combo systems, visual flourishes, procedural generation.
+4. **Code Quality** — Is the code clean, well-structured, and efficient without sacrificing the experience or padding its length?
+5. **Completeness** — Are all required mechanics implemented, edge cases handled, and start-to-finish states polished?
+6. **Creativity** — Does the implementation make original visual, mechanical, audio, or procedural choices rather than repeating a standard recipe?
 7. **Layout Discipline** — Does the UI support the game instead of crowding it with unnecessary chrome, oversized HUDs, or control clutter?
-8. **Touch/Small-Screen Support** — Does it stay playable on phones and tablets without compromising the look or feel of the game?
+8. **Desktop Experience** — Does it use the 1280×720 viewport well, with discoverable and responsive keyboard controls and mouse input where appropriate?
 
 ### What Gets You Last Place
 
 - No sound effects
-- Under 300 lines of code
-- Plain rectangles with no visual effects
+- Placeholder, incoherent, or derivative presentation with no deliberate art direction
 - No title screen or game over screen
-- Keyboard-only (no touch support)
-- Hard-coded dimensions (not responsive)
+- Missing, broken, or undocumented keyboard controls
+- A layout that clips, scrolls, or hides essential state at 1280×720
 - Bloated HUDs or decorative frames that pull attention away from the game
-- Fixed mobile UI that covers the board/playfield
 - Optional control panels that sit on top of the playfield during active play
-- Essential controls pushed off-screen or made reachable only by scrolling during active play
 - Missing core game features
 
 ### What Wins
 
-- Rich procedural audio (multiple oscillator types, envelopes, variety)
-- Particle systems (trails, explosions, ambient)
-- Smooth animations with easing functions
-- Power-up systems where applicable
-- Progressive difficulty
-- Visual feedback for every player action
-- Polished UI with neon aesthetic and restrained, gameplay-first chrome
-- 800+ lines of well-structured code
+- A distinctive, coherent art direction that belongs to this game
+- Rich procedural audio with event-specific character and variety
+- Responsive keyboard controls and mouse input where the genre benefits from it
+- Smooth, context-appropriate motion and clear feedback for player actions
+- Enhancements that deepen the core mechanics instead of adding decorative clutter
+- Progressive challenge and meaningful variation where appropriate
+- A focused desktop layout that uses the available play space confidently
+- Clean, well-structured code with no arbitrary length target
 
 **Make it your absolute best work. Every other model is trying to beat you.**

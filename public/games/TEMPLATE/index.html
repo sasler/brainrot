@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Game Template — BrainRot Games</title>
   <style>
+    /*
+     * Neutral structural defaults only.
+     * Replace these tokens and the typography with an art direction specific to the game.
+     */
+    :root {
+      color-scheme: light dark;
+      --game-bg: Canvas;
+      --game-fg: CanvasText;
+      --game-muted: GrayText;
+      --game-accent: LinkText;
+      --game-control-bg: ButtonFace;
+      --game-control-fg: ButtonText;
+      --game-border: ButtonBorder;
+    }
+
     *, *::before, *::after {
       margin: 0;
       padding: 0;
@@ -12,9 +27,9 @@
     }
 
     body {
-      background: #050510;
-      color: #e4e4ef;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--game-bg);
+      color: var(--game-fg);
+      font-family: system-ui, sans-serif;
       overflow: hidden;
       width: 100vw;
       height: 100vh;
@@ -26,7 +41,7 @@
 
     canvas {
       display: block;
-      image-rendering: pixelated;
+      image-rendering: auto;
     }
 
     #ui-overlay {
@@ -38,18 +53,18 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-family: 'Courier New', monospace;
+      font-family: inherit;
       font-size: 14px;
       z-index: 10;
       pointer-events: none;
     }
 
     .score {
-      color: #00f0ff;
+      color: var(--game-accent);
     }
 
     .game-state {
-      color: #5a5a7a;
+      color: var(--game-muted);
     }
 
     #start-screen,
@@ -60,7 +75,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(5, 5, 16, 0.95);
+      background: var(--game-bg);
       z-index: 20;
     }
 
@@ -68,31 +83,31 @@
     #game-over-screen h1 {
       font-size: 2.5rem;
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: normal;
       margin-bottom: 1rem;
     }
 
     #start-screen p,
     #game-over-screen p {
-      color: #5a5a7a;
+      color: var(--game-muted);
       margin-bottom: 2rem;
     }
 
     .btn {
-      background: transparent;
-      border: 1px solid #00f0ff40;
-      color: #00f0ff;
+      background: var(--game-control-bg);
+      border: 1px solid var(--game-border);
+      color: var(--game-control-fg);
       padding: 12px 32px;
       font-size: 14px;
       font-family: inherit;
-      letter-spacing: 0.2em;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: outline-color 0.15s;
     }
 
-    .btn:hover {
-      border-color: #00f0ff;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+    .btn:hover,
+    .btn:focus-visible {
+      outline: 2px solid var(--game-accent);
+      outline-offset: 2px;
     }
   </style>
 </head>
@@ -190,14 +205,15 @@
     }
 
     function render() {
-      ctx.fillStyle = '#050510';
+      const bodyStyle = getComputedStyle(document.body);
+      ctx.fillStyle = bodyStyle.backgroundColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Render your game here
-      ctx.fillStyle = '#5a5a7a';
-      ctx.font = '16px monospace';
+      // Replace this neutral placeholder with the game's own visual language.
+      ctx.fillStyle = bodyStyle.color;
+      ctx.font = bodyStyle.font;
       ctx.textAlign = 'center';
-      ctx.fillText('Replace this with your game rendering', canvas.width / 2, canvas.height / 2);
+      ctx.fillText('Define your game rendering and art direction here', canvas.width / 2, canvas.height / 2);
     }
   </script>
 </body>
