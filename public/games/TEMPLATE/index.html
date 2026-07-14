@@ -139,15 +139,29 @@
     // ═══ SETUP ═══
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
+    const renderTheme = {
+      background: '',
+      foreground: '',
+      font: '',
+    };
     let animationId = null;
     let score = 0;
     let gameRunning = false;
 
+    function refreshRenderTheme() {
+      const bodyStyle = getComputedStyle(document.body);
+      renderTheme.background = bodyStyle.backgroundColor;
+      renderTheme.foreground = bodyStyle.color;
+      renderTheme.font = bodyStyle.font;
+    }
+
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      refreshRenderTheme();
     }
     window.addEventListener('resize', resizeCanvas);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', refreshRenderTheme);
     resizeCanvas();
 
     // ═══ GAME STATE ═══
@@ -205,13 +219,12 @@
     }
 
     function render() {
-      const bodyStyle = getComputedStyle(document.body);
-      ctx.fillStyle = bodyStyle.backgroundColor;
+      ctx.fillStyle = renderTheme.background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Replace this neutral placeholder with the game's own visual language.
-      ctx.fillStyle = bodyStyle.color;
-      ctx.font = bodyStyle.font;
+      ctx.fillStyle = renderTheme.foreground;
+      ctx.font = renderTheme.font;
       ctx.textAlign = 'center';
       ctx.fillText('Define your game rendering and art direction here', canvas.width / 2, canvas.height / 2);
     }
