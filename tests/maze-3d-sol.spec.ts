@@ -13,6 +13,14 @@ type MazeSnapshot = {
   guardian: { mode: string; stunned: number; x: number; y: number } | null;
   player: { x: number; y: number };
   gates: boolean[];
+  gateWalls: boolean[];
+  minimap: {
+    explored: number;
+    total: number;
+    playerVisible: boolean;
+    coreVisibility: boolean[];
+    exitVisible: boolean;
+  };
   won: boolean;
   audit: { reachable: boolean; separated: boolean; walkable: number; total: number; seed: number } | null;
 };
@@ -135,22 +143,49 @@ test.describe("GPT 5.6 Sol HELIOVAULT maze", () => {
     await openGame(page);
     await startGame(page);
 
-    const states = await page.evaluate(() => {
+    const { before, states } = await page.evaluate(() => {
       const snapshots: MazeSnapshot[] = [];
+      const before = window.__helioVaultTest.snapshot();
       for (let index = 0; index < 3; index += 1) {
         window.__helioVaultTest.collectCore(index);
         snapshots.push(window.__helioVaultTest.snapshot());
       }
-      return snapshots;
+      return { before, states: snapshots };
     });
 
+    expect(before.gateWalls[0]).toBe(true);
     expect(states[0].cores).toBe(1);
     expect(states[0].guardian?.mode).not.toBe("dormant");
     expect(states[0].gates[0]).toBe(true);
+    expect(states[0].gateWalls[0]).toBe(false);
     expect(states[1].gates[1]).toBe(true);
+    expect(states[1].gateWalls[1]).toBe(false);
     expect(states[2].cores).toBe(3);
     expect(states[2].exitActive).toBe(true);
     await expect(page.locator(".core-dot.on")).toHaveCount(3);
+  });
+
+  test("reveals the minimap progressively while keeping objectives behind fog of war", async ({ page }) => {
+    await openGame(page);
+    await startGame(page);
+    await expect(page.locator("#minimap")).toBeVisible();
+
+    const result = await page.evaluate(() => {
+      const initial = window.__helioVaultTest.snapshot();
+      window.__helioVaultTest.setPulse(100);
+      window.__helioVaultTest.usePulse();
+      const pulsed = window.__helioVaultTest.snapshot();
+      const atCore = window.__helioVaultTest.teleportTo("core", 0);
+      return { initial, pulsed, atCore };
+    });
+
+    expect(result.initial.minimap.playerVisible).toBe(true);
+    expect(result.initial.minimap.explored).toBeGreaterThan(0);
+    expect(result.initial.minimap.explored).toBeLessThan(result.initial.minimap.total / 4);
+    expect(result.initial.minimap.coreVisibility.every((visible) => !visible)).toBe(true);
+    expect(result.initial.minimap.exitVisible).toBe(false);
+    expect(result.pulsed.minimap.explored).toBeGreaterThan(result.initial.minimap.explored);
+    expect(result.atCore.minimap.coreVisibility[0]).toBe(true);
   });
 
   test("uses pulse charge, rejects an empty pulse, and stuns a nearby guardian", async ({ page }) => {
@@ -239,10 +274,11 @@ test.describe("GPT 5.6 Sol HELIOVAULT maze", () => {
     await expect(page.locator("#touch")).toHaveClass(/playing/);
     await expect(page.locator("#stickZone")).toBeVisible();
     await expect(page.locator("#pulseButton")).toBeVisible();
+    await expect(page.locator("#minimapShell")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(481);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
 
-    for (const selector of ["#stickZone", "#pulseButton", "#pauseButton", "#muteButton"]) {
+    for (const selector of ["#stickZone", "#pulseButton", "#pauseButton", "#muteButton", "#minimapShell"]) {
       const box = await page.locator(selector).boundingBox();
       expect(box).not.toBeNull();
       expect(box!.x).toBeGreaterThanOrEqual(0);

@@ -242,6 +242,62 @@
       background: rgba(4,3,2,.5);
     }
 
+    #minimapShell {
+      position: absolute;
+      top: 76px;
+      right: 16px;
+      width: 150px;
+      aspect-ratio: 1;
+      padding: 8px;
+      border: 1px solid rgba(255,196,84,.3);
+      background: linear-gradient(145deg, rgba(17,11,5,.88), rgba(3,2,1,.68));
+      box-shadow: inset 0 0 28px rgba(255,111,21,.05), 0 10px 35px rgba(0,0,0,.38);
+      clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+      backdrop-filter: blur(8px);
+    }
+
+    #minimapShell::before,
+    #minimapShell::after {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    #minimapShell::before {
+      inset: 8px;
+      border: 1px solid rgba(255,219,140,.12);
+      box-shadow: inset 0 0 18px rgba(0,0,0,.7);
+    }
+
+    #minimapShell::after {
+      top: 8px;
+      bottom: 8px;
+      left: 50%;
+      width: 1px;
+      opacity: .16;
+      background: linear-gradient(transparent, var(--gold), transparent);
+    }
+
+    #minimap {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #mapLabel {
+      position: absolute;
+      right: 9px;
+      bottom: -17px;
+      color: rgba(190,159,106,.72);
+      font-family: "Arial Narrow", sans-serif;
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      text-shadow: 0 1px 4px #000;
+    }
+
     #prompt {
       position: absolute;
       left: 50%;
@@ -664,6 +720,10 @@
       #pauseButton { right: 12px; bottom: auto; top: max(58px, calc(env(safe-area-inset-top) + 55px)); }
       #muteButton { right: 56px; bottom: auto; top: max(58px, calc(env(safe-area-inset-top) + 55px)); }
       #prompt { bottom: 152px; }
+      #minimapShell { top: max(103px, calc(env(safe-area-inset-top) + 100px)); right: 10px; width: 92px; padding: 5px; }
+      #minimapShell::before { inset: 5px; }
+      #minimapShell::after { top: 5px; bottom: 5px; }
+      #mapLabel { display: none; }
     }
 
     @media (max-width: 560px) {
@@ -689,6 +749,7 @@
       .controls-note { display: none; }
       #compass { top: 55px; }
       #meters { bottom: 11px; }
+      #minimapShell { top: 101px; width: 82px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -721,6 +782,10 @@
       </div>
     </div>
     <div id="compass"><span id="bearing">SEEK THE FIRST CORE</span><i id="needle"></i></div>
+    <div id="minimapShell" aria-label="Explored vault map with fog of war">
+      <canvas id="minimap" width="240" height="240"></canvas>
+      <span id="mapLabel">Discovered vault</span>
+    </div>
     <div id="crosshair"></div>
     <div id="prompt">Solar pulse ready</div>
     <div id="meters">
@@ -801,6 +866,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     const timerEl = $("#timer");
     const scoreEl = $("#score");
     const bearingEl = $("#bearing");
+    const minimapCanvas = $("#minimap");
+    const minimapCtx = minimapCanvas.getContext("2d");
     const promptEl = $("#prompt");
     const pulseBar = $("#pulseBar");
     const staminaBar = $("#staminaBar");
@@ -821,6 +888,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     const PULSE_COST = 35;
     const PULSE_RADIUS = 9.5;
     const CONTACT_TIME_LOSS = 10;
+    const MAP_REVEAL_RADIUS = 2;
     const TAU = Math.PI * 2;
 
     const state = {
@@ -834,6 +902,8 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       fragments: [],
       wells: [],
       gates: [],
+      explored: new Set(),
+      lastMapCell: "",
       exit: null,
       time: RUN_TIME,
       score: 0,
@@ -867,6 +937,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
     let dynamicGroup;
     let particleGroup;
     let wallMesh;
+    let wallInstanceByCell = new Map();
     let floor;
     let ceiling;
     let exitGroup;
@@ -915,6 +986,125 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
         x: Math.floor(x / CELL + GRID / 2),
         y: Math.floor(z / CELL + GRID / 2),
       };
+    }
+
+    function revealMapAroundPlayer(radius = MAP_REVEAL_RADIUS) {
+      const center = gridFromWorld(camera.position.x, camera.position.z);
+      const centerKey = keyOf(center.x, center.y);
+      if (radius === MAP_REVEAL_RADIUS && state.lastMapCell === centerKey) return;
+      state.lastMapCell = centerKey;
+      const radiusSq = (radius + .35) * (radius + .35);
+      for (let y = center.y - radius; y <= center.y + radius; y++) {
+        for (let x = center.x - radius; x <= center.x + radius; x++) {
+          if (x < 0 || y < 0 || x >= GRID || y >= GRID) continue;
+          const dx = x - center.x;
+          const dy = y - center.y;
+          if (dx * dx + dy * dy <= radiusSq) state.explored.add(keyOf(x, y));
+        }
+      }
+    }
+
+    function isMapped(cell) {
+      return Boolean(cell) && state.explored.has(keyOf(cell.x, cell.y));
+    }
+
+    function drawMapMarker(cell, color, radius, stroke = null) {
+      if (!isMapped(cell)) return;
+      const size = minimapCanvas.width;
+      const margin = 12;
+      const tile = (size - margin * 2) / GRID;
+      const cx = margin + (cell.x + .5) * tile;
+      const cy = margin + (cell.y + .5) * tile;
+      minimapCtx.beginPath();
+      minimapCtx.arc(cx, cy, radius, 0, TAU);
+      minimapCtx.fillStyle = color;
+      minimapCtx.fill();
+      if (stroke) {
+        minimapCtx.lineWidth = 1.5;
+        minimapCtx.strokeStyle = stroke;
+        minimapCtx.stroke();
+      }
+    }
+
+    function drawMinimap() {
+      if (!state.grid.length) return;
+      const ctx = minimapCtx;
+      const size = minimapCanvas.width;
+      const margin = 12;
+      const tile = (size - margin * 2) / GRID;
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = "#040302";
+      ctx.fillRect(0, 0, size, size);
+
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          const px = margin + x * tile;
+          const py = margin + y * tile;
+          if (!state.explored.has(keyOf(x, y))) {
+            ctx.fillStyle = "rgba(0,0,0,.96)";
+            ctx.fillRect(px, py, tile + .4, tile + .4);
+            continue;
+          }
+          if (state.grid[y][x] === 1) {
+            ctx.fillStyle = "rgba(128,76,34,.62)";
+            ctx.fillRect(px, py, tile + .5, tile + .5);
+          } else {
+            ctx.fillStyle = "rgba(255,177,54,.13)";
+            ctx.fillRect(px, py, tile + .5, tile + .5);
+            ctx.strokeStyle = "rgba(255,205,105,.08)";
+            ctx.lineWidth = .55;
+            ctx.strokeRect(px + .3, py + .3, tile - .6, tile - .6);
+          }
+        }
+      }
+
+      for (const fragment of state.fragments) {
+        if (!fragment.collected) drawMapMarker(fragment, "#69f6e6", 1.6);
+      }
+      for (const well of state.wells) {
+        if (!well.used) drawMapMarker(well, "rgba(91,230,224,.78)", 2.3, "rgba(205,255,246,.5)");
+      }
+      for (const core of state.cores) {
+        if (!core.collected) drawMapMarker(core, "#ffb62e", 3.2, "#fff0a5");
+      }
+      if (state.exit) {
+        drawMapMarker(state.exit, state.exit.active ? "#fff0a4" : "#8e6730", state.exit.active ? 4 : 2.8, state.exit.active ? "#ff7a22" : null);
+      }
+
+      const playerCell = gridFromWorld(camera.position.x, camera.position.z);
+      const guardianCellNow = guardianGroup?.visible ? gridFromWorld(guardianGroup.position.x, guardianGroup.position.z) : null;
+      if (guardianCellNow && isMapped(guardianCellNow) && Math.hypot(guardianCellNow.x - playerCell.x, guardianCellNow.y - playerCell.y) <= 5) {
+        drawMapMarker(guardianCellNow, "#ff301e", 3.1, "#ffab76");
+      }
+
+      const cx = margin + (playerCell.x + .5) * tile;
+      const cy = margin + (playerCell.y + .5) * tile;
+      const forwardX = -Math.sin(state.yaw);
+      const forwardY = -Math.cos(state.yaw);
+      const rightX = Math.cos(state.yaw);
+      const rightY = -Math.sin(state.yaw);
+      const radius = Math.max(4.5, tile * .72);
+      const backX = cx - forwardX * radius * .55;
+      const backY = cy - forwardY * radius * .55;
+      ctx.beginPath();
+      ctx.moveTo(cx + forwardX * radius, cy + forwardY * radius);
+      ctx.lineTo(backX + rightX * radius * .58, backY + rightY * radius * .58);
+      ctx.lineTo(backX - rightX * radius * .58, backY - rightY * radius * .58);
+      ctx.closePath();
+      ctx.fillStyle = "#fff4c2";
+      ctx.shadowColor = "#ff8b24";
+      ctx.shadowBlur = 7;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      const sweep = state.elapsed * .75;
+      ctx.beginPath();
+      ctx.moveTo(size / 2, size / 2);
+      ctx.lineTo(size / 2 + Math.cos(sweep) * size * .48, size / 2 + Math.sin(sweep) * size * .48);
+      ctx.strokeStyle = "rgba(255,178,49,.08)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      minimapCanvas.dataset.explored = String(state.explored.size);
     }
 
     function keyOf(x, y) {
@@ -1024,7 +1214,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       state.cores = selected.map((cell, index) => ({ ...cell, index, collected: false, mesh: null }));
       state.fragments = fragmentCells.map((cell, index) => ({ ...cell, index, collected: false, mesh: null }));
       state.wells = wellCells.map((cell, index) => ({ ...cell, index, used: false, mesh: null }));
-      state.gates = gates.map((gate, index) => ({ ...gate, index, open: false, mesh: null }));
+      state.gates = gates.map((gate, index) => ({ ...gate, index, open: false, mesh: null, wallInstance: null, wallHidden: false }));
       state.walkable = search.cells;
       return { grid, start, exit, cores: selected, fragments: fragmentCells, wells: wellCells, gates };
     }
@@ -1229,6 +1419,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       const wallGeo = new THREE.BoxGeometry(CELL-.035,WALL_H,CELL-.035);
       const wallMat = new THREE.MeshStandardMaterial({ map: basalt, color: 0xd0b187, roughness: .82, metalness: .12, emissive: 0x351807, emissiveIntensity: .58 });
       wallMesh = new THREE.InstancedMesh(wallGeo,wallMat,wallCount);
+      wallInstanceByCell = new Map();
       wallMesh.castShadow = !isCoarse;
       wallMesh.receiveShadow = true;
       const dummy = new THREE.Object3D();
@@ -1241,6 +1432,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
           dummy.rotation.y = ((x*17+y*31)%5)*.003;
           dummy.scale.set(1,1+((x+y)%3)*.008,1);
           dummy.updateMatrix();
+          wallInstanceByCell.set(keyOf(x,y),instance);
           wallMesh.setMatrixAt(instance++,dummy.matrix);
         }
       }
@@ -1268,7 +1460,10 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       state.cores.forEach((core)=>core.mesh=createCore(core,glowTex));
       state.fragments.forEach((fragment)=>fragment.mesh=createFragment(fragment,glowTex));
       state.wells.forEach((well)=>well.mesh=createWell(well,glowTex));
-      state.gates.forEach((gate)=>gate.mesh=createGate(gate,brass));
+      state.gates.forEach((gate)=>{
+        gate.wallInstance=wallInstanceByCell.get(keyOf(gate.x,gate.y));
+        gate.mesh=createGate(gate,brass);
+      });
       exitGroup = createExit(state.exit,glowTex);
       guardianGroup = createGuardian(glowTex);
       dynamicGroup.add(exitGroup,guardianGroup);
@@ -1516,12 +1711,15 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       state.hitCooldown=0;
       state.elapsed=0;
       state.won=false;
+      state.explored=new Set();
+      state.lastMapCell="";
       state.sanctuary={x:1,y:1};
       camera.position.copy(worldFromGrid(1,1,EYE_H));
       const firstCorridor=neighbors(1,1)[0]||{x:1,y:2};
       const firstTarget=worldFromGrid(firstCorridor.x,firstCorridor.y,EYE_H);
       state.yaw=Math.atan2(camera.position.x-firstTarget.x,camera.position.z-firstTarget.z);
       camera.rotation.set(0,state.yaw,0);
+      revealMapAroundPlayer();
       titleScreen.classList.remove("active");
       pauseScreen.classList.remove("active");
       resultScreen.classList.remove("active");
@@ -1586,6 +1784,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       const bob=prefersReducedMotion?0:Math.sin(state.elapsed*(wantsSprint?12:8))*Math.min(.045,moving*.009);
       camera.position.y=EYE_H+bob;
       camera.rotation.set(state.pitch,state.yaw,0);
+      revealMapAroundPlayer();
     }
 
     function updateCollectibles(dt,time) {
@@ -1671,10 +1870,28 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 
     function openGate(index) {
       const gate=state.gates[index];
-      if(!gate) return;
+      if(!gate||gate.open) return;
       gate.open=true;
       state.grid[gate.y][gate.x]=0;
+      if(Number.isInteger(gate.wallInstance)){
+        const hiddenMatrix=new THREE.Matrix4().makeScale(.001,.001,.001);
+        hiddenMatrix.setPosition(worldFromGrid(gate.x,gate.y,-WALL_H*2));
+        wallMesh.setMatrixAt(gate.wallInstance,hiddenMatrix);
+        wallMesh.instanceMatrix.needsUpdate=true;
+        gate.wallHidden=true;
+      }
       audio?.gate();
+    }
+
+    function gateWallVisible(gate) {
+      if(!wallMesh||!Number.isInteger(gate?.wallInstance)) return false;
+      const matrix=new THREE.Matrix4();
+      const position=new THREE.Vector3();
+      const rotation=new THREE.Quaternion();
+      const scale=new THREE.Vector3();
+      wallMesh.getMatrixAt(gate.wallInstance,matrix);
+      matrix.decompose(position,rotation,scale);
+      return Math.max(Math.abs(scale.x),Math.abs(scale.y),Math.abs(scale.z))>.1;
     }
 
     function awakenGuardian() {
@@ -1785,6 +2002,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       flash(.95,0xff2f16);
       burst(camera.position,0xff3218,38);
       camera.position.copy(worldFromGrid(state.sanctuary.x,state.sanctuary.y,EYE_H));
+      revealMapAroundPlayer();
       state.velocity.set(0,0,0);
       state.guardian.mode="search";
       state.guardian.lastSeen=null;
@@ -1800,6 +2018,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       }
       state.pulse-=PULSE_COST;
       state.guidance=4.5;
+      revealMapAroundPlayer(5);
       state.shake=Math.max(state.shake,.22);
       audio?.pulse();
       flash(.46,0xffc75a);
@@ -1931,6 +2150,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
       pulseBar.style.transform=`scaleX(${state.pulse/100})`;
       staminaBar.style.transform=`scaleX(${state.stamina/100})`;
       updateCompass();
+      drawMinimap();
     }
 
     function showPrompt(text,duration=900) {
@@ -2137,6 +2357,14 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
         guardian:state.guardian?{mode:state.guardian.mode,stunned:state.guardian.stunned,x:state.guardian.x,y:state.guardian.y}:null,
         player:gridFromWorld(camera.position.x,camera.position.z),
         gates:state.gates.map((gate)=>gate.open),
+        gateWalls:state.gates.map((gate)=>gateWallVisible(gate)),
+        minimap:{
+          explored:state.explored.size,
+          total:GRID*GRID,
+          playerVisible:isMapped(gridFromWorld(camera.position.x,camera.position.z)),
+          coreVisibility:state.cores.map((core)=>isMapped(core)),
+          exitVisible:isMapped(state.exit),
+        },
         won:state.won,
         audit:state.grid.length?graphAudit():null,
       };
@@ -2156,6 +2384,9 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
         teleportTo(kind,index=0){
           const target=kind==="core"?state.cores[index]:kind==="exit"?state.exit:kind==="guardian"?gridFromWorld(guardianGroup.position.x,guardianGroup.position.z):state.wells[index];
           camera.position.copy(worldFromGrid(target.x,target.y,EYE_H));
+          state.lastMapCell="";
+          revealMapAroundPlayer();
+          drawMinimap();
           return snapshot();
         },
         setPulse(value){state.pulse=value;},
