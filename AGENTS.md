@@ -19,7 +19,6 @@ If the client does not discover skills automatically, enumerate `.agents/skills/
 | `start-session` | Starting a new task on a branch created from latest `origin/main` |
 | `develop-game` | Adding or changing a game implementation |
 | `verify-changes` | Running scoped checks and the full PR validation gate |
-| `generate-ai-reviews` | Producing the required cross-model game reviews |
 | `create-pull-request` | Committing, pushing, and opening a compliant PR |
 | `address-pr-review-comments` | Triaging and resolving PR review feedback |
 | `frontend-design` | Designing or substantially restyling frontend UI |
