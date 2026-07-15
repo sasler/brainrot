@@ -136,7 +136,7 @@
     function buildLevel(index){
       const src=levels[index];level=src;player={x:src.spawn.x,y:src.spawn.y,r:13,angle:-Math.PI/2};
       echoes=[];guards=src.guards.map(g=>({path:g.path.map(clonePoint),speed:g.speed,x:g.path[0].x,y:g.path[0].y,index:1,alert:0,target:null}));
-      liveTrace=[{t:0,x:player.x,y:player.y}];liveActions=[];traceClock=0;loopTime=0;loopsUsed=0;alarmProgress=0;lostSight=0;alarmCount=0;artifactCollected=false;particles=[];shake=0;
+      liveTrace=[{t:0,x:player.x,y:player.y}];liveActions=[];traceClock=0;loopTime=0;loopsUsed=1;alarmProgress=0;lostSight=0;alarmCount=0;artifactCollected=false;particles=[];shake=0;
       updateDom();
     }
     function vaultUnlocked(){return sessionBest.campaign>=levels.length}
@@ -178,7 +178,7 @@
     function blockedPoint(p){return walls().some(w=>pointInRect(p,w,player.r+1))||p.x<35||p.x>W-35||p.y<60||p.y>H-30}
     function movePlayer(dt){
       let x=0,y=0;if(keys.has('KeyW')||keys.has('ArrowUp'))y--;if(keys.has('KeyS')||keys.has('ArrowDown'))y++;if(keys.has('KeyA')||keys.has('ArrowLeft'))x--;if(keys.has('KeyD')||keys.has('ArrowRight'))x++;if(!x&&!y)return;
-      const len=Math.hypot(x,y)||1;x/=len;y/=len;const speed=184;const old={x:player.x,y:player.y};player.x+=x*speed*dt;player.y+=y*speed*dt;let hit=false;if(blockedPoint(player)){player.x=old.x;hit=true}if(!hit){const testY={x:player.x,y:player.y};if(blockedPoint(testY)){player.y=old.y;hit=true}}player.angle=Math.atan2(y,x);traceClock+=dt;if(traceClock>.045){liveTrace.push({t:loopTime,x:player.x,y:player.y});traceClock=0}if(hit){if(Math.random()<.15)sound('move')}else if(Math.random()<.1)sound('move');
+      const len=Math.hypot(x,y)||1;x/=len;y/=len;const speed=184,dx=x*speed*dt,dy=y*speed*dt,old={x:player.x,y:player.y};const nextX={x:old.x+dx,y:old.y};if(!blockedPoint(nextX))player.x=nextX.x;const nextY={x:player.x,y:old.y+dy};if(!blockedPoint(nextY))player.y=nextY.y;const hit=player.x===old.x&&player.y===old.y;player.angle=Math.atan2(y,x);traceClock+=dt;if(traceClock>.045){liveTrace.push({t:loopTime,x:player.x,y:player.y});traceClock=0}if(hit){if(Math.random()<.15)sound('move')}else if(Math.random()<.1)sound('move');
     }
     function sampleTrace(trace,t){
       if(!trace.length)return{x:0,y:0};if(t<=trace[0].t)return trace[0];const last=trace[trace.length-1];if(t>=last.t)return last;let lo=0,hi=trace.length-1;while(lo<hi-1){const m=(lo+hi)>>1;if(trace[m].t<=t)lo=m;else hi=m}const a=trace[lo],b=trace[hi],q=(t-a.t)/Math.max(.001,b.t-a.t);return{x:a.x+(b.x-a.x)*q,y:a.y+(b.y-a.y)*q}
