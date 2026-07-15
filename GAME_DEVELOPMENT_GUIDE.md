@@ -82,6 +82,8 @@ These describe desired gameplay outcomes, not a mandatory effects recipe. Interp
 
 **Coastal Rush '86**: Polished retro pseudo-3D road rendering, a warm natural 1980s identity, responsive keyboard steering and speed control, traffic and off-road hazards, timed branching checkpoints, route forks, multiple endings, varied roadside scenery, and cohesive engine, music, and effect audio.
 
+**Clockwork Caper**: Deterministic time-loop stealth with readable guard vision, reliable echo replays, meaningful multi-echo coordination, recoverable alarm pressure, five progressively layered campaign rooms, an escalating score-attack vault, and a distinctive clockwork-heist audiovisual identity.
+
 ---
 
 ## Architecture
@@ -117,7 +119,9 @@ public/games/
 │   └── ...
 ├── tile-matching/
 │   └── ...
-└── space-invaders/
+├── space-invaders/
+│   └── ...
+└── clockwork-caper/
     └── ...
 ```
 
@@ -286,6 +290,16 @@ Add this to the `versions` array of the appropriate game.
 - Responsive keyboard steering, acceleration, and braking optimized for the 1280×720 desktop experience; touch controls are optional
 - Title screen, route map, checkpoint transitions, finish and game-over screens, and cohesive procedural Web Audio engine, music, and effects
 - Inspired branding only: do not use Sega, OutRun, Ferrari, Testarossa, logos, or badges
+
+### Clockwork Caper
+- Top-down stealth game built around repeatable 12-second timelines and manual rewind
+- Up to four persistent echoes that reproduce recorded movement and interactions deterministically
+- Echoes can operate pressure plates, levers, and noisemakers and can distract guards; only the live player can claim artifacts and exit
+- Guards and cameras use clearly rendered vision cones; live-player detection starts a short alarm window that can be canceled by breaking line of sight
+- Five authored campaign rooms that introduce doors, distractions, timed gates, cameras, beams, and a multi-echo finale
+- Campaign medals based on loop efficiency and alarms, followed by an unlockable timed score-attack vault with escalating security
+- Responsive keyboard movement and interaction, pause, manual rewind, mute, session results, and clear onboarding at 1280×720
+- Distinctive art direction and cohesive procedural Web Audio for footsteps, mechanisms, detection, rewind, scoring, music, completion, and failure
 
 ## Quality Expectations (CRITICAL)
 

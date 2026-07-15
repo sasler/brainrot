@@ -19,7 +19,8 @@ games/
 ├── maze-3d/               ← 🧭 3D Maze
 ├── mini-golf/             ← ⛳ Mini Golf 3D
 ├── tile-matching/         ← 💎 Tile Matching
-└── space-invaders/        ← 👾 Space Invaders
+├── space-invaders/        ← 👾 Space Invaders
+└── clockwork-caper/       ← 🕰️ Clockwork Caper
 ```
 
 ## Rules for Adding Games
