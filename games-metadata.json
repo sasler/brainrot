@@ -5247,6 +5247,47 @@
           ]
         }
       ]
+    },
+    {
+      "id": "clockwork-caper",
+      "name": "Clockwork Caper",
+      "description": "Stage perfect heists across a clockwork museum by recording echoes of your past actions, outsmarting guards, and escaping before the final chime.",
+      "icon": "🕰️",
+      "accentColor": "#c6a15b",
+      "versions": [
+        {
+          "model": "OpenAI GPT 5.6 Sol",
+          "modelId": "gpt-5-6-sol",
+          "date": "2026-07-15",
+          "linesOfCode": 2447,
+          "path": "/games/clockwork-caper/gpt-5-6-sol/index.html",
+          "features": [
+            "sound",
+            "particles"
+          ]
+        },
+        {
+          "model": "OpenAI GPT 5.6 Terra",
+          "modelId": "gpt-5-6-terra",
+          "date": "2026-07-15",
+          "linesOfCode": 147,
+          "path": "/games/clockwork-caper/gpt-5-6-terra/index.html",
+          "features": [
+            "sound"
+          ]
+        },
+        {
+          "model": "OpenAI GPT 5.6 Luna",
+          "modelId": "gpt-5-6-luna",
+          "date": "2026-07-15",
+          "linesOfCode": 289,
+          "path": "/games/clockwork-caper/gpt-5-6-luna/index.html",
+          "features": [
+            "sound",
+            "particles"
+          ]
+        }
+      ]
     }
   ],
   "modelReviews": [

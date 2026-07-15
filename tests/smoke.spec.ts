@@ -11,10 +11,10 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     // Tagline
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
-    // Arena section with 16 game cards
+    // Arena section with 17 game cards
     const arena = page.locator("#arena");
     const gameCards = arena.locator('a[href^="/games/"]');
-    await expect(gameCards).toHaveCount(16);
+    await expect(gameCards).toHaveCount(17);
 
     // Game card titles present in arena section
     await expect(
@@ -81,6 +81,11 @@ test.describe("BrainRot Games — Smoke Tests", () => {
         .locator('a[href="/games/coastal-rush-86"]')
         .getByRole("heading", { name: "Coastal Rush '86" }),
     ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/clockwork-caper"]')
+        .getByRole("heading", { name: "Clockwork Caper" }),
+    ).toBeVisible();
   });
 
   test("navbar has correct links", async ({ page }) => {
@@ -116,6 +121,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "sudoku",
       "outrun-racer",
       "coastal-rush-86",
+      "clockwork-caper",
     ];
 
     for (const game of games) {
@@ -128,6 +134,13 @@ test.describe("BrainRot Games — Smoke Tests", () => {
 
       if (["outrun-racer", "coastal-rush-86"].includes(game)) {
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.5", exact: true })).toBeVisible();
+        continue;
+      }
+
+      if (game === "clockwork-caper") {
+        await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Sol", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Terra", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Luna", exact: true })).toBeVisible();
         continue;
       }
 
@@ -163,7 +176,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.games).toHaveLength(16);
+    expect(data.games).toHaveLength(17);
     expect(data.games.map((g: { id: string }) => g.id)).toEqual([
       "snake",
       "minesweeper",
@@ -181,6 +194,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "sudoku",
       "outrun-racer",
       "coastal-rush-86",
+      "clockwork-caper",
     ]);
   });
 
