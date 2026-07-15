@@ -5,6 +5,7 @@ const IMPLEMENTATIONS: Array<{
   state: string;
   echoAttribute: string;
   startSelector?: string;
+  loopCounter?: string;
 }> = [
   { model: "gpt-5-6-sol", state: "body[data-screen]", echoAttribute: "data-echo" },
   {
@@ -18,6 +19,7 @@ const IMPLEMENTATIONS: Array<{
     state: "#app[data-screen]",
     echoAttribute: "data-echoes",
     startSelector: '[data-action="campaign"]',
+    loopCounter: "#hudLoops",
   },
 ];
 
@@ -55,6 +57,9 @@ test.describe("Clockwork Caper", () => {
         await page.keyboard.press("Enter");
       }
       await expect.poll(() => state.getAttribute("data-screen")).not.toBe("title");
+      if (implementation.loopCounter) {
+        await expect(frame.locator(implementation.loopCounter)).toHaveText("1 / 2");
+      }
 
       await canvas.click({ force: true, position: { x: 5, y: 5 } });
       await page.keyboard.press("ArrowRight", { delay: 300 });
@@ -62,6 +67,9 @@ test.describe("Clockwork Caper", () => {
       await expect
         .poll(async () => Number(await state.getAttribute(implementation.echoAttribute)))
         .toBeGreaterThanOrEqual(1);
+      if (implementation.loopCounter) {
+        await expect(frame.locator(implementation.loopCounter)).toHaveText("2 / 2");
+      }
 
       await page.keyboard.press("Escape");
       await expect(state).toHaveAttribute("data-screen", "paused");

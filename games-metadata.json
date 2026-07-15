@@ -5270,7 +5270,7 @@
           "model": "OpenAI GPT 5.6 Terra",
           "modelId": "gpt-5-6-terra",
           "date": "2026-07-15",
-          "linesOfCode": 146,
+          "linesOfCode": 147,
           "path": "/games/clockwork-caper/gpt-5-6-terra/index.html",
           "features": [
             "sound"
