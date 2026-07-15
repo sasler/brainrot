@@ -81,6 +81,7 @@
     state.run=0; state.loop++; state.levelLoops++; state.trace=[]; state.recordAt=0; state.alarm=0; state.unseen=0;
     const prior=state.echoes; const def=state.mode==='vault'?null:campaign[state.level]; const fresh=state.mode==='vault'?makeVault():makeWorld(def);
     if(state.mode==='vault'){ fresh.vaultSpots=state.world.vaultSpots; const old=state.world.artifacts[0]; fresh.artifacts[0].x=old.x; fresh.artifacts[0].y=old.y; applyVaultSecurity(fresh); }
+    for(const echo of prior)echo.actionIndex=0;
     state.world=fresh; state.echoes=prior; state.player={x:fresh.spawn[0],y:fresh.spawn[1],a:0}; state.flash=.35; state.message=reason==='alarm'?'TRACE BURNED':'ECHO COMMITTED';
   }
   function togglePause(){ if(state.screen!=='playing'&&state.screen!=='paused')return; if(state.screen==='paused'){state.paused=false;setScreen('playing','');tone('start');}else{state.paused=true;setScreen('paused',`<div class="panel"><p class="eyebrow">Clock stopped</p><h2>PAUSED</h2><p class="copy">The vault is waiting outside the second hand.</p><div class="buttons"><button data-start="${state.mode}">Resume</button><button class="secondary" data-next="restart">Restart</button><button class="secondary" data-next="menu">Menu</button></div></div>`);screen.querySelector('[data-start]').addEventListener('click',()=>{state.paused=false;setScreen('playing','');});screen.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>b.dataset.next==='menu'?menu():start(state.mode)));} }
