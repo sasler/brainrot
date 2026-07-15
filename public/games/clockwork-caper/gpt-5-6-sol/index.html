@@ -1,0 +1,2446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:,">
+  <title>Clockwork Caper — A Twelve-Second Robbery</title>
+  <style>
+    :root {
+      --lacquer: #080c11;
+      --ink: #101920;
+      --brass: #d4a447;
+      --ivory: #f1e5c3;
+      --mint: #65e5d2;
+      --danger: #ff5a52;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--lacquer);
+    }
+    body {
+      display: grid;
+      place-items: center;
+      color: var(--ivory);
+      font-family: "Avenir Next Condensed", "Arial Narrow", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 50% 45%, #17242b 0, #0a1016 48%, #05080c 100%);
+    }
+    #stage {
+      position: relative;
+      width: min(100vw, calc(100vh * 16 / 9));
+      height: min(100vh, calc(100vw * 9 / 16));
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #080c11;
+      box-shadow: 0 0 0 1px rgba(212,164,71,.35), 0 25px 80px rgba(0,0,0,.7);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+      cursor: default;
+      touch-action: none;
+    }
+    canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--brass); }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #stage { box-shadow: 0 0 0 1px rgba(212,164,71,.35); }
+    }
+  </style>
+</head>
+<body data-screen="title" data-mode="menu" data-level="none" data-echo="0" data-alarm="clear" data-alarm-ms="0">
+  <main id="stage" aria-label="Clockwork Caper game">
+    <canvas id="game" width="1280" height="720" tabindex="0"
+      aria-label="Clockwork Caper, a top-down time-loop stealth game. Use WASD or arrow keys to move, E or Space to interact, and R to rewind."></canvas>
+    <div id="gameState" class="sr-only" role="status" aria-live="polite">TITLE · MENU · NO ROOM · ECHOES 0/4 · ALARM CLEAR</div>
+  </main>
+  <script>
+  (() => {
+    "use strict";
+
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    const stateNode = document.getElementById("gameState");
+    const W = 1280;
+    const H = 720;
+    const WORLD_X = 80;
+    const WORLD_Y = 108;
+    const TILE = 56;
+    const WORLD_W = TILE * 20;
+    const WORLD_H = TILE * 10;
+    const STEP = 1 / 60;
+    const LOOP_TICKS = 720;
+    const ALARM_TICKS = 180;
+    const CLEAR_TICKS = 45;
+    const PLAYER_SPEED = 230 / 60;
+    const ECHO_LIMIT = 4;
+    const ROMAN = ["I", "II", "III", "IV"];
+    const TAU = Math.PI * 2;
+
+    const COLORS = {
+      lacquer: "#080c11",
+      ink: "#111a21",
+      slate: "#18242b",
+      ivory: "#f1e5c3",
+      brass: "#d4a447",
+      brassDark: "#6f5227",
+      mint: "#65e5d2",
+      mintDark: "#246d68",
+      oxblood: "#9f3039",
+      danger: "#ff5a52",
+      violet: "#a987f4",
+      blue: "#6cbdd4",
+      shadow: "rgba(0,0,0,.55)"
+    };
+
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+    const P = (x, y) => ({ x: WORLD_X + (x + .5) * TILE, y: WORLD_Y + (y + .5) * TILE });
+    const R = (x, y, w, h) => ({ x: WORLD_X + x * TILE, y: WORLD_Y + y * TILE, w: w * TILE, h: h * TILE });
+    const copyPoint = p => ({ x: p.x, y: p.y });
+    const formatTime = ticks => `${Math.max(0, ticks) / 60 < 10 ? "0" : ""}${(Math.max(0, ticks) / 60).toFixed(1)}`;
+    const formatScore = value => Math.floor(value).toString().padStart(7, "0");
+
+    let reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motionQuery = matchMedia("(prefers-reduced-motion: reduce)");
+    const onMotionChange = event => { reducedMotion = event.matches; };
+    if (motionQuery.addEventListener) motionQuery.addEventListener("change", onMotionChange);
+    else if (motionQuery.addListener) motionQuery.addListener(onMotionChange);
+
+    const Sound = {
+      context: null,
+      master: null,
+      music: null,
+      sfx: null,
+      muted: false,
+      nextMenuBeat: 0,
+
+      init() {
+        if (this.context) {
+          if (this.context.state === "suspended") this.context.resume().catch(() => {});
+          return;
+        }
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtor) return;
+        try {
+          const audio = new AudioCtor();
+          const master = audio.createGain();
+          const compressor = audio.createDynamicsCompressor();
+          const music = audio.createGain();
+          const sfx = audio.createGain();
+          master.gain.value = this.muted ? 0.0001 : .72;
+          music.gain.value = .28;
+          sfx.gain.value = .72;
+          music.connect(master);
+          sfx.connect(master);
+          master.connect(compressor);
+          compressor.threshold.value = -16;
+          compressor.knee.value = 18;
+          compressor.ratio.value = 5;
+          compressor.attack.value = .004;
+          compressor.release.value = .22;
+          compressor.connect(audio.destination);
+          this.context = audio;
+          this.master = master;
+          this.music = music;
+          this.sfx = sfx;
+          this.nextMenuBeat = performance.now();
+          if (audio.state === "suspended") audio.resume().catch(() => {});
+        } catch (_) {
+          this.context = null;
+        }
+      },
+
+      setMuted(value) {
+        this.muted = value;
+        if (this.master && this.context) {
+          this.master.gain.cancelScheduledValues(this.context.currentTime);
+          this.master.gain.setTargetAtTime(value ? .0001 : .72, this.context.currentTime, .025);
+        }
+      },
+
+      tone(freq, duration = .12, type = "sine", gain = .05, delay = 0, endFreq = freq, bus = "sfx") {
+        if (!this.context || this.muted) return;
+        const now = this.context.currentTime + delay;
+        const osc = this.context.createOscillator();
+        const amp = this.context.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(Math.max(20, freq), now);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration);
+        amp.gain.setValueAtTime(.0001, now);
+        amp.gain.exponentialRampToValueAtTime(Math.max(.0002, gain), now + Math.min(.018, duration * .25));
+        amp.gain.exponentialRampToValueAtTime(.0001, now + duration);
+        osc.connect(amp);
+        amp.connect(bus === "music" ? this.music : this.sfx);
+        osc.start(now);
+        osc.stop(now + duration + .03);
+      },
+
+      noise(duration = .08, gain = .025, delay = 0, highpass = 500, bus = "sfx") {
+        if (!this.context || this.muted) return;
+        const frames = Math.max(1, Math.floor(this.context.sampleRate * duration));
+        const buffer = this.context.createBuffer(1, frames, this.context.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
+        const source = this.context.createBufferSource();
+        const filter = this.context.createBiquadFilter();
+        const amp = this.context.createGain();
+        const now = this.context.currentTime + delay;
+        source.buffer = buffer;
+        filter.type = "highpass";
+        filter.frequency.value = highpass;
+        amp.gain.setValueAtTime(gain, now);
+        amp.gain.exponentialRampToValueAtTime(.0001, now + duration);
+        source.connect(filter);
+        filter.connect(amp);
+        amp.connect(bus === "music" ? this.music : this.sfx);
+        source.start(now);
+      },
+
+      chord(notes, duration = .35, gain = .045, type = "triangle", delay = 0) {
+        notes.forEach((note, i) => this.tone(note, duration, type, gain / Math.sqrt(notes.length), delay + i * .012, note * 1.002));
+      },
+
+      event(name) {
+        if (!this.context || this.muted) return;
+        switch (name) {
+          case "click":
+            this.tone(620, .045, "triangle", .025, 0, 520);
+            this.noise(.025, .015, 0, 1500);
+            break;
+          case "step":
+            this.noise(.035, .012, 0, 850);
+            this.tone(95, .04, "sine", .012, 0, 82);
+            break;
+          case "plate":
+            this.tone(165, .18, "triangle", .045, 0, 122);
+            this.tone(330, .08, "square", .02, .018, 280);
+            break;
+          case "lever":
+            [0, .05, .1].forEach((d, i) => this.tone(260 + i * 70, .055, "square", .025, d, 210 + i * 55));
+            this.tone(220, .25, "sawtooth", .035, .12, 520);
+            break;
+          case "gate":
+            this.noise(.22, .035, 0, 120);
+            this.tone(72, .34, "sawtooth", .05, 0, 116);
+            this.tone(108, .28, "triangle", .035, .08, 162);
+            break;
+          case "noise":
+            this.tone(760, .16, "sawtooth", .04, 0, 1060);
+            this.tone(540, .14, "triangle", .035, .17, 820);
+            this.tone(840, .1, "sine", .025, .34, 620);
+            break;
+          case "artifact":
+            [440, 554.37, 659.25, 880].forEach((n, i) => this.tone(n, .3, "sine", .04, i * .055, n * 1.5));
+            this.noise(.22, .018, .03, 2400);
+            break;
+          case "rewind":
+            this.noise(.5, .03, 0, 500);
+            this.tone(780, .48, "sawtooth", .045, 0, 92);
+            [0, .08, .14, .19, .23].forEach((d, i) => this.tone(880 - i * 95, .035, "square", .02, d));
+            break;
+          case "echo":
+            this.chord([523.25, 659.25, 783.99], .36, .045, "sine");
+            this.noise(.3, .012, 0, 2300);
+            break;
+          case "suspicion":
+            this.tone(185, .24, "sawtooth", .04, 0, 196);
+            this.tone(196, .24, "triangle", .03, .02, 185);
+            break;
+          case "alarm":
+            [0, .11, .22].forEach(d => this.chord([233, 247], .075, .055, "square", d));
+            break;
+          case "clear":
+            this.tone(280, .3, "triangle", .03, 0, 120);
+            this.noise(.18, .015, 0, 2200);
+            break;
+          case "failure":
+            this.chord([92.5, 97.99, 138.59], .75, .07, "sawtooth");
+            this.tone(180, .7, "square", .045, 0, 42);
+            break;
+          case "exit":
+            this.chord([261.63, 329.63, 392, 523.25], .62, .07, "triangle");
+            [659.25, 783.99].forEach((n, i) => this.tone(n, .26, "sine", .035, .15 + i * .07, n * 1.12));
+            break;
+          case "extract":
+            this.tone(1180, .08, "square", .04, 0, 920);
+            this.tone(590, .3, "triangle", .045, .07, 885);
+            this.chord([440, 554.37, 659.25], .42, .055, "sine", .12);
+            break;
+          case "security":
+            this.chord([110, 155.56, 207.65], .58, .055, "sawtooth");
+            [0, .12, .24].forEach(d => this.noise(.05, .025, d, 800));
+            break;
+          case "medal-gold":
+            this.chord([523.25, 659.25, 783.99, 1046.5], .72, .075, "sine");
+            break;
+          case "medal-silver":
+            this.chord([440, 554.37, 659.25], .62, .065, "triangle");
+            break;
+          case "medal-bronze":
+            this.chord([349.23, 440], .52, .06, "triangle");
+            break;
+          case "vault-over":
+            [196, 174.61, 155.56, 138.59, 123.47, 98].forEach((n, i) => this.tone(n, .42, "triangle", .042, i * .18, n * .98));
+            break;
+        }
+      },
+
+      alarmPulse(progress) {
+        const f = 220 + progress * 250;
+        this.tone(f, .18, "sawtooth", .028, 0, f * 1.12);
+        this.tone(f * 1.07, .18, "square", .018, 0, f * .96);
+      },
+
+      musicBeat(beat, intensity) {
+        if (!this.context || this.muted) return;
+        this.noise(.025, .009 + intensity * .002, 0, 2300, "music");
+        if (beat % 2 === 0) {
+          const bass = [82.41, 92.5, 73.42, 98][Math.floor(beat / 2) % 4];
+          this.tone(bass, .18, "triangle", .026 + intensity * .002, 0, bass * .92, "music");
+        }
+        if (beat % 4 === 2 && intensity >= 1) {
+          const notes = [329.63, 392, 311.13, 369.99];
+          const note = notes[Math.floor(beat / 4) % notes.length];
+          this.tone(note, .22, "sine", .018, 0, note * 1.005, "music");
+        }
+        if (beat % 8 === 0 && intensity >= 2) {
+          this.chord([164.81, 196, 246.94], .26, .026, "sawtooth");
+        }
+        if (beat % 4 === 0 && intensity >= 4) {
+          this.tone(740 + (beat % 3) * 90, .12, "triangle", .012, .04, 520, "music");
+        }
+      },
+
+      menuBeat(now) {
+        if (!this.context || this.muted || now < this.nextMenuBeat) return;
+        this.nextMenuBeat = now + 1000;
+        const beat = Math.floor(now / 1000) % 8;
+        this.tone([110, 123.47, 98, 146.83][beat % 4], .34, "triangle", .018, 0, 90, "music");
+        if (beat % 2 === 0) this.tone(440 + beat * 12, .25, "sine", .012, .08, 660, "music");
+        this.noise(.025, .008, 0, 2400, "music");
+      }
+    };
+
+    const THEMES = {
+      foyer: { floor: "#183036", seam: "#5e817c", accent: "#d7ad52", runner: "#224d50" },
+      gallery: { floor: "#241a20", seam: "#72505b", accent: "#c49843", runner: "#6f2631" },
+      counter: { floor: "#182924", seam: "#536f5f", accent: "#c58f3a", runner: "#273f35" },
+      prism: { floor: "#201d31", seam: "#62577d", accent: "#b6a05d", runner: "#433a66" },
+      meridian: { floor: "#131b20", seam: "#53636a", accent: "#dda948", runner: "#27363a" },
+      infinite: { floor: "#101f31", seam: "#41627f", accent: "#dfad4b", runner: "#173b59" }
+    };
+
+    const LEVELS = [
+      {
+        id: "brass-foyer",
+        name: "BRASS FOYER",
+        number: "ROOM I",
+        par: 2,
+        theme: THEMES.foyer,
+        artifactName: "THE SOLAR ESCAPEMENT",
+        objective: "Teach the room your path. Hold the brass plate with an echo, then take the escapement and leave.",
+        hint: echoes => echoes ? "The gate obeys every body in the loop — living or remembered." : "Stand on the brass dial, then press R. Your echo will keep its final pose.",
+        start: P(1.25, 5),
+        exit: P(18.1, 5),
+        artifact: P(15.7, 3.15),
+        walls: [
+          R(9.65, 0, .7, 4.25), R(9.65, 5.75, .7, 4.25),
+          R(3.5, 1.25, 2.2, .34), R(3.5, 8.4, 2.2, .34),
+          R(13.2, 1.35, .36, 1.8), R(13.2, 6.85, .36, 1.8)
+        ],
+        plates: [{ id: "sun", label: "I", ...P(5.15, 5), r: 25 }],
+        levers: [],
+        noisemakers: [],
+        gates: [{ id: "sun-gate", label: "SOL", rect: R(9.65, 4.25, .7, 1.5), plates: ["sun"], levers: [] }],
+        guards: [], cameras: [], lasers: []
+      },
+      {
+        id: "watch-gallery",
+        name: "WATCH GALLERY",
+        number: "ROOM II",
+        par: 2,
+        theme: THEMES.gallery,
+        artifactName: "THE SILENT TOURBILLON",
+        objective: "Record a gramophone lure. On the next loop, let your echo draw the curator away.",
+        hint: echoes => echoes ? "Move when the echo sounds the horn; guards pursue a remembered disturbance." : "Reach the gramophone horn and press E, then rewind.",
+        start: P(1.35, 8.15),
+        exit: P(18.15, 8.15),
+        artifact: P(17.05, 1.45),
+        walls: [
+          R(5.05, 0, .5, 5.45), R(5.05, 7.2, .5, 2.8),
+          R(8.0, 2.45, 2.2, 1.1), R(12.0, 5.0, 2.25, 1.15),
+          R(7.2, 8.4, 2.0, .42), R(15.1, 2.55, .42, 2.0)
+        ],
+        plates: [], levers: [],
+        noisemakers: [{ id: "gramophone", label: "HORN", ...P(2.5, 1.6), r: 34, hearing: 900 }],
+        gates: [],
+        guards: [{
+          id: "curator", ...P(10.4, 6.65), angle: 0,
+          route: [P(7.0, 6.65), P(16.2, 6.65)], speed: 1.55,
+          range: 285, fov: 1.08, hearing: 900, minTier: 0
+        }],
+        cameras: [], lasers: []
+      },
+      {
+        id: "counterweight-hall",
+        name: "COUNTERWEIGHT HALL",
+        number: "ROOM III",
+        par: 3,
+        theme: THEMES.counter,
+        artifactName: "THE GILDED PLUMB",
+        objective: "Conduct two timed cranks. Their echoes must open both counterweight gates in sequence.",
+        hint: echoes => echoes < 1 ? "Record the western crank first." : echoes < 2 ? "Follow echo I through, record the eastern crank, then rewind." : "Both cranks now replay. Run the center line on their cue.",
+        start: P(1.15, 5),
+        exit: P(18.15, 7.8),
+        artifact: P(16.35, 2.3),
+        walls: [
+          R(6.15, 0, .58, 4.2), R(6.15, 5.8, .58, 4.2),
+          R(13.15, 0, .58, 4.2), R(13.15, 5.8, .58, 4.2),
+          R(8.0, 1.35, 1.45, 1.45), R(10.2, 6.5, 1.45, 1.5),
+          R(15.2, 5.9, 1.35, .38)
+        ],
+        plates: [],
+        levers: [
+          { id: "weight-a", label: "A", ...P(2.75, 1.7), r: 35, duration: 650 },
+          { id: "weight-b", label: "B", ...P(9.55, 7.65), r: 35, duration: 190 }
+        ],
+        noisemakers: [],
+        gates: [
+          { id: "gate-a", label: "A", rect: R(6.15, 4.2, .58, 1.6), plates: [], levers: ["weight-a"] },
+          { id: "gate-b", label: "B", rect: R(13.15, 4.2, .58, 1.6), plates: [], levers: ["weight-b"] }
+        ],
+        guards: [{
+          id: "rigger", ...P(16.15, 5.0), angle: -Math.PI / 2,
+          route: [P(16.15, 3.2), P(17.6, 6.6)], speed: 1.35,
+          range: 225, fov: 1.0, hearing: 500, minTier: 0
+        }],
+        cameras: [], lasers: []
+      },
+      {
+        id: "prism-archive",
+        name: "PRISM ARCHIVE",
+        number: "ROOM IV",
+        par: 4,
+        theme: THEMES.prism,
+        artifactName: "THE VIOLET INDEX",
+        objective: "Record three prism levers. Thread their brief shutters while the archive eyes sweep.",
+        hint: echoes => echoes < 1 ? "The first lever is north-west; its shutter opens low." : echoes < 2 ? "Use lever I to reach the low eastern lever." : echoes < 3 ? "Meet lever II at the high shutter and record lever III." : "Follow the full three-beat sequence through the prisms.",
+        start: P(.95, 8.0),
+        exit: P(18.45, 8.3),
+        artifact: P(18.0, 3.65),
+        walls: [
+          R(5.0, 0, .52, 7.05), R(5.0, 8.5, .52, 1.5),
+          R(10.65, 0, .52, 1.45), R(10.65, 2.95, .52, 7.05),
+          R(16.0, 0, .52, 6.15), R(16.0, 7.65, .52, 2.35),
+          R(6.9, 4.2, 1.25, .35), R(12.15, 5.25, 1.25, .35)
+        ],
+        plates: [],
+        levers: [
+          { id: "prism-a", label: "α", ...P(2.4, 1.7), r: 35, duration: 660 },
+          { id: "prism-b", label: "β", ...P(7.65, 8.0), r: 35, duration: 125 },
+          { id: "prism-c", label: "γ", ...P(13.2, 1.75), r: 35, duration: 160 }
+        ],
+        noisemakers: [],
+        gates: [
+          { id: "prism-gate-a", label: "α", rect: R(5.0, 7.05, .52, 1.45), plates: [], levers: ["prism-a"] },
+          { id: "prism-gate-b", label: "β", rect: R(10.65, 1.45, .52, 1.5), plates: [], levers: ["prism-b"] },
+          { id: "prism-gate-c", label: "γ", rect: R(16.0, 6.15, .52, 1.5), plates: [], levers: ["prism-c"] }
+        ],
+        guards: [],
+        cameras: [
+          { id: "lens-a", ...P(7.15, 2.0), base: .35, sweep: 1.0, period: 245, phase: 15, range: 235, fov: .64, minTier: 0 },
+          { id: "lens-b", ...P(13.45, 7.15), base: Math.PI, sweep: 1.15, period: 205, phase: 70, range: 225, fov: .58, minTier: 0 }
+        ],
+        lasers: [
+          { id: "beam-a", ...P(9.1, 5.15), base: -.8, speed: .0105, range: 155, width: 9, minTier: 0 },
+          { id: "beam-b", ...P(14.55, 4.2), base: 2.3, speed: -.012, range: 145, width: 9, minTier: 0 }
+        ]
+      },
+      {
+        id: "meridian-vault",
+        name: "MERIDIAN VAULT",
+        number: "ROOM V",
+        par: 5,
+        theme: THEMES.meridian,
+        artifactName: "THE MERIDIAN CROWN",
+        objective: "Seat four echoes on the cardinal dials. Enter the heart on the fifth loop and steal the crown.",
+        hint: echoes => echoes < 4 ? `Commit a path ending on cardinal dial ${ROMAN[echoes]}. ${4 - echoes} memory slot${4 - echoes === 1 ? "" : "s"} remain.` : "All four dials remember you. The heart of the vault is open.",
+        start: P(9.5, 9.05),
+        exit: P(9.5, 8.25),
+        artifact: P(9.5, 4.55),
+        walls: [
+          R(7.15, 2.55, 5.7, .48),
+          R(7.15, 2.55, .48, 4.95), R(12.37, 2.55, .48, 4.95),
+          R(7.15, 7.02, 2.05, .48), R(10.8, 7.02, 2.05, .48),
+          R(1.0, 4.55, 2.1, .38), R(16.9, 4.55, 2.1, .38)
+        ],
+        plates: [
+          { id: "north-west", label: "I", ...P(2.7, 1.55), r: 25 },
+          { id: "north-east", label: "II", ...P(16.3, 1.55), r: 25 },
+          { id: "south-west", label: "III", ...P(2.7, 8.05), r: 25 },
+          { id: "south-east", label: "IV", ...P(16.3, 8.05), r: 25 }
+        ],
+        levers: [],
+        noisemakers: [
+          { id: "west-chime", label: "W", ...P(5.2, 5.6), r: 32, hearing: 700 },
+          { id: "east-chime", label: "E", ...P(13.8, 5.6), r: 32, hearing: 700 }
+        ],
+        gates: [{
+          id: "heart-gate", label: "IV", rect: R(9.2, 7.02, 1.6, .48),
+          plates: ["north-west", "north-east", "south-west", "south-east"], levers: []
+        }],
+        guards: [
+          { id: "meridian-one", ...P(5.0, 2.0), angle: 0, route: [P(4.2, 2.0), P(14.8, 2.0)], speed: 1.4, range: 245, fov: .98, hearing: 700, minTier: 0 },
+          { id: "meridian-two", ...P(14.0, 8.0), angle: Math.PI, route: [P(14.8, 8.0), P(4.2, 8.0)], speed: 1.35, range: 230, fov: 1.02, hearing: 700, minTier: 0 }
+        ],
+        cameras: [
+          { id: "crown-eye", ...P(9.5, 3.25), base: Math.PI / 2, sweep: .8, period: 250, phase: 0, range: 205, fov: .6, minTier: 0 }
+        ],
+        lasers: []
+      }
+    ];
+
+    const VAULT_LEVEL = {
+      id: "infinite-vault",
+      name: "INFINITE VAULT",
+      number: "SCORE ATTACK",
+      par: 0,
+      theme: THEMES.infinite,
+      objective: "Extract the rotating target. Clean work builds the multiplier; every alarm shatters it.",
+      hint: echoes => echoes ? "Retained echoes can hold the west and east dials while the target rotates." : "Artifacts rotate between galleries. Record a plate-holder when a shutter blocks the route.",
+      start: P(9.5, 8.65),
+      exit: null,
+      artifact: null,
+      walls: [
+        R(5.8, 0, .55, 3.75), R(5.8, 5.25, .55, 4.75),
+        R(13.65, 0, .55, 3.75), R(13.65, 5.25, .55, 4.75),
+        R(8.5, 3.3, 3.0, .38), R(8.5, 6.8, 3.0, .38),
+        R(1.4, 2.0, 1.4, .38), R(17.2, 7.55, 1.4, .38)
+      ],
+      plates: [
+        { id: "west", label: "W", ...P(8.0, 6.0), r: 25 },
+        { id: "east", label: "E", ...P(11.0, 6.0), r: 25 }
+      ],
+      levers: [],
+      noisemakers: [
+        { id: "vault-horn", label: "H", ...P(9.5, 2.25), r: 32, hearing: 850 },
+        { id: "ledger-bell", label: "B", ...P(2.35, 8.15), r: 32, hearing: 700 }
+      ],
+      gates: [
+        { id: "west-shutter", label: "W", rect: R(5.8, 3.75, .55, 1.5), plates: ["west"], levers: [] },
+        { id: "east-shutter", label: "E", rect: R(13.65, 3.75, .55, 1.5), plates: ["east"], levers: [] }
+      ],
+      targets: [
+        { id: "astral", name: "ASTRAL PINION", ...P(9.5, 1.2) },
+        { id: "west", name: "WESTERN RUBY", ...P(2.75, 4.15) },
+        { id: "east", name: "EASTERN PEARL", ...P(16.25, 4.15) },
+        { id: "ledger", name: "LEDGER KEY", ...P(9.5, 5.0) }
+      ],
+      guards: [
+        { id: "vault-chief", ...P(9.5, 4.9), angle: 0, route: [P(7.1, 4.9), P(11.9, 4.9)], speed: 1.45, range: 240, fov: 1.0, hearing: 850, minTier: 0 },
+        { id: "west-warden", ...P(3.0, 6.4), angle: -Math.PI / 2, route: [P(3.0, 7.4), P(3.0, 1.7)], speed: 1.38, range: 225, fov: .96, hearing: 650, minTier: 1 },
+        { id: "east-warden", ...P(16.0, 2.0), angle: Math.PI / 2, route: [P(16.0, 1.7), P(16.0, 7.5)], speed: 1.42, range: 230, fov: 1.0, hearing: 650, minTier: 2 },
+        { id: "relief", ...P(9.5, 8.0), angle: Math.PI, route: [P(7.0, 8.0), P(12.0, 8.0)], speed: 1.52, range: 215, fov: 1.05, hearing: 600, minTier: 4 }
+      ],
+      cameras: [
+        { id: "vault-eye-a", ...P(7.3, 1.35), base: .7, sweep: 1.0, period: 235, phase: 20, range: 220, fov: .62, minTier: 1 },
+        { id: "vault-eye-b", ...P(11.7, 7.85), base: -2.3, sweep: 1.1, period: 195, phase: 60, range: 225, fov: .58, minTier: 3 }
+      ],
+      lasers: [
+        { id: "vault-beam-a", ...P(9.5, 3.75), base: 0, speed: .0085, range: 175, width: 9, minTier: 2 },
+        { id: "vault-beam-b", ...P(9.5, 6.55), base: Math.PI, speed: -.011, range: 165, width: 9, minTier: 5 }
+      ]
+    };
+
+    const state = {
+      screen: "title",
+      mode: "menu",
+      levelIndex: 0,
+      def: null,
+      world: null,
+      player: null,
+      loopTick: 0,
+      loopsUsed: 1,
+      echoes: [],
+      trace: [],
+      nextEchoId: 1,
+      alarms: 0,
+      alarm: { active: false, age: 0, unseen: 0 },
+      failureNotice: 0,
+      keys: Object.create(null),
+      pendingInteract: false,
+      pendingRewind: false,
+      actionThisTick: null,
+      prompt: null,
+      artifactHeld: false,
+      introTicks: 0,
+      rewindFx: 0,
+      shake: 0,
+      flash: 0,
+      banner: null,
+      bannerTicks: 0,
+      pauseReason: "PAUSED",
+      particles: [],
+      result: null,
+      vault: null,
+      vaultResult: null,
+      session: {
+        medals: [null, null, null, null, null],
+        bestLoops: [Infinity, Infinity, Infinity, Infinity, Infinity],
+        bestAlarms: [Infinity, Infinity, Infinity, Infinity, Infinity],
+        unlockedLevel: 0,
+        vaultUnlocked: false,
+        vaultBest: 0,
+        vaultBestExtractions: 0
+      }
+    };
+
+    const mouse = { x: -100, y: -100, down: false };
+    const UI = { buttons: [] };
+    let lastStateText = "";
+    let lastTime = performance.now();
+    let accumulator = 0;
+
+    function syncDomState(force = false) {
+      const level = state.def ? state.def.id : "none";
+      const alarmStatus = state.alarm.active ? "active" : state.failureNotice > 0 ? "failed" : "clear";
+      const alarmMs = state.alarm.active ? Math.max(0, Math.round((ALARM_TICKS - state.alarm.age) * 1000 / 60)) : 0;
+      const body = document.body;
+      body.dataset.screen = state.screen;
+      body.dataset.mode = state.mode;
+      body.dataset.level = level;
+      body.dataset.echo = String(state.echoes.length);
+      body.dataset.alarm = alarmStatus;
+      body.dataset.alarmMs = String(alarmMs);
+      const room = state.def ? state.def.name : "NO ROOM";
+      const text = `${state.screen.replaceAll("-", " ").toUpperCase()} · ${state.mode.toUpperCase()} · ${room} · ECHOES ${state.echoes.length}/4 · ALARM ${alarmStatus === "active" ? `${(alarmMs / 1000).toFixed(1)}s` : alarmStatus.toUpperCase()}`;
+      if (force || text !== lastStateText) {
+        stateNode.textContent = text;
+        lastStateText = text;
+      }
+    }
+
+    function makeWorld(def) {
+      const tier = state.mode === "infinite" && state.vault ? state.vault.securityTier : 0;
+      const world = {
+        walls: def.walls.map(rect => ({ ...rect })),
+        gates: def.gates.map(gate => ({ ...gate, rect: { ...gate.rect }, open: false, wasOpen: false, visualOpen: 0 })),
+        levers: def.levers.map(lever => ({ ...lever, activeUntil: -1 })),
+        noisemakers: def.noisemakers.map(item => ({ ...item, lastTrigger: -9999 })),
+        plateStates: Object.fromEntries(def.plates.map(plate => [plate.id, false])),
+        lastPlateStates: Object.fromEntries(def.plates.map(plate => [plate.id, false])),
+        guards: [],
+        cameras: [],
+        lasers: [],
+        noises: [],
+        detectorLive: false
+      };
+      addSecurityEntities(world, tier);
+      return world;
+    }
+
+    function addSecurityEntities(world, tier) {
+      const guardIds = new Set(world.guards.map(item => item.id));
+      const cameraIds = new Set(world.cameras.map(item => item.id));
+      const laserIds = new Set(world.lasers.map(item => item.id));
+      for (const source of state.def.guards) {
+        if ((source.minTier || 0) > tier || guardIds.has(source.id)) continue;
+        world.guards.push({
+          ...source,
+          route: source.route.map(copyPoint),
+          routeIndex: 0,
+          mode: "patrol",
+          target: copyPoint(source.route[0]),
+          investigateUntil: 0,
+          lastEchoNotice: -9999,
+          seesLive: false,
+          seesEcho: false
+        });
+      }
+      for (const source of state.def.cameras) {
+        if ((source.minTier || 0) <= tier && !cameraIds.has(source.id)) {
+          world.cameras.push({ ...source, seesLive: false, seesEcho: false });
+        }
+      }
+      for (const source of state.def.lasers) {
+        if ((source.minTier || 0) <= tier && !laserIds.has(source.id)) {
+          world.lasers.push({ ...source, seesLive: false, seesEcho: false });
+        }
+      }
+    }
+
+    function resetLoop(reason = "reset") {
+      state.world = makeWorld(state.def);
+      state.player = {
+        x: state.def.start.x,
+        y: state.def.start.y,
+        angle: -Math.PI / 2,
+        r: 13,
+        moving: false
+      };
+      state.loopTick = 0;
+      state.trace = [];
+      state.artifactHeld = false;
+      state.alarm = { active: false, age: 0, unseen: 0 };
+      state.actionThisTick = null;
+      state.pendingInteract = false;
+      state.pendingRewind = false;
+      state.prompt = null;
+      clearKeys();
+      if (reason !== "start") {
+        state.rewindFx = reducedMotion ? 8 : 34;
+        state.banner = reason === "failure" ? "TRACE DISCARDED · OLDER ECHOES PRESERVED" : "THE CLOCK REMEMBERS";
+        state.bannerTicks = reason === "failure" ? 90 : 58;
+      }
+      syncDomState(true);
+    }
+
+    function startCampaign(index = 0) {
+      Sound.init();
+      state.mode = "campaign";
+      state.vault = null;
+      startLevel(clamp(index, 0, LEVELS.length - 1));
+    }
+
+    function startLevel(index) {
+      state.levelIndex = index;
+      state.def = LEVELS[index];
+      state.screen = "playing";
+      state.echoes = [];
+      state.nextEchoId = 1;
+      state.loopsUsed = 1;
+      state.alarms = 0;
+      state.failureNotice = 0;
+      state.introTicks = 210;
+      state.banner = null;
+      state.bannerTicks = 0;
+      state.particles = [];
+      state.result = null;
+      resetLoop("start");
+      canvas.focus();
+    }
+
+    function startInfinite() {
+      if (!state.session.vaultUnlocked) {
+        Sound.event("click");
+        return;
+      }
+      Sound.init();
+      state.mode = "infinite";
+      state.levelIndex = -1;
+      state.def = VAULT_LEVEL;
+      state.screen = "playing";
+      state.echoes = [];
+      state.nextEchoId = 1;
+      state.loopsUsed = 1;
+      state.alarms = 0;
+      state.failureNotice = 0;
+      state.introTicks = 180;
+      state.banner = "90 SECONDS ON THE MASTER CLOCK";
+      state.bannerTicks = 150;
+      state.particles = [];
+      state.result = null;
+      state.vaultResult = null;
+      state.vault = {
+        ticks: 90 * 60,
+        score: 0,
+        extractions: 0,
+        multiplier: 1,
+        peakMultiplier: 1,
+        clean: true,
+        securityTier: 0,
+        targetIndex: 0,
+        lastAward: 0,
+        lastClean: true
+      };
+      resetLoop("start");
+      canvas.focus();
+    }
+
+    function quitToTitle() {
+      clearKeys();
+      state.screen = "title";
+      state.mode = "menu";
+      state.def = null;
+      state.world = null;
+      state.player = null;
+      state.echoes = [];
+      state.trace = [];
+      state.vault = null;
+      state.result = null;
+      state.alarm = { active: false, age: 0, unseen: 0 };
+      state.failureNotice = 0;
+      syncDomState(true);
+    }
+
+    function restartCurrent() {
+      if (state.mode === "infinite") startInfinite();
+      else startLevel(state.levelIndex);
+    }
+
+    function currentPose() {
+      return {
+        x: state.player.x,
+        y: state.player.y,
+        angle: state.player.angle,
+        moving: state.player.moving,
+        action: state.actionThisTick ? { ...state.actionThisTick } : null
+      };
+    }
+
+    function commitTrace(reason) {
+      if (state.screen !== "playing") return;
+      if (!state.trace.length) state.trace.push(currentPose());
+      state.echoes.push({ id: state.nextEchoId++, frames: state.trace.map(frame => ({ ...frame, action: frame.action ? { ...frame.action } : null })) });
+      if (state.echoes.length > ECHO_LIMIT) state.echoes.shift();
+      state.loopsUsed++;
+      Sound.event("rewind");
+      Sound.event("echo");
+      resetLoop(reason === "natural" ? "natural" : "manual");
+    }
+
+    function discardTrace() {
+      state.loopsUsed++;
+      Sound.event("failure");
+      state.failureNotice = 68;
+      state.shake = reducedMotion ? 0 : 24;
+      resetLoop("failure");
+      state.failureNotice = 68;
+      syncDomState(true);
+    }
+
+    function clearKeys() {
+      for (const key of Object.keys(state.keys)) state.keys[key] = false;
+    }
+
+    function circleHitsRect(x, y, radius, rect) {
+      const nearX = clamp(x, rect.x, rect.x + rect.w);
+      const nearY = clamp(y, rect.y, rect.y + rect.h);
+      const dx = x - nearX;
+      const dy = y - nearY;
+      return dx * dx + dy * dy < radius * radius;
+    }
+
+    function isBlocked(x, y, radius, ignoreGate = null) {
+      if (x - radius < WORLD_X + 7 || x + radius > WORLD_X + WORLD_W - 7 ||
+          y - radius < WORLD_Y + 7 || y + radius > WORLD_Y + WORLD_H - 7) return true;
+      for (const wall of state.world.walls) if (circleHitsRect(x, y, radius, wall)) return true;
+      for (const gate of state.world.gates) {
+        if (gate.id !== ignoreGate && !gate.open && circleHitsRect(x, y, radius, gate.rect)) return true;
+      }
+      return false;
+    }
+
+    function moveWithCollision(actor, dx, dy, radius) {
+      if (!isBlocked(actor.x + dx, actor.y, radius)) actor.x += dx;
+      if (!isBlocked(actor.x, actor.y + dy, radius)) actor.y += dy;
+    }
+
+    function segmentHitsRect(x1, y1, x2, y2, rect) {
+      let t0 = 0;
+      let t1 = 1;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const checks = [
+        [-dx, x1 - rect.x], [dx, rect.x + rect.w - x1],
+        [-dy, y1 - rect.y], [dy, rect.y + rect.h - y1]
+      ];
+      for (const [p, q] of checks) {
+        if (p === 0 && q < 0) return false;
+        if (p !== 0) {
+          const t = q / p;
+          if (p < 0) {
+            if (t > t1) return false;
+            if (t > t0) t0 = t;
+          } else {
+            if (t < t0) return false;
+            if (t < t1) t1 = t;
+          }
+        }
+      }
+      return true;
+    }
+
+    function lineBlocked(x1, y1, x2, y2) {
+      for (const wall of state.world.walls) if (segmentHitsRect(x1, y1, x2, y2, wall)) return true;
+      for (const gate of state.world.gates) {
+        if (!gate.open && segmentHitsRect(x1, y1, x2, y2, gate.rect)) return true;
+      }
+      return false;
+    }
+
+    function movePlayer() {
+      let dx = 0;
+      let dy = 0;
+      if (state.keys.KeyA || state.keys.ArrowLeft) dx--;
+      if (state.keys.KeyD || state.keys.ArrowRight) dx++;
+      if (state.keys.KeyW || state.keys.ArrowUp) dy--;
+      if (state.keys.KeyS || state.keys.ArrowDown) dy++;
+      if (dx || dy) {
+        const length = Math.hypot(dx, dy);
+        dx = dx / length * PLAYER_SPEED;
+        dy = dy / length * PLAYER_SPEED;
+        state.player.angle = Math.atan2(dy, dx);
+        state.player.moving = true;
+        moveWithCollision(state.player, dx, dy, state.player.r);
+        if (state.loopTick % 18 === 0) Sound.event("step");
+      } else {
+        state.player.moving = false;
+      }
+    }
+
+    function getEchoActors() {
+      return state.echoes.map((echo, index) => {
+        const frame = echo.frames[Math.min(state.loopTick, echo.frames.length - 1)] || echo.frames[0];
+        return {
+          id: echo.id,
+          index,
+          x: frame.x,
+          y: frame.y,
+          angle: frame.angle,
+          moving: frame.moving,
+          frame,
+          trace: echo
+        };
+      });
+    }
+
+    function resolvePlates(actors) {
+      for (const plate of state.def.plates) {
+        const active = actors.some(actor => Math.hypot(actor.x - plate.x, actor.y - plate.y) <= plate.r + 13);
+        state.world.plateStates[plate.id] = active;
+        if (active && !state.world.lastPlateStates[plate.id]) {
+          Sound.event("plate");
+          spawnParticles(plate.x, plate.y, COLORS.brass, 8);
+        }
+        state.world.lastPlateStates[plate.id] = active;
+      }
+    }
+
+    function leverActive(id) {
+      const lever = state.world.levers.find(item => item.id === id);
+      return !!lever && lever.activeUntil >= state.loopTick;
+    }
+
+    function resolveGates() {
+      for (const gate of state.world.gates) {
+        const condition = gate.plates.every(id => state.world.plateStates[id]) && gate.levers.every(leverActive);
+        gate.open = condition;
+        if (!condition && circleHitsRect(state.player.x, state.player.y, state.player.r + 2, gate.rect)) gate.open = true;
+        if (gate.open && !gate.wasOpen) {
+          Sound.event("gate");
+          spawnParticles(gate.rect.x + gate.rect.w / 2, gate.rect.y + gate.rect.h / 2, COLORS.brass, 12);
+        }
+        gate.wasOpen = gate.open;
+        gate.visualOpen = reducedMotion ? (gate.open ? 1 : 0) : lerp(gate.visualOpen, gate.open ? 1 : 0, .18);
+      }
+    }
+
+    function applyMechanismAction(action, fromEcho) {
+      if (!action) return;
+      if (action.type === "lever") {
+        const lever = state.world.levers.find(item => item.id === action.id);
+        if (!lever) return;
+        const wasActive = lever.activeUntil >= state.loopTick;
+        lever.activeUntil = Math.max(lever.activeUntil, state.loopTick + lever.duration);
+        if (!wasActive) {
+          Sound.event("lever");
+          spawnParticles(lever.x, lever.y, fromEcho ? COLORS.mint : COLORS.brass, 10);
+        }
+      } else if (action.type === "noise") {
+        const item = state.world.noisemakers.find(noise => noise.id === action.id);
+        if (!item || state.loopTick - item.lastTrigger < 30) return;
+        item.lastTrigger = state.loopTick;
+        state.world.noises.push({ id: `${action.id}-${state.loopTick}`, x: item.x, y: item.y, hearing: item.hearing, born: state.loopTick, expires: state.loopTick + 150 });
+        Sound.event("noise");
+        spawnParticles(item.x, item.y, fromEcho ? COLORS.mint : COLORS.brass, 12);
+      }
+    }
+
+    function nearestInteraction() {
+      const choices = [];
+      for (const lever of state.world.levers) choices.push({ type: "lever", id: lever.id, label: `TURN CRANK ${lever.label}`, x: lever.x, y: lever.y, range: 48 });
+      for (const item of state.world.noisemakers) choices.push({ type: "noise", id: item.id, label: `SOUND ${item.label}`, x: item.x, y: item.y, range: 48 });
+      if (state.mode === "campaign" && !state.artifactHeld && state.def.artifact) {
+        choices.push({ type: "artifact", label: `TAKE ${state.def.artifactName}`, x: state.def.artifact.x, y: state.def.artifact.y, range: 46 });
+      }
+      if (state.mode === "campaign" && state.def.exit) {
+        choices.push({ type: "exit", label: state.artifactHeld ? "EXIT THE ROOM" : "EXIT LOCKED · FIND THE ARTIFACT", x: state.def.exit.x, y: state.def.exit.y, range: 52 });
+      }
+      if (state.mode === "infinite" && state.vault) {
+        const target = state.def.targets[state.vault.targetIndex];
+        choices.push({ type: "extract", label: `EXTRACT ${target.name}`, x: target.x, y: target.y, range: 48 });
+      }
+      choices.forEach(choice => { choice.distance = Math.hypot(state.player.x - choice.x, state.player.y - choice.y); });
+      choices.sort((a, b) => a.distance - b.distance);
+      const nearest = choices[0];
+      return nearest && nearest.distance <= nearest.range ? nearest : null;
+    }
+
+    function interactLive() {
+      const choice = nearestInteraction();
+      if (!choice) return false;
+      if (choice.type === "lever" || choice.type === "noise") {
+        const action = { type: choice.type, id: choice.id };
+        applyMechanismAction(action, false);
+        state.actionThisTick = action;
+      } else if (choice.type === "artifact") {
+        state.artifactHeld = true;
+        state.banner = `${state.def.artifactName} SECURED`;
+        state.bannerTicks = 100;
+        state.flash = reducedMotion ? 5 : 16;
+        Sound.event("artifact");
+        spawnParticles(choice.x, choice.y, COLORS.ivory, 28);
+      } else if (choice.type === "exit") {
+        if (!state.artifactHeld) {
+          Sound.event("click");
+          state.banner = "THE KEYHOLE REFUSES YOU";
+          state.bannerTicks = 60;
+        } else {
+          completeLevel();
+          return true;
+        }
+      } else if (choice.type === "extract") {
+        extractVault();
+      }
+      return false;
+    }
+
+    function observerSees(observer, actor, angle, range, fov) {
+      const dx = actor.x - observer.x;
+      const dy = actor.y - observer.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance > range || distance < 1) return false;
+      const delta = Math.atan2(Math.sin(Math.atan2(dy, dx) - angle), Math.cos(Math.atan2(dy, dx) - angle));
+      if (Math.abs(delta) > fov / 2) return false;
+      return !lineBlocked(observer.x, observer.y, actor.x, actor.y);
+    }
+
+    function pointSegmentDistance(px, py, x1, y1, x2, y2) {
+      const vx = x2 - x1;
+      const vy = y2 - y1;
+      const length2 = vx * vx + vy * vy;
+      if (!length2) return Math.hypot(px - x1, py - y1);
+      const t = clamp(((px - x1) * vx + (py - y1) * vy) / length2, 0, 1);
+      return Math.hypot(px - (x1 + vx * t), py - (y1 + vy * t));
+    }
+
+    function cameraAngle(camera) {
+      return camera.base + camera.sweep * Math.sin(TAU * (state.loopTick + camera.phase) / camera.period);
+    }
+
+    function laserAngle(laser) {
+      return laser.base + state.loopTick * laser.speed;
+    }
+
+    function moveGuardToward(guard, target, speed) {
+      const dx = target.x - guard.x;
+      const dy = target.y - guard.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance < 2) return true;
+      guard.angle = Math.atan2(dy, dx);
+      const amount = Math.min(speed, distance);
+      moveWithCollision(guard, dx / distance * amount, dy / distance * amount, 12);
+      return distance <= speed + 2;
+    }
+
+    function updateSecurity(echoActors) {
+      let liveSeen = false;
+      const tier = state.mode === "infinite" && state.vault ? state.vault.securityTier : 0;
+      state.world.noises = state.world.noises.filter(noise => noise.expires >= state.loopTick);
+
+      for (const guard of state.world.guards) {
+        guard.seesLive = observerSees(guard, state.player, guard.angle, guard.range, guard.fov);
+        guard.seesEcho = false;
+        let seenEcho = null;
+        if (!guard.seesLive) {
+          for (const echo of echoActors) {
+            if (observerSees(guard, echo, guard.angle, guard.range, guard.fov)) {
+              seenEcho = echo;
+              guard.seesEcho = true;
+              break;
+            }
+          }
+        }
+        if (guard.seesLive) {
+          liveSeen = true;
+          guard.mode = "chase";
+          guard.target = copyPoint(state.player);
+          guard.investigateUntil = state.loopTick + 90;
+        } else {
+          const audible = [...state.world.noises].reverse().find(noise => Math.hypot(noise.x - guard.x, noise.y - guard.y) <= Math.min(noise.hearing, guard.hearing));
+          if (audible) {
+            guard.mode = "investigate";
+            guard.target = { x: audible.x, y: audible.y };
+            guard.investigateUntil = state.loopTick + 150;
+          } else if (seenEcho) {
+            guard.mode = "investigate";
+            guard.target = { x: seenEcho.x, y: seenEcho.y };
+            guard.investigateUntil = state.loopTick + 105;
+            if (state.loopTick - guard.lastEchoNotice > 90) {
+              Sound.event("suspicion");
+              guard.lastEchoNotice = state.loopTick;
+            }
+          } else if (guard.mode === "chase" && state.loopTick < guard.investigateUntil) {
+            guard.mode = "investigate";
+          } else if (guard.mode === "investigate" && state.loopTick >= guard.investigateUntil) {
+            guard.mode = "patrol";
+          }
+        }
+
+        const speed = guard.speed * (1 + Math.min(.5, tier * .07)) * (guard.mode === "chase" ? 1.35 : 1);
+        if (guard.mode === "patrol") {
+          const target = guard.route[guard.routeIndex];
+          if (moveGuardToward(guard, target, speed)) guard.routeIndex = (guard.routeIndex + 1) % guard.route.length;
+        } else if (guard.target) {
+          moveGuardToward(guard, guard.target, speed);
+        }
+      }
+
+      for (const camera of state.world.cameras) {
+        const angle = cameraAngle(camera);
+        camera.seesLive = observerSees(camera, state.player, angle, camera.range, camera.fov);
+        camera.seesEcho = echoActors.some(echo => observerSees(camera, echo, angle, camera.range, camera.fov));
+        if (camera.seesLive) liveSeen = true;
+      }
+
+      for (const laser of state.world.lasers) {
+        const angle = laserAngle(laser);
+        const endX = laser.x + Math.cos(angle) * laser.range;
+        const endY = laser.y + Math.sin(angle) * laser.range;
+        laser.seesLive = !lineBlocked(laser.x, laser.y, state.player.x, state.player.y) &&
+          pointSegmentDistance(state.player.x, state.player.y, laser.x, laser.y, endX, endY) <= laser.width + state.player.r;
+        laser.seesEcho = echoActors.some(echo => !lineBlocked(laser.x, laser.y, echo.x, echo.y) &&
+          pointSegmentDistance(echo.x, echo.y, laser.x, laser.y, endX, endY) <= laser.width + 11);
+        if (laser.seesLive) liveSeen = true;
+      }
+      state.world.detectorLive = liveSeen;
+      return liveSeen;
+    }
+
+    function beginAlarm() {
+      state.alarm.active = true;
+      state.alarm.age = 0;
+      state.alarm.unseen = 0;
+      state.alarms++;
+      Sound.event("alarm");
+      state.banner = "LIVE EYES ON YOU · BREAK SIGHT FOR 0.75s";
+      state.bannerTicks = 90;
+      state.shake = reducedMotion ? 0 : 8;
+      if (state.mode === "infinite" && state.vault) {
+        state.vault.multiplier = 1;
+        state.vault.clean = false;
+      }
+    }
+
+    function updateAlarm(seen) {
+      if (!state.alarm.active && seen) beginAlarm();
+      if (!state.alarm.active) return false;
+      state.alarm.age++;
+      if (seen) state.alarm.unseen = 0;
+      else state.alarm.unseen++;
+      if (state.alarm.age % 30 === 0) Sound.alarmPulse(state.alarm.age / ALARM_TICKS);
+      if (state.alarm.unseen >= CLEAR_TICKS) {
+        state.alarm = { active: false, age: 0, unseen: 0 };
+        Sound.event("clear");
+        state.banner = "LINE OF SIGHT BROKEN · ALARM CANCELED";
+        state.bannerTicks = 75;
+        syncDomState(true);
+        return false;
+      }
+      if (state.alarm.age >= ALARM_TICKS) {
+        discardTrace();
+        return true;
+      }
+      return false;
+    }
+
+    function medalFor(par, loops, alarms) {
+      if (alarms === 0 && loops <= par) return "gold";
+      if (alarms <= 1 && loops <= par + 1) return "silver";
+      return "bronze";
+    }
+
+    function medalRank(medal) {
+      return medal === "gold" ? 3 : medal === "silver" ? 2 : medal === "bronze" ? 1 : 0;
+    }
+
+    function completeLevel() {
+      if (state.screen !== "playing") return;
+      const medal = medalFor(state.def.par, state.loopsUsed, state.alarms);
+      const index = state.levelIndex;
+      const previous = state.session.medals[index];
+      if (medalRank(medal) > medalRank(previous)) state.session.medals[index] = medal;
+      state.session.bestLoops[index] = Math.min(state.session.bestLoops[index], state.loopsUsed);
+      state.session.bestAlarms[index] = Math.min(state.session.bestAlarms[index], state.alarms);
+      state.session.unlockedLevel = Math.max(state.session.unlockedLevel, Math.min(LEVELS.length - 1, index + 1));
+      state.result = {
+        medal,
+        loops: state.loopsUsed,
+        alarms: state.alarms,
+        par: state.def.par,
+        name: state.def.name,
+        artifact: state.def.artifactName
+      };
+      state.screen = "level-result";
+      clearKeys();
+      Sound.event("exit");
+      Sound.event(`medal-${medal}`);
+      syncDomState(true);
+    }
+
+    function continueCampaign() {
+      if (state.levelIndex < LEVELS.length - 1) startLevel(state.levelIndex + 1);
+      else showFinale();
+    }
+
+    function showFinale() {
+      state.session.vaultUnlocked = true;
+      state.screen = "campaign-finale";
+      state.mode = "campaign";
+      clearKeys();
+      Sound.event("medal-gold");
+      syncDomState(true);
+    }
+
+    function extractVault() {
+      const vault = state.vault;
+      if (!vault) return;
+      const remaining = Math.max(0, Math.ceil((LOOP_TICKS - state.loopTick) / 60));
+      const clean = vault.clean;
+      if (clean) vault.multiplier = Math.min(3, vault.multiplier + .25);
+      vault.peakMultiplier = Math.max(vault.peakMultiplier, vault.multiplier);
+      const base = 1000 + 50 * remaining + (clean ? 500 : 0);
+      const award = Math.round(base * vault.multiplier);
+      vault.score += award;
+      vault.lastAward = award;
+      vault.lastClean = clean;
+      vault.extractions++;
+      vault.ticks = Math.min(90 * 60, vault.ticks + 6 * 60);
+      vault.clean = true;
+      const order = [0, 1, 2, 3, 2, 0, 3, 1];
+      vault.targetIndex = order[vault.extractions % order.length];
+      const previousTier = vault.securityTier;
+      vault.securityTier = Math.floor(vault.extractions / 2);
+      if (vault.securityTier > previousTier) {
+        addSecurityEntities(state.world, vault.securityTier);
+        state.banner = `SECURITY ESCALATION · TIER ${vault.securityTier + 1}`;
+        state.bannerTicks = 120;
+        Sound.event("security");
+      } else {
+        state.banner = `+${formatScore(award)}${clean ? " · CLEAN" : ""} · NEXT TARGET ROTATED`;
+        state.bannerTicks = 100;
+      }
+      Sound.event("extract");
+      const target = state.def.targets[vault.targetIndex];
+      spawnParticles(target.x, target.y, COLORS.ivory, 24);
+      state.flash = reducedMotion ? 4 : 13;
+    }
+
+    function endVault() {
+      if (state.screen !== "playing" || !state.vault) return;
+      const vault = state.vault;
+      state.session.vaultBest = Math.max(state.session.vaultBest, vault.score);
+      state.session.vaultBestExtractions = Math.max(state.session.vaultBestExtractions, vault.extractions);
+      state.vaultResult = {
+        score: vault.score,
+        extractions: vault.extractions,
+        alarms: state.alarms,
+        peak: vault.peakMultiplier,
+        best: state.session.vaultBest
+      };
+      state.screen = "vault-result";
+      clearKeys();
+      Sound.event("vault-over");
+      syncDomState(true);
+    }
+
+    function spawnParticles(x, y, color, count) {
+      if (reducedMotion) count = Math.min(count, 3);
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * TAU;
+        const speed = .4 + Math.random() * 2.4;
+        state.particles.push({
+          x, y, color,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 22 + Math.random() * 34,
+          maxLife: 56,
+          size: 1.5 + Math.random() * 3
+        });
+      }
+      if (state.particles.length > 180) state.particles.splice(0, state.particles.length - 180);
+    }
+
+    function updateParticles() {
+      for (const particle of state.particles) {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.vx *= .97;
+        particle.vy *= .97;
+        particle.life--;
+      }
+      state.particles = state.particles.filter(particle => particle.life > 0);
+    }
+
+    function fixedStep() {
+      if (state.screen !== "playing") return;
+      state.actionThisTick = null;
+      const echoes = getEchoActors();
+      movePlayer();
+      resolvePlates([state.player, ...echoes]);
+
+      for (const echo of echoes) {
+        if (echo.frame.action) applyMechanismAction(echo.frame.action, true);
+      }
+      if (state.pendingInteract) {
+        state.pendingInteract = false;
+        if (interactLive()) return;
+      }
+      resolveGates();
+      state.prompt = nearestInteraction();
+
+      const seen = updateSecurity(echoes);
+      if (updateAlarm(seen)) return;
+
+      state.trace.push(currentPose());
+      if (state.trace.length > LOOP_TICKS) state.trace.length = LOOP_TICKS;
+
+      if (state.loopTick % 30 === 0) {
+        const intensity = state.mode === "infinite" ? Math.min(6, 2 + (state.vault ? state.vault.securityTier : 0)) : state.levelIndex + 1;
+        Sound.musicBeat(Math.floor(state.loopTick / 30), intensity);
+      }
+
+      updateParticles();
+      if (state.introTicks > 0) state.introTicks--;
+      if (state.bannerTicks > 0) state.bannerTicks--;
+      if (state.rewindFx > 0) state.rewindFx--;
+      if (state.failureNotice > 0) state.failureNotice--;
+      if (state.shake > 0) state.shake--;
+      if (state.flash > 0) state.flash--;
+
+      if (state.pendingRewind) {
+        state.pendingRewind = false;
+        commitTrace("manual");
+        return;
+      }
+
+      if (state.mode === "infinite" && state.vault) {
+        state.vault.ticks--;
+        if (state.vault.ticks <= 0) {
+          endVault();
+          return;
+        }
+      }
+
+      state.loopTick++;
+      if (state.loopTick >= LOOP_TICKS) {
+        commitTrace("natural");
+        return;
+      }
+      syncDomState();
+    }
+
+    function roundedRectPath(x, y, w, h, radius) {
+      const r = Math.min(radius, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function decoPath(x, y, w, h, cut = 10) {
+      ctx.beginPath();
+      ctx.moveTo(x + cut, y);
+      ctx.lineTo(x + w - cut, y);
+      ctx.lineTo(x + w, y + cut);
+      ctx.lineTo(x + w, y + h - cut);
+      ctx.lineTo(x + w - cut, y + h);
+      ctx.lineTo(x + cut, y + h);
+      ctx.lineTo(x, y + h - cut);
+      ctx.lineTo(x, y + cut);
+      ctx.closePath();
+    }
+
+    function drawText(text, x, y, size, color = COLORS.ivory, align = "left", weight = 600, family = "Arial Narrow, Arial, sans-serif") {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${size}px ${family}`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function wrapText(text, x, y, maxWidth, lineHeight, size, color = COLORS.ivory, align = "left", weight = 500, maxLines = 4) {
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.font = `${weight} ${size}px Arial Narrow, Arial, sans-serif`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "top";
+      const words = text.split(" ");
+      const lines = [];
+      let line = "";
+      for (const word of words) {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+          if (lines.length >= maxLines - 1) break;
+        } else line = test;
+      }
+      if (line && lines.length < maxLines) lines.push(line);
+      lines.forEach((value, index) => ctx.fillText(value, x, y + index * lineHeight));
+      ctx.restore();
+      return lines.length;
+    }
+
+    function drawDecoFrame(x, y, w, h, color = COLORS.brass, alpha = 1) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      decoPath(x, y, w, h, 14);
+      ctx.stroke();
+      ctx.globalAlpha *= .45;
+      decoPath(x + 7, y + 7, w - 14, h - 14, 9);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function isHovering(rect) {
+      return mouse.x >= rect.x && mouse.x <= rect.x + rect.w && mouse.y >= rect.y && mouse.y <= rect.y + rect.h;
+    }
+
+    function drawButton(x, y, w, h, label, action, sub = "", disabled = false) {
+      const button = { x, y, w, h, action, disabled };
+      const hover = !disabled && isHovering(button);
+      UI.buttons.push(button);
+      ctx.save();
+      decoPath(x, y, w, h, 12);
+      ctx.fillStyle = disabled ? "rgba(31,39,43,.72)" : hover ? "rgba(212,164,71,.95)" : "rgba(16,25,32,.94)";
+      ctx.fill();
+      ctx.strokeStyle = disabled ? "rgba(241,229,195,.22)" : COLORS.brass;
+      ctx.lineWidth = hover ? 3 : 1.5;
+      ctx.stroke();
+      drawText(label, x + w / 2, y + (sub ? h * .4 : h / 2), sub ? 21 : 22, disabled ? "#777b78" : hover ? COLORS.lacquer : COLORS.ivory, "center", 800);
+      if (sub) drawText(sub, x + w / 2, y + h * .7, 12, disabled ? "#626866" : hover ? COLORS.ink : COLORS.brass, "center", 700);
+      ctx.restore();
+    }
+
+    function drawMenuBackdrop(now) {
+      const gradient = ctx.createRadialGradient(640, 350, 40, 640, 350, 740);
+      gradient.addColorStop(0, "#1b2b31");
+      gradient.addColorStop(.48, "#0b1218");
+      gradient.addColorStop(1, "#05080c");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      const spin = reducedMotion ? 0 : now * .00006;
+      ctx.save();
+      ctx.translate(640, 360);
+      ctx.rotate(spin);
+      for (let ring = 0; ring < 5; ring++) {
+        const radius = 150 + ring * 82;
+        ctx.strokeStyle = `rgba(212,164,71,${.18 - ring * .02})`;
+        ctx.lineWidth = ring % 2 ? 1 : 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, TAU);
+        ctx.stroke();
+        const marks = 12 + ring * 8;
+        for (let i = 0; i < marks; i++) {
+          const angle = TAU * i / marks;
+          const inner = radius - (i % 4 === 0 ? 18 : 8);
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+          ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(101,229,210,.1)";
+      ctx.lineWidth = 1;
+      for (let x = -300; x < W + 300; x += 52) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + 360, H);
+        ctx.stroke();
+      }
+      ctx.restore();
+      drawDecoFrame(18, 18, W - 36, H - 36, COLORS.brass, .65);
+    }
+
+    function drawFloor(now) {
+      const theme = state.def.theme;
+      const gradient = ctx.createLinearGradient(WORLD_X, WORLD_Y, WORLD_X + WORLD_W, WORLD_Y + WORLD_H);
+      gradient.addColorStop(0, theme.floor);
+      gradient.addColorStop(.52, theme.runner);
+      gradient.addColorStop(1, theme.floor);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(WORLD_X, WORLD_Y, WORLD_W, WORLD_H);
+
+      ctx.strokeStyle = theme.seam;
+      ctx.globalAlpha = .28;
+      ctx.lineWidth = 1;
+      for (let x = WORLD_X; x <= WORLD_X + WORLD_W; x += TILE) {
+        ctx.beginPath(); ctx.moveTo(x, WORLD_Y); ctx.lineTo(x, WORLD_Y + WORLD_H); ctx.stroke();
+      }
+      for (let y = WORLD_Y; y <= WORLD_Y + WORLD_H; y += TILE) {
+        ctx.beginPath(); ctx.moveTo(WORLD_X, y); ctx.lineTo(WORLD_X + WORLD_W, y); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      const cx = WORLD_X + WORLD_W / 2;
+      const cy = WORLD_Y + WORLD_H / 2;
+      ctx.save();
+      ctx.strokeStyle = theme.accent;
+      ctx.fillStyle = theme.accent;
+      if (state.def.id === "brass-foyer") {
+        ctx.globalAlpha = .14;
+        for (let i = 0; i < 24; i++) {
+          const a = i * TAU / 24;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a - .035) * 430, cy + Math.sin(a - .035) * 430);
+          ctx.lineTo(cx + Math.cos(a + .035) * 430, cy + Math.sin(a + .035) * 430);
+          ctx.closePath();
+          if (i % 2 === 0) ctx.fill(); else ctx.stroke();
+        }
+      } else if (state.def.id === "watch-gallery") {
+        ctx.globalAlpha = .19;
+        ctx.fillRect(WORLD_X + 30, cy - 34, WORLD_W - 60, 68);
+        ctx.globalAlpha = .32;
+        for (let x = WORLD_X + 100; x < WORLD_X + WORLD_W; x += 170) {
+          ctx.beginPath(); ctx.arc(x, cy, 54, 0, TAU); ctx.stroke();
+          ctx.beginPath(); ctx.arc(x, cy, 36, 0, TAU); ctx.stroke();
+        }
+      } else if (state.def.id === "counterweight-hall") {
+        ctx.globalAlpha = .2;
+        for (const [gx, gy, radius] of [[230, 190, 115], [660, 450, 150], [960, 180, 100]]) {
+          ctx.beginPath(); ctx.arc(WORLD_X + gx, WORLD_Y + gy, radius, 0, TAU); ctx.stroke();
+          for (let i = 0; i < 12; i++) {
+            const a = i * TAU / 12;
+            ctx.fillRect(WORLD_X + gx + Math.cos(a) * radius - 5, WORLD_Y + gy + Math.sin(a) * radius - 5, 10, 10);
+          }
+        }
+      } else if (state.def.id === "prism-archive") {
+        ctx.globalAlpha = .16;
+        for (let x = WORLD_X; x < WORLD_X + WORLD_W; x += 110) {
+          for (let y = WORLD_Y; y < WORLD_Y + WORLD_H; y += 96) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + 84); ctx.lineTo(x + 52, y); ctx.lineTo(x + 104, y + 84); ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      } else {
+        const rings = state.def.id === "infinite-vault" ? 7 : 5;
+        ctx.globalAlpha = .2;
+        for (let i = 1; i <= rings; i++) {
+          ctx.beginPath(); ctx.arc(cx, cy, i * 48, 0, TAU); ctx.stroke();
+        }
+        for (let i = 0; i < 16; i++) {
+          const a = i * TAU / 16;
+          ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * 390, cy + Math.sin(a) * 390); ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      ctx.strokeStyle = theme.accent;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(WORLD_X + 1.5, WORLD_Y + 1.5, WORLD_W - 3, WORLD_H - 3);
+      ctx.strokeStyle = "rgba(241,229,195,.24)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(WORLD_X + 9.5, WORLD_Y + 9.5, WORLD_W - 19, WORLD_H - 19);
+    }
+
+    function drawCone(x, y, angle, range, fov, color) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, range);
+      gradient.addColorStop(0, color.replace("ALPHA", ".26"));
+      gradient.addColorStop(1, color.replace("ALPHA", "0"));
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.arc(x, y, range, angle - fov / 2, angle + fov / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = color.replace("ALPHA", ".38");
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSecurityFields() {
+      for (const guard of state.world.guards) {
+        const color = guard.seesLive ? "rgba(255,90,82,ALPHA)" : guard.seesEcho ? "rgba(101,229,210,ALPHA)" : "rgba(212,164,71,ALPHA)";
+        drawCone(guard.x, guard.y, guard.angle, guard.range, guard.fov, color);
+      }
+      for (const camera of state.world.cameras) {
+        const color = camera.seesLive ? "rgba(255,90,82,ALPHA)" : "rgba(169,135,244,ALPHA)";
+        drawCone(camera.x, camera.y, cameraAngle(camera), camera.range, camera.fov, color);
+      }
+      for (const laser of state.world.lasers) {
+        const angle = laserAngle(laser);
+        const endX = laser.x + Math.cos(angle) * laser.range;
+        const endY = laser.y + Math.sin(angle) * laser.range;
+        ctx.save();
+        ctx.globalCompositeOperation = "screen";
+        ctx.strokeStyle = laser.seesLive ? "rgba(255,90,82,.82)" : "rgba(169,135,244,.56)";
+        ctx.shadowColor = laser.seesLive ? COLORS.danger : COLORS.violet;
+        ctx.shadowBlur = 14;
+        ctx.lineWidth = laser.seesLive ? 5 : 3;
+        ctx.beginPath(); ctx.moveTo(laser.x, laser.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawWall(rect) {
+      ctx.save();
+      ctx.fillStyle = "#080c10";
+      ctx.shadowColor = "rgba(0,0,0,.6)";
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 4;
+      ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+      ctx.shadowColor = "transparent";
+      ctx.strokeStyle = COLORS.brassDark;
+      ctx.lineWidth = 4;
+      ctx.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+      ctx.strokeStyle = "rgba(241,229,195,.5)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(rect.x + 7, rect.y + 7, Math.max(0, rect.w - 14), Math.max(0, rect.h - 14));
+      ctx.restore();
+    }
+
+    function drawGate(gate) {
+      const rect = gate.rect;
+      const open = gate.visualOpen;
+      ctx.save();
+      ctx.fillStyle = "#11181b";
+      ctx.strokeStyle = COLORS.brass;
+      ctx.lineWidth = 2;
+      if (rect.h >= rect.w) {
+        const half = rect.h / 2;
+        const amount = half * open;
+        const topH = Math.max(0, half - amount);
+        const bottomY = rect.y + half + amount;
+        const bottomH = Math.max(0, half - amount);
+        if (topH > 1) { ctx.fillRect(rect.x, rect.y, rect.w, topH); ctx.strokeRect(rect.x, rect.y, rect.w, topH); }
+        if (bottomH > 1) { ctx.fillRect(rect.x, bottomY, rect.w, bottomH); ctx.strokeRect(rect.x, bottomY, rect.w, bottomH); }
+      } else {
+        const half = rect.w / 2;
+        const amount = half * open;
+        const leftW = Math.max(0, half - amount);
+        const rightX = rect.x + half + amount;
+        const rightW = Math.max(0, half - amount);
+        if (leftW > 1) { ctx.fillRect(rect.x, rect.y, leftW, rect.h); ctx.strokeRect(rect.x, rect.y, leftW, rect.h); }
+        if (rightW > 1) { ctx.fillRect(rightX, rect.y, rightW, rect.h); ctx.strokeRect(rightX, rect.y, rightW, rect.h); }
+      }
+      const cx = rect.x + rect.w / 2;
+      const cy = rect.y + rect.h / 2;
+      ctx.fillStyle = gate.open ? COLORS.mint : COLORS.brass;
+      ctx.beginPath(); ctx.arc(cx, cy, 13, 0, TAU); ctx.fill();
+      drawText(gate.label, cx, cy + 1, 11, COLORS.lacquer, "center", 900);
+      ctx.restore();
+    }
+
+    function drawPlate(plate) {
+      const active = state.world.plateStates[plate.id];
+      ctx.save();
+      ctx.translate(plate.x, plate.y);
+      ctx.fillStyle = active ? "rgba(101,229,210,.24)" : "rgba(0,0,0,.35)";
+      ctx.strokeStyle = active ? COLORS.mint : COLORS.brass;
+      ctx.lineWidth = active ? 3 : 2;
+      ctx.beginPath(); ctx.arc(0, 0, plate.r, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.globalAlpha = .8;
+      for (let i = 0; i < 12; i++) {
+        const a = i * TAU / 12;
+        ctx.beginPath(); ctx.moveTo(Math.cos(a) * (plate.r - 8), Math.sin(a) * (plate.r - 8)); ctx.lineTo(Math.cos(a) * (plate.r - 3), Math.sin(a) * (plate.r - 3)); ctx.stroke();
+      }
+      drawText(plate.label, 0, 1, 14, active ? COLORS.mint : COLORS.ivory, "center", 900);
+      ctx.restore();
+    }
+
+    function drawLever(lever) {
+      const active = lever.activeUntil >= state.loopTick;
+      const remain = active ? clamp((lever.activeUntil - state.loopTick) / lever.duration, 0, 1) : 0;
+      ctx.save();
+      ctx.translate(lever.x, lever.y);
+      ctx.fillStyle = "rgba(6,10,13,.82)";
+      ctx.strokeStyle = active ? COLORS.mint : COLORS.brass;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, 24, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.rotate(active ? -.75 : .75);
+      ctx.strokeStyle = active ? COLORS.mint : COLORS.ivory;
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(0, -22); ctx.stroke();
+      ctx.fillStyle = COLORS.brass;
+      ctx.beginPath(); ctx.arc(0, -24, 6, 0, TAU); ctx.fill();
+      ctx.restore();
+      if (active) {
+        ctx.save();
+        ctx.strokeStyle = COLORS.mint;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(lever.x, lever.y, 30, -Math.PI / 2, -Math.PI / 2 + TAU * remain); ctx.stroke();
+        ctx.restore();
+      }
+      drawText(lever.label, lever.x, lever.y + 41, 11, active ? COLORS.mint : COLORS.brass, "center", 900);
+    }
+
+    function drawNoisemaker(item) {
+      const active = state.loopTick - item.lastTrigger < 150;
+      ctx.save();
+      ctx.translate(item.x, item.y);
+      ctx.rotate(-.2);
+      ctx.fillStyle = active ? COLORS.mint : COLORS.brass;
+      ctx.beginPath();
+      ctx.moveTo(-18, -14); ctx.lineTo(16, -25); ctx.lineTo(16, 25); ctx.lineTo(-18, 14); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#11181d";
+      ctx.fillRect(-25, -7, 10, 14);
+      ctx.restore();
+      if (active) {
+        const phase = (state.loopTick - item.lastTrigger) / 150;
+        ctx.save();
+        ctx.strokeStyle = "rgba(101,229,210,.55)";
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 3; i++) {
+          ctx.globalAlpha = 1 - phase;
+          ctx.beginPath(); ctx.arc(item.x, item.y, 28 + phase * 120 + i * 18, 0, TAU); ctx.stroke();
+        }
+        ctx.restore();
+      }
+      drawText(item.label, item.x, item.y + 39, 10, COLORS.brass, "center", 900);
+    }
+
+    function drawArtifact(x, y, name, active = true) {
+      const spin = reducedMotion ? .4 : performance.now() * .0014;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.globalAlpha = active ? 1 : .2;
+      ctx.shadowColor = COLORS.ivory;
+      ctx.shadowBlur = active ? 18 : 0;
+      ctx.rotate(spin);
+      ctx.fillStyle = COLORS.ivory;
+      ctx.strokeStyle = COLORS.brass;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const a = i * TAU / 8;
+        const radius = i % 2 ? 12 : 25;
+        const px = Math.cos(a) * radius;
+        const py = Math.sin(a) * radius;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.rotate(-spin * 1.8);
+      ctx.fillStyle = COLORS.brass;
+      ctx.beginPath(); ctx.arc(0, 0, 7, 0, TAU); ctx.fill();
+      ctx.restore();
+      if (active && name) drawText(name, x, y + 40, 10, COLORS.ivory, "center", 800);
+    }
+
+    function drawExit() {
+      if (!state.def.exit) return;
+      const exit = state.def.exit;
+      const unlocked = state.artifactHeld;
+      ctx.save();
+      ctx.translate(exit.x, exit.y);
+      ctx.strokeStyle = unlocked ? COLORS.mint : COLORS.brassDark;
+      ctx.fillStyle = "rgba(7,11,14,.78)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, -7, 17, Math.PI, TAU);
+      ctx.lineTo(17, 24); ctx.lineTo(-17, 24); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = unlocked ? COLORS.mint : COLORS.brassDark;
+      ctx.beginPath(); ctx.arc(0, 1, 6, 0, TAU); ctx.fill();
+      ctx.fillRect(-3, 4, 6, 13);
+      ctx.restore();
+      drawText(unlocked ? "EXIT" : "SEALED", exit.x, exit.y + 41, 10, unlocked ? COLORS.mint : COLORS.brassDark, "center", 900);
+    }
+
+    function drawEcho(echo) {
+      const frame = echo.frame;
+      if (!reducedMotion) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(101,229,210,.25)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 7 + echo.index * 2]);
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const past = echo.trace.frames[Math.max(0, Math.min(state.loopTick - i * 3, echo.trace.frames.length - 1))];
+          if (!past) continue;
+          if (i === 0) ctx.moveTo(past.x, past.y); else ctx.lineTo(past.x, past.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.translate(frame.x, frame.y);
+      ctx.rotate(frame.angle + Math.PI / 2);
+      ctx.globalAlpha = .65;
+      ctx.shadowColor = COLORS.mint;
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = COLORS.mint;
+      ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(12, 7); ctx.lineTo(0, 13); ctx.lineTo(-12, 7); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = COLORS.ivory;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = "rgba(8,12,17,.82)";
+      ctx.beginPath(); ctx.arc(frame.x, frame.y - 24, 10, 0, TAU); ctx.fill();
+      drawText(ROMAN[echo.index], frame.x, frame.y - 23, 10, COLORS.mint, "center", 900);
+      ctx.restore();
+    }
+
+    function drawPlayer() {
+      const player = state.player;
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.rotate(player.angle + Math.PI / 2);
+      ctx.shadowColor = COLORS.ivory;
+      ctx.shadowBlur = state.alarm.active ? 4 : 11;
+      ctx.fillStyle = COLORS.ivory;
+      ctx.beginPath(); ctx.moveTo(0, -17); ctx.lineTo(13, 7); ctx.lineTo(6, 14); ctx.lineTo(0, 9); ctx.lineTo(-6, 14); ctx.lineTo(-13, 7); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = COLORS.brass;
+      ctx.beginPath(); ctx.arc(0, -6, 5, 0, TAU); ctx.fill();
+      ctx.fillStyle = COLORS.lacquer;
+      ctx.fillRect(-2, -9, 4, 7);
+      if (state.artifactHeld) {
+        ctx.strokeStyle = COLORS.brass;
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, 2, 18, .3, 2.8); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawGuard(guard) {
+      ctx.save();
+      ctx.translate(guard.x, guard.y);
+      ctx.rotate(guard.angle + Math.PI / 2);
+      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.beginPath(); ctx.ellipse(0, 8, 14, 9, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = guard.seesLive ? COLORS.danger : COLORS.oxblood;
+      ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(13, 13); ctx.lineTo(0, 8); ctx.lineTo(-13, 13); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = COLORS.brass;
+      ctx.beginPath(); ctx.arc(0, -8, 7, 0, TAU); ctx.fill();
+      ctx.strokeStyle = COLORS.ivory;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(0, -20); ctx.stroke();
+      ctx.restore();
+      if (guard.seesLive || guard.seesEcho || guard.mode === "investigate") {
+        drawText(guard.seesLive ? "!" : "?", guard.x, guard.y - 31, 20, guard.seesLive ? COLORS.danger : guard.seesEcho ? COLORS.mint : COLORS.brass, "center", 900);
+      }
+    }
+
+    function drawCamera(camera) {
+      const angle = cameraAngle(camera);
+      ctx.save();
+      ctx.translate(camera.x, camera.y);
+      ctx.rotate(angle);
+      ctx.fillStyle = "#11151d";
+      ctx.strokeStyle = camera.seesLive ? COLORS.danger : COLORS.violet;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = camera.seesLive ? COLORS.danger : COLORS.violet;
+      ctx.beginPath(); ctx.moveTo(10, -6); ctx.lineTo(27, 0); ctx.lineTo(10, 6); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawLaserEmitter(laser) {
+      ctx.save();
+      ctx.translate(laser.x, laser.y);
+      ctx.fillStyle = "#11151d";
+      ctx.strokeStyle = laser.seesLive ? COLORS.danger : COLORS.violet;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = i * TAU / 6;
+        const x = Math.cos(a) * 14;
+        const y = Math.sin(a) * 14;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (const particle of state.particles) {
+        ctx.globalAlpha = clamp(particle.life / particle.maxLife, 0, 1);
+        ctx.fillStyle = particle.color;
+        ctx.translate(particle.x, particle.y);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+      }
+      ctx.restore();
+    }
+
+    function drawInteractionPrompt() {
+      if (!state.prompt || state.screen !== "playing") return;
+      const width = clamp(120 + state.prompt.label.length * 5.5, 180, 350);
+      const x = clamp(state.player.x - width / 2, WORLD_X + 10, WORLD_X + WORLD_W - width - 10);
+      const y = clamp(state.player.y - 70, WORLD_Y + 10, WORLD_Y + WORLD_H - 42);
+      ctx.save();
+      decoPath(x, y, width, 34, 7);
+      ctx.fillStyle = "rgba(7,11,14,.9)"; ctx.fill();
+      ctx.strokeStyle = COLORS.brass; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = COLORS.brass;
+      ctx.beginPath(); ctx.moveTo(x + 17, y + 7); ctx.lineTo(x + 27, y + 17); ctx.lineTo(x + 17, y + 27); ctx.lineTo(x + 7, y + 17); ctx.closePath(); ctx.fill();
+      drawText("E", x + 17, y + 18, 11, COLORS.lacquer, "center", 900);
+      drawText(state.prompt.label, x + 38, y + 18, 13, COLORS.ivory, "left", 800);
+      ctx.restore();
+    }
+
+    function drawHud() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 98);
+      gradient.addColorStop(0, "#080c11");
+      gradient.addColorStop(1, "#111b21");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, 96);
+      ctx.strokeStyle = COLORS.brassDark;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, 95); ctx.lineTo(W, 95); ctx.stroke();
+
+      if (state.mode === "campaign") {
+        drawText(state.def.number, 38, 24, 12, COLORS.brass, "left", 900);
+        drawText(state.def.name, 38, 51, 24, COLORS.ivory, "left", 900);
+        drawText(state.artifactHeld ? "ARTIFACT SECURED" : state.def.artifactName, 38, 76, 11, state.artifactHeld ? COLORS.mint : "#9f9c8e", "left", 800);
+      } else {
+        drawText("INFINITE VAULT", 38, 22, 13, COLORS.brass, "left", 900);
+        drawText(formatScore(state.vault.score), 38, 50, 26, COLORS.ivory, "left", 900);
+        drawText(`TARGET ${state.def.targets[state.vault.targetIndex].name}`, 38, 76, 11, COLORS.mint, "left", 800);
+      }
+
+      const seconds = Math.max(0, (LOOP_TICKS - state.loopTick) / 60);
+      const fraction = clamp((LOOP_TICKS - state.loopTick) / LOOP_TICKS, 0, 1);
+      ctx.save();
+      ctx.translate(640, 46);
+      ctx.strokeStyle = "rgba(241,229,195,.18)";
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.arc(0, 0, 30, -Math.PI / 2, TAU - Math.PI / 2); ctx.stroke();
+      ctx.strokeStyle = state.alarm.active ? COLORS.danger : COLORS.brass;
+      ctx.beginPath(); ctx.arc(0, 0, 30, -Math.PI / 2, -Math.PI / 2 + TAU * fraction); ctx.stroke();
+      drawText(seconds.toFixed(1), 0, -1, 18, COLORS.ivory, "center", 900);
+      drawText("LOOP", 0, 19, 8, COLORS.brass, "center", 900);
+      ctx.restore();
+
+      drawText(`LOOP ${state.loopsUsed}`, 745, 24, 12, COLORS.brass, "left", 900);
+      drawText("ECHOES", 745, 51, 11, "#a7a596", "left", 800);
+      for (let i = 0; i < ECHO_LIMIT; i++) {
+        const x = 815 + i * 28;
+        ctx.fillStyle = i < state.echoes.length ? COLORS.mint : "rgba(101,229,210,.12)";
+        ctx.strokeStyle = i < state.echoes.length ? COLORS.mint : COLORS.mintDark;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(x, 40); ctx.lineTo(x + 9, 50); ctx.lineTo(x, 60); ctx.lineTo(x - 9, 50); ctx.closePath(); ctx.fill(); ctx.stroke();
+        drawText(String(i + 1), x, 51, 8, i < state.echoes.length ? COLORS.lacquer : COLORS.mintDark, "center", 900);
+      }
+
+      if (state.mode === "campaign") {
+        drawText(`ALARMS ${state.alarms}`, 955, 24, 12, state.alarms ? COLORS.danger : COLORS.brass, "left", 900);
+        drawText(`PAR ${state.def.par}`, 955, 51, 22, COLORS.ivory, "left", 900);
+        drawText("GOLD REQUIRES ZERO ALARMS", 955, 76, 10, "#9f9c8e", "left", 700);
+      } else {
+        drawText(`MASTER ${formatTime(state.vault.ticks)}s`, 955, 22, 13, state.vault.ticks < 600 ? COLORS.danger : COLORS.brass, "left", 900);
+        drawText(`${state.vault.multiplier.toFixed(2)}×`, 955, 51, 24, state.vault.clean ? COLORS.mint : COLORS.ivory, "left", 900);
+        drawText(`EXTRACTIONS ${state.vault.extractions} · SECURITY ${state.vault.securityTier + 1}`, 955, 76, 10, "#aaa899", "left", 800);
+      }
+
+      if (state.alarm.active) {
+        const remaining = Math.max(0, (ALARM_TICKS - state.alarm.age) / ALARM_TICKS);
+        ctx.fillStyle = "rgba(255,90,82,.15)"; ctx.fillRect(500, 84, 280, 6);
+        ctx.fillStyle = COLORS.danger; ctx.fillRect(500, 84, 280 * remaining, 6);
+        drawText(`${((ALARM_TICKS - state.alarm.age) / 60).toFixed(1)}s`, 790, 87, 10, COLORS.danger, "left", 900);
+      }
+
+      ctx.fillStyle = "rgba(6,9,12,.96)";
+      ctx.fillRect(0, 680, W, 40);
+      ctx.strokeStyle = "rgba(212,164,71,.4)";
+      ctx.beginPath(); ctx.moveTo(0, 680); ctx.lineTo(W, 680); ctx.stroke();
+      const hint = state.def.hint(state.echoes.length);
+      drawText(hint, 30, 700, 12, "#c9c2aa", "left", 700);
+      drawText("MOVE  WASD/ARROWS   INTERACT  E/SPACE   REWIND  R   PAUSE  P/ESC   MUTE  M", 1250, 700, 11, COLORS.brass, "right", 800);
+    }
+
+    function drawAlarmTreatment() {
+      if (!state.alarm.active) return;
+      const pulse = .16 + .08 * Math.sin(performance.now() * .012);
+      const gradient = ctx.createRadialGradient(640, 360, 250, 640, 360, 720);
+      gradient.addColorStop(0, "rgba(255,90,82,0)");
+      gradient.addColorStop(1, `rgba(255,90,82,${pulse})`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 96, W, 584);
+    }
+
+    function drawTransientOverlays() {
+      if (state.introTicks > 0) {
+        const alpha = clamp(Math.min(state.introTicks / 35, (210 - state.introTicks) / 25), 0, 1);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        decoPath(300, 270, 680, 160, 18);
+        ctx.fillStyle = "rgba(7,11,14,.92)"; ctx.fill();
+        ctx.strokeStyle = COLORS.brass; ctx.lineWidth = 2; ctx.stroke();
+        drawText(state.def.number, 640, 301, 13, COLORS.brass, "center", 900);
+        drawText(state.def.name, 640, 337, 32, COLORS.ivory, "center", 900);
+        wrapText(state.def.objective, 640, 368, 570, 20, 15, "#cfc7ae", "center", 600, 3);
+        ctx.restore();
+      }
+      if (state.bannerTicks > 0 && state.banner) {
+        const alpha = clamp(Math.min(state.bannerTicks / 14, 1), 0, 1);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const width = clamp(260 + state.banner.length * 5.2, 420, 780);
+        const x = (W - width) / 2;
+        decoPath(x, 112, width, 40, 8);
+        ctx.fillStyle = "rgba(6,10,13,.9)"; ctx.fill();
+        ctx.strokeStyle = state.alarm.active ? COLORS.danger : COLORS.brass; ctx.stroke();
+        drawText(state.banner, W / 2, 132, 13, state.alarm.active ? COLORS.danger : COLORS.ivory, "center", 900);
+        ctx.restore();
+      }
+      if (state.rewindFx > 0) {
+        const amount = state.rewindFx / 34;
+        ctx.save();
+        ctx.strokeStyle = `rgba(101,229,210,${.18 * amount})`;
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 18; i++) {
+          const y = WORLD_Y + (i / 17) * WORLD_H;
+          ctx.beginPath();
+          ctx.moveTo(WORLD_X + WORLD_W * (1 - amount), y);
+          ctx.lineTo(WORLD_X + WORLD_W, y - 70 * amount);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      if (state.flash > 0) {
+        ctx.fillStyle = `rgba(241,229,195,${state.flash / 50})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+
+    function drawGameScene(now) {
+      ctx.fillStyle = COLORS.lacquer;
+      ctx.fillRect(0, 0, W, H);
+      const shakeX = state.shake && !reducedMotion ? (Math.random() - .5) * Math.min(8, state.shake) : 0;
+      const shakeY = state.shake && !reducedMotion ? (Math.random() - .5) * Math.min(5, state.shake) : 0;
+      ctx.save();
+      ctx.translate(shakeX, shakeY);
+      ctx.beginPath(); ctx.rect(WORLD_X, WORLD_Y, WORLD_W, WORLD_H); ctx.clip();
+      drawFloor(now);
+      drawSecurityFields();
+      state.def.plates.forEach(drawPlate);
+      state.world.levers.forEach(drawLever);
+      state.world.noisemakers.forEach(drawNoisemaker);
+      if (state.mode === "campaign") {
+        if (!state.artifactHeld && state.def.artifact) drawArtifact(state.def.artifact.x, state.def.artifact.y, state.def.artifactName);
+        drawExit();
+      } else if (state.vault) {
+        state.def.targets.forEach((target, index) => drawArtifact(target.x, target.y, index === state.vault.targetIndex ? target.name : "", index === state.vault.targetIndex));
+      }
+      state.world.walls.forEach(drawWall);
+      state.world.gates.forEach(drawGate);
+      const echoes = getEchoActors();
+      echoes.forEach(drawEcho);
+      state.world.guards.forEach(drawGuard);
+      state.world.cameras.forEach(drawCamera);
+      state.world.lasers.forEach(drawLaserEmitter);
+      drawPlayer();
+      drawParticles();
+      drawInteractionPrompt();
+      ctx.restore();
+      drawHud();
+      drawAlarmTreatment();
+      drawTransientOverlays();
+    }
+
+    function drawTitle(now) {
+      drawMenuBackdrop(now);
+      drawText("A TWELVE-SECOND ROBBERY", 640, 88, 15, COLORS.brass, "center", 900);
+      drawText("CLOCKWORK", 640, 151, 58, COLORS.ivory, "center", 900, "Georgia, serif");
+      drawText("CAPER", 640, 211, 70, COLORS.brass, "center", 900, "Georgia, serif");
+      drawText("CONDUCT YOUR PAST. OUTWIT THE PRESENT.", 640, 248, 14, COLORS.mint, "center", 800);
+
+      const continueIndex = state.session.medals.every(Boolean) ? 0 : state.session.unlockedLevel;
+      const campaignLabel = state.session.medals.some(Boolean) && !state.session.medals.every(Boolean) ? "CONTINUE CAMPAIGN" : "BEGIN CAMPAIGN";
+      drawButton(390, 292, 500, 66, campaignLabel, () => startCampaign(continueIndex), `FIVE ROOMS · 12-SECOND LOOPS · CURRENT ROOM ${continueIndex + 1}`);
+      drawButton(390, 371, 500, 66, state.session.vaultUnlocked ? "ENTER INFINITE VAULT" : "INFINITE VAULT · LOCKED", () => startInfinite(), state.session.vaultUnlocked ? `90-SECOND SCORE ATTACK · SESSION BEST ${formatScore(state.session.vaultBest)}` : "COMPLETE THE MERIDIAN VAULT TO UNLOCK", !state.session.vaultUnlocked);
+      drawButton(475, 450, 330, 50, "HOW THE CAPER WORKS", () => { state.screen = "instructions"; syncDomState(true); }, "CONTROLS · ECHOES · ALARMS");
+
+      decoPath(238, 529, 804, 105, 12);
+      ctx.fillStyle = "rgba(8,12,17,.78)"; ctx.fill();
+      ctx.strokeStyle = "rgba(212,164,71,.55)"; ctx.stroke();
+      drawText("WASD / ARROWS", 310, 558, 13, COLORS.brass, "left", 900);
+      drawText("MOVE", 310, 584, 18, COLORS.ivory, "left", 800);
+      drawText("E / SPACE", 505, 558, 13, COLORS.brass, "left", 900);
+      drawText("INTERACT", 505, 584, 18, COLORS.ivory, "left", 800);
+      drawText("R", 690, 558, 13, COLORS.brass, "left", 900);
+      drawText("COMMIT & REWIND", 690, 584, 18, COLORS.ivory, "left", 800);
+      drawText("P / ESC · M", 875, 558, 13, COLORS.brass, "left", 900);
+      drawText("PAUSE · MUTE", 875, 584, 18, COLORS.ivory, "left", 800);
+      drawText("SESSION-ONLY BESTS · NO SAVED STORAGE", 640, 658, 11, "#7f827b", "center", 700);
+    }
+
+    function drawInstructions(now) {
+      drawMenuBackdrop(now);
+      drawText("THE CAPER'S THREE LAWS", 640, 78, 38, COLORS.ivory, "center", 900, "Georgia, serif");
+      drawText("EVERY ROOM RESETS. YOUR MEMORY DOES NOT.", 640, 116, 13, COLORS.brass, "center", 900);
+      const cards = [
+        { x: 115, title: "I · STEAL TIME", color: COLORS.brass, body: "Each loop lasts exactly 12 seconds. Press R early or let the clock expire to commit your live path and actions." },
+        { x: 455, title: "II · CONDUCT ECHOES", color: COLORS.mint, body: "Up to four echoes replay deterministically. They hold plates, turn levers, sound lures, and distract guards — but only you can steal or exit." },
+        { x: 795, title: "III · BREAK SIGHT", color: COLORS.danger, body: "Live detection starts a 3-second alarm. Stay unseen for 0.75 seconds to cancel it. Failure discards only the current trace; older echoes remain." }
+      ];
+      for (const card of cards) {
+        decoPath(card.x, 164, 310, 300, 16);
+        ctx.fillStyle = "rgba(8,12,17,.9)"; ctx.fill();
+        ctx.strokeStyle = card.color; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = card.color;
+        ctx.beginPath(); ctx.arc(card.x + 155, 235, 45, 0, TAU); ctx.stroke();
+        for (let i = 0; i < 12; i++) {
+          const a = i * TAU / 12;
+          ctx.beginPath(); ctx.moveTo(card.x + 155 + Math.cos(a) * 35, 235 + Math.sin(a) * 35); ctx.lineTo(card.x + 155 + Math.cos(a) * 43, 235 + Math.sin(a) * 43); ctx.stroke();
+        }
+        drawText(card.title, card.x + 155, 322, 18, card.color, "center", 900);
+        wrapText(card.body, card.x + 155, 355, 248, 24, 16, COLORS.ivory, "center", 600, 5);
+      }
+      drawText("MEDALS", 270, 508, 12, COLORS.brass, "center", 900);
+      drawText("BRONZE  COMPLETE · SILVER  ≤ PAR+1 & ≤1 ALARM · GOLD  ≤ PAR & 0 ALARMS", 270, 538, 15, COLORS.ivory, "center", 700);
+      drawText("FOCUS LOSS PAUSES AUTOMATICALLY · REDUCED MOTION IS HONORED", 270, 568, 11, "#92938a", "center", 700);
+      drawButton(790, 500, 330, 56, "BEGIN AT THE FOYER", () => startCampaign(0), "CAMPAIGN");
+      drawButton(790, 570, 330, 48, "BACK TO TITLE", () => { state.screen = "title"; state.mode = "menu"; syncDomState(true); });
+    }
+
+    function drawMedalSeal(x, y, radius, medal, label = "") {
+      const color = medal === "gold" ? "#edc45e" : medal === "silver" ? "#bac6c9" : medal === "bronze" ? "#a96c41" : "#394246";
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = "rgba(8,12,17,.88)";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0, 0, radius, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(0, 0, radius - 9, 0, TAU); ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const a = -Math.PI / 2 + i * TAU / 8;
+        const r = i % 2 ? radius * .34 : radius * .58;
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+      if (label) drawText(label, x, y + radius + 18, 11, color, "center", 900);
+    }
+
+    function dimScene() {
+      ctx.fillStyle = "rgba(3,6,8,.72)";
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawPause() {
+      dimScene();
+      decoPath(390, 145, 500, 450, 18);
+      ctx.fillStyle = "rgba(9,14,18,.96)"; ctx.fill();
+      ctx.strokeStyle = COLORS.brass; ctx.lineWidth = 2; ctx.stroke();
+      drawText("TIME SUSPENDED", 640, 195, 34, COLORS.ivory, "center", 900, "Georgia, serif");
+      drawText(state.pauseReason, 640, 230, 12, COLORS.brass, "center", 900);
+      drawButton(470, 266, 340, 58, "RESUME", () => resumeGame(), "P / ESC");
+      drawButton(470, 336, 340, 58, state.mode === "infinite" ? "RESTART VAULT RUN" : "RESTART ROOM", () => restartCurrent(), "CLEARS CURRENT ECHOES");
+      drawButton(470, 406, 340, 52, Sound.muted ? "UNMUTE AUDIO" : "MUTE AUDIO", () => toggleMute(), "M");
+      drawButton(470, 470, 340, 52, "RETURN TO TITLE", () => quitToTitle(), "SESSION BESTS STAY");
+      drawText("WASD / ARROWS · E / SPACE · R REWIND", 640, 557, 11, "#8c9089", "center", 700);
+    }
+
+    function drawLevelResult() {
+      dimScene();
+      decoPath(270, 112, 740, 510, 20);
+      ctx.fillStyle = "rgba(8,12,17,.97)"; ctx.fill();
+      ctx.strokeStyle = COLORS.brass; ctx.lineWidth = 2; ctx.stroke();
+      drawText("ROOM CLEARED", 640, 153, 13, COLORS.brass, "center", 900);
+      drawText(state.result.name, 640, 190, 31, COLORS.ivory, "center", 900, "Georgia, serif");
+      drawMedalSeal(410, 318, 83, state.result.medal, state.result.medal.toUpperCase());
+      const medalColor = state.result.medal === "gold" ? "#edc45e" : state.result.medal === "silver" ? "#bac6c9" : "#a96c41";
+      drawText(state.result.medal.toUpperCase(), 410, 420, 19, medalColor, "center", 900);
+      drawText("LOOPS", 575, 270, 11, COLORS.brass, "center", 900);
+      drawText(String(state.result.loops), 575, 310, 34, COLORS.ivory, "center", 900);
+      drawText(`PAR ${state.result.par}`, 575, 344, 12, "#98988e", "center", 800);
+      drawText("ALARMS", 735, 270, 11, COLORS.brass, "center", 900);
+      drawText(String(state.result.alarms), 735, 310, 34, state.result.alarms ? COLORS.danger : COLORS.mint, "center", 900);
+      drawText(state.result.alarms ? "SILENCE BROKEN" : "PERFECTLY CLEAN", 735, 344, 12, state.result.alarms ? COLORS.danger : COLORS.mint, "center", 800);
+      drawText(state.result.artifact, 655, 390, 13, COLORS.ivory, "center", 800);
+      const bestLoops = state.session.bestLoops[state.levelIndex];
+      drawText(`SESSION BEST · ${state.session.medals[state.levelIndex].toUpperCase()} · ${bestLoops} LOOP${bestLoops === 1 ? "" : "S"}`, 655, 421, 11, "#8f928a", "center", 700);
+      drawButton(518, 466, 330, 58, state.levelIndex === LEVELS.length - 1 ? "OPEN THE MERIDIAN" : "NEXT ROOM", () => continueCampaign(), state.levelIndex === LEVELS.length - 1 ? "CAMPAIGN FINALE" : LEVELS[state.levelIndex + 1].name);
+      drawButton(350, 542, 275, 48, "RETRY ROOM", () => startLevel(state.levelIndex), "CHASE A BETTER MEDAL");
+      drawButton(655, 542, 275, 48, "TITLE", () => quitToTitle(), "PROGRESS STAYS THIS SESSION");
+    }
+
+    function drawFinale(now) {
+      drawMenuBackdrop(now);
+      ctx.save();
+      ctx.fillStyle = "rgba(4,7,9,.85)";
+      ctx.beginPath();
+      ctx.arc(640, 315, 170, Math.PI, TAU);
+      ctx.lineTo(810, 540); ctx.lineTo(470, 540); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = COLORS.brass; ctx.lineWidth = 4; ctx.stroke();
+      ctx.restore();
+      drawText("THE MERIDIAN OPENS", 640, 77, 36, COLORS.ivory, "center", 900, "Georgia, serif");
+      drawText("FIVE ROOMS. ONE PERFECTLY IMPOSSIBLE NIGHT.", 640, 116, 13, COLORS.brass, "center", 900);
+      const positions = [[440, 235], [540, 182], [640, 165], [740, 182], [840, 235]];
+      state.session.medals.forEach((medal, i) => drawMedalSeal(positions[i][0], positions[i][1], 38, medal, `ROOM ${i + 1}`));
+      drawArtifact(640, 347, "THE MERIDIAN CROWN");
+      drawText("INFINITE VAULT UNLOCKED", 640, 420, 21, COLORS.mint, "center", 900);
+      wrapText("The master vault is awake. Ninety seconds, rotating targets, escalating security, and a clean multiplier that shatters on every alarm.", 640, 450, 570, 22, 15, "#c7c1ac", "center", 600, 3);
+      drawButton(420, 532, 440, 62, "ENTER INFINITE VAULT", () => startInfinite(), "90-SECOND SCORE ATTACK");
+      drawButton(485, 611, 310, 48, "RETURN TO TITLE", () => quitToTitle(), "VAULT REMAINS UNLOCKED");
+    }
+
+    function drawVaultResult(now) {
+      drawMenuBackdrop(now);
+      drawText("THE MASTER CLOCK STOPS", 640, 77, 36, COLORS.ivory, "center", 900, "Georgia, serif");
+      drawText("INFINITE VAULT LEDGER", 640, 116, 13, COLORS.brass, "center", 900);
+      decoPath(300, 150, 680, 370, 18);
+      ctx.fillStyle = "rgba(8,12,17,.92)"; ctx.fill();
+      ctx.strokeStyle = COLORS.brass; ctx.lineWidth = 2; ctx.stroke();
+      drawText("FINAL SCORE", 640, 195, 12, COLORS.brass, "center", 900);
+      drawText(formatScore(state.vaultResult.score), 640, 247, 52, COLORS.ivory, "center", 900, "Georgia, serif");
+      drawText(`SESSION BEST ${formatScore(state.vaultResult.best)}`, 640, 289, 14, state.vaultResult.score >= state.vaultResult.best ? COLORS.mint : "#a3a195", "center", 900);
+      const columns = [430, 640, 850];
+      const labels = ["EXTRACTIONS", "ALARMS", "PEAK MULTIPLIER"];
+      const values = [state.vaultResult.extractions, state.vaultResult.alarms, `${state.vaultResult.peak.toFixed(2)}×`];
+      for (let i = 0; i < 3; i++) {
+        drawText(labels[i], columns[i], 353, 11, COLORS.brass, "center", 900);
+        drawText(String(values[i]), columns[i], 395, 30, i === 1 && state.vaultResult.alarms ? COLORS.danger : COLORS.ivory, "center", 900);
+      }
+      drawText("1000 + 50 × LOOP SECONDS · +500 CLEAN · CLEAN MULTIPLIER TO 3×", 640, 462, 12, "#999b93", "center", 800);
+      drawButton(415, 548, 450, 60, "RUN THE VAULT AGAIN", () => startInfinite(), "RESET SCORE · KEEP SESSION BEST");
+      drawButton(485, 625, 310, 46, "RETURN TO TITLE", () => quitToTitle());
+    }
+
+    function render(now) {
+      UI.buttons.length = 0;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+      if (state.screen === "title") drawTitle(now);
+      else if (state.screen === "instructions") drawInstructions(now);
+      else if (state.screen === "campaign-finale") drawFinale(now);
+      else if (state.screen === "vault-result") drawVaultResult(now);
+      else if (state.def && state.world) {
+        drawGameScene(now);
+        if (state.screen === "paused") drawPause();
+        else if (state.screen === "level-result") drawLevelResult();
+      } else {
+        drawMenuBackdrop(now);
+      }
+      canvas.style.cursor = UI.buttons.some(button => !button.disabled && isHovering(button)) ? "pointer" : "default";
+    }
+
+    function toggleMute() {
+      Sound.init();
+      Sound.setMuted(!Sound.muted);
+      Sound.event("click");
+    }
+
+    function pauseGame(reason = "PAUSED") {
+      if (state.screen !== "playing") return;
+      state.screen = "paused";
+      state.pauseReason = reason;
+      clearKeys();
+      accumulator = 0;
+      syncDomState(true);
+    }
+
+    function resumeGame() {
+      if (state.screen !== "paused") return;
+      state.screen = "playing";
+      state.pauseReason = "PAUSED";
+      clearKeys();
+      accumulator = 0;
+      lastTime = performance.now();
+      canvas.focus();
+      if (Sound.context && Sound.context.state === "suspended") Sound.context.resume().catch(() => {});
+      syncDomState(true);
+    }
+
+    const blockedKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"]);
+
+    window.addEventListener("keydown", event => {
+      if (blockedKeys.has(event.code)) event.preventDefault();
+      Sound.init();
+
+      if (event.code === "KeyM" && !event.repeat) {
+        toggleMute();
+        return;
+      }
+
+      if (state.screen === "title") {
+        if ((event.code === "Enter" || event.code === "Space") && !event.repeat) {
+          const index = state.session.medals.every(Boolean) ? 0 : state.session.unlockedLevel;
+          startCampaign(index);
+        } else if (event.code === "KeyI" && state.session.vaultUnlocked && !event.repeat) startInfinite();
+        return;
+      }
+
+      if (state.screen === "instructions") {
+        if (event.code === "Escape") {
+          state.screen = "title";
+          state.mode = "menu";
+          syncDomState(true);
+        } else if ((event.code === "Enter" || event.code === "Space") && !event.repeat) startCampaign(0);
+        return;
+      }
+
+      if (state.screen === "playing") {
+        if ((event.code === "Escape" || event.code === "KeyP") && !event.repeat) {
+          pauseGame("TIME SUSPENDED BY THE THIEF");
+          return;
+        }
+        if (event.code === "KeyR" && !event.repeat) {
+          state.pendingRewind = true;
+          return;
+        }
+        if ((event.code === "KeyE" || event.code === "Space") && !event.repeat) {
+          state.pendingInteract = true;
+          return;
+        }
+        state.keys[event.code] = true;
+        return;
+      }
+
+      if (state.screen === "paused") {
+        if ((event.code === "Escape" || event.code === "KeyP" || event.code === "Enter") && !event.repeat) resumeGame();
+        return;
+      }
+
+      if (state.screen === "level-result") {
+        if ((event.code === "Enter" || event.code === "Space") && !event.repeat) continueCampaign();
+        else if (event.code === "KeyR" && !event.repeat) startLevel(state.levelIndex);
+        else if (event.code === "Escape" && !event.repeat) quitToTitle();
+        return;
+      }
+
+      if (state.screen === "campaign-finale") {
+        if ((event.code === "Enter" || event.code === "Space") && !event.repeat) startInfinite();
+        else if (event.code === "Escape" && !event.repeat) quitToTitle();
+        return;
+      }
+
+      if (state.screen === "vault-result") {
+        if ((event.code === "Enter" || event.code === "Space") && !event.repeat) startInfinite();
+        else if (event.code === "Escape" && !event.repeat) quitToTitle();
+      }
+    }, { passive: false });
+
+    window.addEventListener("keyup", event => {
+      state.keys[event.code] = false;
+      if (blockedKeys.has(event.code)) event.preventDefault();
+    }, { passive: false });
+
+    function pointerPosition(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * W / rect.width,
+        y: (event.clientY - rect.top) * H / rect.height
+      };
+    }
+
+    canvas.addEventListener("pointermove", event => {
+      const point = pointerPosition(event);
+      mouse.x = point.x;
+      mouse.y = point.y;
+    });
+
+    canvas.addEventListener("pointerdown", event => {
+      const point = pointerPosition(event);
+      mouse.x = point.x;
+      mouse.y = point.y;
+      mouse.down = true;
+      Sound.init();
+      canvas.focus();
+      event.preventDefault();
+    });
+
+    canvas.addEventListener("pointerup", event => {
+      const point = pointerPosition(event);
+      mouse.x = point.x;
+      mouse.y = point.y;
+      mouse.down = false;
+      for (let i = UI.buttons.length - 1; i >= 0; i--) {
+        const button = UI.buttons[i];
+        if (!button.disabled && isHovering(button)) {
+          Sound.event("click");
+          button.action();
+          break;
+        }
+      }
+      event.preventDefault();
+    });
+
+    canvas.addEventListener("pointerleave", () => {
+      mouse.x = -100;
+      mouse.y = -100;
+      mouse.down = false;
+    });
+
+    window.addEventListener("blur", () => {
+      if (state.screen === "playing") pauseGame("FOCUS LOST · TIMER HELD SAFELY");
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && state.screen === "playing") pauseGame("WINDOW HIDDEN · TIMER HELD SAFELY");
+    });
+
+    function frame(now) {
+      const delta = Math.min(.1, Math.max(0, (now - lastTime) / 1000));
+      lastTime = now;
+      if (state.screen === "playing") {
+        accumulator += delta;
+        while (accumulator >= STEP && state.screen === "playing") {
+          fixedStep();
+          accumulator -= STEP;
+        }
+      } else {
+        accumulator = 0;
+        Sound.menuBeat(now);
+      }
+      render(now);
+      requestAnimationFrame(frame);
+    }
+
+    syncDomState(true);
+    requestAnimationFrame(frame);
+
+  })();
+  </script>
+</body>
+</html>
