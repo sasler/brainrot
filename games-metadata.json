@@ -5288,6 +5288,27 @@
           ]
         }
       ]
+    },
+    {
+      "id": "kart-racing",
+      "name": "Sunbeam Kart Rally",
+      "description": "Drift through a bright low-poly countryside circuit, trade playful gadgets with five rival drivers, and chase the valley championship.",
+      "icon": "🏁",
+      "accentColor": "#ffd447",
+      "versions": [
+        {
+          "model": "OpenAI GPT 5.6 Sol",
+          "modelId": "gpt-5-6-sol",
+          "date": "2026-07-16",
+          "linesOfCode": 2153,
+          "path": "/games/kart-racing/gpt-5-6-sol/index.html",
+          "features": [
+            "sound",
+            "3d",
+            "particles"
+          ]
+        }
+      ]
     }
   ],
   "modelReviews": [

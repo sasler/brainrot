@@ -20,7 +20,8 @@ games/
 ├── mini-golf/             ← ⛳ Mini Golf 3D
 ├── tile-matching/         ← 💎 Tile Matching
 ├── space-invaders/        ← 👾 Space Invaders
-└── clockwork-caper/       ← 🕰️ Clockwork Caper
+├── clockwork-caper/       ← 🕰️ Clockwork Caper
+└── kart-racing/           ← 🏁 Sunbeam Kart Rally
 ```
 
 ## Rules for Adding Games
