@@ -41,6 +41,7 @@ type KartSnapshot = {
     trackMaxY: number;
     maxGrade: number;
     terrainSupport: string;
+    terrainTreatment: string;
     windmillHill: string;
     skyTreatment: string;
     lightingTreatment: string;
@@ -108,18 +109,22 @@ async function openGame(page: Page, viewport = { width: 1280, height: 720 }) {
 test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
   test("loads the pinned Three.js game without external requests or runtime errors", async ({ page }) => {
     const externalRequests: string[] = [];
+    const runtimeRequests: string[] = [];
     const errors: string[] = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
       const loopback = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname);
       if (url.protocol.startsWith("http") && !loopback) externalRequests.push(request.url());
+      if (url.pathname.startsWith("/vendor/three/")) runtimeRequests.push(request.url());
     });
     page.on("pageerror", (error) => errors.push(error.message));
+    await page.route("**/vendor/three/**", (route) => route.abort("blockedbyclient"));
 
     await openGame(page);
     await expect(page.locator("#game")).toBeVisible();
     await expect(page.locator("#titleScreen")).toContainText("SUNBEAM");
     expect(externalRequests).toEqual([]);
+    expect(runtimeRequests).toEqual([]);
     expect(errors).toEqual([]);
 
     const diagnostics = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__.snapshot());
@@ -295,7 +300,8 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
     expect(snapshot.environment.trackMaxY).toBeLessThanOrEqual(3.1);
     expect(snapshot.environment.maxGrade).toBeLessThan(0.16);
     expect(snapshot.environment.terrainSupport).toBe("graded-corridor");
-    expect(snapshot.environment.windmillHill).toBe("radial-mound");
+    expect(snapshot.environment.terrainTreatment).toBe("flat-verge-rolling-hills");
+    expect(snapshot.environment.windmillHill).toBe("embedded-low-mound-foundation");
     expect(snapshot.environment.skyTreatment).toBe("gradient-dome-clouds");
     expect(snapshot.environment.lightingTreatment).toBe("warm-sun-cool-fill");
     expect(snapshot.environment.playerMarker).toBe("sun-chevron-checkered-flag");
@@ -350,7 +356,7 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
     expect(held.player.item).not.toBeNull();
     await expect(page.locator("#item")).toBeEnabled();
     await expect(page.locator("#item")).toHaveClass(/ready/);
-    await page.locator("#item").click();
+    await page.locator("#item").dispatchEvent("pointerdown");
     const used = await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot());
     expect(used.player.item).toBeNull();
     expect(used.player.boost + used.player.shield + used.objects.projectiles + used.objects.puddles).toBeGreaterThan(0);
