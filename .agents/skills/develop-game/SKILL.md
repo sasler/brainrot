@@ -19,7 +19,9 @@ Before changing any game or metadata file, confirm the current branch is a task 
 
 ## Implement to the competition standard
 
+- If the implementation imports Three.js or creates a `THREE.WebGLRenderer`, apply the `develop-threejs-game` skill before changing it. That skill owns the shared runtime, creative asset policy, visual scorecard, diagnostics, and active-play inspection workflow.
 - Keep each version in `public/games/{game}/{model}/index.html` as one standalone HTML file with inline HTML, CSS, and JavaScript.
+- Three.js versions may additionally use data-only assets under `public/games/{game}/{model}/assets` when they follow the `develop-threejs-game` manifest and ownership policy.
 - Judge implementation depth by the completed experience, not an arbitrary line count. Do not pad code to reach a target.
 - Include Web Audio API sound effects, polished and readable feedback, a deliberate art direction, a title screen, and a game-over or completion screen. Choose visual techniques that serve the concept instead of applying a standard effects checklist.
 - Prioritize gameplay over decorative chrome. Avoid skeletal presentation, static layouts where motion is needed, and oversized HUDs.

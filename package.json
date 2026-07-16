@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "test": "playwright test",
-    "update-metadata": "node scripts/update-metadata.js"
+    "update-metadata": "node scripts/update-metadata.js",
+    "sync:three-runtime": "node scripts/sync-three-runtime.js",
+    "validate:game-assets": "node scripts/validate-game-assets.js",
+    "test:game-assets": "node --test tests-node/game-assets.test.js tests-node/asset-display.test.js",
+    "inspect:threejs": "node scripts/inspect-threejs.js"
   },
   "dependencies": {
     "@upstash/redis": "^1.37.0",
@@ -28,6 +32,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
+    "three": "0.185.1",
     "typescript": "^5"
   }
 }

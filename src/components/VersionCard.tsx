@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getModelInfo } from "@/lib/modelCatalog";
 import type { Game, GameVersion } from "@/lib/games";
+import { formatAssetSummary } from "@/lib/assetDisplay";
 import RatingSummary from "./RatingSummary";
 import { useVersionRating } from "./RatingsProvider";
 
@@ -32,6 +33,7 @@ const FEATURE_COLORS: Record<string, string> = {
 export default function VersionCard({ game, version, index }: VersionCardProps) {
   const model = getModelInfo(version.modelId, version.model);
   const modelColor = model.color;
+  const assetSummary = formatAssetSummary(version.assets);
   const { rating } = useVersionRating(game.id, version.modelId);
   const [review, setReview] = useState<{ from: string; comment: string } | null>(null);
 
@@ -50,6 +52,7 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
       className="card-glow group relative flex flex-col overflow-hidden rounded-2xl bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-card-hover focus-visible:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4"
       data-model-id={version.modelId}
       data-model-color={modelColor}
+      data-asset-summary={assetSummary ?? undefined}
       style={
         {
           "--glow-color": modelColor,
@@ -96,6 +99,11 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
           <div className="mt-1 font-mono text-sm text-foreground/80">
             {version.linesOfCode.toLocaleString()}
           </div>
+          {assetSummary && (
+            <div className="mt-1 font-mono text-[10px] text-muted">
+              {assetSummary}
+            </div>
+          )}
         </div>
       </div>
 

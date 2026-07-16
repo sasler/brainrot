@@ -14,8 +14,11 @@ const eslintConfig = defineConfig([
     "test-results/**",
     "playwright-report/**",
     "next-env.d.ts",
+    // Deterministically vendored third-party runtime files.
+    "public/vendor/**",
     // Node.js scripts use CommonJS require()
     "scripts/**",
+    "tests-node/**",
   ]),
 ]);
 

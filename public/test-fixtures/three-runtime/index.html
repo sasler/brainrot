@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Three.js opaque iframe fixture</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "/vendor/three/0.185.1/three.module.min.js",
+      "three/addons/": "/vendor/three/0.185.1/addons/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+    window.__THREE_RUNTIME_TEST__ = {
+      revision: THREE.REVISION,
+      loader: new GLTFLoader().constructor.name,
+      imported: true
+    };
+  </script>
+</body>
+</html>

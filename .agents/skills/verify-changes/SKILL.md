@@ -21,14 +21,15 @@ Verification-only commands may run without creating a branch. Before applying an
 2. Run only tests that exercise changed files and behavior. For games, run that game's focused spec plus a filtered load probe for the changed model; do not load every unrelated game.
 3. Verify game controls and essential UI at the primary 1280×720 desktop viewport, including keyboard input and mouse input where appropriate. Test mobile or touch layouts only when the implementation provides or claims that support. Reuse one managed server/browser session when possible.
 4. For Next.js code, read the relevant local documentation under node_modules/next/dist/docs/ before evaluating API usage.
-5. Run `npm run lint` locally when JavaScript, TypeScript, tests, or repository/runtime configuration changes.
-6. Run `npm run build` locally when application code, routing, dependencies, Next.js configuration, or shared runtime behavior changes. Standalone game-only changes do not require a local production build.
-7. Run the full `npm test` suite locally only for test or CI infrastructure changes, changes whose impact cannot be bounded reliably, or explicit user requests. Otherwise use the affected Playwright specs:
+5. For Three.js runtime or asset changes, run `npm run sync:three-runtime -- --check`, `npm run validate:game-assets`, and `npm run test:game-assets`. For a new or substantially revised Three.js game, also run `npm run inspect:threejs -- --game <id> --model <id> --state active-play` and manually review its screenshot.
+6. Run `npm run lint` locally when JavaScript, TypeScript, tests, or repository/runtime configuration changes.
+7. Run `npm run build` locally when application code, routing, dependencies, Next.js configuration, or shared runtime behavior changes. Standalone game-only changes do not require a local production build.
+8. Run the full `npm test` suite locally only for test or CI infrastructure changes, changes whose impact cannot be bounded reliably, or explicit user requests. Otherwise use the affected Playwright specs:
 
        npm test -- <affected-specs>
 
-8. Treat any required affected-scope failure as blocking unless evidence shows it is unrelated and pre-existing; report that evidence explicitly.
-9. Clean up owned servers, browser sessions, and temporary processes before finishing.
+9. Treat any required affected-scope failure as blocking unless evidence shows it is unrelated and pre-existing; report that evidence explicitly.
+10. Clean up owned servers, browser sessions, and temporary processes before finishing.
 
 ## Rely on the pull request gate
 

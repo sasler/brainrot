@@ -35,6 +35,11 @@ export interface GameVersion {
   date: string;
   linesOfCode: number;
   path: string;
+  assets?: {
+    files: number;
+    bytes: number;
+    kinds: Array<"model" | "image">;
+  };
   features?: FeatureId[];
   aiReviews?: AiReview[];
 }
