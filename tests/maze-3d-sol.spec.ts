@@ -133,10 +133,8 @@ test.describe("GPT 5.6 Sol HELIOVAULT maze", () => {
 
     await page.keyboard.down("w");
     try {
-      await expect.poll(
-        () => page.evaluate(() => window.__helioVaultTest.snapshot().player),
-        { timeout: 5000 },
-      ).not.toEqual(before);
+      const after = await page.evaluate(() => window.__helioVaultTest.advance(1).player);
+      expect(after).not.toEqual(before);
     } finally {
       await page.keyboard.up("w");
     }
