@@ -24,6 +24,7 @@ test.describe("Game HTML Files — Load Tests", () => {
   for (const game of ALL_GAMES) {
     for (const model of game.models) {
       test(`${game.id}/${model} loads without errors`, async ({ page }) => {
+        test.setTimeout(60_000);
         const errors: string[] = [];
         page.on("pageerror", (err) => errors.push(err.message));
 

@@ -43,3 +43,5 @@ next-env.d.ts
 # Playwright CLI artifacts
 .playwright-cli/
 test-results/
+blob-report/
+playwright-report/

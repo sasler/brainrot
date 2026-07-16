@@ -132,11 +132,12 @@ test.describe("GPT 5.6 Sol HELIOVAULT maze", () => {
     const before = await page.evaluate(() => window.__helioVaultTest.snapshot().player);
 
     await page.keyboard.down("w");
-    await page.waitForTimeout(900);
-    await page.keyboard.up("w");
-
-    const after = await page.evaluate(() => window.__helioVaultTest.snapshot().player);
-    expect(after).not.toEqual(before);
+    try {
+      const after = await page.evaluate(() => window.__helioVaultTest.advance(1).player);
+      expect(after).not.toEqual(before);
+    } finally {
+      await page.keyboard.up("w");
+    }
   });
 
   test("opens shortcuts, awakens the guardian, and activates the gate after three cores", async ({ page }) => {

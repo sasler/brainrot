@@ -13,7 +13,7 @@ description: Prepare and publish a compliant BrainRot pull request by checking s
 4. Ensure only task-scoped changes will be staged. Preserve unrelated user changes.
 5. If game files changed, run `npm run update-metadata` and verify line counts and feature flags.
 6. Update README tables, project structure, and other documentation affected by games, models, counts, commands, or repository layout.
-7. Apply the complete `verify-changes` gate. Do not publish with failing required checks.
+7. Apply the change-scoped local gate from `verify-changes`. Do not publish with known failing applicable checks; the pull request workflow owns the complete lint, build, and Playwright gate.
 
 ## Commit and publish
 
@@ -27,7 +27,8 @@ description: Prepare and publish a compliant BrainRot pull request by checking s
 
 4. Push the current branch with upstream tracking. Never force-push unless the user explicitly authorizes it.
 5. Prefer the harness's connected GitHub tools to create the PR; fall back to `gh pr create` when needed.
-6. Start the PR title with an actual Unicode Gitmoji. Include a concise summary and the exact validation commands and outcomes in the body.
-7. Return the PR URL and current check state.
+6. Start the PR title with an actual Unicode Gitmoji. Include a concise summary and the exact local validation commands and outcomes in the body.
+7. Confirm the required pull request workflow started. Do not wait for completion unless the user requested it, the task changes CI/test infrastructure, or a failure needs diagnosis.
+8. Return the PR URL and current check state. The required aggregate CI check must pass before merge.
 
 PR review handling is separate. Do not wait or poll for reviews unless the user asks; apply `address-pr-review-comments` when feedback arrives.

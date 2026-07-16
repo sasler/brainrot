@@ -675,6 +675,7 @@
       const MAX_SPEED = 23;
       const STOP_SPEED = 0.075;
       const CUP_RADIUS = 0.49;
+      const TEST_MODE = new URLSearchParams(location.search).get("test") === "1";
       const colors = {
         void: 0x050403,
         green: 0x163b2d,
@@ -1765,7 +1766,7 @@
         const copy = relative <= -1 ? "The sun itself could not improve that line." : relative === 0 ? "Measured, exact, inevitable." : "The eclipse keeps every scar. Continue.";
         game.scores[game.currentHole] = { hole: game.currentHole + 1, name: hole.name, par: hole.par, strokes: game.holeStrokes, medal };
 
-        setTimeout(() => {
+        const revealResult = () => {
           game.mode = "result";
           ui.hud.classList.add("hidden");
           ui.resultTitle.textContent = title;
@@ -1775,7 +1776,9 @@
           ui.resultMedal.textContent = medal;
           ui.next.textContent = game.currentHole === holes.length - 1 ? "Reveal the Scorecard" : "Next Alignment";
           ui.holeScreen.classList.remove("hidden");
-        }, REDUCED_MOTION ? 120 : 1050);
+        };
+        if (TEST_MODE) revealResult();
+        else setTimeout(revealResult, REDUCED_MOTION ? 120 : 1050);
       }
 
       function acceptHoleAndContinue() {
@@ -2054,7 +2057,7 @@
         game.accumulator = 0;
       });
 
-      if (new URLSearchParams(location.search).get("test") === "1") {
+      if (TEST_MODE) {
         window.__miniGolfTest = {
           get currentHole() { return game.currentHole; },
           get state() { return game.mode; },
@@ -2063,6 +2066,13 @@
           get strokeCount() { return game.holeStrokes; },
           loadHole(index) { loadHole(index, { silentIntro: true }); },
           launchShot(direction, power) { return launchShot(direction, power, { silent: true }); },
+          advance(seconds) {
+            const steps = Math.max(0, Math.ceil(seconds / FIXED_DT));
+            for (let step = 0; step < steps; step += 1) {
+              physicsStep(FIXED_DT);
+              if (ball.stopped || game.mode !== "playing") break;
+            }
+          },
           completeCurrentHole() { completeHole(); },
           snapshot() {
             const hole = holes[game.currentHole];

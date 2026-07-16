@@ -23,6 +23,7 @@ declare global {
       strokeCount: number;
       loadHole(index: number): void;
       launchShot(direction: { x: number; z: number }, power: number): boolean;
+      advance(seconds: number): void;
       completeCurrentHole(): void;
       snapshot(): MiniGolfSnapshot;
     };
@@ -97,12 +98,14 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
       window.__miniGolfTest.launchShot({ x: -0.82, z: 1 }, 0.82);
     });
 
-    await expect.poll(() => page.evaluate(() => window.__miniGolfTest.strokeCount)).toBe(1);
-    await expect.poll(() => page.evaluate(() => window.__miniGolfTest.snapshot().ball.speed)).toBeGreaterThan(0.5);
-    await expect.poll(
-      () => page.evaluate(() => window.__miniGolfTest.ballVelocity.x),
-      { timeout: 4000 },
-    ).toBeGreaterThan(0);
+    const rebounded = await page.evaluate(() => {
+      for (let step = 0; step < 1200; step += 1) {
+        window.__miniGolfTest.advance(1 / 120);
+        if (window.__miniGolfTest.ballVelocity.x > 0) return true;
+      }
+      return false;
+    });
+    expect(rebounded).toBe(true);
     expect(await page.evaluate(() => window.__miniGolfTest.strokeCount)).toBe(1);
   });
 
@@ -113,17 +116,12 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
       window.__miniGolfTest.loadHole(0);
       const z = window.__miniGolfTest.ballPosition.z;
       window.__miniGolfTest.launchShot({ x: 0, z: 1 }, 1);
+      window.__miniGolfTest.advance(20);
       return z;
     });
 
-    await expect.poll(
-      () => page.evaluate(() => {
-        const snapshot = window.__miniGolfTest.snapshot();
-        return snapshot.state === "result" || snapshot.ball.stopped;
-      }),
-      { timeout: 8000 },
-    ).toBe(true);
     const finish = await page.evaluate(() => window.__miniGolfTest.snapshot());
+    expect(finish.state === "result" || finish.ball.stopped).toBe(true);
     expect(finish.ball.z - startZ).toBeGreaterThan(14.5);
     expect(finish.strokes).toBe(1);
   });
@@ -157,30 +155,31 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
       window.__miniGolfTest.loadHole(3);
       window.__miniGolfTest.launchShot({ x: 0, z: 1 }, 0.95);
     });
-    await expect.poll(
-      () => page.evaluate(() => window.__miniGolfTest.ballPosition.y),
-      { timeout: 4500 },
-    ).toBeGreaterThan(0.75);
+    const peakY = await page.evaluate(() => {
+      let peak = window.__miniGolfTest.ballPosition.y;
+      for (let step = 0; step < 1200; step += 1) {
+        window.__miniGolfTest.advance(1 / 120);
+        peak = Math.max(peak, window.__miniGolfTest.ballPosition.y);
+      }
+      return peak;
+    });
+    expect(peakY).toBeGreaterThan(0.75);
 
     await page.evaluate(() => window.__miniGolfTest.loadHole(0));
-    await page.evaluate(() => window.__miniGolfTest.launchShot({ x: 0, z: 1 }, 1));
-    await expect.poll(
-      () => page.evaluate(() => window.__miniGolfTest.snapshot().ball.stopped),
-      { timeout: 7000 },
-    ).toBe(true);
     await page.evaluate(() => {
+      window.__miniGolfTest.launchShot({ x: 0, z: 1 }, 1);
+      window.__miniGolfTest.advance(20);
       const snapshot = window.__miniGolfTest.snapshot();
+      if (!snapshot.ball.stopped) throw new Error("Full-power setup shot did not stop");
       const dx = snapshot.cup.x - snapshot.ball.x;
       const dz = snapshot.cup.z - snapshot.ball.z;
       const distance = Math.hypot(dx, dz);
       const estimatedSpeed = distance * 1.48;
       const power = Math.max(0.1, Math.min(0.72, (estimatedSpeed - 3.1) / 14.4));
       window.__miniGolfTest.launchShot({ x: dx, z: dz }, power);
+      window.__miniGolfTest.advance(20);
     });
-    await expect.poll(
-      () => page.evaluate(() => window.__miniGolfTest.state),
-      { timeout: 8000 },
-    ).toBe("result");
+    expect(await page.evaluate(() => window.__miniGolfTest.state)).toBe("result");
     await expect(page.locator("#holeScreen")).toBeVisible();
   });
 
@@ -188,12 +187,20 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
     await openGame(page);
     await startGame(page);
 
-    for (let index = 0; index < 9; index += 1) {
-      await page.evaluate(() => window.__miniGolfTest.completeCurrentHole());
-      await expect(page.locator("#holeScreen")).toBeVisible({ timeout: 2500 });
-      await page.locator("#nextButton").click();
-    }
+    const resultScreens = await page.evaluate(() => {
+      const visibility: boolean[] = [];
+      const holeScreen = document.getElementById("holeScreen");
+      const nextButton = document.getElementById("nextButton") as HTMLButtonElement;
+      if (!holeScreen || !nextButton) throw new Error("Hole result controls are unavailable");
+      for (let index = 0; index < 9; index += 1) {
+        window.__miniGolfTest.completeCurrentHole();
+        visibility.push(!holeScreen.classList.contains("hidden"));
+        nextButton.click();
+      }
+      return visibility;
+    });
 
+    expect(resultScreens).toEqual(Array(9).fill(true));
     await expect(page.locator("#finalScreen")).toBeVisible();
     await expect(page.locator("#scorecardGrid .score-cell")).toHaveCount(9);
     await expect(page.locator("#rankTitle")).not.toBeEmpty();
