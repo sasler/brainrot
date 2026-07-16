@@ -18,6 +18,7 @@ If the client does not discover skills automatically, enumerate `.agents/skills/
 |---|---|
 | `start-session` | Starting a new task on a branch created from latest `origin/main` |
 | `develop-game` | Adding or changing a game implementation |
+| `develop-threejs-game` | Building or substantially revising a Three.js game, its model-owned assets, diagnostics, or visual-quality evidence |
 | `verify-changes` | Running scoped local checks and applying the CI validation contract |
 | `create-pull-request` | Committing, pushing, and opening a compliant PR |
 | `address-pr-review-comments` | Triaging and resolving PR review feedback |

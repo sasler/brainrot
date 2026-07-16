@@ -4,10 +4,12 @@ import { getGame, getGames, getGameVersion } from "@/lib/games";
 import RatingsProvider from "@/components/RatingsProvider";
 import RatingInput from "@/components/RatingInput";
 import { getModelInfo } from "@/lib/modelCatalog";
+import { formatAssetSummary } from "@/lib/assetDisplay";
 import type { Metadata } from "next";
 
 interface PlayPageProps {
   params: Promise<{ game: string; model: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateStaticParams() {
@@ -33,13 +35,16 @@ export async function generateMetadata({
   };
 }
 
-export default async function PlayPage({ params }: PlayPageProps) {
+export default async function PlayPage({ params, searchParams }: PlayPageProps) {
   const { game: gameId, model: modelId } = await params;
+  const query = await searchParams;
   const game = getGame(gameId);
   const version = game ? getGameVersion(gameId, modelId) : undefined;
 
   if (!game || !version) notFound();
   const model = getModelInfo(version.modelId, version.model);
+  const assetSummary = formatAssetSummary(version.assets);
+  const iframeSrc = query.test === "1" ? `${version.path}?test=1` : version.path;
 
   return (
     <div className="fixed inset-0 top-16 flex flex-col bg-background">
@@ -91,13 +96,18 @@ export default async function PlayPage({ params }: PlayPageProps) {
             </span>{" "}
             lines
           </span>
+          {assetSummary && (
+            <span data-asset-summary={assetSummary}>
+              <span className="text-neon-cyan">{assetSummary}</span>
+            </span>
+          )}
         </div>
       </div>
 
       {/* Game iframe — takes all remaining space */}
       <div className="relative min-h-0 flex-1 bg-black">
         <iframe
-          src={version.path}
+          src={iframeSrc}
           sandbox="allow-scripts allow-pointer-lock"
           title={`${game.name} by ${model.displayName}`}
           className="absolute inset-0 h-full w-full border-0"

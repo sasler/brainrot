@@ -9,6 +9,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { validateRepositoryAssets } = require("./game-assets");
 
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_PATH = path.join(ROOT, "games-metadata.json");
@@ -49,6 +50,16 @@ function detectFeatures(content) {
 
 function main() {
   const metadata = JSON.parse(fs.readFileSync(METADATA_PATH, "utf-8"));
+  const assetValidation = validateRepositoryAssets({
+    rootDir: ROOT,
+    metadata,
+  });
+  if (assetValidation.errors.length > 0) {
+    console.error("❌ Game asset validation failed:");
+    for (const error of assetValidation.errors) console.error(`  - ${error}`);
+    process.exit(1);
+  }
+
   let updated = 0;
 
   for (const game of metadata.games) {
@@ -81,6 +92,23 @@ function main() {
           `🏷️  ${game.id}/${version.modelId}: features → [${features.join(", ")}]`
         );
         version.features = features;
+        updated++;
+      }
+
+      const assetKey = `${game.id}/${version.modelId}`;
+      const assetSummary = assetValidation.summaries.get(assetKey);
+      const oldAssets = JSON.stringify(version.assets);
+      if (assetSummary) {
+        version.assets = assetSummary;
+      } else {
+        delete version.assets;
+      }
+      if (oldAssets !== JSON.stringify(version.assets)) {
+        console.log(
+          assetSummary
+            ? `📦 ${assetKey}: ${assetSummary.files} assets, ${assetSummary.bytes} bytes`
+            : `📦 ${assetKey}: removed stale asset summary`,
+        );
         updated++;
       }
     }

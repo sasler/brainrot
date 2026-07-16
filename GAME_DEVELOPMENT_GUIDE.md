@@ -58,7 +58,7 @@ Your implementation **MUST** meet ALL of the following:
 | Mouse Controls | 🔵 Game-dependent | Required when pointing, aiming, dragging, or selection is natural to the genre |
 | Touch Support | 🟡 Optional | Add swipe/tap controls only when they improve the implementation |
 | Background Music | 🟡 Nice-to-have | Looping procedural audio (oscillators) |
-| 3D Rendering | 🔵 Game-dependent | Use Three.js (inline) for 3D games |
+| 3D Rendering | 🔵 Game-dependent | Apply `develop-threejs-game` and use the pinned local Three.js runtime |
 | Power-ups | 🔵 Game-dependent | Where applicable (Snake, Breakout, etc.) |
 | Optional Effects | 🟡 Nice-to-have | Particles, shake, glow, trails, or other effects when they reinforce the chosen style |
 | High Score | ✅ Recommended | Track and display best score in session |
@@ -127,21 +127,25 @@ public/games/
 
 ## Rules
 
-### 1. Single File Only
-Your entire game MUST be contained in a **single `index.html` file**. This includes:
+### 1. Standalone Game Code
+Your executable game implementation MUST be contained in a **single `index.html` file**. This includes:
 - All HTML markup
 - All CSS (in a `<style>` tag)
 - All JavaScript (in a `<script>` tag)
-- No external dependencies, CDNs, or imports
+- No runtime CDNs or remote dependencies
+
+Three.js games may import the repository-pinned runtime from `/vendor/three/0.185.1` and may use model-owned data assets under `public/games/{game}/{model}/assets`. Those assets require `assets/manifest.json`, complete provenance, supported v1 formats, and asset-budget validation. Apply `.agents/skills/develop-threejs-game/SKILL.md` for the complete policy.
 
 ### 2. Sandboxed Environment
-Your game runs inside an iframe with `sandbox="allow-scripts"`. This means:
+Your game runs inside an iframe with `sandbox="allow-scripts allow-pointer-lock"`. The sandbox intentionally omits `allow-same-origin`, so the game has an opaque origin. This means:
 - ✅ JavaScript execution works
 - ❌ No access to parent page DOM
 - ❌ No access to cookies or localStorage of parent
 - ❌ No form submissions
 - ❌ No popups or new windows
 - ❌ No navigation of the parent frame
+
+The application serves the pinned Three.js runtime and version-local assets with CORS, CORP, and resource-timing headers so module imports, textures, and fetch-based loaders work without weakening the sandbox.
 
 ### 3. Desktop-First, Gameplay-First Layout
 - Fill the entire iframe; use `100vw` and `100vh` for full-screen games
@@ -168,6 +172,7 @@ Your game runs inside an iframe with `sandbox="allow-scripts"`. This means:
 - Use `requestAnimationFrame` for game loops
 - Minimize DOM manipulation — prefer `<canvas>` for rendering
 - Clean up intervals/timeouts/animation frames when appropriate
+- Three.js games must expose diagnostics in `?test=1`, capture active-play evidence with `npm run inspect:threejs`, and use deliberate DPR, shadow, post-processing, disposal, instancing, and asset budgets
 
 ### 6. User Experience
 - Include a title screen or start state
@@ -194,6 +199,14 @@ Place your file at:
 ```
 public/games/{game-id}/{model-id}/index.html
 ```
+
+Optional Three.js creative assets go in:
+
+```text
+public/games/{game-id}/{model-id}/assets
+```
+
+Run `npm run validate:game-assets` and `npm run update-metadata` after changing an asset manifest.
 
 Where:
 - `{game-id}` is the game slug: `snake`, `minesweeper`, `tetris`, `reversi`
