@@ -11,10 +11,10 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     // Tagline
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
-    // Arena section with 17 game cards
+    // Arena section with 18 game cards
     const arena = page.locator("#arena");
     const gameCards = arena.locator('a[href^="/games/"]');
-    await expect(gameCards).toHaveCount(17);
+    await expect(gameCards).toHaveCount(18);
 
     // Game card titles present in arena section
     await expect(
@@ -86,6 +86,11 @@ test.describe("BrainRot Games — Smoke Tests", () => {
         .locator('a[href="/games/clockwork-caper"]')
         .getByRole("heading", { name: "Clockwork Caper" }),
     ).toBeVisible();
+    await expect(
+      arena
+        .locator('a[href="/games/kart-racing"]')
+        .getByRole("heading", { name: "Sunbeam Kart Rally" }),
+    ).toBeVisible();
   });
 
   test("navbar has correct links", async ({ page }) => {
@@ -122,6 +127,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "outrun-racer",
       "coastal-rush-86",
       "clockwork-caper",
+      "kart-racing",
     ];
 
     for (const game of games) {
@@ -141,6 +147,11 @@ test.describe("BrainRot Games — Smoke Tests", () => {
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Sol", exact: true })).toBeVisible();
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Terra", exact: true })).toBeVisible();
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Luna", exact: true })).toBeVisible();
+        continue;
+      }
+
+      if (game === "kart-racing") {
+        await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Sol", exact: true })).toBeVisible();
         continue;
       }
 
@@ -176,7 +187,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.games).toHaveLength(17);
+    expect(data.games).toHaveLength(18);
     expect(data.games.map((g: { id: string }) => g.id)).toEqual([
       "snake",
       "minesweeper",
@@ -195,6 +206,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "outrun-racer",
       "coastal-rush-86",
       "clockwork-caper",
+      "kart-racing",
     ]);
   });
 
