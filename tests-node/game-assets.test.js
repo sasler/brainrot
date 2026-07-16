@@ -136,6 +136,24 @@ test("rejects owner mismatch", () => {
   }
 });
 
+test("rejects asset directories for games missing from metadata", () => {
+  const fixture = createFixture();
+  try {
+    const metadata = { games: [] };
+    const result = validateRepositoryAssets({
+      rootDir: fixture.root,
+      metadata,
+    });
+    assert.ok(
+      result.errors.some((error) =>
+        error.includes("does not belong to a registered game version"),
+      ),
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test("rejects unsupported formats", () => {
   const fixture = createFixture();
   try {
@@ -208,6 +226,35 @@ test("requires inspector evidence for budget exceptions", () => {
       JSON.stringify(fixture.manifest),
     );
     assert.deepEqual(validate(fixture).errors, []);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("rejects non-normalized budget exception report paths", () => {
+  const fixture = createFixture();
+  try {
+    for (const inspectorReport of [
+      "docs\\threejs-inspections\\report.json",
+      "docs/./threejs-inspections/report.json",
+      "docs//threejs-inspections/report.json",
+      "../threejs-inspections/report.json",
+    ]) {
+      fixture.manifest.budgetException = {
+        reason: "Test invalid evidence path handling.",
+        inspectorReport,
+      };
+      fs.writeFileSync(
+        path.join(fixture.assetsDir, "manifest.json"),
+        JSON.stringify(fixture.manifest),
+      );
+      assert.ok(
+        validate(fixture).errors.some((error) =>
+          error.includes("budgetException requires a local inspectorReport path"),
+        ),
+        inspectorReport,
+      );
+    }
   } finally {
     fixture.cleanup();
   }

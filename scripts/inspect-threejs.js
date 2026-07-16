@@ -43,6 +43,21 @@ function parseArgs(argv) {
   return options;
 }
 
+function isInspectedResource(url, game, model) {
+  return (
+    url.pathname.startsWith("/vendor/three/") ||
+    url.pathname.startsWith(`/games/${game}/${model}/assets/`)
+  );
+}
+
+function resourceHttpFailure({ status, url, game, model }) {
+  if (status < 400 || !isInspectedResource(url, game, model)) return null;
+  return {
+    url: url.pathname,
+    status,
+  };
+}
+
 async function measureScreenshot(page, screenshotPath) {
   const dataUrl = `data:image/png;base64,${fs.readFileSync(screenshotPath).toString("base64")}`;
   return page.evaluate(async (source) => {
@@ -123,6 +138,7 @@ async function main() {
   const pageErrors = [];
   const failedRequests = [];
   const externalRequests = [];
+  const httpErrors = [];
   const transfers = { runtimeBytes: 0, assetBytes: 0, entries: [] };
   const baseHost = new URL(options.baseUrl).host;
 
@@ -157,6 +173,13 @@ async function main() {
         `/games/${options.game}/${options.model}/assets/`,
       );
       if (!isRuntime && !isAsset) return;
+      const httpFailure = resourceHttpFailure({
+        status: response.status(),
+        url,
+        game: options.game,
+        model: options.model,
+      });
+      if (httpFailure) httpErrors.push(httpFailure);
       const lengthHeader = Number(response.headers()["content-length"]);
       const bytes = Number.isFinite(lengthHeader) && lengthHeader >= 0
         ? lengthHeader
@@ -252,6 +275,9 @@ async function main() {
         (entry) => `game request: ${entry.url} (${entry.error})`,
       ),
       ...gameExternalRequests.map((entry) => `external game request: ${entry.url}`),
+      ...httpErrors.map(
+        (entry) => `HTTP ${entry.status}: ${entry.url}`,
+      ),
       ...(pixelFailure ? ["screenshot appears blank or near-uniform"] : []),
     ];
     const report = {
@@ -273,6 +299,7 @@ async function main() {
         console: consoleErrors,
         page: pageErrors,
         network: failedRequests,
+        http: httpErrors,
         externalRequests,
       },
       warnings,
@@ -293,7 +320,14 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`❌ ${error.message}`);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(`❌ ${error.message}`);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  isInspectedResource,
+  resourceHttpFailure,
+};

@@ -160,14 +160,12 @@ function readImageDimensions(filePath, extension) {
 }
 
 function validBudgetException(value) {
+  const normalizedReport = normalizeAssetPath(value?.inspectorReport);
   return Boolean(
     value &&
     typeof value === "object" &&
     isNonEmptyString(value.reason) &&
-    isNonEmptyString(value.inspectorReport) &&
-    !/^[a-z][a-z\d+.-]*:/i.test(value.inspectorReport) &&
-    !path.posix.isAbsolute(value.inspectorReport) &&
-    !value.inspectorReport.split("/").includes(".."),
+    normalizedReport.value === value.inspectorReport,
   );
 }
 
@@ -202,7 +200,7 @@ function validateAssetDirectory({
   if (manifest.ownerModelId !== modelId) {
     issue(errors, scope, `ownerModelId must match directory model "${modelId}"`);
   }
-  if (registeredModelIds && !registeredModelIds.has(modelId)) {
+  if (!registeredModelIds || !registeredModelIds.has(modelId)) {
     issue(errors, scope, "asset directory does not belong to a registered game version");
   }
   if (!Array.isArray(manifest.assets)) {
@@ -362,7 +360,7 @@ function validateRepositoryAssets({ rootDir, metadata }) {
         assetsDir,
         gameId: gameEntry.name,
         modelId: modelEntry.name,
-        registeredModelIds: registered.get(gameEntry.name),
+        registeredModelIds: registered.get(gameEntry.name) ?? new Set(),
         rootDir,
       });
       errors.push(...result.errors);
