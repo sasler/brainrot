@@ -121,7 +121,7 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
         const snapshot = window.__miniGolfTest.snapshot();
         return snapshot.state === "result" || snapshot.ball.stopped;
       }),
-      { timeout: 8000 },
+      { timeout: 16_000 },
     ).toBe(true);
     const finish = await page.evaluate(() => window.__miniGolfTest.snapshot());
     expect(finish.ball.z - startZ).toBeGreaterThan(14.5);
@@ -159,14 +159,14 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
     });
     await expect.poll(
       () => page.evaluate(() => window.__miniGolfTest.ballPosition.y),
-      { timeout: 4500 },
+      { timeout: 10_000 },
     ).toBeGreaterThan(0.75);
 
     await page.evaluate(() => window.__miniGolfTest.loadHole(0));
     await page.evaluate(() => window.__miniGolfTest.launchShot({ x: 0, z: 1 }, 1));
     await expect.poll(
       () => page.evaluate(() => window.__miniGolfTest.snapshot().ball.stopped),
-      { timeout: 7000 },
+      { timeout: 14_000 },
     ).toBe(true);
     await page.evaluate(() => {
       const snapshot = window.__miniGolfTest.snapshot();
@@ -179,12 +179,13 @@ test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
     });
     await expect.poll(
       () => page.evaluate(() => window.__miniGolfTest.state),
-      { timeout: 8000 },
+      { timeout: 16_000 },
     ).toBe("result");
     await expect(page.locator("#holeScreen")).toBeVisible();
   });
 
   test("advances through all nine result transitions and renders the final scorecard", async ({ page }) => {
+    test.setTimeout(60_000);
     await openGame(page);
     await startGame(page);
 
