@@ -42,6 +42,9 @@ type KartSnapshot = {
     maxGrade: number;
     terrainSupport: string;
     windmillHill: string;
+    skyTreatment: string;
+    lightingTreatment: string;
+    playerMarker: string;
     minimumTreeTrackClearance: number;
     minimumTreeShortcutClearance: number;
     minimumFlowerTrackClearance: number;
@@ -57,6 +60,7 @@ type KartSnapshot = {
     projectiles: number;
     puddles: number;
     particles: number;
+    audioLayers: number;
   };
 };
 
@@ -96,6 +100,7 @@ async function openGame(page: Page, viewport = { width: 1280, height: 720 }) {
   await page.setViewportSize(viewport);
   await page.goto("/games/kart-racing/gpt-5-6-sol/index.html?test=1");
   await expect(page.locator("#startButton")).toBeVisible();
+  await expect(page.locator("#startButton")).toBeEnabled();
   await expect.poll(() => page.evaluate(() => Boolean(window.__THREE_GAME_TEST_HOOKS__))).toBe(true);
   await expect.poll(() => page.evaluate(() => Boolean(window.__SUNBEAM_TEST__))).toBe(true);
 }
@@ -129,6 +134,20 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
     await expect(page.locator("#startButton")).toBeVisible();
     expect(await page.evaluate(() => "__THREE_GAME_TEST_HOOKS__" in window)).toBe(false);
     expect(await page.evaluate(() => "__SUNBEAM_TEST__" in window)).toBe(false);
+  });
+
+  test("starts even when Web Audio is unavailable after showing a real loading state", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "AudioContext", { value: undefined, configurable: true });
+      Object.defineProperty(window as Window & { webkitAudioContext?: unknown }, "webkitAudioContext", { value: undefined, configurable: true });
+    });
+    await page.goto("/games/kart-racing/gpt-5-6-sol/index.html");
+    const start = page.locator("#startButton");
+    await expect(start).toBeEnabled();
+    await expect(start).toHaveText("Start the Rally");
+    await start.click();
+    await expect(page.locator("#titleScreen")).toBeHidden();
+    await expect(page.locator("#hud")).toBeVisible();
   });
 
   test("supports one through five opponents and defaults to a six-kart grid", async ({ page }) => {
@@ -277,6 +296,9 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
     expect(snapshot.environment.maxGrade).toBeLessThan(0.16);
     expect(snapshot.environment.terrainSupport).toBe("graded-corridor");
     expect(snapshot.environment.windmillHill).toBe("radial-mound");
+    expect(snapshot.environment.skyTreatment).toBe("gradient-dome-clouds");
+    expect(snapshot.environment.lightingTreatment).toBe("warm-sun-cool-fill");
+    expect(snapshot.environment.playerMarker).toBe("sun-chevron-checkered-flag");
     expect(snapshot.environment.minimumTreeTrackClearance).toBeGreaterThanOrEqual(11.75);
     expect(snapshot.environment.minimumTreeShortcutClearance).toBeGreaterThanOrEqual(6.55);
     expect(snapshot.environment.minimumFlowerTrackClearance).toBeGreaterThanOrEqual(9.4);
@@ -315,6 +337,24 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
       return window.__SUNBEAM_TEST__.useItem();
     });
     expect(jam.objects.puddles).toBe(1);
+  });
+
+  test("collects a real track crate and uses it from the clickable HUD slot", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => {
+      window.__SUNBEAM_TEST__.start(1);
+      window.__SUNBEAM_TEST__.setPlayerProgress(36, 0);
+      return window.__THREE_GAME_TEST_HOOKS__.advance(0.03);
+    });
+    const held = await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot());
+    expect(held.player.item).not.toBeNull();
+    await expect(page.locator("#item")).toBeEnabled();
+    await expect(page.locator("#item")).toHaveClass(/ready/);
+    await page.locator("#item").click();
+    const used = await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot());
+    expect(used.player.item).toBeNull();
+    expect(used.player.boost + used.player.shield + used.objects.projectiles + used.objects.puddles).toBeGreaterThan(0);
+    expect(used.objects.audioLayers).toBe(3);
   });
 
   test("requires all checkpoints before awarding a lap", async ({ page }) => {
