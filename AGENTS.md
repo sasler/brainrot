@@ -18,7 +18,7 @@ If the client does not discover skills automatically, enumerate `.agents/skills/
 |---|---|
 | `start-session` | Starting a new task on a branch created from latest `origin/main` |
 | `develop-game` | Adding or changing a game implementation |
-| `verify-changes` | Running scoped checks and the full PR validation gate |
+| `verify-changes` | Running scoped local checks and applying the CI validation contract |
 | `create-pull-request` | Committing, pushing, and opening a compliant PR |
 | `address-pr-review-comments` | Triaging and resolving PR review feedback |
 | `frontend-design` | Designing or substantially restyling frontend UI |
@@ -36,4 +36,5 @@ If the client does not discover skills automatically, enumerate `.agents/skills/
 - This file applies repository-wide. Explicit user instructions take precedence; a more deeply nested `AGENTS.md` takes precedence for its subtree.
 - `games-metadata.json` is the source of truth for games, versions, model ownership, reviews, and detected features.
 - A game file may only be created or changed by the exact AI model that owns that version. Resolve ownership from `games-metadata.json`; if the exact model is unavailable, stop instead of substituting another model.
+- Keep local verification scoped to the change. GitHub Actions runs the complete lint, build, and Playwright gate for every pull request, and its required aggregate check is authoritative before merge.
 - Follow `GAME_DEVELOPMENT_GUIDE.md` for game work. Keep detailed workflows in the skills above, not in this file.

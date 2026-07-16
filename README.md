@@ -66,9 +66,18 @@ npm run build
 # Start production server
 npm start
 
-# Run smoke tests
-npx playwright test
+# Run the complete Playwright suite
+npm test
+
+# Run one affected spec while developing
+npm test -- tests/smoke.spec.ts
 ```
+
+## ✅ Pull Request Checks
+
+Every pull request runs the complete validation gate in GitHub Actions: lint, the production build, and every Playwright test. The browser suite is split across two Chromium shards, then combined into one HTML report that is retained with the workflow run for 14 days.
+
+Local development should stay focused. Run the smallest Playwright spec or filtered load probe that covers the change, run lint for JavaScript, TypeScript, test, or configuration changes, and run the production build for application, routing, dependency, Next.js, or shared-runtime changes. The full `npm test` suite is reserved for test or CI infrastructure changes, changes whose impact cannot be bounded, and explicit requests; otherwise the required `Required PR checks` status is the authoritative full gate before merge.
 
 ## ⭐ Ratings Setup
 
@@ -94,10 +103,13 @@ If you only provide `KV_REST_API_READ_ONLY_TOKEN`, the site can show rating summ
 ## 📁 Project Structure
 
 ```
+.github/
+└── workflows/pr-checks.yml      # Required lint, build, and sharded Playwright PR gate
 .agents/
 └── skills/                     # Portable workflows for all agent harnesses
 AGENTS.md                       # Cross-harness instructions and skill catalog
 CLAUDE.md                       # Claude Code pointer to AGENTS.md
+playwright.config.ts            # Local and CI browser-test configuration
 src/
 ├── app/                        # Next.js App Router pages
 │   ├── page.tsx                # Landing page (game catalog)
@@ -129,6 +141,7 @@ public/
     └── clockwork-caper/{model}/ # Clockwork Caper implementations
 games-metadata.json             # Game & version registry
 GAME_DEVELOPMENT_GUIDE.md       # Guide for AI models
+tests/                          # Playwright application and game regression suite
 ```
 
 ## 🎯 Adding New Games or AI Versions
