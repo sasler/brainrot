@@ -42,6 +42,15 @@ type KartSnapshot = {
     maxGrade: number;
     terrainSupport: string;
     windmillHill: string;
+    minimumTreeTrackClearance: number;
+    minimumTreeShortcutClearance: number;
+    minimumFlowerTrackClearance: number;
+    minimumFlowerShortcutClearance: number;
+    minimumFruitTrackClearance: number;
+    minimumFruitShortcutClearance: number;
+    minimumLandmarkTrackClearance: number;
+    minimumLandmarkShortcutClearance: number;
+    minimumBridgeRailTrackClearance: number;
   };
   objects: {
     itemBoxes: number;
@@ -158,6 +167,80 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
     expect(boosted.player.boost).toBeGreaterThan(0);
   });
 
+  test("maps left and right input to the matching chase-camera direction", async ({ page }) => {
+    await openGame(page);
+    const initial = await page.evaluate(() => window.__SUNBEAM_TEST__.start(1));
+
+    await page.keyboard.down("w");
+    await page.keyboard.down("d");
+    const right = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(0.7));
+    await page.keyboard.up("d");
+    await page.keyboard.up("w");
+
+    await page.evaluate(() => window.__SUNBEAM_TEST__.start(1));
+    await page.keyboard.down("w");
+    await page.keyboard.down("a");
+    const left = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(0.7));
+    await page.keyboard.up("a");
+    await page.keyboard.up("w");
+
+    expect(right.player.heading).toBeLessThan(initial.player.heading);
+    expect(left.player.heading).toBeGreaterThan(initial.player.heading);
+    expect(right.player.x).toBeGreaterThan(left.player.x);
+  });
+
+  test("completes a checkpoint-valid keyboard-controlled lap with five opponents", async ({ page }) => {
+    await openGame(page);
+    const result = await page.evaluate(() => {
+      const testControls = window.__SUNBEAM_TEST__;
+      const hooks = window.__THREE_GAME_TEST_HOOKS__;
+      testControls.start(1);
+      const centerline: Array<{ x: number; z: number }> = [];
+      for (let index = 0; index < 300; index++) {
+        const player = testControls.setPlayerProgress(index).player;
+        centerline.push({ x: player.x, z: player.z });
+      }
+
+      testControls.start(5);
+      const key = (type: "keydown" | "keyup", code: string) => {
+        dispatchEvent(new KeyboardEvent(type, { code, bubbles: true }));
+      };
+      let heldSteer = "";
+      let drifting = false;
+      const setSteer = (next: string) => {
+        if (heldSteer === next) return;
+        if (heldSteer) key("keyup", heldSteer);
+        heldSteer = next;
+        if (heldSteer) key("keydown", heldSteer);
+      };
+
+      key("keydown", "KeyW");
+      let snapshot = hooks.snapshot();
+      for (let step = 0; step < 3600 && snapshot.player.lap < 2; step++) {
+        const player = snapshot.player;
+        const target = centerline[(player.progressIndex + 12) % centerline.length];
+        const desired = Math.atan2(target.x - player.x, target.z - player.z);
+        const delta = Math.atan2(Math.sin(desired - player.heading), Math.cos(desired - player.heading));
+        setSteer(delta > 0.025 ? "KeyA" : delta < -0.025 ? "KeyD" : "");
+        const wantsDrift = Math.abs(delta) > 0.16 && player.speed > 8 && !player.offroad;
+        if (wantsDrift !== drifting) {
+          key(wantsDrift ? "keydown" : "keyup", "Space");
+          drifting = wantsDrift;
+        }
+        snapshot = hooks.advance(0.05);
+      }
+      setSteer("");
+      key("keyup", "KeyW");
+      if (drifting) key("keyup", "Space");
+      return snapshot;
+    });
+
+    expect(result.racerCount).toBe(6);
+    expect(result.player.lap).toBe(2);
+    expect(result.player.offroad).toBe(false);
+    expect(result.raceTime).toBeLessThan(35);
+  });
+
   test("slows off-road and safely resets the player to the racing line", async ({ page }) => {
     await openGame(page);
     await page.evaluate(() => window.__SUNBEAM_TEST__.start(3));
@@ -194,6 +277,15 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally", () => {
     expect(snapshot.environment.maxGrade).toBeLessThan(0.16);
     expect(snapshot.environment.terrainSupport).toBe("graded-corridor");
     expect(snapshot.environment.windmillHill).toBe("radial-mound");
+    expect(snapshot.environment.minimumTreeTrackClearance).toBeGreaterThanOrEqual(11.75);
+    expect(snapshot.environment.minimumTreeShortcutClearance).toBeGreaterThanOrEqual(6.55);
+    expect(snapshot.environment.minimumFlowerTrackClearance).toBeGreaterThanOrEqual(9.4);
+    expect(snapshot.environment.minimumFlowerShortcutClearance).toBeGreaterThanOrEqual(4.3);
+    expect(snapshot.environment.minimumFruitTrackClearance).toBeGreaterThanOrEqual(9.7);
+    expect(snapshot.environment.minimumFruitShortcutClearance).toBeGreaterThanOrEqual(4.6);
+    expect(snapshot.environment.minimumLandmarkTrackClearance).toBeGreaterThanOrEqual(14.7);
+    expect(snapshot.environment.minimumLandmarkShortcutClearance).toBeGreaterThanOrEqual(10.3);
+    expect(snapshot.environment.minimumBridgeRailTrackClearance).toBeGreaterThanOrEqual(9.55);
   });
 
   test("activates all four original items with distinct race effects", async ({ page }) => {

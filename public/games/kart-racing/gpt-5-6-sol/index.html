@@ -624,6 +624,82 @@
       });
     }
 
+    const clearanceMetrics = Object.fromEntries(
+      ["trees", "flowers", "fruit", "landmarks", "bridgeRails"].map((kind) => [
+        kind,
+        { track: Infinity, shortcut: Infinity },
+      ]),
+    );
+
+    function nearestRoutePointXZ(position, routeSamples) {
+      let best = routeSamples[0];
+      let bestDistanceSq = Infinity;
+      for (const sample of routeSamples) {
+        const dx = position.x - sample.p.x;
+        const dz = position.z - sample.p.z;
+        const distanceSq = dx * dx + dz * dz;
+        if (distanceSq < bestDistanceSq) {
+          bestDistanceSq = distanceSq;
+          best = sample;
+        }
+      }
+      return {
+        sample: best,
+        distance: Math.sqrt(bestDistanceSq),
+        sideDistance: (position.x - best.p.x) * best.side.x + (position.z - best.p.z) * best.side.z,
+      };
+    }
+
+    function routeClearance(position) {
+      const track = nearestRoutePointXZ(position, samples);
+      const shortcut = nearestRoutePointXZ(position, shortcutSamples);
+      return {
+        track: track.distance,
+        shortcut: shortcut.distance,
+        minimum: Math.min(track.distance, shortcut.distance),
+      };
+    }
+
+    function terrainHeightAt(position) {
+      const nearest = nearestRoutePointXZ(position, samples);
+      const distance = nearest.distance;
+      let weight = 0;
+      if (distance <= 11) weight = 1;
+      else if (distance < 17) weight = THREE.MathUtils.lerp(1, 0.48, (distance - 11) / 6);
+      else if (distance < 24) weight = THREE.MathUtils.lerp(0.48, 0, (distance - 17) / 7);
+      return THREE.MathUtils.lerp(-0.45, nearest.sample.p.y - 0.13, weight);
+    }
+
+    function moveOutsideRoute(position, trackClearance, shortcutClearance = trackClearance) {
+      for (let pass = 0; pass < 3; pass++) {
+        const track = nearestRoutePointXZ(position, samples);
+        if (track.distance < trackClearance) {
+          const direction = Math.sign(track.sideDistance) || (pass % 2 ? -1 : 1);
+          position.addScaledVector(track.sample.side, direction * trackClearance - track.sideDistance);
+        }
+        const shortcut = nearestRoutePointXZ(position, shortcutSamples);
+        if (shortcut.distance < shortcutClearance) {
+          const direction = Math.sign(shortcut.sideDistance) || (pass % 2 ? 1 : -1);
+          position.addScaledVector(shortcut.sample.side, direction * shortcutClearance - shortcut.sideDistance);
+        }
+      }
+      position.y = terrainHeightAt(position);
+      return position;
+    }
+
+    function recordClearance(kind, position) {
+      const clearance = routeClearance(position);
+      clearanceMetrics[kind].track = Math.min(clearanceMetrics[kind].track, clearance.track);
+      clearanceMetrics[kind].shortcut = Math.min(clearanceMetrics[kind].shortcut, clearance.shortcut);
+    }
+
+    function tracksidePosition(index, offset) {
+      const sample = samples[((index % ROAD_SAMPLES) + ROAD_SAMPLES) % ROAD_SAMPLES];
+      const position = sample.p.clone().addScaledVector(sample.side, offset);
+      position.y = terrainHeightAt(position);
+      return { sample, position };
+    }
+
     function createStrip(width, yOffset, material) {
       const positions = [];
       const uvs = [];
@@ -656,16 +732,32 @@
     terrain.receiveShadow = true;
     world.add(terrain);
 
+    function safeCorridorOffset(index, offset) {
+      if (Math.abs(offset) <= 11) return offset;
+      const previous = samples[(index - 2 + ROAD_SAMPLES) % ROAD_SAMPLES];
+      const next = samples[(index + 2) % ROAD_SAMPLES];
+      const previousHeading = Math.atan2(previous.tangent.x, previous.tangent.z);
+      const nextHeading = Math.atan2(next.tangent.x, next.tangent.z);
+      const turn = Math.atan2(Math.sin(nextHeading - previousHeading), Math.cos(nextHeading - previousHeading));
+      if (Math.abs(turn) < 0.002) return offset;
+      const span = Math.hypot(next.p.x - previous.p.x, next.p.z - previous.p.z);
+      const radius = span / Math.max(0.002, Math.abs(turn));
+      const insideSign = -Math.sign(turn);
+      if (Math.sign(offset) !== insideSign) return offset;
+      return insideSign * Math.min(Math.abs(offset), Math.max(11.35, radius * 0.72));
+    }
+
     function createTerrainCorridor() {
-      const offsets = [-34, -23, -13, 13, 23, 34];
+      const offsets = [-24, -17, -11, 11, 17, 24];
       const heightWeights = [0, 0.48, 1, 1, 0.48, 0];
       const positions = [];
       const indices = [];
-      const baseY = -0.43;
+      const baseY = -0.45;
       for (let i = 0; i <= ROAD_SAMPLES; i++) {
-        const sample = samples[i % ROAD_SAMPLES];
+        const sampleIndex = i % ROAD_SAMPLES;
+        const sample = samples[sampleIndex];
         for (let column = 0; column < offsets.length; column++) {
-          const point = sample.p.clone().addScaledVector(sample.side, offsets[column]);
+          const point = sample.p.clone().addScaledVector(sample.side, safeCorridorOffset(sampleIndex, offsets[column]));
           point.y = THREE.MathUtils.lerp(baseY, sample.p.y - 0.13, heightWeights[column]);
           positions.push(point.x, point.y, point.z);
         }
@@ -673,8 +765,18 @@
           const row = i * offsets.length;
           const next = row + offsets.length;
           for (let column = 0; column < offsets.length - 1; column++) {
-            indices.push(row + column, next + column, row + column + 1);
-            indices.push(next + column, next + column + 1, row + column + 1);
+            const triangles = [
+              [row + column, next + column, row + column + 1],
+              [next + column, next + column + 1, row + column + 1],
+            ];
+            for (const [a, b, c] of triangles) {
+              const ax = positions[a * 3], az = positions[a * 3 + 2];
+              const bx = positions[b * 3], bz = positions[b * 3 + 2];
+              const cx = positions[c * 3], cz = positions[c * 3 + 2];
+              const normalY = (bz - az) * (cx - ax) - (bx - ax) * (cz - az);
+              if (normalY >= 0) indices.push(a, b, c);
+              else indices.push(a, c, b);
+            }
           }
         }
       }
@@ -682,7 +784,11 @@
       geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
       geometry.setIndex(indices);
       geometry.computeVertexNormals();
-      const mesh = new THREE.Mesh(geometry, mats.grass);
+      const corridorMaterial = mats.grass.clone();
+      corridorMaterial.polygonOffset = true;
+      corridorMaterial.polygonOffsetFactor = -1;
+      corridorMaterial.polygonOffsetUnits = -1;
+      const mesh = new THREE.Mesh(geometry, corridorMaterial);
       mesh.receiveShadow = true;
       world.add(mesh);
     }
@@ -841,6 +947,8 @@
         const p = s.p.clone().addScaledVector(s.side, side * distance);
         p.x += Math.sin(i * 2.13) * 6;
         p.z += Math.cos(i * 1.77) * 6;
+        moveOutsideRoute(p, TRACK_WIDTH + 3.4, 6.6);
+        recordClearance("trees", p);
         const scale = 0.72 + (i % 7) * 0.07;
         dummy.position.set(p.x, p.y + 1.35 * scale, p.z);
         dummy.scale.set(scale, scale, scale);
@@ -867,6 +975,8 @@
         const s = samples[(i * 19 + 11) % ROAD_SAMPLES];
         const side = i % 2 ? 1 : -1;
         const p = s.p.clone().addScaledVector(s.side, side * (10.5 + (i % 15) * 0.7));
+        moveOutsideRoute(p, TRACK_WIDTH + 1.05, 4.35);
+        recordClearance("flowers", p);
         dummy.position.set(p.x, p.y + 0.1, p.z);
         dummy.scale.setScalar(0.65 + (i % 4) * 0.16);
         dummy.rotation.set(i, i * 0.7, i * 0.4);
@@ -891,8 +1001,10 @@
         const windowMesh = box(1.2, 1.25, 0.24, mats.blue, sx, 2.9, 3.13);
         group.add(windowMesh);
       }
-      group.position.set(x, 0, z);
+      const position = moveOutsideRoute(new THREE.Vector3(x, 0, z), TRACK_WIDTH + 7.2, 10.4);
+      group.position.copy(position);
       group.rotation.y = rotation;
+      recordClearance("landmarks", position);
       world.add(group);
       return group;
     }
@@ -901,9 +1013,9 @@
       // Festival start arch.
       const start = samples[0];
       const arch = new THREE.Group();
-      arch.add(box(1.1, 8, 1.1, mats.berry, -8.6, 4, 0));
-      arch.add(box(1.1, 8, 1.1, mats.blue, 8.6, 4, 0));
-      arch.add(box(18.3, 1.25, 1.3, mats.sun, 0, 7.7, 0));
+      arch.add(box(0.9, 8, 0.9, mats.berry, -9.75, 4, 0));
+      arch.add(box(0.9, 8, 0.9, mats.blue, 9.75, 4, 0));
+      arch.add(box(20.45, 1.25, 1.3, mats.sun, 0, 7.7, 0));
       const pennantMats = [mats.berry, mats.mint, mats.blue, mats.orange, mats.purple];
       for (let i = 0; i < 11; i++) {
         const flag = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.1, 3), pennantMats[i % pennantMats.length]);
@@ -915,13 +1027,20 @@
       arch.rotation.y = Math.atan2(start.tangent.x, start.tangent.z);
       world.add(arch);
 
-      // Windmill Hill: a broad radial mound that blends into the raised terrain corridor.
-      const hill = createMound(29, 23, 3.25, mats.grassDark);
-      hill.position.set(29, -0.42, -49);
+      // Windmill Hill sits beyond the outside verge, with its short axis facing the road.
+      const windmillSite = tracksidePosition(95, -20);
+      const windmillHeading = Math.atan2(windmillSite.sample.tangent.x, windmillSite.sample.tangent.z);
+      const hill = createMound(9.5, 17, 3.05, mats.grassDark);
+      hill.position.copy(windmillSite.position);
+      hill.position.y -= 0.03;
+      hill.rotation.y = windmillHeading;
       hill.receiveShadow = true;
       world.add(hill);
-      const hillShoulder = createMound(23, 17, 1.55, mats.grass);
-      hillShoulder.position.set(47, -0.4, -34);
+      const shoulderSite = tracksidePosition(106, -18.5);
+      const hillShoulder = createMound(7.5, 12, 1.35, mats.grass);
+      hillShoulder.position.copy(shoulderSite.position);
+      hillShoulder.position.y -= 0.03;
+      hillShoulder.rotation.y = Math.atan2(shoulderSite.sample.tangent.x, shoulderSite.sample.tangent.z);
       world.add(hillShoulder);
       const mill = new THREE.Group();
       const tower = cylinder(2.2, 3.1, 11, 10, mats.white);
@@ -948,9 +1067,11 @@
       blades.position.set(0, 9, -3.2);
       blades.rotation.x = 0.1;
       mill.add(blades);
-      mill.position.set(29, 2.78, -49);
-      mill.rotation.y = 0.35;
+      mill.position.copy(windmillSite.position);
+      mill.position.y += 3.02;
+      mill.rotation.y = windmillHeading + Math.PI / 2;
       world.add(mill);
+      recordClearance("landmarks", mill.position);
       world.userData.windmillBlades = blades;
 
       // Village.
@@ -959,17 +1080,33 @@
       makeHouse(-48, 43, 0.55, mats.white, mats.orange);
       makeHouse(-20, 69, -0.1, mats.white, mats.purple);
 
-      // Stream and bridge.
-      const water = new THREE.Mesh(new THREE.PlaneGeometry(64, 13), mats.water);
-      water.rotation.x = -Math.PI / 2;
-      water.rotation.z = -0.12;
-      water.position.set(49, -0.1, 17);
+      // Stream crosses beneath a bridge whose rails follow the road ribbon.
+      const bridgeCenter = samples[162];
+      const waterLong = bridgeCenter.side.clone().multiplyScalar(32);
+      const waterShort = bridgeCenter.tangent.clone().multiplyScalar(6.5);
+      const waterVertices = [
+        bridgeCenter.p.clone().sub(waterLong).sub(waterShort),
+        bridgeCenter.p.clone().add(waterLong).sub(waterShort),
+        bridgeCenter.p.clone().sub(waterLong).add(waterShort),
+        bridgeCenter.p.clone().add(waterLong).add(waterShort),
+      ];
+      waterVertices.forEach((vertex) => vertex.y = 0.02);
+      const waterGeometry = new THREE.BufferGeometry();
+      waterGeometry.setAttribute("position", new THREE.Float32BufferAttribute(waterVertices.flatMap((vertex) => [vertex.x, vertex.y, vertex.z]), 3));
+      waterGeometry.setIndex([0, 1, 2, 1, 3, 2]);
+      waterGeometry.computeVertexNormals();
+      const water = new THREE.Mesh(waterGeometry, mats.water);
       world.add(water);
-      for (let i = 0; i < 9; i++) {
-        const rail = box(0.35, 1.45, 3.0, mats.white);
-        rail.position.set(41 + i * 2.4, 2.1 + i * -0.02, 19 + i * 0.3);
-        rail.rotation.y = -0.12;
-        world.add(rail);
+      for (let index = 154; index <= 171; index += 3) {
+        const sample = samples[index];
+        for (const direction of [-1, 1]) {
+          const rail = box(0.32, 1.35, 2.85, mats.white);
+          rail.position.copy(sample.p).addScaledVector(sample.side, direction * (TRACK_WIDTH + 1.2));
+          rail.position.y += 0.72;
+          rail.rotation.y = Math.atan2(sample.tangent.x, sample.tangent.z);
+          recordClearance("bridgeRails", rail.position);
+          world.add(rail);
+        }
       }
 
       // Risky dirt shortcut, narrowed by hay bales.
@@ -989,8 +1126,10 @@
       sign.add(box(0.5, 4.5, 0.5, mats.wood, -3, 2.25, 0));
       sign.add(box(0.5, 4.5, 0.5, mats.wood, 3, 2.25, 0));
       sign.add(box(7.4, 2.1, 0.5, mats.orange, 0, 4.4, 0));
-      sign.position.set(-48, 0, -36);
-      sign.rotation.y = -0.4;
+      const signSite = tracksidePosition(26, -14.8);
+      sign.position.copy(signSite.position);
+      sign.rotation.y = Math.atan2(signSite.sample.side.x, signSite.sample.side.z);
+      recordClearance("landmarks", sign.position);
       world.add(sign);
       const fruitGeo = new THREE.IcosahedronGeometry(0.36, 1);
       const fruit = new THREE.InstancedMesh(fruitGeo, mats.berry, 80);
@@ -998,7 +1137,11 @@
       for (let i = 0; i < 80; i++) {
         const s = samples[(22 + i * 3) % 80];
         const p = s.p.clone().addScaledVector(s.side, (i % 2 ? 1 : -1) * (13 + (i % 5) * 2.4));
-        dummy.position.set(p.x + Math.sin(i) * 2, p.y + 0.34 + (i % 3) * 0.08, p.z + Math.cos(i * 1.3) * 2);
+        p.x += Math.sin(i) * 2;
+        p.z += Math.cos(i * 1.3) * 2;
+        moveOutsideRoute(p, TRACK_WIDTH + 1.35, 4.65);
+        recordClearance("fruit", p);
+        dummy.position.set(p.x, p.y + 0.34 + (i % 3) * 0.08, p.z);
         dummy.scale.setScalar(0.42 + (i % 4) * 0.05);
         dummy.updateMatrix();
         fruit.setMatrixAt(i, dummy.matrix);
@@ -1526,7 +1669,9 @@
       }
 
       const steerRate = (racer.drifting ? 2.25 : 1.62) * THREE.MathUtils.clamp(Math.abs(racer.speed) / 8, 0.35, 1.35);
-      racer.heading += steer * steerRate * dt * Math.sign(racer.speed || 1);
+      // Three.js cameras look down local -Z; subtracting keeps right input visually right
+      // from the chase camera while preserving intuitive reverse steering.
+      racer.heading -= steer * steerRate * dt * Math.sign(racer.speed || 1);
       if (racer.spin > 0) {
         racer.spin -= dt;
         racer.heading += 7.5 * dt;
@@ -1981,6 +2126,15 @@
           maxGrade: Number(trackProfile.maxGrade.toFixed(3)),
           terrainSupport: "graded-corridor",
           windmillHill: "radial-mound",
+          minimumTreeTrackClearance: Number(clearanceMetrics.trees.track.toFixed(3)),
+          minimumTreeShortcutClearance: Number(clearanceMetrics.trees.shortcut.toFixed(3)),
+          minimumFlowerTrackClearance: Number(clearanceMetrics.flowers.track.toFixed(3)),
+          minimumFlowerShortcutClearance: Number(clearanceMetrics.flowers.shortcut.toFixed(3)),
+          minimumFruitTrackClearance: Number(clearanceMetrics.fruit.track.toFixed(3)),
+          minimumFruitShortcutClearance: Number(clearanceMetrics.fruit.shortcut.toFixed(3)),
+          minimumLandmarkTrackClearance: Number(clearanceMetrics.landmarks.track.toFixed(3)),
+          minimumLandmarkShortcutClearance: Number(clearanceMetrics.landmarks.shortcut.toFixed(3)),
+          minimumBridgeRailTrackClearance: Number(clearanceMetrics.bridgeRails.track.toFixed(3)),
         },
         objects: { itemBoxes: itemBoxes.length, projectiles: projectiles.length, puddles: puddles.length, particles: particles.length },
       };
