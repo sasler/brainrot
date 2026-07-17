@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-type Item = "boost" | "shield" | "bolt" | "jam";
+type Item = "boost" | "bolt";
 type KartSnapshot = {
   mode: string;
   seed: number;
@@ -16,18 +16,18 @@ type KartSnapshot = {
   player: {
     x: number; y: number; z: number; speed: number; velocity: number; slip: number; heading: number;
     lap: number; rank: number; progressIndex: number; checkpointCount: number; item: Item | null;
-    shield: number; boost: number; drift: number; drifting: boolean; offroad: boolean; finished: boolean;
+    shield: number; boost: number; drift: number; drifting: boolean; shoulder: boolean; offroad: boolean; finished: boolean;
     stun: number; recovery: number; wheelClearance: number;
   };
-  racers: Array<{ id: number; ai: boolean; lap: number; rank: number; progressIndex: number; item: Item | null; finished: boolean; speed: number }>;
+  racers: Array<{ id: number; ai: boolean; lap: number; rank: number; progressIndex: number; item: Item | null; finished: boolean; speed: number; sideDistance: number; shoulder: boolean; offroad: boolean }>;
   environment: {
-    artDirection: string; roadTreatment: string; terrainTreatment: string; distantBackdrop: string; landmarks: string[];
+    artDirection: string; roadTreatment: string; terrainTreatment: string; terrainBlend: { maxStep: number; maxRoadGap: number; blendWidth: number }; distantBackdrop: string; landmarks: string[];
     wheelGrounding: string; sceneryGrounding: {
       maxClearance: number; maxGap: number; values: Array<{ label: string; clearance: number }>;
     }; treeRoadClearance: number; grandstandFacingAlignment: number; passiveHazards: number;
   };
   physics: { collisionCount: number; maxWheelClearance: number; contactModel: string };
-  objects: { itemBoxes: number; projectiles: number; jams: number; particles: number; audioLayers: number };
+  objects: { itemBoxes: number; pickupTypes: Item[]; pickupStyles: { boost: string; bolt: string }; projectiles: number; jams: number; particles: number; audioLayers: number };
 };
 
 declare global {
@@ -56,7 +56,7 @@ declare global {
       completeLap(valid?: boolean): KartSnapshot;
       setOffroad(distance?: number): KartSnapshot;
       setCollision(): KartSnapshot;
-      hitPlayer(kind?: "bolt" | "jam"): KartSnapshot;
+      hitPlayer(kind?: "bolt"): KartSnapshot;
       wheelSample(indices?: number[]): { maxClearance: number; values: Array<{ index: number; clearance: number; y: number; bank: number }> };
       trackPoints(): Array<{ x: number; z: number }>;
       trackProfile(): Array<{ index: number; y: number; grade: number; curvature: number; turn: number }>;
@@ -143,8 +143,8 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     expect(snapshot.track.elevationRange).toBeGreaterThan(30);
     expect(snapshot.environment.passiveHazards).toBe(0);
     expect(snapshot.environment.landmarks).toEqual(["festival", "village", "windmill", "forest", "bridge", "vineyard"]);
-    expect(snapshot.environment.roadTreatment).toBe("dark-aggregate-banked-ribbon");
-    expect(snapshot.environment.terrainTreatment).toBe("continuous-rolling-heightfield-meadow");
+    expect(snapshot.environment.roadTreatment).toBe("dark-aggregate-banked-ribbon-with-forgiving-shoulder");
+    expect(snapshot.environment.terrainTreatment).toBe("wide-blended-rolling-roadbed-meadow");
     expect(snapshot.environment.distantBackdrop).toBe("terrain-hills-no-mountain-meshes");
   });
 
@@ -164,6 +164,17 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     const result = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.45));
     await page.keyboard.up("w");
     expect(result.player.speed).toBeGreaterThan(25);
+  });
+
+  test("does not report a missed sector when the starting grid crosses the line", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => { window.__SUNBEAM_TEST__.start(2); window.__SUNBEAM_TEST__.setPlayerProgress(718, 0); window.__SUNBEAM_TEST__.setPlayerSpeed(26); });
+    await page.keyboard.down("w");
+    const result = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.6));
+    await page.keyboard.up("w");
+    expect(result.player.lap).toBe(1);
+    expect(result.player.checkpointCount).toBe(0);
+    await expect(page.locator("#message")).not.toContainText("MISSED");
   });
 
   test("accelerates beyond the old speed ceiling and releases a drift turbo", async ({ page }) => {
@@ -253,6 +264,9 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     const snapshot = await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot());
     expect(snapshot.environment.treeRoadClearance).toBeGreaterThanOrEqual(6);
     expect(snapshot.environment.grandstandFacingAlignment).toBeGreaterThan(.99);
+    expect(snapshot.environment.terrainBlend.blendWidth).toBeGreaterThanOrEqual(100);
+    expect(snapshot.environment.terrainBlend.maxRoadGap).toBeLessThan(.2);
+    expect(snapshot.environment.terrainBlend.maxStep).toBeLessThan(3.5);
   });
 
   test("resolves physical kart contact with SAT impulses", async ({ page }) => {
@@ -281,21 +295,41 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     expect(settled.player.offroad).toBe(false);
   });
 
-  test("uses all four readable items with short recoverable hit penalties", async ({ page }) => {
+  test("keeps the brown road shoulder fast and reserves heavy drag for grass", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => { window.__SUNBEAM_TEST__.start(2); window.__SUNBEAM_TEST__.setPlayerProgress(170, 14.5); window.__SUNBEAM_TEST__.setPlayerSpeed(25); });
+    await page.keyboard.down("w");
+    const shoulder = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.7));
+    await page.keyboard.up("w");
+    expect(shoulder.player.shoulder).toBe(true);
+    expect(shoulder.player.offroad).toBe(false);
+    expect(shoulder.player.speed).toBeGreaterThan(23.5);
+  });
+
+  test("keeps stronger AI opponents on the racing surface", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => { window.__SUNBEAM_TEST__.start(5); window.__SUNBEAM_TEST__.setPlayerProgress(360, 0); return window.__THREE_GAME_TEST_HOOKS__.advance(8); });
+    const snapshot = await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot());
+    const rivals = snapshot.racers.filter(racer => racer.ai);
+    expect(rivals.every(racer => !racer.shoulder && !racer.offroad && Math.abs(racer.sideDistance) < 8)).toBe(true);
+    expect(Math.max(...rivals.map(racer => racer.speed))).toBeGreaterThan(26);
+  });
+
+  test("uses only visually distinct boost and spark pickups", async ({ page }) => {
     await openGame(page);
     await page.evaluate(() => window.__SUNBEAM_TEST__.start(5));
+    const snapshot = await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot());
+    expect(snapshot.objects.pickupTypes).toEqual(["bolt", "boost"]);
+    expect(snapshot.objects.pickupStyles).toEqual({ boost: "gold-sun-double-ring", bolt: "cyan-arrow-diamond" });
+    expect(snapshot.objects.jams).toBe(0);
     await page.evaluate(() => { window.__SUNBEAM_TEST__.giveItem("boost"); window.__SUNBEAM_TEST__.useItem(); });
     expect((await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot())).player.boost).toBeGreaterThan(1);
-    await page.evaluate(() => { window.__SUNBEAM_TEST__.giveItem("shield"); window.__SUNBEAM_TEST__.useItem(); });
-    expect((await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot())).player.shield).toBeGreaterThan(6);
     await page.evaluate(() => { window.__SUNBEAM_TEST__.giveItem("bolt"); window.__SUNBEAM_TEST__.useItem(); });
     expect((await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot())).objects.projectiles).toBe(1);
-    await page.evaluate(() => { window.__SUNBEAM_TEST__.giveItem("jam"); window.__SUNBEAM_TEST__.useItem(); });
-    expect((await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot())).objects.jams).toBe(1);
     await page.evaluate(() => window.__SUNBEAM_TEST__.start(5));
-    const hit = await page.evaluate(() => window.__SUNBEAM_TEST__.hitPlayer("jam"));
-    expect(hit.player.stun).toBeGreaterThan(.5);
-    const recovered = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.9));
+    const hit = await page.evaluate(() => window.__SUNBEAM_TEST__.hitPlayer("bolt"));
+    expect(hit.player.stun).toBeGreaterThan(.4);
+    const recovered = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.65));
     expect(recovered.player.stun).toBe(0);
   });
 
