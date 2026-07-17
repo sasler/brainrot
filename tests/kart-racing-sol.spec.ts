@@ -83,15 +83,16 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     page.on("request", request => {
       const url = new URL(request.url());
       if (url.protocol.startsWith("http") && !["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname)) external.push(request.url());
-      if (url.pathname.startsWith("/vendor/three/")) runtime.push(url.pathname);
+      if (url.pathname.startsWith("/vendor/three/")) runtime.push(request.url());
     });
     page.on("pageerror", error => errors.push(error.message));
     await openGame(page);
     expect(external).toEqual([]);
     expect(errors).toEqual([]);
-    expect(runtime).toContain("/vendor/three/0.185.1/three.module.min.js");
-    expect(runtime).toContain("/vendor/three/0.185.1/three.core.min.js");
-    expect(runtime.some(path => path.includes("cdn"))).toBe(false);
+    const runtimeUrls = runtime.map(value => new URL(value));
+    expect(runtimeUrls.map(url => url.pathname)).toContain("/vendor/three/0.185.1/three.module.min.js");
+    expect(runtimeUrls.map(url => url.pathname)).toContain("/vendor/three/0.185.1/three.core.min.js");
+    expect(runtimeUrls.every(url => ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname))).toBe(true);
     const diagnostics = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__.snapshot());
     expect(diagnostics.settings).toEqual({ dpr: 1, shadows: true, postPasses: 2 });
     expect(diagnostics.scene.instancedMeshes).toBeGreaterThanOrEqual(8);
@@ -211,6 +212,17 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     expect(right.player.heading).toBeLessThan(initial.player.heading);
     expect(left.player.heading).toBeGreaterThan(initial.player.heading);
     expect(right.player.x).toBeGreaterThan(left.player.x);
+  });
+
+  test("clears held driving controls when the page loses focus", async ({ page }) => {
+    await openGame(page);
+    const initial = await page.evaluate(() => window.__SUNBEAM_TEST__.start(1));
+    await page.keyboard.down("w"); await page.keyboard.down("d"); await page.keyboard.down(" ");
+    await page.evaluate(() => dispatchEvent(new Event("blur")));
+    const result = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.6));
+    expect(result.player.speed).toBeLessThan(1);
+    expect(result.player.heading).toBeCloseTo(initial.player.heading, 3);
+    expect(result.player.drifting).toBe(false);
   });
 
   test("completes the longer checkpoint-valid lap at the intended race pace", async ({ page }) => {

@@ -697,9 +697,11 @@
 
     addEventListener("keydown",e=>{keys[e.code]=true;if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code))e.preventDefault();if(e.code==="KeyE"&&mode==="racing")useItem(racers[0]);if((e.code==="Escape"||e.code==="KeyP")&&(mode==="racing"||mode==="paused"))togglePause();if(e.code==="KeyM"){const muted=audio.toggle();ui.muteButton.textContent=muted?"×":"♪";}},{passive:false});
     addEventListener("keyup",e=>{keys[e.code]=false;});
+    function clearHeldKeys(){for(const code of Object.keys(keys))keys[code]=false;}
+    addEventListener("blur",clearHeldKeys);
     ui.startButton.addEventListener("click",()=>startRace());ui.againButton.addEventListener("click",()=>startRace());ui.resumeButton.addEventListener("click",()=>togglePause(true));ui.pauseButton.addEventListener("click",()=>togglePause());ui.muteButton.addEventListener("click",()=>{const muted=audio.toggle();ui.muteButton.textContent=muted?"×":"♪";});ui.item.addEventListener("click",()=>{if(mode==="racing")useItem(racers[0]);});
     addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight,false);sizePostTarget();});
-    document.addEventListener("visibilitychange",()=>{if(document.hidden&&mode==="racing")togglePause();});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){clearHeldKeys();if(mode==="racing")togglePause();}});
 
     const intro=samples[0];camera.position.copy(intro.p).addScaledVector(intro.side,-27).add(new THREE.Vector3(0,15,22));cameraLook.copy(intro.p).add(new THREE.Vector3(0,2,0));camera.lookAt(cameraLook);
     ui.startButton.disabled=false;ui.startButton.textContent="Start the rally";
