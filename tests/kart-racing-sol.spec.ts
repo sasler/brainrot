@@ -10,7 +10,7 @@ type KartSnapshot = {
   laps: number;
   track: {
     length: number; samples: number; sectors: number; targetLapSeconds: number; passiveHazards: number;
-    turns: { left: number; right: number }; elevationRange: number;
+    turns: { left: number; right: number }; elevationRange: number; maxCurvature: number;
   };
   camera: { fov: number };
   player: {
@@ -24,7 +24,7 @@ type KartSnapshot = {
     artDirection: string; roadTreatment: string; terrainTreatment: string; distantBackdrop: string; landmarks: string[];
     wheelGrounding: string; sceneryGrounding: {
       maxClearance: number; maxGap: number; values: Array<{ label: string; clearance: number }>;
-    }; passiveHazards: number;
+    }; treeRoadClearance: number; grandstandFacingAlignment: number; passiveHazards: number;
   };
   physics: { collisionCount: number; maxWheelClearance: number; contactModel: string };
   objects: { itemBoxes: number; projectiles: number; jams: number; particles: number; audioLayers: number };
@@ -139,6 +139,7 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     expect(snapshot.track.passiveHazards).toBe(0);
     expect(snapshot.track.turns.left).toBeGreaterThan(100);
     expect(snapshot.track.turns.right).toBeGreaterThan(100);
+    expect(snapshot.track.maxCurvature).toBeLessThan(.55);
     expect(snapshot.track.elevationRange).toBeGreaterThan(30);
     expect(snapshot.environment.passiveHazards).toBe(0);
     expect(snapshot.environment.landmarks).toEqual(["festival", "village", "windmill", "forest", "bridge", "vineyard"]);
@@ -157,12 +158,12 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     expect(climb.grade).toBeGreaterThan(.06);
     await page.evaluate(index => {
       window.__SUNBEAM_TEST__.setPlayerProgress(index, 0);
-      window.__SUNBEAM_TEST__.setPlayerSpeed(32);
+      window.__SUNBEAM_TEST__.setPlayerSpeed(28);
     }, climb.index);
     await page.keyboard.down("w");
     const result = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.45));
     await page.keyboard.up("w");
-    expect(result.player.speed).toBeGreaterThan(29);
+    expect(result.player.speed).toBeGreaterThan(25);
   });
 
   test("accelerates beyond the old speed ceiling and releases a drift turbo", async ({ page }) => {
@@ -249,6 +250,9 @@ test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
     expect(grounding.values.length).toBeGreaterThanOrEqual(15);
     expect(grounding.values.map(value => value.label)).toEqual(expect.arrayContaining(["windmill", "house-118", "tent-0", "grandstand--1"]));
     expect(grounding.maxClearance).toBeLessThanOrEqual(.03);
+    const snapshot = await page.evaluate(() => window.__SUNBEAM_TEST__.snapshot());
+    expect(snapshot.environment.treeRoadClearance).toBeGreaterThanOrEqual(6);
+    expect(snapshot.environment.grandstandFacingAlignment).toBeGreaterThan(.99);
   });
 
   test("resolves physical kart contact with SAT impulses", async ({ page }) => {
