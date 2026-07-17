@@ -308,10 +308,11 @@
     const SECTOR_NAMES = ["Festival Straight","Orchard Esses","Windmill Climb","Forest Descent","Vineyard Run"];
     const SECTOR_GATES = [.18,.37,.56,.75,.91];
     const points = [
-      [-232,0,-52],[-220,2,-145],[-158,6,-207],[-62,12,-232],[48,21,-222],[142,32,-182],[211,42,-108],[238,45,-13],
-      [219,38,88],[163,25,169],[82,12,213],[-17,5,226],[-107,1,199],[-181,3,146],[-229,5,76],[-249,1,9],
-    ].map(([x,y,z]) => new THREE.Vector3(x*.95,y,z*.95));
-    const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", .42);
+      [-230,0,-40],[-230,3,-150],[-170,8,-220],[-60,14,-235],[60,20,-200],[120,27,-140],[115,33,-70],[180,36,-25],
+      [240,34,-70],[260,30,20],[220,24,110],[130,18,160],[70,14,150],[60,10,220],[-40,6,250],[-140,3,210],
+      [-200,2,140],[-185,3,90],[-240,1,60],
+    ].map(([x,y,z]) => new THREE.Vector3(x*.83,y,z*.83));
+    const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", .55);
     curve.arcLengthDivisions = 3600;
     const TRACK_LENGTH = curve.getLength();
     const samples = [];
@@ -329,7 +330,9 @@
       const a=samples[(i-5+TRACK_SAMPLES)%TRACK_SAMPLES].tangent;
       const b=samples[(i+5)%TRACK_SAMPLES].tangent;
       samples[i].curvature=Math.acos(THREE.MathUtils.clamp(a.dot(b),-1,1));
+      samples[i].turn=a.x*b.z-a.z*b.x;
     }
+    const TURN_PROFILE={left:samples.filter(s=>s.turn>.01).length,right:samples.filter(s=>s.turn<-.01).length};
 
     function nearestTrack(position, hint = null) {
       let best=0, bestSq=Infinity;
@@ -347,7 +350,10 @@
     }
 
     function terrainBase(x,z) {
-      return -2.2 + Math.sin(x*.011)*5.4 + Math.cos(z*.013-.6)*4.1 + Math.sin((x+z)*.006)*3.2;
+      const distance=Math.hypot(x,z), horizon=THREE.MathUtils.smoothstep(distance,245,500);
+      const meadow=-3.1+Math.sin(x*.008)*3.25+Math.cos(z*.009-.6)*2.7+Math.sin((x+z)*.0045)*2.15;
+      const rollingRim=13.5+Math.sin(Math.atan2(z,x)*4+1.1)*3.2+Math.sin((x-z)*.0055)*2.4;
+      return meadow+horizon*rollingRim;
     }
     function terrainHeight(x,z) {
       const route=nearestTrack(new THREE.Vector3(x,0,z));
@@ -385,7 +391,7 @@
     const roadMesh=ribbon(TRACK_HALF,mats.road,.025,74);
     world.userData.road=roadMesh;
 
-    const terrainGeo=new THREE.PlaneGeometry(800,800,72,72);terrainGeo.rotateX(-Math.PI/2);
+    const terrainGeo=new THREE.PlaneGeometry(1000,1000,128,128);terrainGeo.rotateX(-Math.PI/2);
     const terrainPos=terrainGeo.attributes.position, terrainColors=[];
     const low=new THREE.Color(0x557849),high=new THREE.Color(0x9caf60),sunny=new THREE.Color(0xc5b965),c=new THREE.Color();
     for(let i=0;i<terrainPos.count;i++){
@@ -405,14 +411,6 @@
     for(let i=0;i<TRACK_SAMPLES;i+=15){const s=samples[i];dummy.position.copy(s.p).addScaledVector(s.up,.075);dummy.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(s.side.clone().negate(),s.up,s.tangent));dummy.updateMatrix();dashes.setMatrixAt(di++,dummy.matrix);}
     dashes.receiveShadow=true;world.add(dashes);
 
-    function makeMountainRing(){
-      const geo=new THREE.ConeGeometry(34,94,7),m1=new THREE.MeshLambertMaterial({color:0x5c7153}),m2=new THREE.MeshLambertMaterial({color:0x73805c});
-      const a=new THREE.InstancedMesh(geo,m1,28),b=new THREE.InstancedMesh(geo,m2,28);const d=new THREE.Object3D();
-      for(let i=0;i<28;i++){const angle=i/28*Math.PI*2,r=440+(i%4)*18;d.position.set(Math.cos(angle)*r,25+(i%5)*8,Math.sin(angle)*r);d.rotation.y=angle;d.scale.set(.75+(i%4)*.12,.7+(i%5)*.09,.75+(i%3)*.14);d.updateMatrix();(i%2?a:b).setMatrixAt(i,d.matrix);d.scale.setScalar(0);d.updateMatrix();(i%2?b:a).setMatrixAt(i,d.matrix);}
-      world.add(a,b);
-    }
-    makeMountainRing();
-
     const cloudGeo=new THREE.IcosahedronGeometry(1,1),cloudMat=new THREE.MeshLambertMaterial({color:0xffedc9,transparent:true,opacity:.82});
     world.userData.clouds=[];
     for(let i=0;i<18;i++){
@@ -420,16 +418,21 @@
       const a=i/18*Math.PI*2,r=250+(i%5)*28;g.position.set(Math.cos(a)*r,70+(i%4)*12,Math.sin(a)*r);g.scale.setScalar(.9+(i%3)*.2);world.add(g);world.userData.clouds.push({g,speed:.6+(i%4)*.12});
     }
 
-    const boxCache=new Map(),cylCache=new Map();
+    const boxCache=new Map(),cylCache=new Map(),groundingAnchors=[];
     function box(w,h,d,mat){const k=`${w}:${h}:${d}`;if(!boxCache.has(k))boxCache.set(k,new THREE.BoxGeometry(w,h,d));const m=new THREE.Mesh(boxCache.get(k),mat);m.castShadow=m.receiveShadow=true;return m;}
     function cylinder(r1,r2,h,sides,mat){const k=`${r1}:${r2}:${h}:${sides}`;if(!cylCache.has(k))cylCache.set(k,new THREE.CylinderGeometry(r1,r2,h,sides));const m=new THREE.Mesh(cylCache.get(k),mat);m.castShadow=m.receiveShadow=true;return m;}
-    function trackside(index,offset){const s=samples[(index+TRACK_SAMPLES)%TRACK_SAMPLES];const p=s.p.clone().addScaledVector(s.side,offset);p.y=terrainHeight(p.x,p.z);return{s,p};}
+    const terrainRay=new THREE.Raycaster(),terrainDown=new THREE.Vector3(0,-1,0);
+    function renderedTerrainHeight(x,z){terrainRay.set(new THREE.Vector3(x,120,z),terrainDown);const hit=terrainRay.intersectObject(terrain,false)[0];return hit?hit.point.y:terrainHeight(x,z);}
+    function trackside(index,offset){const s=samples[(index+TRACK_SAMPLES)%TRACK_SAMPLES];const p=s.p.clone().addScaledVector(s.side,offset);p.y=renderedTerrainHeight(p.x,p.z);return{s,p};}
+    let groundingCache=null;
+    function registerGrounding(label,object,foot=0){groundingAnchors.push({label,object,foot});groundingCache=null;}
+    function sceneryGrounding(){if(groundingCache)return groundingCache;const values=groundingAnchors.map(anchor=>{anchor.object.updateWorldMatrix(true,false);const p=anchor.object.localToWorld(new THREE.Vector3(0,anchor.foot,0)),ground=renderedTerrainHeight(p.x,p.z);return{label:anchor.label,clearance:Number((p.y-ground).toFixed(4))};});groundingCache={maxClearance:Number(Math.max(0,...values.map(v=>v.clearance)).toFixed(4)),maxGap:Number(Math.max(0,...values.map(v=>Math.abs(v.clearance))).toFixed(4)),values};return groundingCache;}
 
     function scatterNature(){
       const trunkGeo=new THREE.CylinderGeometry(.42,.62,3.6,7),crownGeo=new THREE.DodecahedronGeometry(2.15,0),crownTall=new THREE.ConeGeometry(2.4,6.4,8);
       const treeCount=360,trunks=new THREE.InstancedMesh(trunkGeo,mats.wood,treeCount),crowns=new THREE.InstancedMesh(crownGeo,mats.leaf,treeCount),pines=new THREE.InstancedMesh(crownTall,mats.pine,treeCount);const d=new THREE.Object3D();
       let made=0,guard=0;while(made<treeCount&&guard++<5000){const x=(worldRandom()-.5)*710,z=(worldRandom()-.5)*710;const route=nearestTrack(new THREE.Vector3(x,0,z));if(route.distance<20||Math.hypot(x,z)>380)continue;const y=terrainHeight(x,z),scale=.8+worldRandom()*1.45,isPine=route.sample.sector===3||worldRandom()<.34;
-        d.position.set(x,y+1.8*scale,z);d.rotation.y=worldRandom()*Math.PI*2;d.scale.setScalar(scale);d.updateMatrix();trunks.setMatrixAt(made,d.matrix);
+        d.position.set(x,y+1.72*scale,z);d.rotation.y=worldRandom()*Math.PI*2;d.scale.setScalar(scale);d.updateMatrix();trunks.setMatrixAt(made,d.matrix);
         d.position.y=y+(isPine?4.6:4.9)*scale;d.scale.set(scale*(.9+worldRandom()*.25),scale,scale*(.9+worldRandom()*.25));d.updateMatrix();(isPine?pines:crowns).setMatrixAt(made,d.matrix);d.scale.setScalar(0);d.updateMatrix();(isPine?crowns:pines).setMatrixAt(made,d.matrix);made++;}
       trunks.castShadow=crowns.castShadow=pines.castShadow=true;world.add(trunks,crowns,pines);
 
@@ -438,17 +441,17 @@
       while(gi<grassCount&&tries++<10000){const x=(worldRandom()-.5)*620,z=(worldRandom()-.5)*620;const route=nearestTrack(new THREE.Vector3(x,0,z));if(route.distance<15.8)continue;d.position.set(x,terrainHeight(x,z)+.02,z);d.rotation.set(0,worldRandom()*Math.PI*2,(worldRandom()-.5)*.12);const s=.38+worldRandom()*.7;d.scale.set(s,s,s);d.updateMatrix();tufts.setMatrixAt(gi++,d.matrix);}
       world.add(tufts);world.userData.grassTufts=tufts;
 
-      const flowerGeo=new THREE.OctahedronGeometry(.18,0),flowers=new THREE.InstancedMesh(flowerGeo,mats.sun,260);for(let i=0;i<260;i++){const s=samples[(i*47+23)%TRACK_SAMPLES],side=i%2?1:-1,dist=16+(i%10)*1.7;const p=s.p.clone().addScaledVector(s.side,side*dist);p.y=terrainHeight(p.x,p.z)+.28;d.position.copy(p);d.scale.setScalar(.65+(i%4)*.18);d.rotation.set(i*.7,i*1.2,i*.4);d.updateMatrix();flowers.setMatrixAt(i,d.matrix);}world.add(flowers);
+      const flowerGeo=new THREE.OctahedronGeometry(.18,0),flowers=new THREE.InstancedMesh(flowerGeo,mats.sun,260);for(let i=0;i<260;i++){const s=samples[(i*47+23)%TRACK_SAMPLES],side=i%2?1:-1,dist=16+(i%10)*1.7;const p=s.p.clone().addScaledVector(s.side,side*dist);p.y=terrainHeight(p.x,p.z)+.16;d.position.copy(p);d.scale.setScalar(.65+(i%4)*.18);d.rotation.set(i*.7,i*1.2,i*.4);d.updateMatrix();flowers.setMatrixAt(i,d.matrix);}world.add(flowers);
     }
     scatterNature();
 
     function buildSectorPlanting(){
       const d=new THREE.Object3D();
       const forestCount=180,forestTrunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.38,.58,3.4,7),mats.wood,forestCount),forestPines=new THREE.InstancedMesh(new THREE.ConeGeometry(2.25,7.2,8),mats.pine,forestCount);
-      for(let i=0;i<forestCount;i++){const index=430+(i%90),s=samples[index],side=i%2?1:-1,distance=18+Math.floor(i/18)%5*4.2,p=s.p.clone().addScaledVector(s.side,side*distance);p.y=terrainHeight(p.x,p.z);const scale=.78+(i%7)*.08;d.position.set(p.x,p.y+1.7*scale,p.z);d.rotation.y=i*1.71;d.scale.setScalar(scale);d.updateMatrix();forestTrunks.setMatrixAt(i,d.matrix);d.position.y=p.y+5.05*scale;d.scale.set(scale*(.9+(i%3)*.08),scale,scale*(.9+(i%4)*.06));d.updateMatrix();forestPines.setMatrixAt(i,d.matrix);}
+      for(let i=0;i<forestCount;i++){const index=430+(i%90),s=samples[index],side=i%2?1:-1,distance=18+Math.floor(i/18)%5*4.2,p=s.p.clone().addScaledVector(s.side,side*distance);p.y=terrainHeight(p.x,p.z);const scale=.78+(i%7)*.08;d.position.set(p.x,p.y+1.62*scale,p.z);d.rotation.y=i*1.71;d.scale.setScalar(scale);d.updateMatrix();forestTrunks.setMatrixAt(i,d.matrix);d.position.y=p.y+5.05*scale;d.scale.set(scale*(.9+(i%3)*.08),scale,scale*(.9+(i%4)*.06));d.updateMatrix();forestPines.setMatrixAt(i,d.matrix);}
       forestTrunks.castShadow=forestPines.castShadow=true;world.add(forestTrunks,forestPines);
       const orchardCount=120,orchardTrunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.3,.46,2.6,7),mats.wood,orchardCount),orchardCrowns=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1.65,0),mats.leafLight,orchardCount);
-      for(let i=0;i<orchardCount;i++){const index=145+(i%60),s=samples[index],side=i%2?1:-1,distance=18+Math.floor(i/12)%5*5,p=s.p.clone().addScaledVector(s.side,side*distance);p.y=terrainHeight(p.x,p.z);const scale=.82+(i%5)*.055;d.position.set(p.x,p.y+1.3*scale,p.z);d.rotation.y=i*1.2;d.scale.setScalar(scale);d.updateMatrix();orchardTrunks.setMatrixAt(i,d.matrix);d.position.y=p.y+3.35*scale;d.scale.set(scale*(1+(i%3)*.08),scale,scale*(.92+(i%4)*.04));d.updateMatrix();orchardCrowns.setMatrixAt(i,d.matrix);}
+      for(let i=0;i<orchardCount;i++){const index=145+(i%60),s=samples[index],side=i%2?1:-1,distance=18+Math.floor(i/12)%5*5,p=s.p.clone().addScaledVector(s.side,side*distance);p.y=terrainHeight(p.x,p.z);const scale=.82+(i%5)*.055;d.position.set(p.x,p.y+1.22*scale,p.z);d.rotation.y=i*1.2;d.scale.setScalar(scale);d.updateMatrix();orchardTrunks.setMatrixAt(i,d.matrix);d.position.y=p.y+3.35*scale;d.scale.set(scale*(1+(i%3)*.08),scale,scale*(.92+(i%4)*.04));d.updateMatrix();orchardCrowns.setMatrixAt(i,d.matrix);}
       orchardTrunks.castShadow=orchardCrowns.castShadow=true;world.add(orchardTrunks,orchardCrowns);
     }
     buildSectorPlanting();
@@ -459,25 +462,25 @@
     }
     function buildFestival(){
       const start=samples[0],g=new THREE.Group();const left=box(.75,8,.75,mats.coral),right=box(.75,8,.75,mats.sun),beam=box(25.2,1.1,1,mats.pine);left.position.set(-12.4,4,0);right.position.set(12.4,4,0);beam.position.set(0,7.7,0);const banner=makeBanner();banner.position.y=6.7;g.add(left,right,beam,banner);g.position.copy(start.p);g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(start.side.clone().negate(),start.up,start.tangent));world.add(g);
-      for(const dir of [-1,1]){const stand=new THREE.Group();for(let r=0;r<4;r++){const tier=box(23,1.1,3.4,mats.wood);tier.position.set(0,r*.9,r*2.3);stand.add(tier);for(let n=0;n<11;n++){const person=cylinder(.22,.28,.9,7,n%3===0?mats.sun:n%3===1?mats.coral:mats.cream);person.position.set(-10+n*2,r*.9+1.05,r*2.3);stand.add(person);}}const site=trackside(14,dir*24);stand.position.copy(site.p);stand.rotation.y=Math.atan2(site.s.tangent.x,site.s.tangent.z)+(dir<0?0:Math.PI);world.add(stand);}
-      for(let i=0;i<8;i++){const site=trackside(690+i*5,(i%2?1:-1)*(22+(i%3)*5)),tent=new THREE.Group();const roof=new THREE.Mesh(new THREE.ConeGeometry(4.2,3,4),i%2?mats.coral:mats.sun);roof.rotation.y=Math.PI/4;roof.position.y=3.1;tent.add(roof);for(const x of [-2.7,2.7])for(const z of [-2.7,2.7]){const pole=cylinder(.08,.08,3,6,mats.wood);pole.position.set(x,1.5,z);tent.add(pole);}tent.position.copy(site.p);tent.rotation.y=i*.7;world.add(tent);}
+      for(const dir of [-1,1]){const stand=new THREE.Group();for(let r=0;r<4;r++){const tier=box(23,1.1,3.4,mats.wood);tier.position.set(0,r*.9,r*2.3);stand.add(tier);for(let n=0;n<11;n++){const person=cylinder(.22,.28,.9,7,n%3===0?mats.sun:n%3===1?mats.coral:mats.cream);person.position.set(-10+n*2,r*.9+1.05,r*2.3);stand.add(person);}}const site=trackside(14,dir*24);stand.position.copy(site.p);stand.position.y-=.08;stand.rotation.y=Math.atan2(site.s.tangent.x,site.s.tangent.z)+(dir<0?0:Math.PI);world.add(stand);registerGrounding(`grandstand-${dir}`,stand,-.55);}
+      for(let i=0;i<8;i++){const site=trackside(690+i*5,(i%2?1:-1)*(22+(i%3)*5)),tent=new THREE.Group();const roof=new THREE.Mesh(new THREE.ConeGeometry(4.2,3,4),i%2?mats.coral:mats.sun);roof.rotation.y=Math.PI/4;roof.position.y=3.1;tent.add(roof);for(const x of [-2.7,2.7])for(const z of [-2.7,2.7]){const pole=cylinder(.08,.08,3,6,mats.wood);pole.position.set(x,1.5,z);tent.add(pole);}tent.position.copy(site.p);tent.position.y-=.08;tent.rotation.y=i*.7;world.add(tent);registerGrounding(`tent-${i}`,tent);}
     }
     buildFestival();
 
     function makeHouse(index,offset,scale=1,roofMat=mats.roof){
-      const site=trackside(index,offset),g=new THREE.Group(),base=box(8*scale,5*scale,6.5*scale,mats.stone);base.position.y=2.5*scale;g.add(base);const roof=new THREE.Mesh(new THREE.ConeGeometry(5.6*scale,3.4*scale,4),roofMat);roof.rotation.y=Math.PI/4;roof.position.y=6.65*scale;roof.castShadow=true;g.add(roof);const door=box(1.4*scale,2.8*scale,.25,mats.wood);door.position.set(0,1.4*scale,3.38*scale);g.add(door);for(const x of [-2.3,2.3]){const win=box(1.3*scale,1.35*scale,.2,mats.cream);win.position.set(x*scale,3.1*scale,3.4*scale);g.add(win);}g.position.copy(site.p);g.rotation.y=Math.atan2(site.s.tangent.x,site.s.tangent.z)+(offset<0?0:Math.PI);world.add(g);
+      const site=trackside(index,offset),g=new THREE.Group(),base=box(8*scale,5*scale,6.5*scale,mats.stone);base.position.y=2.5*scale;g.add(base);const roof=new THREE.Mesh(new THREE.ConeGeometry(5.6*scale,3.4*scale,4),roofMat);roof.rotation.y=Math.PI/4;roof.position.y=6.65*scale;roof.castShadow=true;g.add(roof);const door=box(1.4*scale,2.8*scale,.25,mats.wood);door.position.set(0,1.4*scale,3.38*scale);g.add(door);for(const x of [-2.3,2.3]){const win=box(1.3*scale,1.35*scale,.2,mats.cream);win.position.set(x*scale,3.1*scale,3.4*scale);g.add(win);}g.position.copy(site.p);g.position.y-=.12;g.rotation.y=Math.atan2(site.s.tangent.x,site.s.tangent.z)+(offset<0?0:Math.PI);world.add(g);registerGrounding(`house-${index}`,g);
     }
     [118,132,146,160].forEach((i,n)=>makeHouse(i,-(24+n%2*9),.85+n*.08,n%2?mats.coral:mats.roof));
 
     function buildWindmill(){
-      const site=trackside(340,-23),g=new THREE.Group();const foundation=cylinder(4.2,4.8,1.2,12,mats.stone);foundation.position.y=.6;g.add(foundation);const tower=cylinder(2.9,4,14,10,mats.cream);tower.position.y=7.4;g.add(tower);const roof=new THREE.Mesh(new THREE.ConeGeometry(4.15,4.2,10),mats.roof);roof.position.y=16.1;roof.castShadow=true;g.add(roof);const hub=cylinder(.55,.55,1.2,10,mats.wood);hub.rotation.x=Math.PI/2;hub.position.set(0,11.8,-3.1);g.add(hub);const blades=new THREE.Group();for(let i=0;i<4;i++){const arm=box(.42,7.6,.22,mats.wood);arm.position.y=3.7;const sail=box(1.5,3.1,.15,mats.cream);sail.position.y=7;sail.rotation.z=.08;const bg=new THREE.Group();bg.add(arm,sail);bg.rotation.z=i*Math.PI/2;blades.add(bg);}blades.position.set(0,11.8,-3.8);g.add(blades);g.position.copy(site.p);g.rotation.y=Math.atan2(site.s.tangent.x,site.s.tangent.z)+Math.PI/2;world.add(g);world.userData.windmill=blades;
+      const site=trackside(340,-23),g=new THREE.Group();const foundation=cylinder(4.2,4.8,1.2,12,mats.stone);foundation.position.y=.6;g.add(foundation);const tower=cylinder(2.9,4,14,10,mats.cream);tower.position.y=7.4;g.add(tower);const roof=new THREE.Mesh(new THREE.ConeGeometry(4.15,4.2,10),mats.roof);roof.position.y=16.1;roof.castShadow=true;g.add(roof);const hub=cylinder(.55,.55,1.2,10,mats.wood);hub.rotation.x=Math.PI/2;hub.position.set(0,11.8,-3.1);g.add(hub);const blades=new THREE.Group();for(let i=0;i<4;i++){const arm=box(.42,7.6,.22,mats.wood);arm.position.y=3.7;const sail=box(1.5,3.1,.15,mats.cream);sail.position.y=7;sail.rotation.z=.08;const bg=new THREE.Group();bg.add(arm,sail);bg.rotation.z=i*Math.PI/2;blades.add(bg);}blades.position.set(0,11.8,-3.8);g.add(blades);g.position.copy(site.p);g.position.y-=.14;g.rotation.y=Math.atan2(site.s.tangent.x,site.s.tangent.z)+Math.PI/2;world.add(g);world.userData.windmill=blades;registerGrounding("windmill",g);
     }
     buildWindmill();
 
     function buildBridgeAndVineyard(){
       const s=samples[430];const river=new THREE.Mesh(new THREE.PlaneGeometry(95,18),mats.water);river.rotation.x=-Math.PI/2;river.rotation.z=-Math.atan2(s.tangent.x,s.tangent.z);river.position.copy(s.p);river.position.y-=3.2;world.add(river);world.userData.river=river;
       for(let i=414;i<=446;i+=4){const q=samples[i];for(const dir of [-1,1]){const rail=box(.35,1.1,5.8,mats.cream);rail.position.copy(q.p).addScaledVector(q.side,dir*(TRACK_HALF+1));rail.position.addScaledVector(q.up,.55);rail.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(q.side.clone().negate(),q.up,q.tangent));world.add(rail);}}
-      const postGeo=new THREE.CylinderGeometry(.12,.16,2.3,6),posts=new THREE.InstancedMesh(postGeo,mats.wood,160),d=new THREE.Object3D();let pi=0;for(let row=0;row<8;row++)for(let col=0;col<20;col++){const q=samples[(560+col*4)%TRACK_SAMPLES],p=q.p.clone().addScaledVector(q.side,-(23+row*4));p.y=terrainHeight(p.x,p.z)+1.15;d.position.copy(p);d.rotation.y=Math.atan2(q.tangent.x,q.tangent.z);d.updateMatrix();posts.setMatrixAt(pi++,d.matrix);}posts.castShadow=true;world.add(posts);
+      const postGeo=new THREE.CylinderGeometry(.12,.16,2.3,6),posts=new THREE.InstancedMesh(postGeo,mats.wood,160),d=new THREE.Object3D();let pi=0;for(let row=0;row<8;row++)for(let col=0;col<20;col++){const q=samples[(560+col*4)%TRACK_SAMPLES],p=q.p.clone().addScaledVector(q.side,-(23+row*4));p.y=terrainHeight(p.x,p.z)+1.1;d.position.copy(p);d.rotation.y=Math.atan2(q.tangent.x,q.tangent.z);d.updateMatrix();posts.setMatrixAt(pi++,d.matrix);}posts.castShadow=true;world.add(posts);
     }
     buildBridgeAndVineyard();
 
@@ -572,10 +575,10 @@
     function directions(r){const forward=new THREE.Vector3(Math.sin(r.heading),0,Math.cos(r.heading)),right=new THREE.Vector3(forward.z,0,-forward.x);return{forward,right};}
     function integrateVehicle(r,input,dt){
       const route=nearestTrack(r.position,r.routeIndex);r.routeIndex=route.index;r.sideDistance=route.sideDistance;r.offroad=Math.abs(route.sideDistance)>TRACK_HALF-.35;
-      const {forward,right}=directions(r);let long=r.velocity.dot(forward),lat=r.velocity.dot(right);const abs=Math.abs(long),sectorLimit=[34,22,20,23,26][route.sample.sector],max=r.boost>0?44:r.offroad?18:sectorLimit;
+      const {forward,right}=directions(r);let long=r.velocity.dot(forward),lat=r.velocity.dot(right);const abs=Math.abs(long),cornerLimit=THREE.MathUtils.clamp(36-route.sample.curvature*42,30,36),max=r.boost>0?44:r.offroad?18:cornerLimit;
       const throttle=r.stun>0?input.throttle*.25:input.throttle;
-      if(throttle>0)long+=22.5*throttle*dt*(1-Math.max(0,long)/52);else if(throttle<0)long+=32*throttle*dt;
-      const coast=.24+(r.offroad?5.3:0);long*=Math.exp(-coast*dt);if(Math.abs(long)>max)long=THREE.MathUtils.lerp(long,Math.sign(long)*max,1-Math.exp(-5*dt));long=THREE.MathUtils.clamp(long,-8,max+3);
+      if(throttle>0)long+=24.5*throttle*dt*(1-Math.max(0,long)/54);else if(throttle<0)long+=32*throttle*dt;
+      const coast=.2+(r.offroad?5.3:0);long*=Math.exp(-coast*dt);if(Math.abs(long)>max)long=THREE.MathUtils.lerp(long,Math.sign(long)*max,1-Math.exp(-4*dt));long=THREE.MathUtils.clamp(long,-8,max+3);
       const wantsDrift=input.drift&&Math.abs(input.steer)>.18&&abs>11&&!r.offroad&&r.stun<=0;
       if(wantsDrift){r.drifting=true;r.drift=Math.min(1,r.drift+dt*(.36+Math.abs(input.steer)*.32+abs*.006));}
       else if(r.drifting){if(r.drift>.24){r.boost=Math.max(r.boost,.45+r.drift*1.05);long=Math.max(long,24+r.drift*8);if(!r.ai){audio.event("drift");showMessage(r.drift>.75?"GOLDEN DRIFT!":"MINI TURBO!",.62);}burst(r.position,r.drift>.75?palette.sun:palette.mint,14,5,.48);}r.drifting=false;r.drift=0;}
@@ -598,7 +601,7 @@
     function updatePlayer(r,dt){const throttle=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),steer=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);integrateVehicle(r,{throttle,steer,drift:Boolean(keys.Space)},dt);if(keys.KeyR){keys.KeyR=false;resetRacer(r);}}
     function updateAI(r,dt){const here=samples[r.routeIndex],look=18+Math.floor(Math.abs(r.speed)*.7),targetSample=samples[(r.routeIndex+look)%TRACK_SAMPLES];let lane=r.laneOffset;
       for(const other of racers){if(other===r||other.finished)continue;const gap=other.raceDistance-r.raceDistance;if(gap>0&&gap<.025&&r.position.distanceToSquared(other.position)<100)lane+=other.sideDistance>r.sideDistance?-2.8:2.8;}
-      const target=targetSample.p.clone().addScaledVector(targetSample.side,lane),desired=Math.atan2(target.x-r.position.x,target.z-r.position.z),delta=Math.atan2(Math.sin(desired-r.heading),Math.cos(desired-r.heading));const steer=THREE.MathUtils.clamp(-delta*2.2,-1,1),curveAhead=targetSample.curvature,targetSpeed=THREE.MathUtils.clamp(35-curveAhead*94,20,35)+(r.skill-1)*8+(r.boost>0?7:0),throttle=Math.abs(r.speed)<targetSpeed?1:-.45;integrateVehicle(r,{throttle,steer,drift:curveAhead>.075&&Math.abs(steer)>.34&&Math.abs(r.speed)>15},dt);
+      const target=targetSample.p.clone().addScaledVector(targetSample.side,lane),desired=Math.atan2(target.x-r.position.x,target.z-r.position.z),delta=Math.atan2(Math.sin(desired-r.heading),Math.cos(desired-r.heading));const steer=THREE.MathUtils.clamp(-delta*2.2,-1,1),curveAhead=targetSample.curvature,targetSpeed=THREE.MathUtils.clamp(36-curveAhead*58,29,36)+(r.skill-1)*8+(r.boost>0?7:0),throttle=Math.abs(r.speed)<targetSpeed?1:-.45;integrateVehicle(r,{throttle,steer,drift:curveAhead>.075&&Math.abs(steer)>.34&&Math.abs(r.speed)>15},dt);
       r.decision-=dt;if(r.decision<=0){r.decision=.7+random()*1.5;if(r.item){if(r.item==="jam"&&r.rank<4)useItem(r);else if(r.item==="bolt"&&r.rank>1)useItem(r);else if(r.item==="boost"&&curveAhead<.05)useItem(r);else if(r.item==="shield")useItem(r);}}
     }
 
@@ -656,7 +659,7 @@
     function showResults(){mode="result";ui.hud.classList.add("hidden");ui.resultScreen.classList.remove("hidden");const p=racers[0];ui.resultTitle.textContent=p.rank===1?"Sunbeam Champion":"Festival Finisher";ui.resultCopy.textContent=p.rank===1?"You owned the racing line and brought the valley to its feet.":`You finished ${ordinal(p.rank)} after three hard-charging laps. The sun is still up for another run.`;ui.standings.innerHTML="";[...racers].sort((a,b)=>a.rank-b.rank).forEach(r=>{const row=document.createElement("div");row.className="standing";row.innerHTML=`<strong>${ordinal(r.rank)}</strong><span>${r.name}</span><span>${formatTime(r.finishTime||raceTime)}</span>`;ui.standings.appendChild(row);});}
 
     function setRacerProgress(r,index,side=0){const i=((Math.round(index)%TRACK_SAMPLES)+TRACK_SAMPLES)%TRACK_SAMPLES,s=samples[i];r.routeIndex=i;r.progress=i/TRACK_SAMPLES;r.previousProgress=r.progress;r.sideDistance=side;r.position.copy(s.p).addScaledVector(s.side,side).addScaledVector(s.up,RIDE_HEIGHT);r.heading=Math.atan2(s.tangent.x,s.tangent.z);r.velocity.set(0,0,0);return r;}
-    function snapshot(){const p=racers[0]||null;return{mode,seed:seedValue,opponentCount,racerCount:racers.length,raceTime:Number(raceTime.toFixed(3)),laps:TOTAL_LAPS,finishOrder:finishOrder.map(r=>r.id),track:{length:Number(TRACK_LENGTH.toFixed(2)),samples:TRACK_SAMPLES,sectors:SECTOR_NAMES.length,targetLapSeconds:62,passiveHazards:0},camera:{fov:Number(camera.fov.toFixed(2))},player:p?{x:Number(p.position.x.toFixed(3)),y:Number(p.position.y.toFixed(3)),z:Number(p.position.z.toFixed(3)),speed:Number(p.speed.toFixed(3)),velocity:Number(p.velocity.length().toFixed(3)),slip:Number(p.slip.toFixed(4)),heading:Number(p.heading.toFixed(4)),lap:p.lap,rank:p.rank,progressIndex:p.routeIndex,checkpointCount:p.nextGate,item:p.item,shield:Number(p.shield.toFixed(3)),boost:Number(p.boost.toFixed(3)),drift:Number(p.drift.toFixed(3)),drifting:p.drifting,offroad:p.offroad,finished:p.finished,stun:Number(p.stun.toFixed(3)),recovery:Number(p.recovery.toFixed(3)),wheelClearance:Number(p.wheelClearance.toFixed(4))}:null,racers:racers.map(r=>({id:r.id,ai:r.ai,lap:r.lap,rank:r.rank,progressIndex:r.routeIndex,item:r.item,finished:r.finished,speed:Number(r.speed.toFixed(2))})),environment:{artDirection:"golden-hour-painted-festival-rally",roadTreatment:"dark-aggregate-banked-ribbon",terrainTreatment:"heightfield-multitone-instanced-meadow",landmarks:["festival","village","windmill","forest","bridge","vineyard"],wheelGrounding:"radius-contact-suspension",passiveHazards:0},physics:{collisionCount,maxWheelClearance:Number(Math.max(0,...racers.map(r=>r.wheelClearance)).toFixed(4)),contactModel:"obb-sat-impulse"},objects:{itemBoxes:itemBoxes.length,projectiles:projectiles.length,jams:jams.length,particles:particles.length,audioLayers:3}};}
+    function snapshot(){const p=racers[0]||null,grounding=sceneryGrounding();return{mode,seed:seedValue,opponentCount,racerCount:racers.length,raceTime:Number(raceTime.toFixed(3)),laps:TOTAL_LAPS,finishOrder:finishOrder.map(r=>r.id),track:{length:Number(TRACK_LENGTH.toFixed(2)),samples:TRACK_SAMPLES,sectors:SECTOR_NAMES.length,targetLapSeconds:60,passiveHazards:0,turns:TURN_PROFILE,elevationRange:Number((Math.max(...samples.map(s=>s.p.y))-Math.min(...samples.map(s=>s.p.y))).toFixed(2))},camera:{fov:Number(camera.fov.toFixed(2))},player:p?{x:Number(p.position.x.toFixed(3)),y:Number(p.position.y.toFixed(3)),z:Number(p.position.z.toFixed(3)),speed:Number(p.speed.toFixed(3)),velocity:Number(p.velocity.length().toFixed(3)),slip:Number(p.slip.toFixed(4)),heading:Number(p.heading.toFixed(4)),lap:p.lap,rank:p.rank,progressIndex:p.routeIndex,checkpointCount:p.nextGate,item:p.item,shield:Number(p.shield.toFixed(3)),boost:Number(p.boost.toFixed(3)),drift:Number(p.drift.toFixed(3)),drifting:p.drifting,offroad:p.offroad,finished:p.finished,stun:Number(p.stun.toFixed(3)),recovery:Number(p.recovery.toFixed(3)),wheelClearance:Number(p.wheelClearance.toFixed(4))}:null,racers:racers.map(r=>({id:r.id,ai:r.ai,lap:r.lap,rank:r.rank,progressIndex:r.routeIndex,item:r.item,finished:r.finished,speed:Number(r.speed.toFixed(2))})),environment:{artDirection:"golden-hour-painted-festival-rally",roadTreatment:"dark-aggregate-banked-ribbon",terrainTreatment:"continuous-rolling-heightfield-meadow",distantBackdrop:"terrain-hills-no-mountain-meshes",landmarks:["festival","village","windmill","forest","bridge","vineyard"],wheelGrounding:"radius-contact-suspension",sceneryGrounding:grounding,passiveHazards:0},physics:{collisionCount,maxWheelClearance:Number(Math.max(0,...racers.map(r=>r.wheelClearance)).toFixed(4)),contactModel:"obb-sat-impulse"},objects:{itemBoxes:itemBoxes.length,projectiles:projectiles.length,jams:jams.length,particles:particles.length,audioLayers:3}};}
 
     function setTestState(state){
       if(state==="title"){mode="title";ui.titleScreen.classList.remove("hidden");ui.hud.classList.add("hidden");return snapshot();}
@@ -684,7 +687,7 @@
         setOffroad(distance=TRACK_HALF+4){const r=racers[0],s=samples[r.routeIndex];r.position.copy(s.p).addScaledVector(s.side,distance).addScaledVector(s.up,RIDE_HEIGHT);r.sideDistance=distance;r.offroad=true;return snapshot();},
         setCollision(){const a=racers[0],b=racers[1],s=samples[180],heading=Math.atan2(s.tangent.x,s.tangent.z);a.heading=b.heading=heading;a.position.copy(s.p).addScaledVector(s.tangent,-1.2).addScaledVector(s.up,RIDE_HEIGHT);b.position.copy(s.p).addScaledVector(s.tangent,1.2).addScaledVector(s.up,RIDE_HEIGHT);a.velocity.copy(s.tangent).multiplyScalar(30);b.velocity.copy(s.tangent).multiplyScalar(8);a.routeIndex=b.routeIndex=180;a.collisionCooldown=b.collisionCooldown=0;kartCollision(a,b);return snapshot();},
         hitPlayer(kind="bolt"){applyHit(racers[0],kind);return snapshot();},wheelSample(indices=[0,180,360,540]){const r=racers[0],values=[];for(const i of indices){setRacerProgress(r,i,0);values.push({index:i,clearance:r.wheelClearance,y:r.position.y,bank:samples[i].bank});}return{maxClearance:Math.max(...values.map(v=>v.clearance)),values};},
-        trackPoints(){return samples.map(s=>({x:s.p.x,z:s.p.z}));},
+        trackPoints(){return samples.map(s=>({x:s.p.x,z:s.p.z}));},trackProfile(){return samples.map((s,index)=>({index,y:s.p.y,grade:s.tangent.y,curvature:s.curvature,turn:s.turn}));},groundingReport(){return sceneryGrounding();},
         finishPlayer(){const r=racers[0];r.lap=TOTAL_LAPS+1;finishRacer(r);return snapshot();},resetPlayer(){resetRacer(racers[0]);return snapshot();},snapshot,
       };
     }
