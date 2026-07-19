@@ -64,12 +64,15 @@ async function openGame(page: Page, testMode = true) {
   await page.goto(`/games/marble-madness/gpt-5-6-sol/index.html${testMode ? "?test=1" : ""}`);
   await expect(page.locator("#startButton")).toBeVisible();
   if (testMode) {
-    await page.waitForTimeout(250);
-    if (!await page.evaluate(() => Boolean(window.__THREE_GAME_TEST_HOOKS__))) {
+    try {
+      await page.waitForFunction(() => Boolean(
+        window.__THREE_GAME_TEST_HOOKS__
+        && window.__THREE_GAME_DIAGNOSTICS__
+        && window.__MARBLE_MADNESS_TEST__,
+      ), undefined, { timeout: 10_000 });
+    } catch {
       throw new Error(`Game initialization failed: ${initializationErrors.join(" | ") || "test hooks were not installed"}`);
     }
-    await expect.poll(() => page.evaluate(() => Boolean(window.__THREE_GAME_TEST_HOOKS__))).toBe(true);
-    await expect.poll(() => page.evaluate(() => Boolean(window.__MARBLE_MADNESS_TEST__))).toBe(true);
   }
 }
 
@@ -137,6 +140,23 @@ test.describe("GPT 5.6 Sol Marble Madness", () => {
     expect(rising.marble.y).toBeGreaterThan(grounded.marble.y + .5);
     const landed = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(1));
     expect(landed.marble.grounded).toBe(true);
+  });
+
+  test("reports fresh grounding immediately after test-driver repositioning", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.startCourse(0));
+    const grounded = await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.setMarble({
+      position: { x: 0, y: 1.29, z: 10 },
+      velocity: { x: 0, y: 0, z: 0 },
+    }));
+    expect(grounded.marble.grounded).toBe(true);
+    expect(grounded.groundedPlatform).toBe("start");
+    const airborne = await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.setMarble({
+      position: { x: 30, y: 12, z: 10 },
+      velocity: { x: 0, y: 0, z: 0 },
+    }));
+    expect(airborne.marble.grounded).toBe(false);
+    expect(airborne.groundedPlatform).toBeNull();
   });
 
   test("allows the marble to fall from visibly unrailed platform sides", async ({ page }) => {
