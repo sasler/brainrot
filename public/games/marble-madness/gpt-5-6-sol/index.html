@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Marble Madness — Garden of Motion</title>
+  <style>
+    :root {
+      --ink:#183c3b; --paper:#fffaf0; --cream:#f6e8c9; --brass:#bb7f2d;
+      --aqua:#4ebfc2; --leaf:#4f8c5d; --coral:#ef7f68; --shadow:#16373544;
+    }
+    *{box-sizing:border-box} html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#9ed9dd;color:var(--ink)}
+    body{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;user-select:none}
+    canvas{display:block;width:100%;height:100%;touch-action:none}
+    button{font:inherit;color:inherit}
+    .screen{position:fixed;inset:0;display:grid;place-items:center;z-index:20;transition:opacity .45s ease,visibility .45s}
+    .screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+    .veil{position:absolute;inset:0;background:
+      radial-gradient(circle at 72% 18%,#fff7cebb 0 8%,transparent 28%),
+      linear-gradient(118deg,#dff6eddd,#9ed9ddd0 50%,#f6c68db8);backdrop-filter:blur(7px)}
+    .veil:after{content:"";position:absolute;inset:0;opacity:.22;background-image:
+      repeating-radial-gradient(ellipse at 20% 40%,transparent 0 12px,#fff 13px 14px,transparent 15px 29px)}
+    .panel{position:relative;width:min(920px,calc(100vw - 56px));max-height:calc(100vh - 48px);overflow:auto;
+      padding:34px 38px 30px;border:1px solid #fff9;border-radius:34px;background:#fffaf0e8;
+      box-shadow:0 30px 80px #23524d40,inset 0 1px #fff;clip-path:polygon(3% 0,97% 0,100% 10%,100% 90%,97% 100%,3% 100%,0 90%,0 10%)}
+    .eyebrow{margin:0 0 8px;color:#9b6428;font-weight:700;letter-spacing:.22em;text-transform:uppercase;font-size:12px}
+    h1,h2{margin:0;font-weight:500;line-height:.93;letter-spacing:-.045em}
+    h1{font-size:clamp(48px,7.2vw,92px)} h1 em{display:block;color:#bf7438;font-weight:400;font-size:.5em;letter-spacing:.06em}
+    h2{font-size:clamp(36px,5vw,62px)}
+    .lede{max-width:640px;margin:18px 0 22px;font-size:17px;line-height:1.55;color:#365b57}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0 22px}.key{padding:7px 11px;border:1px solid #8ba8a0;border-radius:10px;background:#f9f0dd;font-size:13px;box-shadow:0 3px #d5c5a6}
+    .primary,.secondary,.course-card{border:0;cursor:pointer;transition:transform .18s,box-shadow .18s,filter .18s}
+    .primary{padding:14px 24px;border-radius:999px;background:var(--ink);color:#fff9e9;font-weight:700;letter-spacing:.04em;box-shadow:0 9px 22px #183c3b42}
+    .secondary{padding:11px 18px;border-radius:999px;background:#efe0bf;color:var(--ink);font-weight:700}
+    button:hover{transform:translateY(-2px);filter:saturate(1.12)} button:focus-visible{outline:3px solid #ef9c55;outline-offset:3px}
+    .course-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+    .course-card{text-align:left;padding:13px 14px;border-radius:18px;background:#f4e8ce;border:1px solid #d6c7a7;color:#234845;min-height:84px}
+    .course-card strong{display:block;font-size:15px;margin-bottom:5px}.course-card small{color:#658079}.course-card.locked{opacity:.48;filter:grayscale(.6);cursor:not-allowed}.course-card.selected{background:#dff0dc;border-color:#6fa77b;box-shadow:0 6px 18px #366b4b26}
+    .petals{color:#c5792f;letter-spacing:.12em}
+    #hud{position:fixed;inset:0;z-index:10;pointer-events:none;opacity:1;transition:opacity .3s}
+    #hud.hidden{opacity:0;visibility:hidden}.hud-top{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 22px}
+    .plaque{background:#fff9eadf;border:1px solid #fff;border-radius:20px;padding:10px 16px;box-shadow:0 9px 28px #244c4730;backdrop-filter:blur(10px)}
+    #courseLabel{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}.subline{font-size:12px;color:#5e7870;margin-top:3px}
+    .seed-row{display:flex;gap:7px;justify-content:center}.seed{width:19px;height:19px;border-radius:50%;border:2px solid #b78842;background:#fff7da;box-shadow:inset 0 0 0 4px #fff;transition:.35s}.seed.on{background:#f4b83d;box-shadow:0 0 18px #ffc849,inset 0 0 0 3px #fff3a5;transform:scale(1.12)}
+    .hud-actions{pointer-events:auto;display:flex;gap:8px}.icon-btn{width:42px;height:42px;border:1px solid #fff;border-radius:50%;background:#fff9eadf;box-shadow:0 7px 20px #244c4730;cursor:pointer}
+    #toast{position:fixed;left:50%;top:18%;z-index:30;transform:translate(-50%,-10px);opacity:0;padding:11px 18px;border-radius:999px;background:#173f3adc;color:#fff8e4;font-weight:700;letter-spacing:.04em;transition:.3s;pointer-events:none;box-shadow:0 10px 30px #153b3540}
+    #toast.show{opacity:1;transform:translate(-50%,0)}
+    #helpCard{position:fixed;right:22px;bottom:22px;z-index:15;width:min(310px,calc(100vw - 44px));padding:16px 17px;border-radius:22px;background:#fff9eae8;border:1px solid #fff;box-shadow:0 13px 38px #244c4740;transform:translateY(140%);transition:.4s;pointer-events:auto}
+    #helpCard.show{transform:translateY(0)}#helpCard strong{display:block;margin-bottom:5px}#helpCard p{font-size:13px;line-height:1.4;margin:0 0 12px;color:#56716a}
+    .results{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}.result{padding:15px;border-radius:18px;background:#f1e5c9}.result b{display:block;font-size:24px;font-weight:500}.result span{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#6d8078}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}.celebration-mark{font-size:58px;margin-bottom:10px;animation:bob 2s ease-in-out infinite}
+    @keyframes bob{50%{transform:translateY(-8px) rotate(4deg)}}
+    @media(max-width:760px){.panel{padding:25px 23px}.course-grid{grid-template-columns:repeat(2,1fr)}.lede{font-size:15px}.hud-top{padding:12px}.results{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
+  <script type="importmap">
+  {"imports":{"three":"/vendor/three/0.185.1/three.module.min.js","three/addons/":"/vendor/three/0.185.1/addons/"}}
+  </script>
+</head>
+<body>
+  <div id="titleScreen" class="screen">
+    <div class="veil"></div>
+    <section class="panel">
+      <p class="eyebrow">A forgiving rolling adventure</p>
+      <h1>Marble Madness <em>Garden of Motion</em></h1>
+      <p class="lede">Wake a garden above the clouds. Guide a living glass marble across six handcrafted terraces—every course is a victory, every seed makes the world bloom.</p>
+      <div class="controls"><span class="key">WASD / Arrows · steer</span><span class="key">Shift · soft brake</span><span class="key">Esc · pause</span><span class="key">R · return safely</span></div>
+      <div id="courseGrid" class="course-grid"></div>
+      <button id="startButton" class="primary">Begin the garden</button>
+    </section>
+  </div>
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="plaque"><div id="courseLabel">Dawn Terrace</div><div id="progressLabel" class="subline">Checkpoint 1 of 3</div></div>
+      <div class="plaque"><div id="seedRow" class="seed-row"><i class="seed"></i><i class="seed"></i><i class="seed"></i></div><div class="subline" style="text-align:center">SUN SEEDS</div></div>
+      <div class="hud-actions"><button id="muteButton" class="icon-btn" aria-label="Mute sound">♪</button><button id="pauseButton" class="icon-btn" aria-label="Pause game">Ⅱ</button></div>
+    </div>
+  </div>
+  <div id="toast"></div>
+  <aside id="helpCard"><strong>The garden is helping</strong><p>Vines have grown along this section and your marble will roll a little more gently.</p><button id="liftButton" class="secondary">Garden Lift to safety</button></aside>
+  <div id="pauseScreen" class="screen hidden"><div class="veil"></div><section class="panel" style="max-width:560px"><p class="eyebrow">Take a breath</p><h2>The garden waits.</h2><p class="lede">Nothing moves while you pause.</p><div class="actions"><button id="resumeButton" class="primary">Keep rolling</button><button id="pauseMenuButton" class="secondary">Course garden</button></div></section></div>
+  <div id="completeScreen" class="screen hidden"><div class="veil"></div><section class="panel" style="max-width:650px"><div class="celebration-mark">✺</div><p id="completeEyebrow" class="eyebrow">A new petal awakens</p><h2 id="completeTitle">Terrace in bloom</h2><div class="results"><div class="result"><b id="resultTime">0:42</b><span>gentle time</span></div><div class="result"><b id="resultSeeds">3 / 3</b><span>sun seeds</span></div><div class="result"><b id="resultFalls">0</b><span>soft landings</span></div></div><p id="completeCopy" class="lede">The garden remembers this victory.</p><div class="actions"><button id="nextButton" class="primary">Next course</button><button id="replayButton" class="secondary">Roll again</button><button id="menuButton" class="secondary">Course garden</button></div></section></div>
+  <script type="module">
+    import * as THREE from "three";
+
+    const TEST = new URLSearchParams(location.search).get("test") === "1";
+    const RADIUS=.72, STEP=1/120, MAX_FRAME=.1;
+    const COURSE_NAMES=["Dawn Terrace","Petal Promenade","Waterwheel Walk","Cloud Conservatory","Brass Aviary","Crown Garden"];
+    const COURSE_SUBTITLES=["A wide and welcoming first roll","Choose the path that delights you","Move with the patient machinery","Read the breeze and let it carry you","Wait safely while the garden turns","Every kindness returns in bloom"];
+    const $=id=>document.getElementById(id);
+    const ui={title:$('titleScreen'),grid:$('courseGrid'),start:$('startButton'),hud:$('hud'),course:$('courseLabel'),progress:$('progressLabel'),seeds:[...document.querySelectorAll('.seed')],toast:$('toast'),help:$('helpCard'),lift:$('liftButton'),pause:$('pauseScreen'),complete:$('completeScreen'),resultTime:$('resultTime'),resultSeeds:$('resultSeeds'),resultFalls:$('resultFalls'),completeTitle:$('completeTitle'),completeEyebrow:$('completeEyebrow'),completeCopy:$('completeCopy'),next:$('nextButton')};
+
+    let rngSeed=72619;
+    function random(){rngSeed=(rngSeed*1664525+1013904223)>>>0;return rngSeed/4294967296}
+    function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+    function ease(current,target,speed,dt){return THREE.MathUtils.lerp(current,target,1-Math.exp(-speed*dt))}
+    function fmt(seconds){const m=Math.floor(seconds/60),s=Math.floor(seconds%60);return `${m}:${String(s).padStart(2,'0')}`}
+
+    const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+    renderer.setPixelRatio(TEST?1:Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);
+    renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+    renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);
+    const scene=new THREE.Scene();scene.background=new THREE.Color(0x9ed9dd);scene.fog=new THREE.Fog(0xa8dce0,70,210);
+    const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,500);camera.position.set(11,13,20);
+
+    const world=new THREE.Group(),courseRoot=new THREE.Group(),fxRoot=new THREE.Group();scene.add(world,fxRoot);world.add(courseRoot);
+    const mats={
+      ivory:new THREE.MeshStandardMaterial({color:0xf3dfb5,roughness:.58,metalness:.04}),
+      ivoryTop:new THREE.MeshStandardMaterial({color:0xfff8df,roughness:.42,metalness:.02}),
+      brass:new THREE.MeshStandardMaterial({color:0xb97927,roughness:.25,metalness:.78}),
+      brassDark:new THREE.MeshStandardMaterial({color:0x6f421f,roughness:.34,metalness:.72}),
+      aqua:new THREE.MeshPhysicalMaterial({color:0x65d3d0,roughness:.08,metalness:.05,transmission:.42,transparent:true,opacity:.78}),
+      leaf:new THREE.MeshStandardMaterial({color:0x4d8c5c,roughness:.7}),
+      leafLight:new THREE.MeshStandardMaterial({color:0x87b86c,roughness:.66}),
+      coral:new THREE.MeshStandardMaterial({color:0xef7f68,roughness:.48}),
+      white:new THREE.MeshStandardMaterial({color:0xfffdf2,roughness:.82}),
+      glow:new THREE.MeshBasicMaterial({color:0xffd85c,transparent:true,opacity:.8,blending:THREE.AdditiveBlending}),
+    };
+
+    scene.add(new THREE.HemisphereLight(0xf9fff5,0x5e836d,2.25));
+    const sun=new THREE.DirectionalLight(0xffefc4,4.1);sun.position.set(-38,52,28);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-80;sun.shadow.camera.near=1;sun.shadow.camera.far=150;sun.shadow.bias=-.00035;scene.add(sun);
+    const fill=new THREE.DirectionalLight(0x65cbd0,1.25);fill.position.set(35,18,-45);scene.add(fill);
+
+    function skyDome(){
+      const material=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{top:{value:new THREE.Color(0x67bfc7)},mid:{value:new THREE.Color(0xc7eee7)},bottom:{value:new THREE.Color(0xf7d3a0)}},vertexShader:`varying vec3 vPos;void main(){vPos=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec3 vPos;uniform vec3 top;uniform vec3 mid;uniform vec3 bottom;void main(){float h=normalize(vPos).y;vec3 c=mix(bottom,mid,smoothstep(-.25,.18,h));c=mix(c,top,smoothstep(.15,.88,h));gl_FragColor=vec4(c,1.);}`});
+      scene.add(new THREE.Mesh(new THREE.SphereGeometry(300,32,20),material));
+      const disc=new THREE.Mesh(new THREE.CircleGeometry(13,48),new THREE.MeshBasicMaterial({color:0xfff0a8,transparent:true,opacity:.72,depthWrite:false}));disc.position.set(-75,68,-185);disc.lookAt(camera.position);scene.add(disc);
+    }
+    skyDome();
+
+    function buildBackdrop(){
+      const cloudGeo=new THREE.DodecahedronGeometry(2,1),cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.72});
+      const clouds=new THREE.InstancedMesh(cloudGeo,cloudMat,95),dummy=new THREE.Object3D();
+      for(let i=0;i<95;i++){const a=random()*Math.PI*2,r=55+random()*125;dummy.position.set(Math.cos(a)*r,-8+random()*28,-35+Math.sin(a)*r);dummy.scale.set(1.5+random()*4,.55+random()*1.1,1.2+random()*3.2);dummy.rotation.set(random(),random(),random());dummy.updateMatrix();clouds.setMatrixAt(i,dummy.matrix)}
+      clouds.instanceMatrix.needsUpdate=true;world.add(clouds);
+      const islandGeo=new THREE.CylinderGeometry(4.5,1.3,6,8),islandMat=new THREE.MeshStandardMaterial({color:0x73956b,roughness:.9});
+      const islands=new THREE.InstancedMesh(islandGeo,islandMat,22);
+      for(let i=0;i<22;i++){const side=i%2?-1:1;dummy.position.set(side*(28+random()*75),-13-random()*18,-10-random()*145);dummy.scale.set(.7+random()*1.8,1+random()*2,.7+random()*1.8);dummy.rotation.y=random()*Math.PI;dummy.updateMatrix();islands.setMatrixAt(i,dummy.matrix)}
+      world.add(islands);
+    }
+    buildBackdrop();
+
+    const marble=new THREE.Group();
+    const outer=new THREE.Mesh(new THREE.SphereGeometry(RADIUS,40,28),new THREE.MeshPhysicalMaterial({color:0xe9ffff,roughness:.06,metalness:.05,transmission:.58,thickness:1.8,clearcoat:1,clearcoatRoughness:.08,transparent:true,opacity:.9}));outer.castShadow=true;outer.receiveShadow=true;marble.add(outer);
+    const core=new THREE.Mesh(new THREE.IcosahedronGeometry(RADIUS*.43,2),new THREE.MeshStandardMaterial({color:0x79d8c4,emissive:0x236f62,emissiveIntensity:1.35,roughness:.22,metalness:.2}));marble.add(core);
+    for(let i=0;i<2;i++){const ring=new THREE.Mesh(new THREE.TorusGeometry(RADIUS*.73,.035,8,48),mats.brass);ring.rotation.set(Math.PI/2,i*Math.PI/2,0);marble.add(ring)}
+    const marbleLight=new THREE.PointLight(0x77e5cc,2.4,9);marble.add(marbleLight);world.add(marble);
+
+    const particleCount=520,particlePos=new Float32Array(particleCount*3),particleCol=new Float32Array(particleCount*3),particles=[];
+    const particleGeo=new THREE.BufferGeometry();particleGeo.setAttribute('position',new THREE.BufferAttribute(particlePos,3));particleGeo.setAttribute('color',new THREE.BufferAttribute(particleCol,3));
+    const particlePoints=new THREE.Points(particleGeo,new THREE.PointsMaterial({size:.16,vertexColors:true,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending}));fxRoot.add(particlePoints);
+    function burst(position,color,count=20,speed=4){const c=new THREE.Color(color);for(let i=0;i<count;i++){const a=random()*Math.PI*2,u=random()*2-1,s=Math.sqrt(1-u*u),v=(.4+random())*speed;particles.push({p:position.clone(),v:new THREE.Vector3(Math.cos(a)*s*v,u*v+1.8,Math.sin(a)*s*v),life:.65+random()*.8,c});}while(particles.length>particleCount)particles.shift()}
+    function updateParticles(dt){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.v.y-=2.2*dt;p.v.multiplyScalar(Math.exp(-1.3*dt));p.p.addScaledVector(p.v,dt);if(p.life<=0)particles.splice(i,1)}for(let i=0;i<particleCount;i++){const p=particles[i],j=i*3;if(p){particlePos[j]=p.p.x;particlePos[j+1]=p.p.y;particlePos[j+2]=p.p.z;particleCol[j]=p.c.r*Math.min(1,p.life*2);particleCol[j+1]=p.c.g*Math.min(1,p.life*2);particleCol[j+2]=p.c.b*Math.min(1,p.life*2)}else{particlePos[j]=particlePos[j+1]=particlePos[j+2]=9999}}particleGeo.attributes.position.needsUpdate=true;particleGeo.attributes.color.needsUpdate=true}
+
+    class GardenAudio{
+      constructor(){this.ctx=null;this.master=null;this.muted=false;this.nextNote=0;this.step=0;this.rollGain=null}
+      wake(){if(this.ctx)return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;this.ctx=new C();this.master=this.ctx.createGain();this.master.gain.value=this.muted?0:.22;this.master.connect(this.ctx.destination);const osc=this.ctx.createOscillator(),g=this.ctx.createGain();osc.type='sine';osc.frequency.value=74;g.gain.value=0;osc.connect(g).connect(this.master);osc.start();this.rollOsc=osc;this.rollGain=g}
+      tone(freq,dur=.18,type='sine',gain=.12,delay=0){if(!this.ctx||this.muted)return;const t=this.ctx.currentTime+delay,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(freq*1.03,t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(gain,t+.018);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(this.master);o.start(t);o.stop(t+dur+.03)}
+      chord(notes){notes.forEach((n,i)=>this.tone(n,.55,'sine',.055,i*.065))}
+      seed(){this.tone(659,.16,'triangle',.12);this.tone(988,.38,'sine',.08,.08)} checkpoint(){this.chord([392,523,659])} fall(){this.tone(260,.28,'sine',.08);this.tone(174,.46,'triangle',.055,.1)} finish(){this.chord([392,494,587,784]);setTimeout(()=>this.chord([523,659,784,1047]),220)} click(){this.tone(520,.08,'triangle',.06)}
+      update(speed,playing){if(!this.ctx)return;this.rollGain.gain.setTargetAtTime(playing?Math.min(.045,speed*.0035):0,this.ctx.currentTime,.08);this.rollOsc.frequency.setTargetAtTime(68+speed*10,this.ctx.currentTime,.08);if(playing&&this.ctx.currentTime>this.nextNote){const notes=[196,247,294,330,294,247,220,262];this.tone(notes[this.step++%notes.length],1.25,'sine',.028);this.nextNote=this.ctx.currentTime+.72}}
+      toggle(){this.muted=!this.muted;if(this.master)this.master.gain.setTargetAtTime(this.muted?0:.22,this.ctx.currentTime,.04);$('muteButton').textContent=this.muted?'×':'♪'}
+    }
+    const audio=new GardenAudio();
+
+    function roundedSlab(w,d,h){const r=Math.min(1.2,w*.18,d*.18),s=new THREE.Shape();s.moveTo(-w/2+r,-d/2);s.lineTo(w/2-r,-d/2);s.quadraticCurveTo(w/2,-d/2,w/2,-d/2+r);s.lineTo(w/2,d/2-r);s.quadraticCurveTo(w/2,d/2,w/2-r,d/2);s.lineTo(-w/2+r,d/2);s.quadraticCurveTo(-w/2,d/2,-w/2,d/2-r);s.lineTo(-w/2,-d/2+r);s.quadraticCurveTo(-w/2,-d/2,-w/2+r,-d/2);const g=new THREE.ExtrudeGeometry(s,{depth:h,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.16,bevelThickness:.12,curveSegments:3});g.rotateX(-Math.PI/2);g.translate(0,-h/2,0);g.computeVertexNormals();return g}
+    function petalGeometry(){const s=new THREE.Shape();s.moveTo(0,0);s.bezierCurveTo(.18,.1,.55,.3,.7,.9);s.bezierCurveTo(.45,1.3,-.45,1.3,-.7,.9);s.bezierCurveTo(-.55,.3,-.18,.1,0,0);const g=new THREE.ExtrudeGeometry(s,{depth:.12,bevelEnabled:true,bevelSize:.04,bevelThickness:.04,bevelSegments:2});g.center();return g}
+    const PETAL_GEO=petalGeometry();
+
+    let colliders=[],checkpoints=[],seeds=[],windZones=[],moving=[],kinetics=[],gardenHeart=null,finishGate=null;
+    function addLeafCluster(parent,x,z,scale=1){const stem=new THREE.Mesh(new THREE.CylinderGeometry(.05,.08,1.1,7),mats.brassDark);stem.position.set(x,.15,z);parent.add(stem);for(let i=0;i<3;i++){const leaf=new THREE.Mesh(PETAL_GEO,i%2?mats.leaf:mats.leafLight);leaf.scale.set(.46*scale,.75*scale,.3);leaf.rotation.set(-Math.PI/2,(i-1)*.75,0);leaf.position.set(x+Math.sin(i*2.2)*.35,.25+i*.25,z+Math.cos(i*2.2)*.28);parent.add(leaf)}}
+    function addRail(group,w,d){for(const side of [-1,1]){const rail=new THREE.Mesh(new THREE.TorusGeometry(.16,.045,6,12,Math.PI),mats.brass);rail.rotation.set(0,0,Math.PI/2);rail.scale.set(1,d/2.15,1);rail.position.set(side*(w/2-.2),.55,0);group.add(rail);for(let z=-d/2+1;z<d/2;z+=3){const post=new THREE.Mesh(new THREE.CylinderGeometry(.055,.08,.8,7),mats.brass);post.position.set(side*(w/2-.2),.3,z);group.add(post)}}}
+    function addDeck(x,y,z,w,d,opt={}){const group=new THREE.Group();group.position.set(x,y,z);group.rotation.y=opt.yaw||0;courseRoot.add(group);const slab=new THREE.Mesh(roundedSlab(w,d,.9),mats.ivory);slab.receiveShadow=true;slab.castShadow=true;group.add(slab);const inset=new THREE.Mesh(roundedSlab(w-.48,d-.48,.15),opt.water?mats.aqua:mats.ivoryTop);inset.position.y=.51;inset.receiveShadow=true;group.add(inset);for(let i=-1;i<=1;i+=2){const trim=new THREE.Mesh(new THREE.BoxGeometry(.12,.18,d*.78),mats.brass);trim.position.set(i*(w/2-.25),.2,0);group.add(trim)}if(opt.rails)addRail(group,w,d);if(opt.leaves!==false){addLeafCluster(group,-w/2+.65,-d/2+1,.85);addLeafCluster(group,w/2-.65,d/2-1,.7)}
+      const c={id:opt.id||`deck-${colliders.length}`,group,base:new THREE.Vector3(x,y,z),position:new THREE.Vector3(x,y,z),w,d,h:.9,yaw:opt.yaw||0,slope:opt.slope||0,rails:!!opt.rails,moving:opt.moving||null,prev:new THREE.Vector3(x,y,z),delta:new THREE.Vector3(),assistEligible:opt.assist!==false};colliders.push(c);if(c.moving){moving.push(c);const axle=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,5,18),mats.brassDark);axle.rotation.z=Math.PI/2;axle.position.y=-2.8;group.add(axle)}return c}
+    function addArch(x,y,z,color=0xef7f68){const g=new THREE.Group();g.position.set(x,y,z);courseRoot.add(g);for(const s of [-1,1]){const col=new THREE.Mesh(new THREE.CylinderGeometry(.28,.42,4.8,12),mats.brass);col.position.set(s*2.3,2.4,0);col.castShadow=true;g.add(col)}const arch=new THREE.Mesh(new THREE.TorusGeometry(2.3,.26,12,42,Math.PI),mats.coral);arch.rotation.z=Math.PI;arch.position.y=4.75;g.add(arch);for(let i=0;i<7;i++){const p=new THREE.Mesh(PETAL_GEO,new THREE.MeshStandardMaterial({color,roughness:.48}));p.scale.set(.55,.8,.45);p.position.set(Math.cos(i/6*Math.PI)*2.55,4.75+Math.sin(i/6*Math.PI)*2.55,0);p.rotation.z=-i/6*Math.PI;p.userData.phase=i*.3;g.add(p);kinetics.push({mesh:p,kind:'petal',base:p.scale.clone(),phase:i*.3})}return g}
+    function addCheckpoint(x,y,z,index){const g=new THREE.Group();g.position.set(x,y,z);courseRoot.add(g);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.45,.11,10,36),mats.brass);ring.rotation.x=Math.PI/2;ring.position.y=.18;g.add(ring);for(let i=0;i<8;i++){const p=new THREE.Mesh(PETAL_GEO,mats.leafLight);p.scale.set(.55,.8,.35);p.rotation.set(-Math.PI/2,0,i*Math.PI/4);p.position.set(Math.cos(i*Math.PI/4)*1.2,.16,Math.sin(i*Math.PI/4)*1.2);g.add(p)}const cp={index,group:g,position:new THREE.Vector3(x,y+RADIUS+.55,z),active:false};checkpoints.push(cp);return cp}
+    function addSeed(x,y,z,index){const g=new THREE.Group();g.position.set(x,y,z);courseRoot.add(g);const gem=new THREE.Mesh(new THREE.IcosahedronGeometry(.38,1),new THREE.MeshStandardMaterial({color:0xffd45d,emissive:0xa85f13,emissiveIntensity:1.2,metalness:.25,roughness:.18}));gem.castShadow=true;g.add(gem);const ring=new THREE.Mesh(new THREE.TorusGeometry(.58,.035,7,28),mats.glow);ring.rotation.x=Math.PI/2;g.add(ring);const seed={index,group:g,position:new THREE.Vector3(x,y,z),collected:false};seeds.push(seed);kinetics.push({mesh:g,kind:'seed',phase:index*1.7,baseY:y});return seed}
+    function addFinish(x,y,z){finishGate=addArch(x,y,z,0xf6c34d);finishGate.userData.position=new THREE.Vector3(x,y+1,z);const halo=new THREE.Mesh(new THREE.CircleGeometry(1.7,40),new THREE.MeshBasicMaterial({color:0xffe06e,transparent:true,opacity:.18,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));halo.position.y=2.25;halo.rotation.y=Math.PI/2;finishGate.add(halo)}
+    function addWaterwheel(x,y,z){const g=new THREE.Group();g.position.set(x,y,z);courseRoot.add(g);for(const r of [1.8,2.25]){const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.12,10,48),mats.brass);ring.rotation.y=Math.PI/2;g.add(ring)}for(let i=0;i<10;i++){const spoke=new THREE.Mesh(new THREE.BoxGeometry(.09,4.25,.16),mats.brassDark);spoke.rotation.x=i*Math.PI/5;g.add(spoke)}kinetics.push({mesh:g,kind:'wheel',speed:.34})}
+    function addWindmill(x,y,z){const g=new THREE.Group();g.position.set(x,y,z);courseRoot.add(g);const hub=new THREE.Mesh(new THREE.SphereGeometry(.35,16,12),mats.brass);g.add(hub);for(let i=0;i<5;i++){const p=new THREE.Mesh(PETAL_GEO,mats.white);p.scale.set(.9,2.2,.55);p.position.set(Math.cos(i*Math.PI*.4)*1.25,Math.sin(i*Math.PI*.4)*1.25,0);p.rotation.z=i*Math.PI*.4-Math.PI/2;g.add(p)}kinetics.push({mesh:g,kind:'fan',speed:.48})}
+    function addHeart(x,y,z,petalsOpen){gardenHeart=new THREE.Group();gardenHeart.position.set(x,y,z);courseRoot.add(gardenHeart);const core=new THREE.Mesh(new THREE.SphereGeometry(.75,24,16),new THREE.MeshStandardMaterial({color:0xffd56a,emissive:0xb66b25,emissiveIntensity:1.4,metalness:.4,roughness:.22}));gardenHeart.add(core);for(let i=0;i<6;i++){const p=new THREE.Mesh(PETAL_GEO,i%2?mats.coral:mats.ivoryTop);p.scale.set(.95,1.5,.65);p.position.set(Math.cos(i*Math.PI/3)*1.1,Math.sin(i*Math.PI/3)*1.1,0);p.rotation.z=i*Math.PI/3-Math.PI/2;p.userData.open=i<petalsOpen?1:.08;gardenHeart.add(p)}kinetics.push({mesh:gardenHeart,kind:'heart',speed:.18})}
+
+    function resetCourseObjects(){courseRoot.clear();colliders=[];checkpoints=[];seeds=[];windZones=[];moving=[];kinetics=[];gardenHeart=null;finishGate=null}
+    function baseCourse(){addDeck(0,0,8,14,16,{rails:true,id:'start'});addArch(0,.5,13,0xef8a72);addCheckpoint(0,.55,7,0)}
+    const builders=[
+      ()=>{baseCourse();addDeck(0,0,-7,14,16,{rails:true,water:true});addDeck(1.5,.4,-22,13,15,{rails:true});addDeck(-1,.8,-36,14,15,{rails:true,water:true});addDeck(0,1.2,-51,15,16,{rails:true});addSeed(-3,1.4,-8,0);addSeed(3,1.8,-27,1);addSeed(0,2.5,-47,2);addCheckpoint(1.5,1,-22,1);addCheckpoint(0,1.75,-50,2);addFinish(0,1.7,-57);addHeart(6,7,-46,progress.unlocked-1)},
+      ()=>{baseCourse();addDeck(-1,0,-8,15,16,{rails:true});addDeck(-4,.5,-23,11,15,{rails:true});addDeck(3,.5,-23,8,14,{rails:true,water:true});addDeck(-1,1,-38,15,16,{rails:true});addDeck(2,1.4,-53,13,16,{rails:true});addDeck(0,1.8,-68,15,16,{rails:true});addSeed(3,1.6,-22,0);addSeed(-4,2,-35,1);addSeed(4,2.5,-55,2);addCheckpoint(-1,1.55,-38,1);addCheckpoint(0,2.35,-67,2);addFinish(0,2.3,-75);addHeart(-7,8,-61,progress.unlocked-1)},
+      ()=>{baseCourse();addDeck(0,0,-8,14,16,{rails:true,water:true});addDeck(0,.35,-24,12,15,{rails:true,moving:{axis:'x',amount:2.2,speed:.52},id:'moving-bridge'});addDeck(0,.7,-40,14,17,{rails:true,water:true});addDeck(2,1.1,-56,13,16,{rails:true,moving:{axis:'y',amount:.6,speed:.38},id:'water-lift'});addDeck(0,1.6,-71,15,16,{rails:true});addSeed(-3,1.35,-7,0);addSeed(2,1.6,-40,1);addSeed(-2,2.8,-70,2);addCheckpoint(0,1.25,-39,1);addCheckpoint(0,2.15,-70,2);addFinish(0,2.1,-78);addWaterwheel(-8,4,-24);addWaterwheel(9,5,-55);addHeart(7,9,-69,progress.unlocked-1)},
+      ()=>{baseCourse();addDeck(0,0,-8,15,17,{rails:true});addDeck(-2,.35,-24,13,16,{rails:true});addDeck(2,.7,-40,14,16,{rails:true});addDeck(-1,1.1,-56,13,16,{rails:true});addDeck(0,1.5,-71,15,16,{rails:true});windZones.push({min:new THREE.Vector3(-6,-2,-32),max:new THREE.Vector3(4,5,-15),force:new THREE.Vector3(.9,0,-.25)});windZones.push({min:new THREE.Vector3(-4,-2,-64),max:new THREE.Vector3(6,5,-48),force:new THREE.Vector3(-.8,0,-.2)});addSeed(3,1.4,-10,0);addSeed(-4,2,-31,1);addSeed(3,2.5,-59,2);addCheckpoint(2,1.25,-40,1);addCheckpoint(0,2.05,-70,2);addFinish(0,2,-78);addWindmill(7,5,-22);addWindmill(-7,6,-54);addHeart(7,10,-70,progress.unlocked-1)},
+      ()=>{baseCourse();addDeck(0,0,-8,14,17,{rails:true});addDeck(0,.45,-24,13,16,{rails:true,id:'turntable'});addDeck(3,.85,-40,14,17,{rails:true});addDeck(-2,1.2,-56,13,16,{rails:true,moving:{axis:'x',amount:1.4,speed:.4},id:'aviary-carriage'});addDeck(0,1.65,-71,15,16,{rails:true});addSeed(-3,1.4,-8,0);addSeed(3,2,-40,1);addSeed(-3,2.8,-69,2);addCheckpoint(3,1.4,-40,1);addCheckpoint(0,2.2,-70,2);addFinish(0,2.2,-78);addWaterwheel(-8,5,-25);addWindmill(9,7,-53);addHeart(7,10,-68,progress.unlocked-1)},
+      ()=>{baseCourse();addDeck(0,0,-8,15,17,{rails:true,water:true});addDeck(-2,.45,-24,13,16,{rails:true,moving:{axis:'x',amount:1.2,speed:.42},id:'crown-bridge'});addDeck(2,.9,-40,14,17,{rails:true});addDeck(-2,1.3,-56,13,16,{rails:true,water:true});addDeck(1,1.75,-72,14,17,{rails:true,moving:{axis:'y',amount:.45,speed:.35},id:'crown-lift'});addDeck(0,2.2,-88,16,17,{rails:true});windZones.push({min:new THREE.Vector3(-6,-2,-64),max:new THREE.Vector3(4,7,-48),force:new THREE.Vector3(.62,0,-.18)});addSeed(3,1.5,-10,0);addSeed(-3,2.3,-43,1);addSeed(4,3.3,-76,2);addCheckpoint(2,1.45,-40,1);addCheckpoint(-2,1.85,-56,2);addCheckpoint(0,2.75,-87,3);addFinish(0,2.75,-95);addWaterwheel(-9,5,-25);addWindmill(9,7,-55);addHeart(0,11,-89,progress.unlocked-1)}
+    ];
+
+    const progress={unlocked:1,best:Array(6).fill(null),seeds:Array(6).fill(0),petals:0};
+    let selectedCourse=0,courseIndex=0,state='title',elapsed=0,totalFalls=0,fallsInSection=0,checkpointIndex=0,assistActive=false,liftAvailable=false,celebration='idle',toastTimer=0,respawnTimer=0,accumulator=0,grounded=null,lastGrounded=null,courseCompleted=false;
+    const position=new THREE.Vector3(),velocity=new THREE.Vector3(),spawn=new THREE.Vector3(),input={x:0,z:0,brake:false},keys=new Set();let testInput=null;
+
+    function renderCourseGrid(){ui.grid.innerHTML='';COURSE_NAMES.forEach((name,i)=>{const b=document.createElement('button');b.className=`course-card ${i>=progress.unlocked?'locked':''} ${i===selectedCourse?'selected':''}`;b.disabled=i>=progress.unlocked;b.innerHTML=`<strong>${i+1}. ${name}</strong><small>${i>=progress.unlocked?'Sleeping garden':progress.best[i]===null?COURSE_SUBTITLES[i]:`Best ${fmt(progress.best[i])} · ${'✦'.repeat(progress.seeds[i])}`}</small>`;b.onclick=()=>{selectedCourse=i;audio.click();renderCourseGrid()};ui.grid.appendChild(b)});ui.start.textContent=selectedCourse===0&&progress.best[0]===null?'Begin the garden':`Roll ${COURSE_NAMES[selectedCourse]}`}
+    function showToast(text,seconds=2){ui.toast.textContent=text;ui.toast.classList.add('show');toastTimer=seconds}
+    function setScreen(screen){[ui.title,ui.pause,ui.complete].forEach(el=>el.classList.add('hidden'));if(screen)screen.classList.remove('hidden')}
+    function startCourse(index=selectedCourse){courseIndex=clamp(index,0,5);selectedCourse=courseIndex;resetCourseObjects();builders[courseIndex]();elapsed=0;totalFalls=0;fallsInSection=0;checkpointIndex=0;assistActive=false;liftAvailable=false;celebration='idle';courseCompleted=false;respawnTimer=0;accumulator=0;seeds.forEach(s=>s.collected=false);checkpoints[0].active=true;spawn.copy(checkpoints[0].position);position.copy(spawn);velocity.set(0,0,0);marble.position.copy(position);state='playing';setScreen(null);ui.hud.classList.remove('hidden');ui.help.classList.remove('show');updateHud();audio.wake();audio.checkpoint();showToast(`${COURSE_NAMES[courseIndex]} · every finish is a victory`,2.6);return snapshot()}
+    function goTitle(){state='title';velocity.set(0,0,0);ui.hud.classList.add('hidden');ui.help.classList.remove('show');setScreen(ui.title);renderCourseGrid()}
+    function pauseGame(){if(state!=='playing')return;state='paused';setScreen(ui.pause);audio.click()}
+    function resumeGame(){if(state!=='paused')return;state='playing';setScreen(null);audio.click()}
+    function updateHud(){ui.course.textContent=`${courseIndex+1} · ${COURSE_NAMES[courseIndex]}`;ui.progress.textContent=`Checkpoint ${checkpointIndex+1} of ${checkpoints.length}`;ui.seeds.forEach((el,i)=>el.classList.toggle('on',!!seeds[i]?.collected))}
+    function triggerFall(){if(state!=='playing'||respawnTimer>0)return snapshot();totalFalls++;fallsInSection++;respawnTimer=.72;state='respawning';velocity.set(0,0,0);marble.visible=false;burst(position,0xffa47e,30,4);audio.fall();if(fallsInSection>=2&&!assistActive){assistActive=true;showToast('Kind vines are growing along this section',2.4)}if(fallsInSection>=3){liftAvailable=true;ui.help.classList.add('show')}return snapshot()}
+    function respawnNow(){position.copy(spawn);velocity.set(0,0,0);marble.position.copy(position);marble.visible=true;state='playing';respawnTimer=0;burst(position,0x8fe0a8,24,3);showToast('Back among the flowers',1.3)}
+    function activateCheckpoint(index){if(index<=checkpointIndex||!checkpoints[index])return;checkpointIndex=index;checkpoints.forEach((c,i)=>c.active=i<=index);spawn.copy(checkpoints[index].position);fallsInSection=0;assistActive=false;liftAvailable=false;ui.help.classList.remove('show');burst(checkpoints[index].group.position,0xffcf55,34,4);audio.checkpoint();showToast('Checkpoint flower awakened',1.7);updateHud()}
+    function collectSeed(seed){if(seed.collected)return;seed.collected=true;seed.group.visible=false;burst(seed.position,0xffd45d,35,5);audio.seed();showToast(`Sun Seed ${seeds.filter(s=>s.collected).length} of 3`,1.25);updateHud()}
+    function completeCourse(){if(courseCompleted)return snapshot();courseCompleted=true;state='courseComplete';celebration=courseIndex===5?'garden-complete':'blooming';velocity.set(0,0,0);const count=seeds.filter(s=>s.collected).length;progress.seeds[courseIndex]=Math.max(progress.seeds[courseIndex],count);progress.best[courseIndex]=progress.best[courseIndex]===null?elapsed:Math.min(progress.best[courseIndex],elapsed);progress.petals=Math.max(progress.petals,courseIndex+1);progress.unlocked=Math.max(progress.unlocked,Math.min(6,courseIndex+2));burst(position,0xffd45d,100,8);audio.finish();ui.resultTime.textContent=fmt(elapsed);ui.resultSeeds.textContent=`${count} / 3`;ui.resultFalls.textContent=String(totalFalls);if(courseIndex===5){ui.completeEyebrow.textContent='The Garden Heart is awake';ui.completeTitle.textContent='Every terrace is in bloom';ui.completeCopy.textContent='You finished the whole garden. Replay any course for seeds, ribbons, or simply the pleasure of rolling.';ui.next.style.display='none'}else{ui.completeEyebrow.textContent='A new petal awakens';ui.completeTitle.textContent=`${COURSE_NAMES[courseIndex]} in bloom`;ui.completeCopy.textContent=totalFalls===0?'A flawless ribbon curls around your marble—but the victory was always yours.':'Every soft landing helped the garden learn how to carry you.';ui.next.style.display='inline-block';ui.next.textContent=`Next: ${COURSE_NAMES[courseIndex+1]}`}setTimeout(()=>{setScreen(ui.complete);if(courseIndex!==5)celebration='settled'},TEST?0:700);return snapshot()}
+    function gardenLift(){if(!liftAvailable)return snapshot();const next=Math.min(checkpoints.length-1,checkpointIndex+1);activateCheckpoint(next);position.copy(spawn);velocity.set(0,0,0);marble.position.copy(position);ui.help.classList.remove('show');showToast('The garden carried you forward',1.8);return snapshot()}
+
+    function updateMoving(time){for(const c of moving){c.prev.copy(c.position);c.position.copy(c.base);const v=Math.sin(time*c.moving.speed*2*Math.PI)*c.moving.amount;if(c.moving.axis==='x')c.position.x+=v;else c.position.y+=v;c.delta.subVectors(c.position,c.prev);c.group.position.copy(c.position)}}
+    function localPoint(c,p,target=new THREE.Vector3()){target.subVectors(p,c.position);const co=Math.cos(-c.yaw),si=Math.sin(-c.yaw),x=target.x,z=target.z;target.x=x*co-z*si;target.z=x*si+z*co;return target}
+    function worldVector(c,v,target=new THREE.Vector3()){const co=Math.cos(c.yaw),si=Math.sin(c.yaw);target.set(v.x*co-v.z*si,v.y,v.x*si+v.z*co);return target}
+    const tmp=new THREE.Vector3(),tmp2=new THREE.Vector3(),tmp3=new THREE.Vector3();
+    function findGround(){let found=null,best=-Infinity;for(const c of colliders){const lp=localPoint(c,position,tmp);if(Math.abs(lp.x)<=c.w/2+RADIUS*.2&&Math.abs(lp.z)<=c.d/2+RADIUS*.2){const top=c.position.y+.57+lp.z*Math.tan(c.slope);const bottom=position.y-RADIUS;if(bottom<=top+.38&&bottom>=top-1.4&&top>best){best=top;found=c}}}return found?{c:found,top:best}:null}
+    function applyRails(c){if(!c.rails&&!assistActive)return;const lp=localPoint(c,position,tmp);const bound=c.w/2-RADIUS*.68;let hit=0;if(lp.x>bound){lp.x=bound;hit=1}else if(lp.x<-bound){lp.x=-bound;hit=-1}if(hit){const corrected=worldVector(c,lp,tmp2).add(c.position);position.x=corrected.x;position.z=corrected.z;const n=worldVector(c,new THREE.Vector3(-hit,0,0),tmp3);const vn=velocity.dot(n);if(vn<0)velocity.addScaledVector(n,-1.35*vn);velocity.multiplyScalar(.82);if(Math.abs(vn)>2.4){burst(position,0xf0b76b,9,2);audio.tone(210+Math.abs(vn)*20,.09,'triangle',.045)}}}
+    function physicsStep(dt){
+      if(state==='respawning'){respawnTimer-=dt;if(respawnTimer<=0)respawnNow();return}if(state!=='playing')return;
+      elapsed+=dt;updateMoving(elapsed);grounded=findGround();
+      if(grounded){if(lastGrounded===grounded.c&&grounded.c.moving)position.add(grounded.c.delta);position.y=grounded.top+RADIUS;velocity.y=Math.max(0,velocity.y);const ix=testInput?.x??input.x,iz=testInput?.z??input.z,brake=testInput?.brake??input.brake;tmp.set(ix,0,iz);if(tmp.lengthSq()>1)tmp.normalize();const accel=assistActive?15.5:18.5;velocity.x+=tmp.x*accel*dt;velocity.z+=tmp.z*accel*dt;const damping=brake?8.5:tmp.lengthSq()>.01?1.35:4.4;velocity.x*=Math.exp(-damping*dt);velocity.z*=Math.exp(-damping*dt);for(const zone of windZones){if(position.x>zone.min.x&&position.x<zone.max.x&&position.y>zone.min.y&&position.y<zone.max.y&&position.z>zone.min.z&&position.z<zone.max.z)velocity.addScaledVector(zone.force,dt)}const cap=assistActive?7.8:10.6;const hs=Math.hypot(velocity.x,velocity.z);if(hs>cap){velocity.x*=cap/hs;velocity.z*=cap/hs}applyRails(grounded.c)}else velocity.y-=18*dt;
+      lastGrounded=grounded?.c||null;position.addScaledVector(velocity,dt);if(position.y<-9)triggerFall();
+      for(const seed of seeds)if(!seed.collected&&position.distanceToSquared(seed.position)<2.1)collectSeed(seed);
+      for(let i=checkpointIndex+1;i<checkpoints.length;i++)if(position.distanceToSquared(checkpoints[i].position)<7.2){activateCheckpoint(i);break}
+      if(finishGate&&position.distanceToSquared(finishGate.userData.position)<9)completeCourse();
+      marble.position.copy(position);const speed=Math.hypot(velocity.x,velocity.z);if(speed>.02){tmp.set(velocity.z,0,-velocity.x).normalize();marble.rotateOnWorldAxis(tmp,speed*dt/RADIUS)}
+    }
+
+    function updateVisuals(dt,time){
+      for(const k of kinetics){if(k.kind==='seed'&&k.mesh.visible){k.mesh.position.y=k.baseY+Math.sin(time*2+k.phase)*.22;k.mesh.rotation.y+=dt*1.5}else if(k.kind==='wheel')k.mesh.rotation.x+=dt*k.speed;else if(k.kind==='fan')k.mesh.rotation.z+=dt*k.speed;else if(k.kind==='petal'){const s=1+Math.sin(time*1.4+k.phase)*.05;k.mesh.scale.copy(k.base).multiplyScalar(s)}else if(k.kind==='heart'){k.mesh.rotation.y+=dt*.16;const pulse=1+Math.sin(time*2)*.035;k.mesh.scale.setScalar(pulse)}}
+      core.rotation.x+=dt*.55;core.rotation.y+=dt*.8;marbleLight.intensity=2.25+Math.sin(time*4)*.35;
+      updateParticles(dt);const speed=velocity.length();audio.update(speed,state==='playing');
+      const look=tmp.set(position.x+velocity.x*.18,position.y+1,position.z-4+velocity.z*.12);const desired=tmp2.set(position.x+10.5,position.y+12.5,position.z+18);camera.position.x=ease(camera.position.x,desired.x,3.4,dt);camera.position.y=ease(camera.position.y,desired.y,3.4,dt);camera.position.z=ease(camera.position.z,desired.z,3.4,dt);camera.lookAt(look);
+      if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)ui.toast.classList.remove('show')}
+    }
+    let last=performance.now();function frame(now){requestAnimationFrame(frame);const dt=Math.min(MAX_FRAME,(now-last)/1000);last=now;accumulator+=dt;let steps=0;while(accumulator>=STEP&&steps++<14){physicsStep(STEP);accumulator-=STEP}updateVisuals(dt,now/1000);renderer.render(scene,camera)};requestAnimationFrame(frame);
+
+    function snapshot(){return {state,seed:rngSeed,courseIndex,courseName:COURSE_NAMES[courseIndex],elapsed:+elapsed.toFixed(3),checkpointIndex,checkpointId:checkpoints[checkpointIndex]?.index??0,courseDesign:{platforms:colliders.length,railPlatforms:colliders.filter(c=>c.rails).length,checkpoints:checkpoints.length,windZones:windZones.length,minWidth:colliders.length?Math.min(...colliders.map(c=>c.w)):0},marble:{x:+position.x.toFixed(3),y:+position.y.toFixed(3),z:+position.z.toFixed(3),vx:+velocity.x.toFixed(3),vy:+velocity.y.toFixed(3),vz:+velocity.z.toFixed(3),speed:+Math.hypot(velocity.x,velocity.z).toFixed(3),grounded:!!grounded},groundedPlatform:grounded?.c.id||null,fallsInSection,totalFalls,assistActive,liftAvailable,seedsCollected:seeds.filter(s=>s.collected).length,seedCount:seeds.length,unlockedCourses:progress.unlocked,petals:progress.petals,celebration,movingPlatforms:moving.map(c=>({id:c.id,x:+c.position.x.toFixed(3),y:+c.position.y.toFixed(3),z:+c.position.z.toFixed(3)}))}}
+    function advance(seconds){const count=Math.ceil(clamp(seconds,0,30)/STEP);for(let i=0;i<count;i++)physicsStep(STEP);updateVisuals(Math.min(seconds,.1),elapsed);return snapshot()}
+    function setMarble(data={}){if(data.position)position.set(data.position.x??position.x,data.position.y??position.y,data.position.z??position.z);if(data.velocity)velocity.set(data.velocity.x??0,data.velocity.y??0,data.velocity.z??0);marble.position.copy(position);return snapshot()}
+
+    if(TEST){
+      window.__THREE_GAME_TEST_HOOKS__={seed(value){rngSeed=value>>>0},setState(value){if(value==='title')goTitle();else if(value==='active-play')startCourse(courseIndex);else if(value==='fail'){startCourse(courseIndex);triggerFall()}else if(value==='win'){startCourse(courseIndex);completeCourse()}else if(value==='stress'){startCourse(5);for(let i=0;i<300;i++)burst(position,0xffd45d,2,5)}return snapshot()},advance,snapshot};
+      window.__THREE_GAME_DIAGNOSTICS__={snapshot(){let meshes=0,materials=new Set(),instancedMeshes=0;scene.traverse(o=>{if(o.isMesh||o.isPoints){meshes++;if(o.material)Array.isArray(o.material)?o.material.forEach(m=>materials.add(m)):materials.add(o.material)}if(o.isInstancedMesh)instancedMeshes++});return {renderer:{calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures},scene:{meshes,materials:materials.size,instancedMeshes},settings:{dpr:renderer.getPixelRatio(),shadows:renderer.shadowMap.enabled,postPasses:0}}}};
+      window.__MARBLE_MADNESS_TEST__={startCourse,setInput(x=0,z=0,brake=false){testInput={x,z,brake};return snapshot()},clearInput(){testInput=null;return snapshot()},setMarble,triggerFall,reachCheckpoint(index){activateCheckpoint(clamp(index,0,checkpoints.length-1));position.copy(spawn);marble.position.copy(position);return snapshot()},collectSeed(index){if(seeds[index])collectSeed(seeds[index]);return snapshot()},completeCourse,gardenLift,snapshot};
+    }
+
+    function keyVector(){let x=0,z=0;if(keys.has('ArrowLeft')||keys.has('KeyA'))x--;if(keys.has('ArrowRight')||keys.has('KeyD'))x++;if(keys.has('ArrowUp')||keys.has('KeyW'))z--;if(keys.has('ArrowDown')||keys.has('KeyS'))z++;input.x=x;input.z=z;input.brake=keys.has('ShiftLeft')||keys.has('ShiftRight')}
+    addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='Escape'){state==='playing'?pauseGame():state==='paused'&&resumeGame();return}if(e.code==='KeyM'){audio.toggle();return}if(e.code==='KeyR'&&(state==='playing'||state==='respawning')){position.y=-20;return}keys.add(e.code);keyVector()});
+    addEventListener('keyup',e=>{keys.delete(e.code);keyVector()});
+    addEventListener('blur',()=>{keys.clear();keyVector();if(state==='playing')pauseGame()});
+    addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+    ui.start.onclick=()=>startCourse(selectedCourse);$('pauseButton').onclick=pauseGame;$('resumeButton').onclick=resumeGame;$('pauseMenuButton').onclick=goTitle;$('muteButton').onclick=()=>audio.toggle();ui.lift.onclick=gardenLift;ui.next.onclick=()=>startCourse(Math.min(5,courseIndex+1));$('replayButton').onclick=()=>startCourse(courseIndex);$('menuButton').onclick=goTitle;
+    renderCourseGrid();builders[0]();position.copy(checkpoints[0].position);marble.position.copy(position);camera.lookAt(position);renderer.render(scene,camera);
+  </script>
+</body>
+</html>
