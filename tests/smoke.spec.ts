@@ -1,5 +1,26 @@
 import { test, expect } from "@playwright/test";
 
+const games = [
+  "snake",
+  "pac-man",
+  "minesweeper",
+  "tetris",
+  "reversi",
+  "breakout",
+  "2048",
+  "endless-runner",
+  "marble-madness",
+  "maze-3d",
+  "mini-golf",
+  "tile-matching",
+  "space-invaders",
+  "sudoku",
+  "outrun-racer",
+  "coastal-rush-86",
+  "clockwork-caper",
+  "kart-racing",
+];
+
 test.describe("BrainRot Games — Smoke Tests", () => {
   test("landing page loads with hero and game cards", async ({ page }) => {
     await page.goto("/");
@@ -108,29 +129,8 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     );
   });
 
-  test("game detail page loads for each game with versions", async ({ page }) => {
-    const games = [
-      "snake",
-      "pac-man",
-      "minesweeper",
-      "tetris",
-      "reversi",
-      "breakout",
-      "2048",
-      "endless-runner",
-      "marble-madness",
-      "maze-3d",
-      "mini-golf",
-      "tile-matching",
-      "space-invaders",
-      "sudoku",
-      "outrun-racer",
-      "coastal-rush-86",
-      "clockwork-caper",
-      "kart-racing",
-    ];
-
-    for (const game of games) {
+  for (const game of games) {
+    test(`game detail page loads for ${game} with versions`, async ({ page }) => {
       await page.goto(`/games/${game}`);
 
       // AI implementations section (games have versions now)
@@ -140,19 +140,19 @@ test.describe("BrainRot Games — Smoke Tests", () => {
 
       if (["outrun-racer", "coastal-rush-86"].includes(game)) {
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.5", exact: true })).toBeVisible();
-        continue;
+        return;
       }
 
       if (game === "clockwork-caper") {
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Sol", exact: true })).toBeVisible();
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Terra", exact: true })).toBeVisible();
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Luna", exact: true })).toBeVisible();
-        continue;
+        return;
       }
 
       if (game === "kart-racing") {
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.6 Sol", exact: true })).toBeVisible();
-        continue;
+        return;
       }
 
       await expect(page.getByRole("heading", { name: "Claude Sonnet 4.6" })).toBeVisible();
@@ -162,8 +162,8 @@ test.describe("BrainRot Games — Smoke Tests", () => {
         await expect(page.getByRole("heading", { name: "Claude Opus 4.6" })).toBeVisible();
         await expect(page.getByRole("heading", { name: "OpenAI GPT 5.4 Mini" })).toBeVisible();
       }
-    }
-  });
+    });
+  }
 
   test("navigation from landing to game page works", async ({ page }) => {
     await page.goto("/");
