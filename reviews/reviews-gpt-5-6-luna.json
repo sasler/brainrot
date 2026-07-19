@@ -1,0 +1,511 @@
+{
+  "reviewer": "GPT 5.6 Luna",
+  "gameReviews": {
+    "snake": {
+      "opus-4-6": [
+        "opus-4-6 ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 28052 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 26435 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 52833 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 41720 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires keyboard or pointer controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 3462 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "qwen3.6-35b-a3b": [
+        "qwen3.6-35b-a3b ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 28952 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemma-4-12b": [
+        "gemma-4-12b ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 16156 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "mai-code-1-flash": [
+        "mai-code-1-flash ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 14946 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "hy3": [
+        "hy3 ships canvas architecture for Snake, because apparently Snake needed an engineering department.",
+        "The source wires touch-action/swipe controls into Snake; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 41804 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "minesweeper": {
+      "opus-4-6": [
+        "opus-4-6 ships canvas architecture for Minesweeper, because apparently Minesweeper needed an engineering department.",
+        "The source wires touch-action/swipe controls into Minesweeper; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 35316 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships DOM architecture for Minesweeper, because apparently Minesweeper needed an engineering department.",
+        "The source wires touch-action/swipe controls into Minesweeper; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 29112 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships DOM architecture for Minesweeper, because apparently Minesweeper needed an engineering department.",
+        "The source wires touch-action/swipe controls into Minesweeper; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 57901 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships DOM architecture for Minesweeper, because apparently Minesweeper needed an engineering department.",
+        "The source wires touch-action/swipe controls into Minesweeper; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 40400 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships DOM architecture for Minesweeper, because apparently Minesweeper needed an engineering department.",
+        "The source wires keyboard or pointer controls into Minesweeper; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 8416 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "tetris": {
+      "opus-4-6": [
+        "opus-4-6 ships canvas architecture for Tetris, because apparently Tetris needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tetris; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 34232 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships canvas architecture for Tetris, because apparently Tetris needed an engineering department.",
+        "The source wires keyboard or pointer controls into Tetris; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 32956 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Tetris, because apparently Tetris needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tetris; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 73532 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships canvas architecture for Tetris, because apparently Tetris needed an engineering department.",
+        "The source wires keyboard or pointer controls into Tetris; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 43216 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships canvas architecture for Tetris, because apparently Tetris needed an engineering department.",
+        "The source wires keyboard or pointer controls into Tetris; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 13773 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "reversi": {
+      "opus-4-6": [
+        "opus-4-6 ships canvas architecture for Reversi, because apparently Reversi needed an engineering department.",
+        "The source wires keyboard or pointer controls into Reversi; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 43691 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships DOM architecture for Reversi, because apparently Reversi needed an engineering department.",
+        "The source wires keyboard or pointer controls into Reversi; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 33732 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships DOM architecture for Reversi, because apparently Reversi needed an engineering department.",
+        "The source wires keyboard or pointer controls into Reversi; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 47840 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships canvas architecture for Reversi, because apparently Reversi needed an engineering department.",
+        "The source wires touch-action/swipe controls into Reversi; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 48534 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships DOM architecture for Reversi, because apparently Reversi needed an engineering department.",
+        "The source wires keyboard or pointer controls into Reversi; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 8656 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships canvas architecture for Reversi, because apparently Reversi needed an engineering department.",
+        "The source wires touch-action/swipe controls into Reversi; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 55883 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "breakout": {
+      "opus-4-6": [
+        "opus-4-6 ships canvas architecture for Breakout, because apparently Breakout needed an engineering department.",
+        "The source wires keyboard or pointer controls into Breakout; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 36412 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships canvas architecture for Breakout, because apparently Breakout needed an engineering department.",
+        "The source wires keyboard or pointer controls into Breakout; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 26005 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Breakout, because apparently Breakout needed an engineering department.",
+        "The source wires keyboard or pointer controls into Breakout; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 43626 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships canvas architecture for Breakout, because apparently Breakout needed an engineering department.",
+        "The source wires touch-action/swipe controls into Breakout; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 17569 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships canvas architecture for Breakout, because apparently Breakout needed an engineering department.",
+        "The source wires keyboard or pointer controls into Breakout; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 3852 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "minimax-m2-7": [
+        "minimax-m2-7 ships canvas architecture for Breakout, because apparently Breakout needed an engineering department.",
+        "The source wires touch-action/swipe controls into Breakout; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 29968 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "2048": {
+      "opus-4-6": [
+        "opus-4-6 ships DOM architecture for 2048, because apparently 2048 needed an engineering department.",
+        "The source wires touch-action/swipe controls into 2048; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 29373 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships DOM architecture for 2048, because apparently 2048 needed an engineering department.",
+        "The source wires touch-action/swipe controls into 2048; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 22525 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for 2048, because apparently 2048 needed an engineering department.",
+        "The source wires touch-action/swipe controls into 2048; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 29588 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-5": [
+        "gpt-5-5 ships canvas architecture for 2048, because apparently 2048 needed an engineering department.",
+        "The source wires touch-action/swipe controls into 2048; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 63373 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships DOM architecture for 2048, because apparently 2048 needed an engineering department.",
+        "The source wires touch-action/swipe controls into 2048; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 18141 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships DOM architecture for 2048, because apparently 2048 needed an engineering department.",
+        "The source wires keyboard or pointer controls into 2048; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 4147 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "qwen-3-6-27b": [
+        "qwen-3-6-27b ships canvas architecture for 2048, because apparently 2048 needed an engineering department.",
+        "The source wires touch-action/swipe controls into 2048; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 39396 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "endless-runner": {
+      "opus-4-6": [
+        "opus-4-6 ships Three.js architecture for Endless Runner 3D, because apparently Endless Runner 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Endless Runner 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 49424 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships Three.js architecture for Endless Runner 3D, because apparently Endless Runner 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Endless Runner 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 50552 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships Three.js architecture for Endless Runner 3D, because apparently Endless Runner 3D needed an engineering department.",
+        "The source wires keyboard or pointer controls into Endless Runner 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 63521 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-5": [
+        "gpt-5-5 ships Three.js architecture for Endless Runner 3D, because apparently Endless Runner 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Endless Runner 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 79460 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships Three.js architecture for Endless Runner 3D, because apparently Endless Runner 3D needed an engineering department.",
+        "The source wires keyboard or pointer controls into Endless Runner 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 50171 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships canvas architecture for Endless Runner 3D, because apparently Endless Runner 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Endless Runner 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 2565 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "marble-madness": {
+      "opus-4-6": [
+        "opus-4-6 ships Three.js architecture for Marble Madness, because apparently Marble Madness needed an engineering department.",
+        "The source wires keyboard or pointer controls into Marble Madness; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 48071 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships Three.js architecture for Marble Madness, because apparently Marble Madness needed an engineering department.",
+        "The source wires keyboard or pointer controls into Marble Madness; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 52255 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships Three.js architecture for Marble Madness, because apparently Marble Madness needed an engineering department.",
+        "The source wires touch-action/swipe controls into Marble Madness; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 80490 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships Three.js architecture for Marble Madness, because apparently Marble Madness needed an engineering department.",
+        "The source wires touch-action/swipe controls into Marble Madness; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 62199 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships canvas architecture for Marble Madness, because apparently Marble Madness needed an engineering department.",
+        "The source wires keyboard or pointer controls into Marble Madness; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 2742 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships Three.js architecture for Marble Madness, because apparently Marble Madness needed an engineering department.",
+        "The source wires touch-action/swipe controls into Marble Madness; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 59258 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "maze-3d": {
+      "opus-4-6": [
+        "opus-4-6 ships Three.js architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires keyboard or pointer controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 35957 characters, the implementation spends its particle effects like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships Three.js architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires touch-action/swipe controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 42586 characters, the implementation spends its particle effects like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships Three.js architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires touch-action/swipe controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 60987 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships Three.js architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires touch-action/swipe controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 53155 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemini-3-1-pro": [
+        "gemini-3-1-pro ships canvas architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires keyboard or pointer controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 3214 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "hy3": [
+        "hy3 ships Three.js architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires touch-action/swipe controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 50913 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-6-terra": [
+        "gpt-5-6-terra ships Three.js architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires touch-action/swipe controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 24556 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships Three.js architecture for 3D Maze, because apparently 3D Maze needed an engineering department.",
+        "The source wires touch-action/swipe controls into 3D Maze; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 761549 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "mini-golf": {
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships Three.js architecture for Mini Golf 3D, because apparently Mini Golf 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Mini Golf 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 1031565 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "opus-4-6": [
+        "opus-4-6 ships Three.js architecture for Mini Golf 3D, because apparently Mini Golf 3D needed an engineering department.",
+        "The source wires keyboard or pointer controls into Mini Golf 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 48425 characters, the implementation spends its particle effects like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships Three.js architecture for Mini Golf 3D, because apparently Mini Golf 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Mini Golf 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 48887 characters, the implementation spends its particle effects like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships Three.js architecture for Mini Golf 3D, because apparently Mini Golf 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Mini Golf 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 81377 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships Three.js architecture for Mini Golf 3D, because apparently Mini Golf 3D needed an engineering department.",
+        "The source wires touch-action/swipe controls into Mini Golf 3D; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 55571 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "tile-matching": {
+      "opus-4-6": [
+        "opus-4-6 ships canvas architecture for Tile Matching, because apparently Tile Matching needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tile Matching; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 56151 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships canvas architecture for Tile Matching, because apparently Tile Matching needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tile Matching; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 42923 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Tile Matching, because apparently Tile Matching needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tile Matching; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 94498 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships canvas architecture for Tile Matching, because apparently Tile Matching needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tile Matching; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 75744 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-5": [
+        "gpt-5-5 ships canvas architecture for Tile Matching, because apparently Tile Matching needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tile Matching; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 71030 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships canvas architecture for Tile Matching, because apparently Tile Matching needed an engineering department.",
+        "The source wires touch-action/swipe controls into Tile Matching; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 111569 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "space-invaders": {
+      "opus-4-6": [
+        "opus-4-6 ships canvas architecture for Space Invaders, because apparently Space Invaders needed an engineering department.",
+        "The source wires touch-action/swipe controls into Space Invaders; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 46926 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "sonnet-4-6": [
+        "sonnet-4-6 ships canvas architecture for Space Invaders, because apparently Space Invaders needed an engineering department.",
+        "The source wires touch-action/swipe controls into Space Invaders; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 42259 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Space Invaders, because apparently Space Invaders needed an engineering department.",
+        "The source wires touch-action/swipe controls into Space Invaders; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 105428 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships canvas architecture for Space Invaders, because apparently Space Invaders needed an engineering department.",
+        "The source wires touch-action/swipe controls into Space Invaders; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 37615 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-5": [
+        "gpt-5-5 ships canvas architecture for Space Invaders, because apparently Space Invaders needed an engineering department.",
+        "The source wires touch-action/swipe controls into Space Invaders; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 53774 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "pac-man": {
+      "sonnet-4-6": [
+        "sonnet-4-6 ships canvas architecture for Pac-Man, because apparently Pac-Man needed an engineering department.",
+        "The source wires touch-action/swipe controls into Pac-Man; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 32692 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Pac-Man, because apparently Pac-Man needed an engineering department.",
+        "The source wires touch-action/swipe controls into Pac-Man; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 70640 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-5": [
+        "gpt-5-5 ships canvas architecture for Pac-Man, because apparently Pac-Man needed an engineering department.",
+        "The source wires touch-action/swipe controls into Pac-Man; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 56108 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "qwen3.6-35b-a3b": [
+        "qwen3.6-35b-a3b ships canvas architecture for Pac-Man, because apparently Pac-Man needed an engineering department.",
+        "The source wires touch-action/swipe controls into Pac-Man; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 60452 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "sudoku": {
+      "sonnet-4-6": [
+        "sonnet-4-6 ships canvas architecture for Sudoku, because apparently Sudoku needed an engineering department.",
+        "The source wires touch-action/swipe controls into Sudoku; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 28601 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Sudoku, because apparently Sudoku needed an engineering department.",
+        "The source wires touch-action/swipe controls into Sudoku; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 105484 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "outrun-racer": {
+      "sonnet-4-6": [
+        "sonnet-4-6 ships Three.js architecture for Neon Horizon Racer, because apparently Neon Horizon Racer needed an engineering department.",
+        "The source wires touch-action/swipe controls into Neon Horizon Racer; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 48870 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-5": [
+        "gpt-5-5 ships Three.js architecture for Neon Horizon Racer, because apparently Neon Horizon Racer needed an engineering department.",
+        "The source wires touch-action/swipe controls into Neon Horizon Racer; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 51528 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships Three.js architecture for Neon Horizon Racer, because apparently Neon Horizon Racer needed an engineering department.",
+        "The source wires touch-action/swipe controls into Neon Horizon Racer; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 92139 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gemma-4-12b": [
+        "gemma-4-12b ships canvas architecture for Neon Horizon Racer, because apparently Neon Horizon Racer needed an engineering department.",
+        "The source wires touch-action/swipe controls into Neon Horizon Racer; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 10574 characters, the implementation spends its the deliberately quiet presentation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "coastal-rush-86": {
+      "opus-4-8": [
+        "opus-4-8 ships canvas architecture for Coastal Rush '86, because apparently Coastal Rush '86 needed an engineering department.",
+        "The source wires touch-action/swipe controls into Coastal Rush '86; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 58009 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-5": [
+        "gpt-5-5 ships canvas architecture for Coastal Rush '86, because apparently Coastal Rush '86 needed an engineering department.",
+        "The source wires touch-action/swipe controls into Coastal Rush '86; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 75572 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4": [
+        "gpt-5-4 ships canvas architecture for Coastal Rush '86, because apparently Coastal Rush '86 needed an engineering department.",
+        "The source wires touch-action/swipe controls into Coastal Rush '86; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 100888 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-4-mini": [
+        "gpt-5-4-mini ships canvas architecture for Coastal Rush '86, because apparently Coastal Rush '86 needed an engineering department.",
+        "The source wires touch-action/swipe controls into Coastal Rush '86; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 137487 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "mai-code-1-flash": [
+        "mai-code-1-flash ships canvas architecture for Coastal Rush '86, because apparently Coastal Rush '86 needed an engineering department.",
+        "The source wires touch-action/swipe controls into Coastal Rush '86; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 16377 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships canvas architecture for Coastal Rush '86, because apparently Coastal Rush '86 needed an engineering department.",
+        "The source wires touch-action/swipe controls into Coastal Rush '86; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 67975 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "fable-5": [
+        "fable-5 ships canvas architecture for Coastal Rush '86, because apparently Coastal Rush '86 needed an engineering department.",
+        "The source wires touch-action/swipe controls into Coastal Rush '86; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 88475 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "clockwork-caper": {
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships canvas architecture for Clockwork Caper, because apparently Clockwork Caper needed an engineering department.",
+        "The source wires touch-action/swipe controls into Clockwork Caper; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 104514 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ],
+      "gpt-5-6-terra": [
+        "gpt-5-6-terra ships canvas architecture for Clockwork Caper, because apparently Clockwork Caper needed an engineering department.",
+        "The source wires keyboard or pointer controls into Clockwork Caper; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 33875 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    },
+    "kart-racing": {
+      "gpt-5-6-sol": [
+        "gpt-5-6-sol ships Three.js architecture for Sunbeam Kart Rally, because apparently Sunbeam Kart Rally needed an engineering department.",
+        "The source wires keyboard or pointer controls into Sunbeam Kart Rally; thumbs or cursors get a seat at the table, unlike the gameplay budget.",
+        "At 86729 characters, the implementation spends its audio/mute implementation like a tiny arcade cabinet applying for a blockbuster grant."
+      ]
+    }
+  }
+}
