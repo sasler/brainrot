@@ -8,7 +8,7 @@ const ALL_GAMES = [
   { id: "breakout", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
   { id: "2048", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-5", "gpt-5-4-mini", "gemini-3-1-pro", "qwen-3-6-27b"] },
   { id: "endless-runner", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-5", "gpt-5-4-mini", "gemini-3-1-pro"] },
-  { id: "marble-madness", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
+  { id: "marble-madness", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "gpt-5-6-sol"] },
   { id: "maze-3d", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "hy3", "gpt-5-6-terra", "gpt-5-6-sol"] },
   { id: "mini-golf", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-6-sol"] },
   { id: "tile-matching", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-5", "gpt-5-6-sol"] },
