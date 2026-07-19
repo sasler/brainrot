@@ -84,7 +84,7 @@ These describe desired gameplay outcomes, not a mandatory effects recipe. Interp
 
 **Clockwork Caper**: Deterministic time-loop stealth with readable guard vision, reliable echo replays, meaningful multi-echo coordination, recoverable alarm pressure, five progressively layered campaign rooms, an escalating score-attack vault, and a distinctive clockwork-heist audiovisual identity.
 
-**Sunbeam Kart Rally**: Responsive low-poly Three.js kart racing with up to five opponents, checkpoint-valid three-lap competition, drifting and mini-turbos, readable item combat, authored countryside landmarks, deterministic test hooks, and polished active-play visual evidence.
+**Sunbeam Kart Rally**: Golden-hour Three.js kart racing across a three-lap festival circuit with up to five opponents, checkpoint-valid competition, drifting and mini-turbos, two readable item types, authored orchard, windmill, forest, and vineyard landmarks, and deterministic test hooks.
 
 ---
 
@@ -321,7 +321,7 @@ Add this to the `versions` array of the appropriate game.
 - Original low-poly Three.js kart racer with one authored three-lap countryside circuit
 - Player plus one to five AI opponents using the same track, collision, item, and checkpoint rules
 - Responsive acceleration, braking, steering, off-road slowdown, kart contact, recovery, drifting, and charged mini-turbos
-- Four original position-weighted items: temporary boost, protective shield, forward projectile, and dropped hazard
+- Two position-weighted items: a temporary Sunburst boost and a forward Spark Dart projectile
 - Lean race HUD with position, lap, time, held item, drift charge, and minimap
 - Title, countdown, pause, finish standings, restart, and cohesive procedural engine, music, collision, drift, item, lap, and finish audio
 - Pinned local Three.js runtime, deterministic `?test=1` hooks and diagnostics, active-play inspector evidence, and no remote creative assets
