@@ -7,7 +7,7 @@ type MarbleSnapshot = {
   courseName: string;
   elapsed: number;
   checkpointIndex: number;
-  courseDesign: { platforms: number; railPlatforms: number; checkpoints: number; windZones: number; minWidth: number };
+  courseDesign: { difficulty: number; theme: string; mechanic: string; requiredJumps: number; platforms: number; railPlatforms: number; assistedRailPlatforms: number; checkpoints: number; windZones: number; minWidth: number; maxHeight: number };
   marble: { x: number; y: number; z: number; vx: number; vy: number; vz: number; speed: number; grounded: boolean };
   groundedPlatform: string | null;
   fallsInSection: number;
@@ -41,6 +41,7 @@ declare global {
       startCourse(index: number): MarbleSnapshot;
       setInput(x?: number, z?: number, brake?: boolean): MarbleSnapshot;
       clearInput(): MarbleSnapshot;
+      jump(): MarbleSnapshot;
       setMarble(data: { position?: Partial<{ x: number; y: number; z: number }>; velocity?: Partial<{ x: number; y: number; z: number }> }): MarbleSnapshot;
       triggerFall(): MarbleSnapshot;
       reachCheckpoint(index: number): MarbleSnapshot;
@@ -110,14 +111,53 @@ test.describe("GPT 5.6 Sol Marble Madness", () => {
     expect(await page.locator("canvas").evaluate(canvas => ({ width: canvas.clientWidth, height: canvas.clientHeight }))).toEqual({ width: 1280, height: 720 });
   });
 
-  test("makes the opening course wide, fully railed, and checkpoint-rich", async ({ page }) => {
+  test("makes the opening course wide and forgiving without sealing every edge", async ({ page }) => {
     await openGame(page);
     const result = await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.startCourse(0));
     expect(result.courseName).toBe("Dawn Terrace");
     expect(result.courseDesign.minWidth).toBeGreaterThanOrEqual(13);
-    expect(result.courseDesign.railPlatforms).toBe(result.courseDesign.platforms);
+    expect(result.courseDesign.railPlatforms).toBeGreaterThanOrEqual(2);
+    expect(result.courseDesign.railPlatforms).toBeLessThan(result.courseDesign.platforms);
+    expect(result.courseDesign.requiredJumps).toBe(2);
+    expect(result.courseDesign.maxHeight).toBeGreaterThanOrEqual(3);
     expect(result.courseDesign.checkpoints).toBeGreaterThanOrEqual(3);
     expect(result.seedCount).toBe(3);
+  });
+
+  test("implements a real grounded Space jump with an airborne arc", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.startCourse(0));
+    await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.05));
+    const grounded = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.snapshot());
+    await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.jump());
+    const rising = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.12));
+    expect(grounded.marble.grounded).toBe(true);
+    expect(rising.marble.grounded).toBe(false);
+    expect(rising.marble.y).toBeGreaterThan(grounded.marble.y + .5);
+    expect(rising.marble.vy).toBeGreaterThan(4);
+    const landed = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(1));
+    expect(landed.marble.grounded).toBe(true);
+  });
+
+  test("allows the marble to fall from visibly unrailed platform sides", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.startCourse(1));
+    await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.setMarble({ position: { x: 9, y: 3.4, z: -23 }, velocity: { x: 3, y: 0, z: 0 } }));
+    const result = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(1.25));
+    expect(result.totalFalls).toBe(1);
+  });
+
+  test("gives every course a distinct theme and progressively harder geometry", async ({ page }) => {
+    await openGame(page);
+    const designs = [];
+    for (let course = 0; course < 6; course++) designs.push(await page.evaluate(index => window.__MARBLE_MADNESS_TEST__.startCourse(index), course));
+    expect(new Set(designs.map(result => result.courseDesign.theme)).size).toBe(6);
+    expect(designs.map(result => result.courseDesign.difficulty)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(designs.map(result => result.courseDesign.requiredJumps)).toEqual([2, 3, 4, 5, 6, 7]);
+    expect(designs[5].courseDesign.maxHeight).toBeGreaterThan(designs[0].courseDesign.maxHeight * 5);
+    expect(designs[5].courseDesign.minWidth).toBeLessThan(designs[0].courseDesign.minWidth);
+    expect(designs[3].courseDesign.windZones).toBeGreaterThan(0);
+    expect(designs[2].movingPlatforms.length).toBeGreaterThanOrEqual(2);
   });
 
   test("provides responsive assisted steering, a speed cap, and strong braking", async ({ page }) => {
@@ -158,7 +198,7 @@ test.describe("GPT 5.6 Sol Marble Madness", () => {
     const recovered = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.75));
     expect(recovered.state).toBe("playing");
     expect(recovered.checkpointIndex).toBe(1);
-    expect(recovered.seedsCollected).toBe(1);
+    expect(recovered.seedsCollected).toBeGreaterThanOrEqual(1);
     expect(recovered.totalFalls).toBe(1);
   });
 
@@ -171,6 +211,7 @@ test.describe("GPT 5.6 Sol Marble Madness", () => {
     }
     let result = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.snapshot());
     expect(result.assistActive).toBe(true);
+    expect(result.courseDesign.assistedRailPlatforms).toBeGreaterThan(0);
     expect(result.liftAvailable).toBe(false);
     await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.triggerFall());
     await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.75));
