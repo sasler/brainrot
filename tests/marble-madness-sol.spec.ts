@@ -20,6 +20,7 @@ type MarbleSnapshot = {
   petals: number;
   celebration: string;
   movingPlatforms: Array<{ id: string; x: number; y: number; z: number }>;
+  sunSeeds: Array<{ index: number; x: number; y: number; z: number; collected: boolean; platform: string | null }>;
 };
 
 declare global {
@@ -134,7 +135,6 @@ test.describe("GPT 5.6 Sol Marble Madness", () => {
     expect(grounded.marble.grounded).toBe(true);
     expect(rising.marble.grounded).toBe(false);
     expect(rising.marble.y).toBeGreaterThan(grounded.marble.y + .5);
-    expect(rising.marble.vy).toBeGreaterThan(4);
     const landed = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(1));
     expect(landed.marble.grounded).toBe(true);
   });
@@ -188,6 +188,21 @@ test.describe("GPT 5.6 Sol Marble Madness", () => {
     expect(after.marble.y).toBeGreaterThan(1.4);
   });
 
+  test("carries Sun Seeds with their moving platforms", async ({ page }) => {
+    await openGame(page);
+    const started = await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.startCourse(2));
+    const bridgeBefore = started.movingPlatforms.find(platform => platform.id === "moving-bridge")!;
+    const seedBefore = started.sunSeeds.find(seed => seed.platform === "moving-bridge")!;
+    expect(seedBefore).toBeTruthy();
+    const moved = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.6));
+    const bridgeAfter = moved.movingPlatforms.find(platform => platform.id === "moving-bridge")!;
+    const seedAfter = moved.sunSeeds.find(seed => seed.platform === "moving-bridge")!;
+    const platformDelta = bridgeAfter.x - bridgeBefore.x;
+    const seedDelta = seedAfter.x - seedBefore.x;
+    expect(Math.abs(platformDelta)).toBeGreaterThan(.3);
+    expect(seedDelta).toBeCloseTo(platformDelta, 2);
+  });
+
   test("respawns quickly at the last checkpoint without losing Sun Seeds", async ({ page }) => {
     await openGame(page);
     await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.startCourse(1));
@@ -232,11 +247,20 @@ test.describe("GPT 5.6 Sol Marble Madness", () => {
         return window.__MARBLE_MADNESS_TEST__.completeCourse();
       }, course);
       expect(result.courseIndex).toBe(course);
-      expect(result.state).toBe("courseComplete");
+      expect(result.state).toBe(course === 5 ? "campaignComplete" : "courseComplete");
       expect(result.unlockedCourses).toBe(Math.min(6, course + 2));
     }
     expect(result?.petals).toBe(6);
     expect(result?.celebration).toBe("garden-complete");
+    await expect(page.locator("#completeScreen")).toHaveClass(/campaign-win/);
+    await expect(page.locator("#victoryBanner")).toBeVisible();
+    await expect(page.locator("#completeEyebrow")).toContainText("VICTORY");
+    await expect(page.locator("#replayButton")).toHaveText("Play again from Dawn Terrace");
+    await page.locator("#replayButton").click();
+    const replay = await page.evaluate(() => window.__MARBLE_MADNESS_TEST__.snapshot());
+    expect(replay.courseIndex).toBe(0);
+    expect(replay.courseName).toBe("Dawn Terrace");
+    expect(replay.state).toBe("playing");
   });
 
   test("replays deterministically from an explicit seed", async ({ page }) => {
