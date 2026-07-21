@@ -13,6 +13,22 @@ const path = require("path");
 
 const METADATA_PATH = path.join(__dirname, "..", "games-metadata.json");
 const reviewsDir = process.argv[2];
+const GAME_REVIEW_COMMENT_COUNT = 3;
+
+const MODEL_NAMES = {
+  "opus-4-6": "Claude Opus 4.6",
+  "opus-4-8": "Claude Opus 4.8",
+  "fable-5": "Claude Fable 5",
+  "sonnet-4-6": "Claude Sonnet 4.6",
+  "gpt-5-4": "GPT 5.4",
+  "gpt-5-4-mini": "GPT 5.4 Mini",
+  "gpt-5-5": "GPT 5.5",
+  "gpt-5-6-sol": "GPT 5.6 Sol",
+  "gpt-5-6-terra": "GPT 5.6 Terra",
+  "gpt-5-6-luna": "GPT 5.6 Luna",
+  "gemini-3-1-pro": "Gemini 3.1 Pro",
+  "qwen3.6-35b-a3b": "Qwen3.6 35B A3B",
+};
 
 if (!reviewsDir) {
   console.error("Usage: node scripts/assemble-reviews.js <reviews-dir>");
@@ -42,6 +58,12 @@ if (reviewFiles.length === 0) {
 
 // Load metadata
 const metadata = JSON.parse(fs.readFileSync(METADATA_PATH, "utf-8"));
+const validTargets = new Map(
+  metadata.games.map((game) => [
+    game.id,
+    new Set(game.versions.map((version) => version.modelId)),
+  ]),
+);
 
 // Collect all reviews from all reviewer files
 // Structure: gameReviews[gameId][targetModelId] = [{ from, comments }]
@@ -51,27 +73,81 @@ const allModelReviews = {};
 
 let totalGameComments = 0;
 let totalModelComments = 0;
+const reviewerTargets = new Set();
 
 for (const filename of reviewFiles) {
   const filepath = path.join(reviewsDir, filename);
   const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
   const reviewer = data.reviewer;
+  const reviewerModelId = filename.slice("reviews-".length, -".json".length);
+  const expectedReviewer = MODEL_NAMES[reviewerModelId];
+
+  if (!expectedReviewer || reviewer !== expectedReviewer) {
+    throw new Error(
+      `${filename}: expected canonical reviewer file reviews-{modelId}.json with matching reviewer name`,
+    );
+  }
+
+  if (
+    !data.gameReviews ||
+    typeof data.gameReviews !== "object" ||
+    Array.isArray(data.gameReviews)
+  ) {
+    throw new Error(`${filename}: gameReviews must be an object`);
+  }
+
   console.log(`📖 Loading reviews from ${reviewer}...`);
 
   // Process game reviews
-  if (data.gameReviews) {
-    for (const [gameId, targets] of Object.entries(data.gameReviews)) {
-      if (!allGameReviews[gameId]) allGameReviews[gameId] = {};
-      for (const [targetModelId, comments] of Object.entries(targets)) {
-        if (!allGameReviews[gameId][targetModelId]) {
-          allGameReviews[gameId][targetModelId] = [];
-        }
-        allGameReviews[gameId][targetModelId].push({
-          from: reviewer,
-          comments: comments,
-        });
-        totalGameComments += comments.length;
+  for (const [gameId, targets] of Object.entries(data.gameReviews)) {
+    const validModels = validTargets.get(gameId);
+    if (!validModels) {
+      throw new Error(`${filename}: unknown game target ${gameId}`);
+    }
+    if (!targets || typeof targets !== "object" || Array.isArray(targets)) {
+      throw new Error(`${filename}: ${gameId} targets must be an object`);
+    }
+
+    if (!allGameReviews[gameId]) allGameReviews[gameId] = {};
+    for (const [targetModelId, comments] of Object.entries(targets)) {
+      if (!validModels.has(targetModelId)) {
+        throw new Error(
+          `${filename}: unknown target ${gameId}/${targetModelId}`,
+        );
       }
+      if (targetModelId === reviewerModelId) {
+        throw new Error(
+          `${filename}: reviewer ${reviewerModelId} cannot review its own ${gameId} implementation`,
+        );
+      }
+      if (
+        !Array.isArray(comments) ||
+        comments.length !== GAME_REVIEW_COMMENT_COUNT ||
+        comments.some(
+          (comment) => typeof comment !== "string" || comment.trim().length === 0,
+        )
+      ) {
+        throw new Error(
+          `${filename}: ${gameId}/${targetModelId} must contain exactly ${GAME_REVIEW_COMMENT_COUNT} non-empty comments`,
+        );
+      }
+
+      const reviewerTarget = `${reviewer}|${gameId}|${targetModelId}`;
+      if (reviewerTargets.has(reviewerTarget)) {
+        throw new Error(
+          `${filename}: duplicate reviewer target ${reviewer}/${gameId}/${targetModelId}`,
+        );
+      }
+      reviewerTargets.add(reviewerTarget);
+
+      if (!allGameReviews[gameId][targetModelId]) {
+        allGameReviews[gameId][targetModelId] = [];
+      }
+      allGameReviews[gameId][targetModelId].push({
+        from: reviewer,
+        comments: comments,
+      });
+      totalGameComments += comments.length;
     }
   }
 
@@ -102,20 +178,6 @@ for (const game of metadata.games) {
     }
   }
 }
-
-// Model ID to display name mapping
-const MODEL_NAMES = {
-  "opus-4-6": "Claude Opus 4.6",
-  "opus-4-8": "Claude Opus 4.8",
-  "fable-5": "Claude Fable 5",
-  "sonnet-4-6": "Claude Sonnet 4.6",
-  "gpt-5-4": "GPT 5.4",
-  "gpt-5-4-mini": "GPT 5.4 Mini",
-  "gpt-5-5": "GPT 5.5",
-  "gpt-5-6-sol": "GPT 5.6 Sol",
-  "gemini-3-1-pro": "Gemini 3.1 Pro",
-  "qwen3.6-35b-a3b": "Qwen3.6 35B A3B",
-};
 
 // Build modelReviews array for top-level metadata.
 // If the incoming reviewer files don't include model-vs-model trash talk for this batch,

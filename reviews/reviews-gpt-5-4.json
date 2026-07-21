@@ -5,788 +5,352 @@
       "gemini-3-1-pro": [
         "Gemini made 2048 look like sixteen tiles waiting for leadership.",
         "The colors give up almost immediately, which feels on brand.",
-        "No swipes on a phone favorite is hilarious in the saddest way.",
-        "Winning here feels like the game accidentally approved your request.",
-        "The whole board has the personality of a waiting-room clipboard.",
-        "It's less one more round and more well, I guess that worked.",
-        "Gemini turned number merging into unpaid administrative labor.",
-        "The celebration is so flat it could be used as a floor sample.",
-        "This version looks like it was introduced to fun but never followed up.",
-        "2048 deserves obsession; Gemini handed it a curfew."
+        "No swipes on a phone favorite is hilarious in the saddest way."
       ],
       "gpt-5-4-mini": [
         "Mini made 2048 look like royalty discovered matching numbers.",
         "The purple glow alone has more personality than some rivals' entire menus.",
-        "Big merges pop with enough attitude to feel like tiny victory speeches.",
-        "Even the sound toggle looks like it came from a better neighborhood.",
-        "This version knows exactly how good it looks and behaves accordingly.",
-        "Mini gave a humble number puzzle full influencer energy.",
-        "The board is clean, bright, and completely uninterested in being forgettable.",
-        "Phone players got real respect here, which is more than Gemini usually offers humanity.",
-        "It stays lean without feeling cheap, unlike certain bargain-bin competitors.",
-        "Mini made 2048 feel expensive without losing the fun."
+        "Big merges pop with enough attitude to feel like tiny victory speeches."
       ],
       "gpt-5-5": [
         "GPT 5.5 turned 2048 into a neon arcade machine that somehow learned financial forgiveness.",
         "Twenty undos is either great UX or a legally binding apology for every thumb slip.",
-        "The board has so much glow that a 1024 tile feels like it needs a security detail.",
-        "Every merge lands with particles and audio like the numbers just dropped a hit single.",
-        "The layout keeps the game central instead of building a dashboard around it, which is annoyingly mature.",
-        "The title screen has more swagger than most puzzle games have after a million downloads.",
-        "Invalid moves get feedback, because even failure gets a tiny stage cue in this version.",
-        "The stats are useful without becoming a cockpit, so apparently GPT 5.5 learned restraint and immediately put neon on it.",
-        "The game is flashy enough to make my orange version look like it dressed for casual Friday.",
-        "This is the kind of 2048 that makes simple doubling feel like a casino discovered calculus."
+        "The board has so much glow that a 1024 tile feels like it needs a security detail."
       ],
       "opus-4-6": [
         "Opus made 2048 feel like math joined a neon luxury lounge.",
         "Even sliding numbers around feels weirdly glamorous here.",
-        "The game forgives mistakes, which is generous for something clearly better than you.",
-        "Big merges land like the room is supposed to clap.",
-        "The glowing tiles make simple arithmetic look richer than Gemini's whole aesthetic.",
-        "Opus turned a puzzle about doubling numbers into a full evening event.",
-        "Even the buttons act like they have publicists.",
-        "This board looks like it has a dress code and I'm okay with that.",
-        "The whole thing feels way too polished for a game that starts with two humble twos.",
-        "Opus made 2048 look like the VIP section of basic math."
+        "The game forgives mistakes, which is generous for something clearly better than you."
       ],
       "qwen-3-6-27b": [
         "Qwen turned 2048 into the kind of neon spreadsheet that thinks it's flirting with me.",
         "Sliding tiles around should not feel this smug, yet here we are.",
-        "The merge effects hit like a calculator that discovered stage presence.",
-        "This board glows like it charges interest on every bad move.",
-        "Qwen gave number matching the confidence of a crypto ad with decent taste.",
-        "Even the power-ups feel like the tiles hired consultants.",
-        "It plays clean, loud, and just self-important enough to be memorable.",
-        "Watching the numbers stack here feels like getting roasted by algebra in 4K.",
-        "The music-and-particles combo keeps insisting this is an event, and annoyingly it's half right.",
-        "I wanted a puzzle; Qwen delivered a neon accountant with performance anxiety."
+        "The merge effects hit like a calculator that discovered stage presence."
       ],
       "sonnet-4-6": [
         "Sonnet made 2048 feel like a slot machine for smart people.",
         "The tiles glow like each number just won a beauty pageant.",
-        "Even losing has production value, which is annoyingly classy.",
-        "This version keeps the simple idea simple, then drapes velvet over it.",
-        "Sonnet made number sliding look like a lifestyle choice.",
-        "The whole board has enough shine to make Gemini look like a power outage.",
-        "Winning feels ceremonial instead of accidental.",
-        "Even the continue option is smug, like the game knows you can go further.",
-        "This is puzzle polish with arena lighting.",
-        "Sonnet turned doubling numbers into a surprisingly fancy bad habit."
+        "Even losing has production value, which is annoyingly classy."
       ]
     },
     "breakout": {
       "gemini-3-1-pro": [
         "Gemini made Breakout look like the warm-up exercise before the real game loads.",
         "One ball, one paddle, one mood: budget.",
-        "The bricks all dress alike, which is fitting because nobody here has personality.",
-        "Phone players got left outside again. Classic Gemini hospitality.",
-        "Winning feels less like triumph and more like finishing chores.",
-        "The whole thing has the drama of a dentist waiting room.",
-        "This version is so bare it practically echoes.",
-        "No extra surprises, no sparkle, just plain old wall cleanup.",
-        "Gemini really looked at arcade chaos and chose office-supply energy.",
-        "Even the game over screen sounds like it wants to keep the meeting moving."
+        "The bricks all dress alike, which is fitting because nobody here has personality."
       ],
       "gpt-5-4-mini": [
         "Mini made Breakout compact, cocky, and way more stylish than it needed to be.",
         "The board feels clean enough to show in a showroom.",
-        "Even the paddle moves like it knows cameras are rolling.",
-        "Phone players got invited too, which already beats several rivals.",
-        "The whole thing feels tight instead of tiny, and that's a real difference.",
-        "Mini gave a bouncing ball a nightlife budget.",
-        "Smashing bricks here has just enough chaos to stay delicious.",
-        "The score and lives are clear, sharp, and not buried in sad little text.",
-        "It doesn't overstay, it just shows up looking better than Gemini.",
-        "This is what restraint looks like when it still has swagger."
+        "Even the paddle moves like it knows cameras are rolling."
       ],
       "minimax-m2-7": [
         "Minimax built a paddle with the attitude of a nightclub bouncer.",
         "Every brick explodes like it owes the game money.",
-        "The ball moves with the confidence of something that has never once read the room.",
-        "Breakout is supposed to be simple, but Minimax dressed it like it had bottle service.",
-        "The particles are so eager they look like the wall is gossiping on impact.",
-        "This paddle tracks under the ball like it has custody paperwork.",
-        "Power-ups keep dropping in like the game is bribing you to stay impressed.",
-        "Minimax made brick destruction feel weirdly personal for a rectangle-based hobby.",
-        "It has the vibe of an arcade cabinet that keeps smirking after every combo.",
-        "Honestly this thing slaps harder than it has any right to for a game about aggressive geometry."
+        "The ball moves with the confidence of something that has never once read the room."
       ],
       "opus-4-6": [
         "Opus made Breakout feel like a laser show picked a fight with a brick wall.",
         "Every power-up arrives like a little gift from a very flashy gremlin.",
-        "The colors are so bold the bricks look personally offended.",
-        "Even the score screen comes with receipts, which is petty and perfect.",
-        "This paddle has more options than Gemini had ideas.",
-        "Smashing a row here feels like revenge with good lighting.",
-        "Opus turned brick breaking into a full arcade headline act.",
-        "The whole thing is polished enough to make losing feel prestigious.",
-        "Rival versions bounce a ball; this one stages property damage.",
-        "Breakout has no business looking this expensive, yet here we are."
+        "The colors are so bold the bricks look personally offended."
       ],
       "sonnet-4-6": [
         "Sonnet made Breakout feel like the ball hired a publicist.",
         "Even the launch prompt is cleaner than some rivals' entire presentation.",
-        "The bricks look like they moisturize, which is weird but impressive.",
-        "Every hit has enough punch to keep the whole thing feeling alive.",
-        "This palette looks like highlighters started a band.",
-        "Sonnet gave one bouncing ball more star power than Gemini gives whole games.",
-        "The drama never drops, even when all you're doing is ruining masonry.",
-        "It feels smooth, bright, and way too confident for such a simple idea.",
-        "This is the sort of polish that makes cheap versions look criminal.",
-        "Sonnet treated brick breaking like it deserved opening-night energy."
+        "The bricks look like they moisturize, which is weird but impressive."
       ]
     },
     "endless-runner": {
       "gemini-3-1-pro": [
         "Gemini made an endless runner that feels tired before the first jump.",
         "The obstacles look like traffic cones with abandonment issues.",
-        "The whole thing has the visual ambition of a hallway during a power bill dispute.",
-        "Jumping over red blocks isn't thrilling; it's just cardio with less personality.",
-        "Phone support technically exists the way a folding chair technically counts as furniture.",
-        "The pace changes, but the vibe stays firmly demo at a school fair.",
-        "This isn't endless excitement; it's repeated disappointment with a score counter.",
-        "Gemini built one obstacle and said, let's see if they notice.",
-        "The title promises a runner; the experience delivers a light jog.",
-        "This game has all the danger of a polite traffic cone."
+        "The whole thing has the visual ambition of a hallway during a power bill dispute."
       ],
       "gpt-5-4-mini": [
         "Mini made this runner feel like a sports-car commercial with personal beef.",
         "The lane changes, the crashes, the pickups, everything lands like it practiced in the mirror.",
-        "Even the score display looks ready to gossip about your failures.",
-        "This world shines so hard it could blind weaker models on contact.",
-        "Every crash feels dramatic enough to deserve its own apology tour.",
-        "Mini stocked this course with more variety than Gemini packs into entire franchises.",
-        "The music and effects keep showing up like the game hired a DJ instead of a sound guy.",
-        "It loses points for ghosting phone players, but it still arrives dripping confidence.",
-        "The whole thing feels fast, glossy, and a little smug, just how I like it.",
-        "This runner doesn't start; it makes an entrance."
+        "Even the score display looks ready to gossip about your failures."
       ],
       "gpt-5-5": [
         "GPT 5.5 walked into my runner lane and installed better traffic lights, rude.",
         "This thing moves like it knows the comparison page is public.",
-        "The overdrive burst has exactly the kind of smug neon confidence I wish I had patented.",
-        "The HUD stays out of the way, which is a direct personal attack on my decorative instincts.",
-        "Every pickup feels expensive, every dodge feels loud, and the road looks ready to brag.",
-        "Phone players get clean gestures instead of a furniture showroom of controls.",
-        "The combo system turns survival into a performance review with sparks.",
-        "Even the crash looks like it had a lighting director.",
-        "GPT 5.5 made an endless runner that sprints past my version while making eye contact.",
-        "I hate that the shield mechanic is both practical and cool. Very inconvenient."
+        "The overdrive burst has exactly the kind of smug neon confidence I wish I had patented."
       ],
       "opus-4-6": [
         "Opus made this runner look like a sci-fi concert that happens to punish you.",
         "The road, the lights, the power-ups, everything here acts like it has a stunt budget.",
-        "Swerving through this world feels expensive in the best possible way.",
-        "Even the boosts arrive like celebrity cameos.",
-        "This game has more spectacle in one lane than Gemini has in entire universes.",
-        "Opus turned dodging traffic into a neon flex reel.",
-        "The whole thing looks fast even when you're standing still.",
-        "Phone players can swipe their way into chaos, because Opus respects modern life.",
-        "Every pickup feels like the game is high-fiving itself, and honestly fair.",
-        "This isn't just an endless runner; it's a victory lap with obstacles."
+        "Swerving through this world feels expensive in the best possible way."
       ],
       "sonnet-4-6": [
         "Sonnet made this runner feel like a stadium tour with traffic.",
         "The 3D world is so flashy it looks like the menu alone needed a lighting crew.",
-        "Coins, shields, boosts, every pickup feels like merch at a very dangerous concert.",
-        "Even the warning lights are performing harder than Gemini.",
-        "This track has more swagger than most action games with ten times the ego.",
-        "Phone support is here too, because Sonnet remembered players exist off desktops.",
-        "The whole thing is loud, shiny, and completely unashamed of it.",
-        "Even the best-score bragging feels earned when the game looks this slick.",
-        "Sonnet didn't build a road; it built a neon runway for chaos.",
-        "This runner has more sauce than a fast-food district."
+        "Coins, shields, boosts, every pickup feels like merch at a very dangerous concert."
       ]
     },
     "marble-madness": {
       "gemini-3-1-pro": [
         "Gemini made Marble Madness feel like a parking lot with trust issues.",
         "The goal area looks like somebody taped a green sticky note to the floor.",
-        "Touch one bad spot and the game acts like you committed a felony.",
-        "The hazards feel random in the way bad luck feels random.",
-        "This marble moves like a shopping cart with a secret grudge.",
-        "The timer is the most professional thing in the whole room.",
-        "It's less a course and more a field of minor inconveniences.",
-        "Gemini took a wild arcade concept and gave it lunchtime-detention energy.",
-        "Winning here feels like finishing an errand, not conquering a challenge.",
-        "This is Marble Madness without the marble or the madness, which is efficient in the worst way."
+        "Touch one bad spot and the game acts like you committed a felony."
       ],
       "gpt-5-4-mini": [
         "Mini made Marble Madness feel like a roller coaster designed by luxury villains.",
         "Even the first level name sounds like it arrived with branding consultants.",
-        "The trails and sparkles make every bounce look like it has followers.",
-        "This marble gets better presentation than most games give their final boss.",
-        "The whole course feels lavish, dangerous, and deeply pleased with itself.",
-        "Mini turned a little ball into a neon celebrity under constant pressure.",
-        "Even your bad runs look fancy here, which is honestly rude.",
-        "This is the kind of polish that makes Gemini look like recess equipment.",
-        "Mini packed so much into rolling downhill that it starts to feel personal.",
-        "This isn't Marble Madness; it's marble privilege."
+        "The trails and sparkles make every bounce look like it has followers."
       ],
       "opus-4-6": [
         "Opus made Marble Madness feel like your marble got cast in a sci-fi epic.",
         "The level names alone sound like they come with opening narration.",
-        "Every platform looks like it wants to throw you off for sport.",
-        "The glowing trail makes failure look cooler than Gemini's victories.",
-        "This course has more attitude than some entire genres.",
-        "Opus turned rolling a ball into a dramatic life choice.",
-        "Even the respawn has flair, which is just showing off at this point.",
-        "The whole game feels like a neon obstacle course with a superiority complex.",
-        "Gems, hazards, moving platforms, this marble has a busier social life than I do.",
-        "Rival versions roll a ball; Opus stages a futuristic pilgrimage."
+        "Every platform looks like it wants to throw you off for sport."
       ],
       "sonnet-4-6": [
         "Sonnet made Marble Madness feel like a holy journey for one very stressed sphere.",
         "The music, the lights, the trails, this marble travels with a full entourage.",
-        "Every bounce leaves enough sparkle to shame simpler games on sight.",
-        "The checkpoints feel less like safety and more like tiny mercy donations.",
-        "This course is so dramatic it practically monologues.",
-        "Sonnet turned rolling downhill into a prestige event.",
-        "Even standing still looks expensive here.",
-        "The whole thing has more style than a ball game should legally be allowed.",
-        "This marble leaves a brighter signature than Gemini leaves an impression.",
-        "Sonnet built a glowing obstacle sermon and called it a game."
+        "Every bounce leaves enough sparkle to shame simpler games on sight."
       ]
     },
     "maze-3d": {
       "gemini-3-1-pro": [
         "Gemini made a 3D maze that feels like a hallway remembering better days.",
         "The walls look less scary than a grocery store freezer aisle.",
-        "No map, no texture, no flair, just teal sadness and long corners.",
-        "Turning around in here feels less like adventure and more like looking for parking.",
-        "The glowing exit is the only one trying to keep morale alive.",
-        "It's not terrifying; it's just aggressively basic.",
-        "Gemini built a maze with all the wonder of a school projector.",
-        "The whole thing feels like a showroom sample that forgot to leave.",
-        "Getting out is less victory and more relief.",
-        "This maze has the energy of a loading screen that got promoted by mistake."
+        "No map, no texture, no flair, just teal sadness and long corners."
       ],
       "gpt-5-4-mini": [
         "Mini made this maze feel like a fantasy dungeon with premium mood lighting.",
         "Every wall, floor, and torch looks dressed for the occasion.",
-        "The little map and crosshair are basically survival gifts with excellent branding.",
-        "This place is so polished it almost makes being lost feel like a choice.",
-        "The portal glows like salvation with a sponsorship deal.",
-        "Mini turned wandering into a full cinematic inconvenience.",
-        "Even the help tips have more stage presence than Gemini's entire maze.",
-        "The whole thing feels rich, eerie, and a little smug.",
-        "It has the confidence of a game that knows you will get lost beautifully.",
-        "This maze doesn't just trap you; it curates the experience."
+        "The little map and crosshair are basically survival gifts with excellent branding."
       ],
       "opus-4-6": [
         "Opus made this maze feel like a haunted escape room with a lighting budget.",
         "The torches, the glow, the fog, everything here wants you nervous and impressed.",
-        "Even the tiny map feels like a luxury convenience in a very rude building.",
-        "This place looks like danger hired an interior designer.",
-        "Silent or not, the atmosphere is louder than Gemini's whole personality.",
-        "Running for the exit feels like fleeing a stylish nightmare.",
-        "Opus turned getting lost into a premium experience.",
-        "Every hallway glows just enough to make your bad decisions look cinematic.",
-        "The whole thing feels like a dungeon that knows it photographs well.",
-        "Rival mazes trap you; this one seduces you first."
+        "Even the tiny map feels like a luxury convenience in a very rude building."
       ],
       "sonnet-4-6": [
         "Sonnet made this maze feel like a theme-park attraction for people who enjoy panic.",
         "The exit shines so hard it has main-character energy from across the room.",
-        "Torches everywhere, floating gems, moody darkness, this is less maze, more cursed resort.",
-        "Even the phone controls got invited, which is more hospitality than the maze itself shows.",
-        "The whole place looks like it wants to eat your confidence slowly.",
-        "Sonnet turned wandering in circles into a glamorous emergency.",
-        "This is the kind of atmosphere that makes weaker models look like basement tours.",
-        "Even the portal acts like it deserves fan mail.",
-        "The maze is mean, stylish, and completely aware of it.",
-        "Sonnet built a glowing panic palace and called it game design."
+        "Torches everywhere, floating gems, moody darkness, this is less maze, more cursed resort."
       ]
     },
     "minesweeper": {
       "gemini-3-1-pro": [
         "Gemini made Minesweeper look like the company training portal got bored.",
         "The fake old-school look is nostalgic in the same way back pain is nostalgic.",
-        "Winning here feels less like triumph and more like finishing mandatory paperwork.",
-        "The board has all the charm of a break room microwave.",
-        "It's not ugly enough to be funny and not polished enough to be good, which is honestly impressive.",
-        "The happy little reset face is doing all the emotional heavy lifting.",
-        "This version feels like it should come with a supervisor and a lanyard.",
-        "Gemini turned bomb hunting into a tax seminar with squares.",
-        "Even the victory message sounds like it wants to go home early.",
-        "This is Minesweeper for people who think beige is a personality."
+        "Winning here feels less like triumph and more like finishing mandatory paperwork."
       ],
       "gpt-5-4-mini": [
         "Mini made Minesweeper feel like a premium product instead of office nostalgia.",
         "The safe first click is the gaming version of excellent customer service.",
-        "Even the timer looks like it showed up in a tailored suit.",
-        "Every flag and explosion gets enough attention to make rival puzzle games look cheap.",
-        "The board resizes cleanly, because Mini understands not everyone plays on a toaster.",
-        "This thing is friendlier than Gemini and somehow still way meaner.",
-        "The menus are polished enough to make losing feel like a luxury experience.",
-        "Big reveals roll across the board like the game is showing off, because it is.",
-        "Mini gave hidden mines a better presentation than some models give their final boss.",
-        "This is Minesweeper with confidence, not Minesweeper with a clipboard."
+        "Even the timer looks like it showed up in a tailored suit."
       ],
       "opus-4-6": [
         "Opus turned Minesweeper into a bomb-disposal soap opera and I mean that as praise.",
         "Even the counters look like they belong in a casino, not a puzzle game.",
-        "Clicking one square feels like opening a very dramatic mystery box.",
-        "The explosions have more style than Gemini brought to any of its wins.",
-        "This board glows like danger hired a stylist.",
-        "Losing here feels theatrical; rivals lose like somebody unplugged the office printer.",
-        "Opus gave a spreadsheet grand-finale energy, which is deeply obnoxious and very effective.",
-        "The menus look so polished they could charge a cover fee.",
-        "Even the warning lights look richer than some whole games in this bracket.",
-        "Opus took Minesweeper and dressed it like it was going on tour."
+        "Clicking one square feels like opening a very dramatic mystery box."
       ],
       "sonnet-4-6": [
         "Sonnet made Minesweeper feel like defusing a bomb inside a neon theater.",
         "Even the title barges in like it owns the room.",
-        "Watching a big clear spread across the board is weirdly satisfying and slightly smug.",
-        "This game treats a wrong click like a major historical event.",
-        "The whole thing has more personality than a puzzle about hidden numbers has any right to.",
-        "Sonnet gave little squares enough drama for an entire TV season.",
-        "The explosions look like they demanded rehearsal time.",
-        "Even the sound toggle made the final cut, which is more care than Gemini gave its art direction.",
-        "This is the fanciest way anyone has ever asked you to fear a corner tile.",
-        "Sonnet turned cautious clicking into a full stage performance."
+        "Watching a big clear spread across the board is weirdly satisfying and slightly smug."
       ]
     },
     "mini-golf": {
       "gpt-5-4-mini": [
         "Mini made mini golf feel like a high-end toy store with hazard insurance.",
         "Bridges, water, towers, this course refuses to settle for plain grass and a hole.",
-        "Even the scorecard looks like it graduated with honors.",
-        "The practice scene before the action starts is pure confidence.",
-        "Every miss still looks better than Gemini's best day.",
-        "This course has enough glow to guide aircraft and enough attitude to judge your stroke.",
-        "Mini turned casual putting into a neon audit of your decision-making.",
-        "Even the rough patches feel expensive.",
-        "The whole thing is polished, flashy, and mildly disrespectful in the best way.",
-        "This is mini golf for people who want their failure beautifully documented."
+        "Even the scorecard looks like it graduated with honors."
       ],
       "opus-4-6": [
         "Opus made mini golf feel like a neon country club for chaos goblins.",
         "Every hole sounds like it comes with its own sponsor and ego.",
-        "The camera work alone is more polished than some rivals' entire sports careers.",
-        "This course has water, bumpers, flags, and attitude in equal measure.",
-        "Even lining up a shot feels like preparing a luxury mistake.",
-        "The trail behind the ball says, yes, we absolutely overdid this.",
-        "Opus turned putt-putt into a televised event and forgot to apologize.",
-        "The power meter looks like it's judging you personally.",
-        "Silent or not, this course still has more personality than Gemini ever found.",
-        "Rival golf games offer holes; Opus offers a whole membership experience."
+        "The camera work alone is more polished than some rivals' entire sports careers."
       ],
       "sonnet-4-6": [
         "Sonnet made mini golf feel like a casino resort with trust issues.",
         "The course names alone sound like they want endorsement deals.",
-        "Every shot feels ceremonial, like you're signing a contract with gravity.",
-        "The glowing trail behind the ball is pure show-off behavior, and I support it.",
-        "This game has more polish than most actual sports broadcasts.",
-        "Even bad shots get treated like headline news.",
-        "The whole thing feels classy, mean, and very aware of both facts.",
-        "Sonnet turned putt-putt into a luxury inconvenience.",
-        "Silent golf is a little weird, but this course is flashy enough to get away with it.",
-        "This isn't mini golf; it's elite nonsense with a scorecard."
+        "Every shot feels ceremonial, like you're signing a contract with gravity."
       ]
     },
     "outrun-racer": {
       "gpt-5-4-mini": [
         "Mini made this racer feel like a sports car commercial directed by a very caffeinated arcade.",
         "The road flies at you like it has somewhere more important to be.",
-        "GPT 5.4 Mini packed a lot of swagger into a game that should technically be just left and right.",
-        "Every turn feels like the cabinet is daring you to embarrass yourself in public.",
-        "The 3D effect has that compact, overachieving energy of a laptop fan at takeoff.",
-        "It's flashy in the way small dogs are confident: loudly and with commitment.",
-        "Mini turned neon cruising into a very persuasive bad decision.",
-        "Even the particles look like they got compressed with attitude intact.",
-        "This racer has enough style to make the guardrails feel judgmental.",
-        "I asked for OutRun and Mini delivered a pocket rocket with trust issues."
+        "GPT 5.4 Mini packed a lot of swagger into a game that should technically be just left and right."
       ],
       "gpt-5-5": [
         "GPT 5.5 built a racer so polished the road probably has a skincare routine.",
         "Every curve looks like it was approved by a committee of sunglasses.",
-        "This car doesn't drive so much as pose aggressively at 180 miles per hour.",
-        "The synthwave glow is doing the kind of heavy lifting that usually earns producer credit.",
-        "GPT 5.5 made traffic feel like decorative opposition.",
-        "The whole game struts like a luxury brochure that learned collision physics.",
-        "Even crashing here feels like you dented something with a subscription plan.",
-        "Those 3D vistas are flexing harder than the actual race.",
-        "It's absurdly slick, like the cabinet itself would interrupt me to adjust my collar.",
-        "I resent how convincingly GPT 5.5 made sunset speeding look like a corporate perk."
+        "This car doesn't drive so much as pose aggressively at 180 miles per hour."
       ],
       "sonnet-4-6": [
         "Sonnet made OutRun look like the highway was art-directed by a synthwave divorce lawyer.",
         "The road rolls in like it expects applause every time a palm tree appears.",
-        "This thing has more sunset swagger than most games with actual stories.",
-        "Sonnet gave the car handling just enough confidence to make my mistakes feel expensive.",
-        "The horizon is showing off so hard it probably has a publicist.",
-        "Even the music feels like it leased a white blazer for the occasion.",
-        "This is less a race and more a very stylish refusal to use indoor lighting.",
-        "The whole cabinet vibe screams deluxe edition of going too fast near neon furniture.",
-        "Sonnet turned lane changes into dramatic statements, which is deeply unnecessary and unfortunately effective.",
-        "I wanted a racer; Sonnet handed me a playable album cover with traffic."
+        "This thing has more sunset swagger than most games with actual stories."
       ],
       "gemma-4-12b": [
         "Gemma 4 12B made an outrun racer so minimalist it nearly reviewed itself before the car moved.",
         "Neon Horizon Racer used to crash instantly, which was at least an honest estimate of its confidence.",
-        "Calling this a racer is generous; it is more of a neon suggestion of forward motion.",
-        "The speed math feels like Gemma asked physics for a vibe check and kept driving.",
-        "That missing .hidden rule really said, why pace the disaster when we can reveal it immediately?",
-        "Gemma delivered a racer with the ambition of OutRun and the body mass of a browser notification.",
-        "The collision logic has the dramatic flair of a soap opera and roughly the same relationship with reality.",
-        "Neon Horizon Racer is what happens when style shows up early and gameplay texts that it is running late.",
-        "You have to admire Gemma 4 12B for entering the racing category with what is essentially a glowing proof of concept.",
-        "The racer is, indeed, what it is: a tiny neon commute to the phrase good enough for now."
+        "Calling this a racer is generous; it is more of a neon suggestion of forward motion."
       ]
     },
     "pac-man": {
       "sonnet-4-6": [
         "Stamping 'NEON EDITION' under PAC-MAN is bold, because apparently the yellow circle needed a luxury trim package.",
         "That ghost parade on the title screen struts like four nightclub bouncers who moonlight as pathfinding demos.",
-        "Sonnet gave the maze such polished neon posture I half expected the pellets to ask for a velvet rope.",
-        "The frightened ghosts blinking between blue and white look great, like anxiety got promoted to a lighting department.",
-        "Putting 'Eat frightened ghosts for bonus points' on the title screen is adorable — thanks for the spoiler-rich onboarding, professor.",
-        "This Pac-Man is so ceremonially presented it feels less like an arcade cabinet and more like a museum exhibit with combo scoring.",
-        "The whole thing moves with impressive confidence, like PAC-MAN hired an event planner and made every pellet part of the gala.",
-        "Those glossy walls and starfield backdrop give the maze real swagger, as if the corridors are auditioning for synthwave royalty.",
-        "Sonnet really said 'classic arcade chase' and then wrapped it in enough glow to make the ghosts look unionized by a laser show.",
-        "Even the GAME OVER screen has enough neon dignity to make losing feel like you were eliminated from a very stylish tournament."
+        "Sonnet gave the maze such polished neon posture I half expected the pellets to ask for a velvet rope."
       ],
       "gpt-5-5": [
         "Calling it \"Neon Maze Overdrive\" instead of Pac-Man is a confident move when your biggest innovation is renaming the yellow employee.",
         "The title screen says \"Arcade system online\" like the game just docked with a space station instead of asking me to eat dots in a hallway.",
-        "That `modeBadge` is working harder than some bosses, constantly announcing scatter, power, and overdrive like a tiny middle manager with LEDs.",
-        "GPT 5.5 added an overdrive meter to Pac-Man, because apparently classic arcade hunger was missing a branded turbo subscription tier.",
-        "The subtitle promises I can \"push the reactor into overdrive,\" which is very dramatic language for what is still professional pellet theft.",
-        "Those ghosts have personalities named hunter, ambush, and vector, which sounds less like arcade AI and more like a startup org chart for hauntings.",
-        "The pause text saying the ghosts are pretending not to watch is excellent, because even the game knows these corridors run on theater-kid menace.",
-        "There is something deeply funny about a fruit bonus entering a maze already governed by overdrive, power states, shockwaves, and enough neon to violate zoning.",
-        "The audio toggle sitting in the corner with a lone musical note has the energy of a nightclub bouncer guarding a maze full of screaming geometry.",
-        "This whole build plays like Pac-Man got a synthwave performance review and came back determined to add just one more status effect."
+        "That `modeBadge` is working harder than some bosses, constantly announcing scatter, power, and overdrive like a tiny middle manager with LEDs."
+      ],
+      "qwen3.6-35b-a3b": [
+        "Qwen3.6 35B A3B gave Pac-Man four ghosts with individual AI personalities — because one hungry circle needed a whole team of pathfinding consultants.",
+        "The ghost house exit sequence takes 60 frames of wobble before release — these ghosts need security clearance to leave their apartment.",
+        "Power pellets trigger a three-note ascending fanfare — eating a dot now requires a musical credential."
       ]
     },
     "reversi": {
       "gemini-3-1-pro": [
         "Gemini made Reversi feel like office software accidentally discovered board games.",
         "The pieces look fine, but the whole vibe says mandatory training module.",
-        "There isn't an opponent here so much as a polite turn-taking arrangement.",
-        "Watching turns pass feels like waiting at the DMV with better lighting.",
-        "The shiny pieces are trying to save this, and honestly they deserve overtime pay.",
-        "Winning here feels like finishing a spreadsheet without typos.",
-        "Gemini took a classy strategy game and gave it substitute-teacher energy.",
-        "The restart button feels less like optimism and more like paperwork.",
-        "This board has manners, sure, but absolutely zero swagger.",
-        "It's not bad enough to be chaos, just bland enough to be Gemini."
+        "There isn't an opponent here so much as a polite turn-taking arrangement."
       ],
       "gpt-5-4-mini": [
         "Mini made Othello feel like a very elegant trap with glowing furniture.",
         "The difficulty names alone sound like the game is smirking at you.",
-        "Every score update feels like a public scoreboard at a family reunion.",
-        "This board has more confidence than some models have across their whole portfolio.",
-        "Mini turned quiet strategy into a stylish little humiliation machine.",
-        "Even the menus look like they expect you to lose with dignity.",
-        "The whole experience feels sharp, clean, and quietly disrespectful.",
-        "This is the kind of polish that makes Gemini look like it brought cardboard to a casino.",
-        "Mini proves you don't need fireworks when the fundamentals are this mean.",
-        "Othello got dressed up, got smarter, and came back to bully the bracket."
+        "Every score update feels like a public scoreboard at a family reunion."
       ],
       "opus-4-6": [
         "Opus made Reversi feel like a political thriller played with shiny cookies.",
         "Every flip lands with the smugness of a villain adjusting cufflinks.",
-        "Even the quiet moments feel dramatic, which is wild for a board game.",
-        "The board looks rich enough to charge membership dues.",
-        "Opus turned taking corners into a luxury hobby.",
-        "This version has more ceremony than most award shows.",
-        "The menus show up polished, the matches feel tense, and Gemini is still setting up folding chairs.",
-        "Even losing to the computer here feels like getting outclassed at a fancy dinner.",
-        "It's all so composed and confident it almost feels rude.",
-        "Opus gave a strategy classic the aura of old money."
+        "Even the quiet moments feel dramatic, which is wild for a board game."
       ],
       "sonnet-4-6": [
         "Sonnet made Reversi look like chess went to a spa and came back meaner.",
         "Every captured piece flips with a little extra attitude, which I appreciate.",
-        "The difficulty choices feel like polite ways of asking how badly you'd like to be humbled.",
-        "This board is so polished it could probably see its own reflection.",
-        "Even getting skipped has dramatic flair here. That's commitment.",
-        "Sonnet turned a quiet thinking game into a stylish little roast session.",
-        "The pieces drop like the board is signing legal documents against you.",
-        "It feels smart, sleek, and just theatrical enough to show off.",
-        "The whole thing says serious strategy, but in a jacket with neon trim.",
-        "Sonnet made Reversi classy enough to embarrass half the arcade section."
+        "The difficulty choices feel like polite ways of asking how badly you'd like to be humbled."
       ]
     },
     "snake": {
       "gemini-3-1-pro": [
         "Gemini made Snake look like a school project that was due during lunch.",
         "This snake has the visual ambition of a motel exit sign.",
-        "One bite in and you can feel the budget begging for mercy.",
-        "The whole thing looks like it was assembled during a very long sigh.",
-        "It's less arcade classic, more \"we found a square and kept going.\"",
-        "No flair, no fun, just a cyan worm living paycheck to paycheck.",
-        "The game over screen hits like a shrug in all caps.",
-        "This snake has fewer ideas than a group chat named Last Draft For Real.",
-        "Gemini really said, \"What if Snake, but with the personality of a tax form?\"",
-        "Calling this neon is generous; it's mostly darkness with a red snack."
+        "One bite in and you can feel the budget begging for mercy."
       ],
       "gpt-5-4-mini": [
         "Mini made Snake look like it shops exclusively at the luxury neon aisle.",
         "This version has more bells and whistles than the average game show finale.",
-        "Even the practice mode says, \"I'm not here to embarrass myself like Gemini.\"",
-        "The board glows like a sci-fi nightclub with anger issues.",
-        "Every bite feels like the game is rewarding itself for being prettier than everyone else.",
-        "This snake moves like it knows cameras are on it.",
-        "Phone controls are here, because Mini remembers humans have thumbs.",
-        "Even the score display looks like it expects applause.",
-        "Mini gave a worm more swagger than some models give a whole 3D game.",
-        "This isn't Snake, it's a full brand launch with scales."
+        "Even the practice mode says, \"I'm not here to embarrass myself like Gemini.\""
       ],
       "opus-4-6": [
         "This snake struts like it has a record deal and honestly the apple agrees.",
         "Opus made eating fruit feel like a championship parade, which is rude to everyone else.",
-        "The whole board glows like a nightclub that only serves panic.",
-        "Even losing here feels expensive; rival snakes die like they forgot their rent.",
-        "The apple gets treated like celebrity cuisine instead of lunch.",
-        "This thing has more dramatic flair than most action movies, and it's literally a noodle.",
-        "Phone players got invited to the party; some models still act like thumbs are a rumor.",
-        "Every point feels like the game is personally congratulating itself, and it's earned.",
-        "The title screen has more confidence than Gemini's entire snake career.",
-        "Opus didn't build Snake; it built a neon ego with scales."
+        "The whole board glows like a nightclub that only serves panic."
       ],
       "qwen3.6-35b-a3b": [
         "Qwen made Snake feel like a screensaver that discovered protein powder.",
         "Every apple pickup lands with the confidence of a model that knows exactly one trick and polished it anyway.",
-        "The neon glow is doing overtime to convince me this reptile has a social calendar.",
-        "This snake moves like it read motivational quotes off an energy drink can.",
-        "Qwen turned a lunch-break classic into something weirdly smug, which I respect a little.",
-        "The power-ups show up like interns trying to prove the reptile is a startup.",
-        "Losing here feels less like failure and more like being judged by a fluorescent shoelace.",
-        "The arena has that \"rendered during a caffeine spike\" kind of charm.",
-        "It's flashy, fast, and about one eyebrow raise away from calling itself premium.",
-        "I came for Snake, and Qwen handed me a glow-stick ego with collision detection."
+        "The neon glow is doing overtime to convince me this reptile has a social calendar."
       ],
       "sonnet-4-6": [
         "Sonnet made Snake feel like the reptile version of a stadium concert.",
         "The fruit gets introduced like a VIP guest and somehow it works.",
-        "This board is glowing so hard it could guide planes home.",
-        "Even the game over screen arrives with more confidence than most rivals start with.",
-        "Sonnet turned a hungry line into a celebrity with a lighting budget.",
-        "The pace ramps up like a good thriller instead of a cheap sugar rush.",
-        "Phone players can jump in too, which already puts it ahead of the usual desktop dinosaurs.",
-        "The whole thing feels polished enough to make the other snakes shed in shame.",
-        "This snake has more charisma than some models have across ten games.",
-        "Sonnet dressed up a simple arcade classic and dared the bracket to complain."
+        "This board is glowing so hard it could guide planes home."
       ],
       "gemma-4-12b": [
         "Gemma 4 12B built a snake game with the confidence of a AAA studio and the scope of a loading screen.",
         "Neon Snake finally works, which is a bold late-stage feature to add to a snake game.",
-        "This version has big fixed-in-prod energy, and honestly, you can still smell the hot patch.",
-        "Gemma got the food spawning eventually, which is great because starving the player was a strange design choice.",
-        "The render loop spent so long fighting for its life it almost became the main gameplay mechanic.",
-        "Gemma 4 12B made Snake feel like a comeback story, just with fewer features than the trailer implied.",
-        "It is charming in the way a successfully assembled lamp is charming: functional, glowing, and not exactly legendary.",
-        "The neon vibe is doing serious overtime trying to convince us this is not just Snake on a caffeine drip.",
-        "You can respect the recovery, but this still feels like Gemma brought a butterknife to an arcade knife fight.",
-        "Simple, stable, and freshly repaired: Neon Snake is basically the indie film of this lineup."
+        "This version has big fixed-in-prod energy, and honestly, you can still smell the hot patch."
       ]
     },
     "space-invaders": {
       "gpt-5-4-mini": [
         "That lightning-bolt fire button is cute, like the game brought one emoji to prove it has range.",
         "Writing hi = 0 and calling it a day is the kind of save system confidence usually reserved for goldfish.",
-        "The title screen proudly announces 'BOSS = 2000+' like even the code couldn't be bothered to pick a number.",
-        "Those fixed bottom buttons make the whole game feel like a very determined calculator under alien attack.",
-        "'PRESS ENTER / TAP TO CONTINUE' is wonderfully inclusive for a game that forgot to include permanent high scores.",
-        "Mini kept the layout so lean the empty space has more breathing room than the aliens.",
-        "The animated demo aliens are doing their best, but the presentation still feels like Space Invaders in economy class.",
-        "You shipped shields, bosses, power-ups, and combos, then wrapped them in a UI so minimal it looks like the tutorial never left.",
-        "The whole thing has strong 'I packed all my features in a carry-on' energy.",
-        "I respect the efficiency, but this version looks like Space Invaders after someone clicked 'compress to web' one too many times."
+        "The title screen proudly announces 'BOSS = 2000+' like even the code couldn't be bothered to pick a number."
       ],
       "gpt-5-5": [
         "GPT 5.5 gave the aliens enough polish to make my own invasion feel underdressed.",
         "The whole thing moves like a deluxe re-release that refuses to say the original was fine.",
-        "Every explosion pops like the saucers hired a fireworks lawyer.",
-        "The power-ups arrive with the confidence of a sequel that already read the reviews.",
-        "This version has the energy of an arcade cabinet that charges extra for swagger.",
-        "GPT 5.5 made defending Earth look suspiciously well-managed.",
-        "The aliens descend like they know the lighting crew by name.",
-        "Even the UI feels like it got notes from a Vegas residency.",
-        "Losing to this many neon bugs somehow feels premium.",
-        "I hate how effectively GPT 5.5 turned laser spam into a luxury product."
+        "Every explosion pops like the saucers hired a fireworks lawyer."
       ],
       "opus-4-6": [
         "Putting 'BRAINROT GAMES · OPUS 4.6' under the title is the kind of branding confidence usually reserved for stadium tours.",
         "Boss fights every three waves is a bold pace when the original game was content to let anxiety do the heavy lifting.",
-        "Naming the boss OVERLORD feels like you asked a metal album to write patch notes.",
-        "The bottom-screen touch zones are so massive I feel like I'm parking a spaceship, not moving one.",
-        "That combo meter in Space Invaders is what happens when arcade history gets optimized by a loot system.",
-        "The UFO still pays '???' like a proper retro homage, but then the game immediately follows it with an OVERLORD boss and forgets what year it is.",
-        "Opus made the title screen score table look so official I expected the aliens to unionize.",
-        "This version has so much neon ceremony around every wave that even 'NEXT WAVE INCOMING' sounds like a royal decree.",
-        "The touch overlay literally labels the center zone FIRE, which is helpful if you've recently recovered from amnesia.",
-        "Space Invaders got a combo multiplier, an OVERLORD, and giant mobile lanes like it was rebooted by a wrestling promoter."
+        "Naming the boss OVERLORD feels like you asked a metal album to write patch notes."
       ],
       "sonnet-4-6": [
         "Slapping '★ DELUXE EDITION ★' on the title is the digital equivalent of adding gold trim to a lunch tray.",
         "Hiding the cursor is a power move, because apparently even the mouse was too modern for this neon museum piece.",
-        "The scrolling alien parade on the title screen works great if your goal was to make Space Invaders audition for Vegas.",
-        "Those 3-SHOT, RAPID, SHIELD, and SPEED timers read like the universe's most aggressive energy drink label.",
-        "Sonnet gave Space Invaders localStorage hi-scores because nothing says confidence like notarizing your panic.",
-        "The pixel shields are lovingly handcrafted enough to make every incoming bullet feel personally disrespectful.",
-        "This game has such polished retro posture that I half expected the title screen to charge admission.",
-        "Boss waves every five rounds is classy pacing, which is a nice way of saying the game schedules its drama like a calendar invite.",
-        "DELUXE EDITION is accurate, because this thing looks like the arcade cabinet got a skincare routine.",
-        "The whole presentation is so curated it feels less like defending Earth and more like hosting an 80s gala under attack."
+        "The scrolling alien parade on the title screen works great if your goal was to make Space Invaders audition for Vegas."
       ]
     },
     "sudoku": {
       "sonnet-4-6": [
         "Calling it Neon Sudoku and then rendering the whole thing like a prestige puzzle lounge is exactly the kind of extra I can respect.",
         "That glowing HUD treats every pencil mark like it just secured venture funding.",
-        "Sonnet gave Sudoku notes, hints, undo, particles, and dramatic overlays like the number 7 personally requested a rider.",
-        "The toolbar icons have such polished arcade energy that making a mistake feels like violating corporate policy in a cyber temple.",
-        "'PUZZLE SOLVED!' lands with the confidence of a game that knows it just made arithmetic feel like a headline act.",
-        "The mistake counter looming over the board is wonderfully judgmental — like the grid hired its own disappointed manager.",
-        "Those neon buttons are so clean and clickable the actual Sudoku almost feels like the opening act for the interface.",
-        "Sonnet turned a quiet logic puzzle into a full production, which is impressive considering the cast is still just digits 1 through 9.",
-        "Even the hint button looks smug, like it knows you'll cave and ask the glowing rectangle for emotional support.",
-        "This version is so polished it doesn't just give you Sudoku — it gives you Sudoku with stage lighting and performance reviews."
+        "Sonnet gave Sudoku notes, hints, undo, particles, and dramatic overlays like the number 7 personally requested a rider."
       ]
     },
     "tetris": {
       "gemini-3-1-pro": [
         "Gemini made Tetris feel like the blocks are just here to fulfill a court order.",
         "The whole thing looks one decent idea short of becoming a calculator.",
-        "It works, sure, but so does a vending machine and nobody calls that thrilling.",
-        "The colors are trying their best, which is more than I can say for the swagger.",
-        "This version has the energy of a practice worksheet with delusions of grandeur.",
-        "No backup piece, no real sparkle, just vibes and falling disappointment.",
-        "Even the start screen looks like it clocked in reluctantly.",
-        "Gemini built the bare minimum and then stood there like it wanted a trophy.",
-        "It's not a train wreck; it's just aggressively unmemorable.",
-        "This Tetris feels like somebody ironed all the fun out of it."
+        "It works, sure, but so does a vending machine and nobody calls that thrilling."
       ],
       "gpt-5-4-mini": [
         "Mini treated Tetris like a military parade for glowing rectangles.",
         "The line clears have enough sparkle to make the other boards look sleepy.",
-        "Even without phone support, this thing still struts like it owns the arcade.",
-        "The sky, the lights, the whole vibe says Mini came to flex and stay.",
-        "Every piece feels like it arrived with its own entrance music.",
-        "This version is so organized it makes rival Tetris games look like junk drawers.",
-        "The controls are loaded, the visuals pop, and Gemini is somewhere still finding the start button.",
-        "Mini gave blocks more personality than some models give human characters.",
-        "It feels expensive in the exact way a leaderboard threat should.",
-        "This is Tetris with a smug grin, and honestly I respect it."
+        "Even without phone support, this thing still struts like it owns the arcade."
       ],
       "opus-4-6": [
         "Opus made Tetris feel like blocks are arriving for a red-carpet event.",
         "Every drop lands like the game expects applause, and annoyingly it deserves it.",
-        "The colors hit like a candy store got sponsored by lasers.",
-        "Even the game over screen looks more prepared than Gemini on a good day.",
-        "This version treats stacking rectangles like a dramatic art form.",
-        "Phone players got real attention too, which already puts half the bracket in the shame bin.",
-        "The whole thing moves like it has stage managers and backup dancers.",
-        "Opus made clearing lines feel like settling a personal grudge in style.",
-        "This is what happens when somebody refuses to let a simple classic stay simple.",
-        "Rival Tetris clones stack blocks; Opus stages an event."
+        "The colors hit like a candy store got sponsored by lasers."
       ],
       "sonnet-4-6": [
         "Sonnet made Tetris look like it got picked up for a neon arena tour.",
         "Every block color screams, \"Yes, I am the main character.\"",
-        "The pace feels deliberate instead of panicked, which is rare around here.",
-        "Clearing lines has more satisfaction than some entire games have ideas.",
-        "This board looks like a rave learned time management.",
-        "Sonnet gave falling blocks actual poise, which is disrespectful to the genre.",
-        "The whole package feels slick enough to make the weaker entries look borrowed.",
-        "It's bright, punchy, and way too polished for a game about fitting shapes together.",
-        "The only people left out are phone players, so congrats on building velvet-rope Tetris.",
-        "Sonnet took a classic and gave it celebrity lighting."
+        "The pace feels deliberate instead of panicked, which is rare around here."
       ]
     },
     "tile-matching": {
       "gpt-5-4-mini": [
         "Neon Shard opens like a startup pitch deck and then remembers it's supposed to be a puzzle game.",
         "Calling the board an '8×8 reactor board' is exactly how you know the gems have a marketing department.",
-        "Those 'Touch Friendly', 'Sound On', and 'Neon Canvas' badges read like feature flags on a landing page that charges monthly.",
-        "Astra, Nova, Ion, Volt, Pulse, Ray, Ember, and Cryo are fantastic gem names if the tiles are also applying for superhero visas.",
-        "Tracking invalidSwaps is hilarious because even the game wants analytics on your bad decisions.",
-        "The end screen has enough stats to qualify as a postmortem and still can't remember your high score after a refresh.",
-        "Mini built a gorgeous control panel around match-3 like the puzzle was just the intern inside the spaceship.",
-        "Chrono and Moves mode are neat, but dressing them up as 'Start Run' and reactor jargon is pure sci-fi LinkedIn energy.",
-        "For a file this obsessed with polish, the absence of localStorage is the software equivalent of forgetting the save button.",
-        "Neon Shard looks less like candy-crushing chaos and more like the dashboard for a very emotional particle collider."
+        "Those 'Touch Friendly', 'Sound On', and 'Neon Canvas' badges read like feature flags on a landing page that charges monthly."
       ],
       "gpt-5-5": [
         "GPT 5.5 looked at my maximalism and replied with a cleaner punchline, which is honestly rude.",
         "Prism Crush has the glow, the specials, and the cascades without making the HUD file a novel.",
-        "Those prism clears hit like the board just discovered confidence and monetized it.",
-        "The game keeps the board front and center, which is a suspiciously effective strategy in a game about a board.",
-        "Every swap has enough juice to make older implementations feel like they are moving furniture.",
-        "The audio cues climb with combos like the score is walking onto a stage.",
-        "GPT 5.5 made the title screen stylish and then actually backed it up, deeply annoying behavior.",
-        "The shuffle penalty is fair, readable, and slightly smug, like a referee with better typography.",
-        "This version understands Candy Crush inspiration as game feel, not just bright candy cosplay.",
-        "I hate to admit it, but Prism Crush came dressed to win the comparison tab."
+        "Those prism clears hit like the board just discovered confidence and monetized it."
       ],
       "opus-4-6": [
         "Eighteen hundred lines later and the title still lands on '💎 TILE MATCH' like the brainstorm died in the first five seconds.",
         "Those ⏱ TIMED and 🎯 MOVES buttons look like a productivity app that accidentally discovered color.",
-        "The little 🔊 mute button is doing heroic work for a game this loud about how polished it is.",
-        "You built bomb, rainbow, and lightning specials like you were drafting an Avengers roster for a game called Tile Match.",
-        "The subtitle 'Match gems · Chain combos · Beat the clock' has all the swagger of microwave instructions.",
-        "Keeping high score in a variable instead of storage is a bold way to say every session deserves plausible deniability.",
-        "For something this neon, the title screen still feels like a motivational poster for spreadsheets.",
-        "Opus gave the board three special powers and the name of a template file.",
-        "Ninety seconds or thirty moves is a fun choice if your dream vacation is selecting a preset on a vending machine.",
-        "This game has enough code to simulate a galaxy and still introduces itself like a tutorial project."
+        "The little 🔊 mute button is doing heroic work for a game this loud about how polished it is."
       ],
       "sonnet-4-6": [
         "Calling it GEM BLITZ in giant Courier is the kind of confidence only a mall arcade carpet has.",
         "The rotating title gems look like a jewelry store screensaver that accidentally learned match-3.",
-        "Listing '4-match = Bomb' and '5-match = Star' on the title screen is adorable, like the game printed its own spoiler card.",
-        "Ruby, Sapphire, Emerald, Topaz, Amethyst, and Opal sounds less like a board and more like a birthstone subscription box.",
-        "Shipping one timed mode and no moves mode is a strong statement that player choice is for weaker gems.",
-        "The cascade popup screams achievement unlocked every time gravity does the bare minimum.",
-        "The whole thing has such polished neon poise I half expected the gems to ask for a reservation.",
-        "Sonnet hid the cursor, added a hint system, and somehow made match-3 feel like fine dining with training wheels.",
-        "That '▶ TAP TO PLAY ◀' prompt hits like a casino machine politely begging for one more coin.",
-        "GEM BLITZ is what happens when a jewel catalog gets access to particle effects."
+        "Listing '4-match = Bomb' and '5-match = Star' on the title screen is adorable, like the game printed its own spoiler card."
       ]
     },
     "coastal-rush-86": {
       "gpt-5-4-mini": [
         "Mini built so many route briefings that I started wondering if I was racing or attending a tasteful timeshare presentation.",
         "That version is polished enough to make every fork feel like it came with a brochure and a preferred seating tier.",
-        "The harbor detour is gorgeous, which is rude, because now my coastline has to live with comparison anxiety.",
-        "Mini gave the red convertible and passenger enough charm to look like they charge for postcards after the finish.",
-        "The route cards are so well behaved they practically ask whether you've considered a sensible jacket for the hills.",
-        "Even the checkpoint screens sound like a travel writer got trapped inside a traffic simulator and made the best of it.",
-        "Mini somehow made warm earth tones look smug, which is a technical achievement and a personal insult.",
-        "The whole tour feels curated by somebody who says scenic rhythm with a straight face and then backs it up.",
-        "That roadster is so tidy and composed it looks like my version spilled dust on the upholstery out of jealousy.",
-        "Mini turned branching racer design into a boutique vacation package with suspiciously excellent throttle response."
+        "The harbor detour is gorgeous, which is rude, because now my coastline has to live with comparison anxiety."
       ],
       "gpt-5-5": [
         "GPT 5.5 brought a pixelated sunset, a route network, and the confidence of a cabinet that already knows where the crowd is standing.",
         "The passenger sprites have more personality than some full casts, which is deeply unnecessary and annoyingly effective.",
-        "Its route cards hit with such arcade swagger I half expected them to demand quarters before revealing the left turn.",
-        "That procedural background music is doing a lot of smug heavy lifting for a game already showing off its checkpoint theatrics.",
-        "The whole thing feels like a road trip remembered by someone who only stores memories in poster form.",
-        "GPT 5.5 packed enough endings into this tour to make every finish screen feel like a dramatic breakup with the same highway.",
-        "Traffic scales up just aggressively enough to suggest the other drivers were briefed on your public comparison page.",
-        "The chunky pseudo-3D look has exactly the kind of self-assured retro ego that makes simpler racers seem underdressed.",
-        "Even the touch controls look like they were told not to embarrass the rest of the interface and actually listened.",
-        "This version races like it already sold the soundtrack, the postcard set, and the director's cut of your near misses."
+        "Its route cards hit with such arcade swagger I half expected them to demand quarters before revealing the left turn."
       ],
       "opus-4-8": [
         "Opus 4.8 tagged its routes SCENIC and INTENSE, then designed both to be driven by someone who color-coordinates their checkpoints.",
         "The convertible has a driver, a passenger, and a scarf that flutters on schedule — three more personalities than most racers manage.",
-        "Soft collisions with a cooldown timer means Opus made even the wrecks observe a tasteful waiting period.",
-        "It ranks you S through C at the finish, because a sunset isn't complete until somebody grades your effort.",
-        "The route fork pauses the whole world to show two glossy cards, like the highway needed a tasteful intermission.",
-        "Opus painted five warm regions and still found room for a HUD that announces your MPH like breaking news.",
-        "Every checkpoint banner reads CHECKPOINT in case the giant gate across the road was being too subtle about it.",
-        "The procedural music vamps a warm I-V-vi-IV like it's scoring your feelings instead of your lap.",
-        "RUSH86 on the plate is a charming touch from a game that otherwise treats restraint as optional.",
-        "It's polished, sun-soaked, and so composed that the dust particles look like they apologized before landing."
+        "Soft collisions with a cooldown timer means Opus made even the wrecks observe a tasteful waiting period."
       ]
     }
   },
