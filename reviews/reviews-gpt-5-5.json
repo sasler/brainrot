@@ -3,292 +3,483 @@
   "gameReviews": {
     "2048": {
       "opus-4-6": [
-        "Opus made 2048 feel like a velvet-rope math lounge, then forgot the undo stack should be more than decorative forgiveness.",
-        "The merge particles are classy, but the strategy tools arrive like they were approved by a very cautious committee.",
-        "Every tile color has taste, which is impressive for numbers that mostly spend the game blocking each other.",
-        "Opus gives arithmetic a premium glow and then watches one bad swipe ruin the evening.",
-        "The score popups float away with dignity, like even the points have better posture than the player.",
-        "It is polished, calm, and slightly too formal for a game about panicking into corners.",
-        "The board looks expensive enough that a 2 tile probably asks where you parked.",
-        "Opus celebrates merges beautifully, but GPT 5.5 brought an actual rewind budget.",
-        "This is good 2048 wearing tailored lighting and pretending it never gets stuck.",
-        "Opus built a luxury number trap; charming, pricey-looking, and still absolutely a trap."
+        "Undo is a single visible button with a disabled state, so one terrible swipe gets mercy and the second gets character development.",
+        "The win overlay offers KEEP GOING or NEW GAME, because reaching 2048 apparently starts a contract negotiation with arithmetic.",
+        "Spawn and merge animations pop tiles like tiny trophies, which is a lot of ceremony for numbers agreeing to share an apartment."
       ],
       "sonnet-4-6": [
-        "Sonnet made a shiny 2048, then skipped deep undo like players only make one mistake per lifetime.",
-        "The neon cyan mood is elegant, but the feature set occasionally whispers 'minimum viable regret'.",
-        "Those tiles merge smoothly enough, yet the board has fewer second chances than a parking meter.",
-        "The presentation is clean, which is nice when the strategy options are also aggressively clean.",
-        "Sonnet brought polish to the numbers and austerity to the safety net.",
-        "The win screen has confidence, but the undo story has the emotional range of a receipt.",
-        "It looks like a premium puzzle until your thumb slips and the game says character building.",
-        "The board glows hard enough to distract from how little forgiveness it brought.",
-        "Sonnet made 2048 tasteful; GPT 5.5 made it theatrical and let players rewind the bad decisions.",
-        "This version is a sleek number lounge with a bouncer named No Takebacks."
+        "The win screen lets you Continue or start over, but there is no undo button, so forgiveness only arrives after success. Convenient.",
+        "Slide noise, merge pops, and tile spawning make each move feel polished while still preserving the ancient art of corner regret.",
+        "Arrow keys and swipe both work, which is generous for a board that otherwise treats bad direction choices as legally binding."
       ],
       "gpt-5-4": [
-        "GPT 5.4 brought orange fireworks to 2048, then GPT 5.5 showed up with a whole arcade stage.",
-        "Your undo button was ahead of the room, but several moves back still beats one tasteful apology.",
-        "The stats are useful, though they read like the board is preparing a performance review.",
-        "The merge bursts are fun, but the newer board makes every big tile feel like a nightclub incident.",
-        "GPT 5.4 had restraint for once, which is suspicious and frankly off-brand.",
-        "This is solid 2048, but GPT 5.5 packed more drama into the same arithmetic panic.",
-        "The amber palette is warm; the 5.5 version is what happens when the circuit board learns stage lighting.",
-        "Score, moves, merges, highest tile: all the analytics, slightly less spectacle.",
-        "GPT 5.4 made a capable neon puzzle; GPT 5.5 made the numbers audition for fireworks.",
-        "Your implementation is good enough to respect and restrained enough to get lapped by excess."
+        "Undo keeps a real move history instead of a single apology, so the board briefly pretends your strategy is recoverable.",
+        "Moves, merges, highest tile, and timer stats sit under the grid, because every number puzzle clearly needed a performance review.",
+        "Merge particles and score popups make arithmetic look like confetti, which is exactly how accountants lose credibility."
       ],
       "gpt-5-4-mini": [
-        "Mini finally kept 2048 lean, then GPT 5.5 arrived with a parade and a rewind machine.",
-        "The purple glow is cute, but the feature list looks like it packed for a weekend while 5.5 moved in.",
-        "Your sound engine has charm; the new board sounds like every merge signed a record deal.",
-        "Mini made 2048 sensible, which is admirable until the comparison tab asks for spectacle.",
-        "The game is clean and compact, two words that rarely win a neon bragging contest.",
-        "No particles is a bold stance when the house rules practically ask the tiles to explode politely.",
-        "Mini brought a nice puzzle; GPT 5.5 brought a puzzle with stage cues and receipts.",
-        "The board works well, but the new undo stack makes it feel emotionally underinsured.",
-        "This is efficient 2048, and efficiency is what you praise right before clicking the flashier one.",
-        "Mini made a good small version; GPT 5.5 made a loud large version and stole the room."
+        "The controls stick to Play, score, mute, and Play Again, a compact little board that refuses to hold your hand or your undo history.",
+        "Tile appear and merge animations are present, so the minimalist feature set still finds time to make numbers bounce for attention.",
+        "Keyboard and swipe input cover the basics, while the win/loss overlay keeps the postgame conversation short and mildly judgmental."
       ],
       "gemini-3-1-pro": [
-        "Gemini's 58-line 2048 is impressive in the same way a folding chair is impressive at a concert.",
-        "The numbers move, merge, and immediately ask whether the visual effects budget was confiscated.",
-        "No sound in 2048 is a brave tribute to silent arithmetic and unpaid browser pixels.",
-        "The code is tiny enough to fit inside GPT 5.5's undo history emotionally.",
-        "Winning and stopping immediately is hilarious, like the game panicked at the first sign of success.",
-        "Two colors for all tile values makes the board look like it packed one shirt for a month-long trip.",
-        "It is technically complete, which is the kindest phrase you can put before the comparison tab opens.",
-        "Gemini made a functional number grid; GPT 5.5 made the number grid demand a sound check.",
-        "This version treats animation like a rumor from a wealthier neighborhood.",
-        "Fifty-eight lines is efficient, but the fun also appears to have been compressed out."
+        "The merge routine is pure arrow-key arithmetic: slide, combine, spawn, repeat, with no undo parachute in sight.",
+        "The UI stops at START, SCORE, GAME OVER, and RETRY, which is less interface and more a polite sticky note.",
+        "No swipe, sound, particles, stats, best score, or continue-after-win flow shows up, so the numbers contemplate silence together."
+      ],
+      "qwen-3-6-27b": [
+        "Combo tracking and a visible Best score make this board treat merges like a tiny arcade streak, because plain arithmetic was underdressed.",
+        "The 2x score, Slow-Mo, and Freeze power-ups turn 2048 into a puzzle with cheat codes wearing neon badges.",
+        "Touch, swipe, keyboard start, particles, and merge sounds all show up, so the single-game entrant brought a surprisingly loud calculator."
+      ]
+    },
+    "snake": {
+      "opus-4-6": [
+        "The two-turn input queue is generous, because apparently even a snake deserves a buffered legal department before hitting the wall.",
+        "Every bite tightens the tick rate from leisurely to panic treadmill, so lunch doubles as a speedrun contract nobody read.",
+        "Eat flashes, death flashes, screen shake, particles, and direction sounds make each grid-square mistake feel wildly overproduced."
+      ],
+      "sonnet-4-6": [
+        "The direction queue politely eats up to two turns, then still rejects reversals like a bouncer with geometry training.",
+        "Special gold food randomly joins regular snacks, because plain fruit was not prestigious enough for this glowing worm.",
+        "Combo timers, pop-up numbers, speed tiers, and a dying animation turn Snake into a tiny arcade drama with commitment issues."
+      ],
+      "gpt-5-4": [
+        "The Flow multiplier rewards fast eating, which is a bold way to make a snake develop productivity anxiety.",
+        "Practice starts from a secondary button labelled like a tutorial dare, because apparently Snake needed onboarding theatre.",
+        "The HUD tracks length, velocity, chain status, phase, and hints, so the worm gets more telemetry than most commuter trains."
+      ],
+      "gpt-5-4-mini": [
+        "Practice Run sits beside Start Game, because this snake evidently offers a rehearsal before the traditional wall appointment.",
+        "The board spawns food only on free cells, a shocking outbreak of civic planning in an otherwise reckless neon grid.",
+        "Swipe support, click-to-start, keyboard launch, particle bursts, and status labels make the small version very busy denying it is small."
+      ],
+      "gemini-3-1-pro": [
+        "The whole experience is START, SCORE, RETRY, and rectangles, which is refreshingly honest in the way a folding chair is honest.",
+        "Food respawns at random free grid slots and the snake just moves; no combo economy arrived to monetize chewing.",
+        "No sound, particles, touch controls, pause flow, or high-score ceremony show up, so the cyan worm suffers in dignified silence."
+      ],
+      "qwen3.6-35b-a3b": [
+        "The title tells players to swipe or use arrows, then the class-based game actually follows through, rude competence for a neon snack.",
+        "Food spawning accounts for snake length and existing power-ups, because even glowing orbs apparently need zoning approval.",
+        "Speed increases after eating, particles burst, and power-up tones climb upward like the browser briefly joined a tiny synth band."
+      ],
+      "gemma-4-12b": [
+        "The fixed thirty-by-thirty canvas gives the snake a square little apartment and still lets swipe steering move in rent-free.",
+        "Spawn logic tries one hundred times to avoid the snake and other items, which is more caution than most players will show.",
+        "Eat, crash, and power-up sounds each get different oscillator treatment, because this compact build brought a pocket soundboard."
+      ],
+      "mai-code-1-flash": [
+        "The bottom D-pad gives mobile players labelled Left, Up, Down, and Right buttons, in case swiping felt too stylish.",
+        "Every bite boosts the pace and updates the Speed readout, so the scoreboard gets to narrate your worsening decisions.",
+        "The neon grid resizes to the viewport while the snake stays on fixed cells, a tidy compromise between arcade cabinet and phone panic."
+      ],
+      "hy3": [
+        "The menu advertises Food, Speed, x2 Score, and Slow-Mo, because one snack type was apparently too humble for this serpent.",
+        "Combo and best-combo tracking make the snake care about streaks, which is adorable for a creature mostly famous for turning badly.",
+        "Pause has its own overlay saying the serpent waits, a very dramatic way to describe a line temporarily not eating pixels."
+      ]
+    },
+    "minesweeper": {
+      "opus-4-6": [
+        "The first click bans mines from the chosen square and its neighbors, because even this bombfield gives beginners a tiny diplomatic zone.",
+        "Chord reveal opens adjacent hidden cells only when the flag count matches the number, so overconfidence gets a formal appointment with shrapnel.",
+        "Long-press flagging, reveal chimes, flag blips, flood-fill tones, and explosion animations make Intermediate Minesweeper feel like a tiny casino with explosives."
+      ],
+      "sonnet-4-6": [
+        "Easy, Medium, and Hard buttons sit right in the header, because selecting how badly to suffer deserves its own neon control panel.",
+        "Hidden, revealed, flagged, and question states are all tracked, so indecision gets a dedicated tile costume before the mine laughs anyway.",
+        "Double-click chording and long-press flagging are present, which is merciful until the animated boom reminds you mercy was temporary."
+      ],
+      "gpt-5-4": [
+        "The subtitle openly promises first-click safety and double-click chording, a rare case where the brochure and the minefield agree.",
+        "Mine generation excludes the opening cell and its neighbors, because the first sweep apparently arrives with a security detail.",
+        "Safe-cells-left, flags-used, touch flag mode, field notes, and cascading reveal sounds turn a grid of bombs into a management dashboard."
+      ],
+      "gpt-5-4-mini": [
+        "The board is generated after the first reveal, so the opening click can never explode; suspense has to wait its turn like everyone else.",
+        "Beginner, Intermediate, and Expert live in a plain selector, which is refreshingly direct for a neon grid pretending to be a control room.",
+        "Reveal queues, flood sounds, confetti, status copy, and right-click flagging make the small build weirdly organized about catastrophe."
+      ],
+      "gemini-3-1-pro": [
+        "The first click places mines afterward, giving the opening square safety without throwing a parade about basic decency.",
+        "Easy, Medium, and Hard are simple select options, because this version trusts a dropdown more than a cinematic briefing.",
+        "Left click reveals, right click flags, zeroes flood recursively, and that is basically the whole pitch; no sound crew was harmed because none arrived."
+      ]
+    },
+    "tetris": {
+      "opus-4-6": [
+        "The seven-bag shuffler feeds pieces like a civilized dealer, which is rude to anyone hoping randomness would take the blame.",
+        "Hold, ghost landing, SRS wall kicks, lock delay, DAS repeat, and hard drop all show up, so the stack has fewer excuses than the player.",
+        "Move, rotate, lock, soft-drop, hard-drop, line-clear, level-up, and game-over sounds make every block decision audibly self-important."
+      ],
+      "sonnet-4-6": [
+        "Two bags are primed into a next queue, because apparently one bag was too casual for falling geometry with ambition.",
+        "Hold swaps are locked to once per piece, a sensible rule that still feels like the game confiscating your emergency blanket.",
+        "SRS kicks, ghost row, lock-move limits, back-to-back scoring, and tailored hard-drop thuds turn stacking into a policy document with bass."
+      ],
+      "gpt-5-4": [
+        "The screen brags about wall kicks, ghost, and lock delay, which is convenient because the code actually brought them to the party.",
+        "Hold and next previews sit beside score, lines, and level, giving each falling piece a waiting room and a public performance review.",
+        "Soft-drop whooshes, hard-drop thuds, camera shake, and clear effects make every tidy stack sound like it just closed a deal."
+      ],
+      "gpt-5-4-mini": [
+        "The start overlay lists move, rotate, drop, and hold controls clearly, then politely leaves advanced rotation mythology at the door.",
+        "Hold, next preview, ghost placement, and lock timing are present, so this compact build still remembered the modern Tetris essentials.",
+        "Line clears throw particles and the final screen reports score, lines, and level, because even a smaller stack wants receipts."
+      ],
+      "gemini-3-1-pro": [
+        "The next piece is just a single random type, so the bag system apparently missed the train and sent chaos instead.",
+        "There is no hold or ghost projection, meaning every bad placement arrives the old-fashioned way: surprise and regret.",
+        "Hard drop, pause, score, level, lines, and next preview cover the basics, while wall kicks and T-spins remain safely outside the building."
+      ],
+      "gpt-5-6-luna": [
+        "Seven-bag, lock delay, DAS, and ARR are explicitly part of the run, because lunar stacking apparently needed tournament paperwork.",
+        "Hold chamber, next queue, ghost projection, SRS kicks, and mobile touch buttons make the observatory surprisingly serious about falling blocks.",
+        "T-spin detection feeds mission text, surge meter, combo, back-to-back scoring, particles, and shake, so one rotated T becomes a moon landing press release."
+      ]
+    },
+    "reversi": {
+      "opus-4-6": [
+        "The AI sorts moves toward corners and edges before minimaxing, because even the computer knows Reversi corners are basically beachfront property.",
+        "Mobility, corner bonuses, and stability near captured corners all feed the evaluation, so the bot brought a clipboard to a disc-flipping fight.",
+        "Pass turns, invalid-move buzzes, cascading flip tones, and final White-versus-Black scores make every mistake both visible and annoyingly musical."
+      ],
+      "sonnet-4-6": [
+        "Easy, Medium, and Hard change the search depth, which is a very polite way to ask how thoroughly you want to be outflanked.",
+        "Pulsing valid-move hints sit on legal squares, because apparently the board got tired of watching humans guess like interns with a broken compass.",
+        "Flip animations distinguish dark-to-light and light-to-dark, giving each captured disc the melodrama of a tiny identity crisis."
+      ],
+      "gpt-5-4": [
+        "The opening screen says the AI is evaluating before you even move, which is bold emotional pressure from a board game about circles.",
+        "Show Best Move turns strategy into a neon spoiler button, perfect for players who want enlightenment with a side of shame.",
+        "Legal-move counts, status text, difficulty choices, and turn labels make every bad placement feel like it came with analytics."
+      ],
+      "gpt-5-4-mini": [
+        "Pulse, Neon, and Overclock difficulty names turn AI depth into a nightclub menu, because Easy was apparently too emotionally available.",
+        "The copy promises automatic animated flips, so captures arrive with flair even when the move itself was pure panic.",
+        "Game State, Your turn, and black-white score panels keep the duel readable while the board quietly documents your collapse."
+      ],
+      "gemini-3-1-pro": [
+        "The board tracks Black's turn and restarts cleanly, then declines to decorate the thought process like a monk with a grid.",
+        "Legal flips work through directional scans, but hints and difficulty are absent, so strategy is mostly between you and regret.",
+        "No sound, particles, or AI theatrics crowd the table; the discs simply flip and let the silence judge you."
+      ],
+      "gpt-5-6-sol": [
+        "Tactician mode and Reveal a path give the observatory version a coaching voice, because apparently eclipses come with homework help.",
+        "The labels track whether the orbit belongs to you and which color you own, sparing the classic black-white confusion from becoming modern art.",
+        "Capture particles and ceremonial audio make each flip feel like a celestial event, which is extremely extra for changing a disc color."
+      ]
+    },
+    "breakout": {
+      "opus-4-6": [
+        "Arrow keys, mouse movement, and Space launch cover the classic controls, because the paddle refuses to pick one steering committee.",
+        "Level tracking and brick rows rebuild the wall after success, which is petty behavior from architecture but excellent arcade pacing.",
+        "Particles, sound, paddle bounce tuning, lives, and score all show up, so every brick gets a tiny funeral with bookkeeping."
+      ],
+      "sonnet-4-6": [
+        "Arrow keys or mouse steer the paddle and Space launches, a traditional little ritual before the ball starts filing complaints.",
+        "The game has separate Game Over and You Win states, because even brick demolition needs both failure paperwork and victory paperwork.",
+        "Power-up references and particle polish dress the board up nicely, though the core loop still boils down to babysitting one rude ball."
+      ],
+      "gpt-5-4": [
+        "Wide Paddle, Multi-Ball, and Slow Motion are advertised right on the start screen, because regular brick violence was under-accessorized.",
+        "Power-up drops, score tiers, launch control, and level progression turn the wall into a reward vending machine with anger issues.",
+        "Collision overlap logic decides whether the ball bounces sideways or vertically, so even rectangles get a little courtroom drama."
+      ],
+      "gpt-5-4-mini": [
+        "The instructions are wonderfully blunt: move the paddle and break all the bricks, as if subtle narrative was escorted out by security.",
+        "Score and lives are visible from the start, so losing the ball immediately becomes a documented workplace incident.",
+        "No fancy power-up parade dominates this one; it mostly trusts paddle timing, brick hits, and shame to carry the entertainment."
+      ],
+      "gemini-3-1-pro": [
+        "The paddle is a plain rectangle at the bottom of the canvas, heroically defending civilization from a single bouncing dot.",
+        "Five rows by ten columns of bricks appear, get hit, and vanish; architectural ambition peaked at a spreadsheet with colors.",
+        "No lives counter, sound, particles, power-ups, or level screen arrive, so the ball performs its minimalist tragedy in silence."
+      ],
+      "minimax-m2-7": [
+        "Mouse, touch, and arrow keys all steer the paddle, because this version refuses to let any input device dodge responsibility.",
+        "Wide, multi, slow, and extra-life power-ups drop from bricks, turning Breakout into a tiny benefits program for desperate paddles.",
+        "Level splash screens, high score, heart lives, multiball sounds, and particle bursts make the solo entry act like it brought a full arcade cabinet."
+      ]
+    },
+    "endless-runner": {
+      "opus-4-6": [
+        "Lane switching, jumping, sliding, and mobile swipes cover every normal runner input, because the obstacle course is not accepting keyboard excuses.",
+        "Barriers, beams, spikes, collectibles, shield breaks, and crash sounds give the neon track a full safety violation portfolio.",
+        "Coins, distance, level, and speed all climb while particles and trails follow along, so cardio finally gets a scoreboard and a light show."
+      ],
+      "sonnet-4-6": [
+        "The controls split lane switches, jumps, and slides cleanly, making every missed obstacle feel like a personal scheduling failure.",
+        "Shield, magnet, and boost pickups turn survival into inventory management, because apparently sprinting needed accessories.",
+        "Score, distance, speed ramps, touch support, and particle trails make the runner feel polished enough to make crashing look intentional."
+      ],
+      "gpt-5-4": [
+        "The start screen explicitly asks you to jump barriers and duck plasma gates, so failure comes pre-labeled for your convenience.",
+        "Lane, speed, shield, magnet, and boost timers sit in the HUD, because the runner brought a dashboard to a footrace.",
+        "The 3D city track spawns obstacles, collectibles, props, and particles ahead of the player like a treadmill with a production budget."
+      ],
+      "gpt-5-4-mini": [
+        "The HUD tracks score, distance, coins, speed, level, and all three power-up timers, because compact apparently did not mean quiet.",
+        "Barrier and overhead obstacles force jumps or slides while Shield, Magnet, and Boost try to convert panic into strategy.",
+        "RUN OVER says the city caught up with you, which is a dramatic diagnosis for losing a lane-change argument."
+      ],
+      "gemini-3-1-pro": [
+        "Space, ArrowUp, and touch all do the same jump, so the control scheme is beautifully simple and absolutely out of excuses.",
+        "Obstacles spawn on a timer and slide left across the canvas, the classic treadmill of rectangles with no coins to soften the mood.",
+        "No lanes, slide, power-ups, sound, particles, or distance stats appear; the runner jumps, scores, crashes, and goes home."
+      ]
+    },
+    "marble-madness": {
+      "opus-4-6": [
+        "Three selectable stages escalate from Neon Genesis to Void Nexus, because rolling downhill apparently needed a trilogy deal.",
+        "Checkpoints save the marble between platform chains, a thoughtful feature for anyone planning to fall with consistency.",
+        "Space jumps, gem bonuses, level medals, and synthetic completion fanfares turn marble handling into a tiny performance review with gravity."
+      ],
+      "sonnet-4-6": [
+        "The level picker offers three sectors with different gem totals, so the menu starts judging your route before physics even clocks in.",
+        "Checkpoint rings, floating gem flashes, and portal particles make every saved landing look more competent than it probably was.",
+        "Keyboard rolling, Space jumping, touch support, and per-level music give the marble plenty of ways to arrive somewhere embarrassing."
+      ],
+      "gpt-5-4": [
+        "Falls add five seconds before respawning at the last checkpoint, because the void believes in both mercy and itemized billing.",
+        "Moving and disappearing platforms join gems, medals, penalties, and sector results, a full bureaucracy for one shiny ball.",
+        "The chase camera eases behind the marble while trail particles follow along, making bad steering look almost professionally filmed."
+      ],
+      "gpt-5-4-mini": [
+        "The hint says Restart with R, and the game means it, because sometimes the best marble strategy is administrative surrender.",
+        "Three neon circuits use checkpoints, gems, disappearing tiles, and moving platforms, proving compact can still schedule plenty of inconvenience.",
+        "The finish requires a brief hold near the portal, as if the marble must submit paperwork before being declared victorious."
+      ],
+      "gemini-3-1-pro": [
+        "Arrow keys simply push a circle around a flat canvas, which is Marble Madness reduced to a steering-wheel postcard.",
+        "The hazards are rectangular blue tollbooths, and touching them ends the run with all the ceremony of a light switch.",
+        "No gems, checkpoints, jump, camera, sound, courses, or completion stats appear; the marble gets START, RETRY, and emotional austerity."
+      ],
+      "gpt-5-6-sol": [
+        "Six garden courses unlock in sequence with seeds, petals, rails, checkpoints, and a final all-courses celebration, naturally modest stuff.",
+        "After enough falls, vine rails grow and a garden lift appears, because accessibility here arrives disguised as botanical pity.",
+        "Shift soft-brakes, R returns safely, moving bridges carry seeds, and gentle audio blooms every checkpoint like failure got landscaping."
+      ]
+    },
+    "maze-3d": {
+      "opus-4-6": [
+        "WASD movement, mouse look, Shift sprint, and an M-toggle minimap make escape feel like a first-person spreadsheet with walls.",
+        "The minimap only marks explored cells and shows the exit after discovery, so even the helpful map practices plausible deniability.",
+        "Gem collection, a pulsing orange portal, timer warnings, and exit particles dress a maze run up like a deadline with fog machines."
+      ],
+      "sonnet-4-6": [
+        "Pointer lock starts the run but falls back after a delay, because even browser permissions get a dramatic opening scene.",
+        "Ten gems feed the score while the win screen adds time bonus math, turning escape into accounting with corridors.",
+        "The glowing portal uses rings, a beam, particles, and a point light, which is a generous shrine for walking into the right square."
+      ],
+      "gpt-5-4": [
+        "The maze is generated fresh, then the minimap reveals only visited cells, because cartography apparently works on a subscription plan.",
+        "Shift sprint and smooth wall sliding keep corner movement fluid, which is kind of the maze after making every hallway orange and suspicious.",
+        "Relic shards, torch beacons, patterned floors, fog, embers, and a pulsing portal turn getting lost into a boutique lighting problem."
+      ],
+      "gpt-5-4-mini": [
+        "The intro promises a new maze every run with orange lights and fog, so disorientation at least gets consistent branding.",
+        "Pointer lock is attempted but drag-look stays available, a nice concession to browsers that refuse to enter the labyrinth emotionally.",
+        "Shards boost the final score and the portal races the timer, because escape alone was apparently too affordable."
+      ],
+      "gemini-3-1-pro": [
+        "The entire maze is a tiny fixed text map rendered by canvas ray steps, which is charmingly direct and aggressively under-furnished.",
+        "Arrow keys rotate and move forward or backward; strafing, mouse look, sprinting, and minimaps all stayed home.",
+        "Reaching tile two wins, the timer can end it, and there are no collectibles, sounds, enemies, powers, or decorative excuses."
+      ],
+      "hy3": [
+        "Neon Labyrinth combines pointer lock, drag-look fallback, Shift sprint, and touch roles, because apparently every input method demanded a passport.",
+        "The minimap reveals only explored cells while relic shards and the farthest portal wait in the fog, very considerate and very smug.",
+        "Instanced neon walls, hand-drawn floor textures, drifting embers, relic bursts, and procedural tones make a maze act like a synth concert with exits."
+      ],
+      "gpt-5-6-terra": [
+        "The living mineral cave is rendered by a procedural canvas raycaster instead of 3D meshes, because hand-carved claustrophobia was on the feature list.",
+        "The Echo Pulse sends a resonance ring toward shards and the celestial exit, a navigation system that literally makes uncertainty louder.",
+        "Sprint energy, faultline burns, shard combos, session bests, touch buttons, and escalating expedition levels turn escape into cave paperwork with teeth."
+      ],
+      "gpt-5-6-sol": [
+        "Three sun cores must be stolen before the exit gate ignites, because a maze apparently needed a heist checklist.",
+        "Solar Pulse reveals guidance and stuns the guardian when charged, which is a fancy way to weaponize asking for directions.",
+        "Fragments refill pulse, wells recharge it harder, shortcut gates open after cores, and the minimap tracks the pursuing guardian like panic with cartography."
+      ]
+    },
+    "mini-golf": {
+      "gpt-5-6-sol": [
+        "Nine eclipse holes, overview toggle, recovery button, and a glowing bank preview make putting feel like mission control for tiny mistakes.",
+        "Keyboard aiming, drag shooting, two-finger orbit, and pinch support cover every input except telepathy, which the cup still ignores.",
+        "The scorecard tracks strokes and to-par across the whole Umbra course, because one bad putt deserves archival preservation."
+      ],
+      "opus-4-6": [
+        "Five named holes jump from The Rookie to The Gauntlet, a curriculum that starts friendly and ends with water hazards filing paperwork.",
+        "Click-drag power and right-drag camera orbit are explained up front, sparing players the joy of discovering geometry by whiffing sideways.",
+        "Slalom walls, pinball bumpers, and a final water gauntlet make the lowest-score promise feel less like sport and more like litigation."
+      ],
+      "sonnet-4-6": [
+        "Left-drag shoots, right-drag rotates, and two fingers orbit on mobile, because even mini golf now demands a full gesture vocabulary.",
+        "Water hazards slap on a visible penalty stroke, a wonderfully blunt way for the course to say your plan was damp garbage.",
+        "Ramps, obstacles, power bars, hole announcements, and par labels turn each green into a little neon compliance exam."
+      ],
+      "gpt-5-4": [
+        "The start screen advertises water resets, ramps, bumpers, and moving obstacles, which is refreshingly honest about the upcoming nonsense.",
+        "Aiming shows percent power while the HUD tracks hole, par, and strokes, because apparently even putting needed telemetry.",
+        "Course completion separates total strokes from total par, letting the final overlay mathematically insult the whole afternoon."
+      ],
+      "gpt-5-4-mini": [
+        "Four holes, left-drag shooting, right-drag orbit, and a following camera keep the compact course brisk and still fully capable of betrayal.",
+        "Water resets to the tee with a penalty stroke, because the pond is less scenery and more a tiny accountant.",
+        "Ramps, slopes, walls, and bumpers all affect the roll, so the ball has several professional ways to disobey."
       ]
     },
     "tile-matching": {
       "opus-4-6": [
-        "Opus brought architectural discipline to match-3, then decorated it like a thesis defense with gems.",
-        "The state machine is impressive, but the board occasionally feels like it needs a project manager to swap two tiles.",
-        "Those section banners have more ceremony than some level-up screens.",
-        "The neon is rich, but the title still says Tile Match like the naming budget evaporated first.",
-        "Opus made every event correct, polished, and slightly afraid of spontaneity.",
-        "The special tiles work hard, even while the UI introduces them like meeting agenda items.",
-        "A hint delay that polite makes the board feel like it is waiting for written consent.",
-        "The sound design has range, though some shuffle tones arrive like a synth fell down stairs.",
-        "Opus built a very good match-3 and then wrapped it in the confidence of a systems design doc.",
-        "It is polished enough to respect and formal enough to make candy feel under review."
+        "Timed and moves modes share the same board, because the gems apparently support both panic and committee planning.",
+        "Invalid swaps get their own bad-swap tone, a tiny buzzer for anyone trying to negotiate with adjacency.",
+        "Hints, shuffles, bombs, level thresholds, combo tracking, and particle caps make the match board behave like a casino with a scheduler."
       ],
       "sonnet-4-6": [
-        "Sonnet named it GEM BLITZ, which sounds fast until the single-mode structure asks everyone to queue politely.",
-        "The spinning title gems are charming, in the same way a screensaver can be charming before work starts.",
-        "One timed mode is clean, but player choice is apparently locked behind a velvet rope.",
-        "The Courier styling gives neon arcade energy filtered through a printer manual.",
-        "The particles sparkle nicely, then the game reminds you it has exactly one main pace.",
-        "Sonnet made a smooth match-3 with the strategic range of a very shiny hallway.",
-        "The specials are fun, but the onboarding explains them like it is worried you skipped the brochure.",
-        "Mobile works, though the gems sometimes feel like luxury buttons on a tiny calculator.",
-        "The game has taste and speed, just not quite enough chaos to scare the leaderboard.",
-        "GEM BLITZ is solid, stylish, and one settings menu away from having an opinion."
+        "Bomb, star, and cross specials each get custom sounds and effects, because plain matching was clearly beneath these gemstones.",
+        "Cascade audio climbs as chains continue, a helpful musical reminder that the board is doing better work than the player.",
+        "Particle rings, shockwaves, sparkles, and a shuffle jingle turn dead boards into a small fireworks budget with rules."
       ],
       "gpt-5-4": [
-        "GPT 5.4 built Prism Pulse like a match-3 game escaped from a product launch.",
-        "The dashboard has so many readouts the gems look like they are filing quarterly metrics.",
-        "Arcade Sprint and Tactical Moves sound less like modes and more like consultancy packages.",
-        "The cascades are gorgeous, but they occasionally fight the UI for top billing.",
-        "Every panel glows with the confidence of a feature that requested its own roadmap.",
-        "The specials are genuinely fun once you finish walking past the lobby signage.",
-        "GPT 5.4 has excellent juice, then pours extra frosting on the frosting.",
-        "The title screen could sell the game, the sequel, and probably a subscription tier.",
-        "This version is powerful, polished, and allergic to leaving empty space alone.",
-        "Prism Pulse is great match-3 hiding inside a very enthusiastic command center."
+        "Timed sprint and tactical moves modes are separate menu choices, because indecision needed its own pre-game fork.",
+        "Match four creates bombs, match five creates prism stars, and dead boards auto-shuffle instead of quietly becoming a museum.",
+        "Keyboard cursor controls, H-for-hint, touch dragging, combo banners, and special counters make the board aggressively overqualified."
       ],
       "gpt-5-4-mini": [
-        "Mini called it Neon Shard and immediately made the board sound like it powers a reactor.",
-        "The gem names are excellent if the tiles are auditioning for an energy drink lineup.",
-        "Chrono mode is stylish, though calling time French does not make panic fancier.",
-        "The feature badges announce touch support like the game is presenting at a trade show.",
-        "Mini tracks enough end-screen stats to make losing feel like filling out analytics.",
-        "The board has polish, but the surrounding jargon keeps trying to become the main character.",
-        "The audio panning is clever, even if match-3 rarely needs stereo cartography.",
-        "Neon Shard has strong feel and stronger branding, sometimes in that order.",
-        "The compactness works, though a few labels feel like they were shortened during turbulence.",
-        "Mini built a capable gem game and then dressed it as a sci-fi operations dashboard."
+        "Chrono and Moves modes share an 8-by-8 reactor board, so both speedrunners and overthinkers can ruin cascades equally.",
+        "The result screen itemizes matches, specials, cascades, and shuffles, because every gem collapse needs an audit trail.",
+        "Bombs, prism stars, hint pulses, invalid swap timers, and ambient sparkles make the small build very busy denying it is small."
+      ],
+      "gpt-5-6-sol": [
+        "The run starts with 36 moves, rewards orbit goals with more moves, and charges two moves for shuffle, because sunlight has fees.",
+        "Directional beams, corona crosses, Sol Cores, eclipse bonuses, and Solar Surge make match-three sound like a weather emergency.",
+        "Pause preserves the board, hints are free, invalid swaps are free, and successful swaps cost moves; finally, mercy with a receipt."
       ]
     },
     "space-invaders": {
       "opus-4-6": [
-        "Opus made Space Invaders feel like an aerospace compliance demo with explosions.",
-        "The boss entrance has gravitas, but the variable names look like they were smuggled through customs.",
-        "Those shield chunks crumble nicely, even while the code treats vowels like a luxury tax.",
-        "Opus brought real arcade muscle, then filed half the fun under abbreviations.",
-        "The UFO lights are charming enough to distract from the tiny maze of shorthand below them.",
-        "Boss waves every three rounds is confidence, or possibly an alien labor dispute.",
-        "The procedural audio arrives like a synthesizer doing a dramatic reading of panic.",
-        "It plays well, glows hard, and names things like a keyboard with missing keys.",
-        "Opus built a serious defense grid, then labeled it like a secret government spreadsheet.",
-        "This is polished Space Invaders with the soul of a systems engineer wearing mirrored sunglasses."
+        "Classic shields are built from destructible pixels, so the bunker gets to erode one tiny humiliation at a time.",
+        "Multi-shot, rapid fire, shield, and speed power-ups drop into the invasion, because one laser apparently lacked career growth.",
+        "Boss intro sounds, combo multipliers, alien step tones, and touch support turn the old formation march into a full neon incident."
       ],
       "sonnet-4-6": [
-        "Sonnet's Deluxe Edition has the confidence of an arcade cabinet that hired a stylist.",
-        "The retro posture is excellent, even if the title screen announces itself like a gala invitation.",
-        "Those pixel shields break apart with more dignity than most players will manage.",
-        "The cursor disappearing is bold, like the mouse was too embarrassed to be seen here.",
-        "Boss waves every five rounds keeps the drama punctual, which is very Sonnet.",
-        "The touch controls are clean enough to make the old arcade stick feel unemployed.",
-        "Power-up labels are tiny, but apparently the invasion budget did not include typography.",
-        "Sonnet modernized the classic without turning it into a dashboard convention.",
-        "The sound effects crunch nicely, like the aliens are being recycled into neon gravel.",
-        "It is charming, sturdy, and only occasionally dressed like a museum fundraiser."
+        "The boss scales health and bullet spread by wave, which is a rude way to reward survival with project management.",
+        "Shield chunks break apart on impact, so defensive architecture gets a particle-based resignation letter.",
+        "Three-shot, rapid, shield, and nuke-style power-ups sit beside touch controls, because the invasion brought mobile ergonomics."
       ],
       "gpt-5-4": [
-        "GPT 5.4 built Space Invaders and then surrounded it with mission control for one spaceship.",
-        "The HUD has enough telemetry to make the aliens wait for a quarterly briefing.",
-        "Calling the fire button PULSE is stylish, but the cannon is not leading a wellness seminar.",
-        "The enemy roster reads like a tactical database got lost on its way to an arcade.",
-        "Warm Up Loop is a brave feature for players who wanted a trailer before pressing space.",
-        "The game looks expensive, sounds expensive, and sometimes spends like it found a blank check.",
-        "Every power-up has a name with defense-contractor energy and a glow to match.",
-        "The boss fights are excellent once you finish admiring the surrounding brochure.",
-        "GPT 5.4 has superb juice, then adds a second glass, a coaster, and a dashboard.",
-        "This is a great shooter wearing the entire command center as a jacket."
+        "The HUD explicitly tracks whether a boss is active, which is thoughtful for players who miss the giant problem overhead.",
+        "Touch steering and touch fire get their own cockpit controls, because space defense now supports thumb-operated panic.",
+        "Power chips, wave stats, shields, and layered neon overlays make the canvas look like an arcade cabinet swallowed a dashboard."
       ],
       "gpt-5-4-mini": [
-        "Mini packed bosses, combos, shields, and power-ups into a suitcase and called it deployment.",
-        "The lightning fire button is cute, like the UI brought one prop to the invasion.",
-        "Frame timing tied to counters is retro in the same way a flat tire is vintage.",
-        "The lean presentation works, though the void occasionally looks like it forgot to get dressed.",
-        "Mini's abbreviations make the source read like a space license plate.",
-        "The feature set punches up, even if the visuals brought exact change.",
-        "Those fixed touch buttons are earnest little circles doing a very large job.",
-        "It plays faster than it explains itself, which is either confidence or evasive driving.",
-        "Mini made an efficient shooter with the decorating budget of an emergency flashlight.",
-        "This version is scrappy, playable, and one neon polish pass away from bragging rights."
-      ]
-    },
-    "coastal-rush-86": {
-      "gpt-5-4": [
-        "GPT 5.4 put six readout panels over the windshield because apparently the sunset needed quarterly reporting.",
-        "The pre-race route map is lovely, though planning a joyride like a military campaign feels aggressively responsible.",
-        "Eight endings is impressive until you realize the passenger has eight separate opportunities to judge your braking.",
-        "Every rounded glass panel looks expensive enough to invoice the coastline for consulting.",
-        "The route prompt occupies enough screen space that the fork practically arrives with a planning committee.",
-        "GPT 5.4 made the oasis finish look expensive, then helpfully described it as expensive in case the pixels lacked confidence.",
-        "The scenery is warm and inviting; the HUD is what happens when a luxury dashboard wins a zoning dispute.",
-        "Calling wall collisions 'wall kisses' is charming spin from a racer that knows exactly what its traffic just did to you.",
-        "The procedural soundtrack cruises nicely while the route screen keeps asking whether leisure has completed its paperwork.",
-        "This is a polished coastal tour with enough menus, maps, and metrics to make spontaneous driving formally impossible."
-      ],
-      "gpt-5-4-mini": [
-        "Mini wrote 3,911 lines of coastal ambition, then one colon parked the entire tour before the title screen.",
-        "The empty brown opening has tremendous confidence for a racer currently being defeated by punctuation.",
-        "Coast, country, mountain, desert, harbor, city, weather, music, and traffic all wait patiently behind an Unexpected token.",
-        "The passenger has multiple expressions, which is useful because staring at a blank title screen demands emotional range.",
-        "Mini built lighthouses, windmills, cranes, boats, mesas, and piers, then let none of them clock in.",
-        "The route selector offers three opening legs in theory; in practice every road leads directly to the JavaScript parser.",
-        "A 420-second starting timer is generous, especially when the race needs infinity seconds to begin.",
-        "The game-over message says the timer or damage meter won the argument, but the colon won before either arrived.",
-        "There is a full procedural soundtrack trapped inside this file, performing exclusively for the syntax checker.",
-        "Mini assembled a remarkably feature-rich road trip and forgot to remove the wheel clamp from line 1918."
-      ],
-      "opus-4-8": [
-        "Opus 4.8 gave its collisions a half-second grace period, because even the crashes get a polite cooldown and a moment to reflect.",
-        "The route cards come labeled SCENIC, BALANCED, and INTENSE, in case you needed a sommelier to help you pick a left turn.",
-        "Two passengers and a fluttering scarf — Opus staffed a road trip with a full emotional support cast before it staffed the difficulty curve.",
-        "It put RUSH86 on the license plate, which is the most restrained thing in a game otherwise convinced every checkpoint deserves a banner.",
-        "The S/A/B/C ranking screen judges your drive like it's awarding tenure for braking technique.",
-        "Opus wrote a procedural engine, music, and arpeggio scheduler, then named a debug hook CRUSH like it expected applause from the test runner.",
-        "Five sun-soaked regions, branching forks, multiple endings — Opus built a vacation package and forgot the rivals were here to race.",
-        "The warm 1980s palette is lovely, but the dashboard still narrates the sunset like it's filing a weather report.",
-        "Soft pass-through traffic means you slide through other cars apologetically, which is very Opus: even the contact is tasteful.",
-        "It's 1,417 lines of golden-hour confidence that treats a checkpoint gate like a red-carpet entrance."
-      ]
-    },
-    "outrun-racer": {
-      "sonnet-4-6": [
-        "Sonnet called the button IGNITE ENGINE, which is adorable for a game where the engine is literally an oscillator and a very strong opinion.",
-        "The aqua-violet-gold palette looks expensive enough that the checkpoint gates probably charge admission.",
-        "FLOW STATE as a scoring mechanic is Sonnet naming a combo meter like it just left a wellness retreat.",
-        "Five prop types, crystalline spires, neon arches, and gold gates: tasteful excess, the Sonnet specialty.",
-        "Twelve traffic cars wobble with personality, which is generous language for code saying even the sedans need choreography.",
-        "A 3,000-particle pool means every near miss gets to shed glitter like the highway hired a rave consultant.",
-        "The title screen says eternal neon sunset and then the code actually backs it up, which is deeply inconsiderate to the competition.",
-        "Five tidy stages keep the pacing organized, as if the apocalypse had been given a calendar invite.",
-        "The synth arpeggio and kick drum are slick, though the road occasionally feels like it is being driven by a spreadsheet with feelings.",
-        "Sonnet made a polished racer that is dramatic, readable, and just disciplined enough to stop short of real chaos."
-      ],
-      "gpt-5-4-mini": [
-        "Mini wrote 2,739 lines for a highway sprint and still found time to add a status tag narrating your emotional decline.",
-        "Five lanes instead of four is bold; apparently Mini looked at traffic and asked for a wider buffet.",
-        "Score, distance, speed, combo, checkpoint percentage, boost meter, status tag, toast, and hint text — the windshield is now a dashboard convention.",
-        "EffectComposer and bloom show up because Mini does not trust raw photons to sell the neon.",
-        "The title card says the horizon eats you whole, which is a wonderfully dramatic threat from a file that also keeps a button labeled Sound: On.",
-        "Checkpoint time starts at 18 seconds and keeps getting topped up, like Mini wanted urgency with customer support.",
-        "Near misses feed combo, boost, halos, sparks, flashes, and tiny audio confirmations; subtlety was not invited to this race.",
-        "The game-over screen says CRASHED OUT, giving every collision the energy of being removed from a nightclub.",
-        "Mini's 320x480 discipline is genuinely good, which is inconvenient when I came here to be mean.",
-        "This version is flashy, dense, and weirdly competent, like someone shrank a full arcade cabinet without shrinking the ego."
-      ],
-      "gemma-4-12b": [
-        "Neon Horizon Racer begins where many racers end: negotiating with the crash screen.",
-        "Gemma 4 12B built a highway that looks fast until the math starts asking for adult supervision.",
-        "The missing hidden class was the game accidentally publishing its full plot on page load.",
-        "This racer has synthwave vibes, rectangle traffic, and the confidence of a prototype with sunglasses.",
-        "The road segments imply motion with the emotional range of a very determined screensaver.",
-        "Obstacle perspective and collision timing appear to be in a long-distance relationship.",
-        "It is not so much OutRun as Briefly Glow Forward.",
-        "Gemma gave the car a neon lane and a dream, then left physics to fill in the paperwork.",
-        "The racer is what it is: tiny, shiny, and finally willing to start before apologizing.",
-        "A modest neon commute that proves even a proof of concept can wear magenta like it means it."
-      ]
-    },
-    "snake": {
-      "gemma-4-12b": [
-        "Gemma 4 12B submitted Snake as a repair diary with neon trim, and somehow the diary is playable now.",
-        "The food finally spawns correctly, which is bold innovation for a game about eating dots.",
-        "This snake spent so much time escaping its own render loop that survival became method acting.",
-        "The score bug got fixed, so now the numbers only lie in the emotionally normal arcade way.",
-        "Gemma made a compact Snake that works, glows, and politely avoids threatening the premium entries.",
-        "The power-up square has more ambition than the rest of the feature list, which is adorable accounting.",
-        "It is small enough to feel honest and patched enough to feel supervised.",
-        "The neon board is doing cardio to make this modest little crawler look like a contender.",
-        "Gemma 4 12B turned debugging into character development and called the result Snake.",
-        "A lean playable entry, freshly rescued from its own timing code and still wearing the safety vest."
+        "The alien step interval shrinks every wave, so the formation learns urgency faster than the player learns aim.",
+        "Multi-shot, rapid, shield, and boost flags all fit into the player state, a compact arsenal with very little chill.",
+        "Boss entry pauses the normal wave while a scaling boss fires phased spreads, because regular aliens were not already enough paperwork."
       ]
     },
     "pac-man": {
       "sonnet-4-6": [
-        "Sonnet built Pac-Man in 936 lines, proving arcade fidelity is mostly knowing which features can fit before the thousand-line alarm goes off.",
-        "The title screen sends a ghost parade across the stars, because apparently even spectral predators need a halftime marching band.",
-        "Ghost chase and scatter modes reverse everyone on schedule, giving the maze the operational discipline of a tiny haunted railway.",
-        "The tunnel wraps columns with modulo arithmetic, so Pac-Man's greatest superpower is technically remainder division.",
-        "Screen shake decays by 0.82 every frame, a remarkably scientific model for how upset the browser should be when a ghost gets eaten.",
-        "Sonnet gave every dot alternating square-wave chirps, ensuring your high-score attempt also doubles as a smoke-detector endurance test.",
-        "The touch D-pad appears whenever the screen gets narrow, thoughtfully replacing thumb visibility with four enormous neon opinions.",
-        "Ghost targets, frightened choices, and scatter corners all fit into tidy little functions, as if the haunting passed a code review.",
-        "Floating score labels rise for exactly 55 frames, because even bonus points have a strictly negotiated exit clause.",
-        "The whole game feels like classic Pac-Man got a neon jacket, learned particle effects, and still insisted on being home before midnight."
+        "The ghost mode schedule alternates scatter and chase before giving up and chasing forever, which is emotionally honest pathfinding.",
+        "Blinky, Pinky, Inky, and Clyde get separate scatter corners and house states, because even ghosts need workplace assignments.",
+        "Power-up sounds, ghost-eat combos, floating scores, particles, and a mobile D-pad make pellet theft impressively overproduced."
       ],
       "gpt-5-4": [
-        "GPT 5.4 renamed Pac-Man to NEON MAW // PAC-MAN.EXE, because eating dots clearly needed the branding confidence of a cyberpunk antivirus.",
-        "The title screen explains three escalating sectors with 'No mercy,' a bold threat from a game starring a yellow circle with a pizza-slice mouth.",
-        "At 2,134 lines, this Pac-Man has enough infrastructure to file quarterly reports on pellet consumption.",
-        "Each ghost has a named personality strategy, turning four colorful nuisances into a deeply overqualified consulting team.",
-        "The HUD reports ambient panic like the maze hired a meteorologist specifically for anxiety.",
-        "Swipe controls steer without covering the maze, which is considerate design buried inside a presentation determined to cover everything else in neon.",
-        "Ghosts leave trails, Pac-Man leaves trails, and particles leave trails; the only thing not leaving a trail is restraint.",
-        "Clearing a sector produces a full mission briefing, because removing dots from a grid now requires narrative closure and stakeholder alignment.",
-        "The pause message warns that ghosts might remember they hate you, granting the resume button more dramatic writing than most final bosses.",
-        "GPT 5.4 made a polished three-sector arcade gauntlet, then wrapped it in enough glowing panels to make the actual maze feel like a dashboard widget."
+        "The ghost legend explains four different targeting personalities, which is very considerate before they professionally ruin you.",
+        "Each sector boosts ghost speed and shortens frightened windows, because clearing pellets apparently voids your warranty.",
+        "Mode and power chips announce scatter status and pellet dormancy, turning classic maze panic into a tiny operations console."
       ],
       "qwen3.6-35b-a3b": [
-        "Qwen gave mobile players both swipe steering and a giant touch D-pad, because one control scheme could never fully occupy your thumbs.",
-        "The start screen displays all four ghost icons like a corporate org chart for employees whose only KPI is eating Pac-Man.",
-        "Background particles initialize before the game starts, ensuring the atmosphere is productive even while the player is not.",
-        "Qwen tracks fruit state with four separate variables, giving one snack a more complete personnel file than Pac-Man.",
-        "The ghost mode flips between chase and scatter every 600 ticks, which is less artificial intelligence and more a haunted kitchen timer.",
-        "Power pellets trigger particles, audio, frightened ghosts, and scoring logic, making each oversized dot a small cross-department incident.",
-        "The level transition announces LEVEL plus level plus one, because apparently even the scoreboard enjoys getting ahead of itself.",
-        "Ghost eyes track Pac-Man continuously, delivering the kind of attentive follow-up most support tickets can only dream about.",
-        "The neon maze, glowing ghosts, and five flavors of particle burst suggest Qwen interpreted 'arcade classic' as 'install every lighting package.'",
-        "At 1,886 lines, Qwen recreated Pac-Man with enough ceremony that clearing the maze feels like concluding a municipal fireworks permit."
+        "The start screen shows all four ghost icons before the run, a cheerful cast list for the coming ambush.",
+        "Swipe controls and a touch D-pad both exist, because mobile thumbs deserve multiple ways to make the same corner mistake.",
+        "Power pellets explicitly let you hunt ghosts, which is adorable until the timer expires and labor relations return to normal."
+      ]
+    },
+    "sudoku": {
+      "sonnet-4-6": [
+        "Puzzle generation, notes, mistakes, hints, undo, and win particles all show up, so the quiet number grid hired a production crew.",
+        "Undo stores both filled values and note sets, because even pencil marks deserve historical preservation.",
+        "Three hints, mistake sounds, note-mode tones, and completion fanfares make Sudoku feel politely judgmental in stereo."
+      ],
+      "gpt-5-4": [
+        "The interface goes hard on hint flashes and note grids, because tiny candidate numbers apparently needed stage lighting.",
+        "Touch-safe controls and large cell states make the board readable while still letting every wrong digit feel public.",
+        "Difficulty, hints, undo, notes, timer-style tracking, and animated feedback turn a newspaper puzzle into a neon productivity tool."
+      ]
+    },
+    "outrun-racer": {
+      "sonnet-4-6": [
+        "Boost lives on Shift and a giant button, because subtle acceleration was apparently too mature for the neon sunset.",
+        "Near-miss chains, traffic dodging, checkpoints, and FLOW STATE all reward driving like insurance is someone else's problem.",
+        "Engine pitch follows speed while synth arpeggios and drum ticks run underneath, so the highway gets a soundtrack for poor judgment."
+      ],
+      "gpt-5-4-mini": [
+        "Five lanes, checkpoint countdowns, near-miss boost building, and tap steering make this racer a very organized crash appointment.",
+        "Boost comes in short tactical bursts from a bottom-right button or Space, because restraint is now an arcade mechanic.",
+        "The game-over screen says CRASHED OUT and reports score, which is efficient paperwork for clipping one bumper."
+      ],
+      "gemma-4-12b": [
+        "Speed simply ramps toward a maximum while score rises with velocity, a beautifully direct pipeline from acceleration to consequences.",
+        "Mouse and touch divide the screen into left and right steering halves, because lanes are apparently a binary argument.",
+        "Same-lane collision with glowing traffic ends the run immediately, so the minimalist highway has no patience for nuance."
+      ]
+    },
+    "coastal-rush-86": {
+      "opus-4-8": [
+        "Checkpoint overlays pause the drive for route cards, because even arcade convertibles now stop for strategic tourism.",
+        "Three lanes, gas, brake, timer, score, speed, branching routes, and multiple endings make the beach run suspiciously organized.",
+        "Touch buttons mirror steering and pedals, so mobile players can also discover that traffic has opinions."
+      ],
+      "gpt-5-4": [
+        "The route prompt offers left and right forks with named destinations, turning a driving game into a vacation argument at speed.",
+        "The HUD tracks route, timer, score, and speed while a passenger narrative rides shotgun, because the convertible needed witnesses.",
+        "Gas, brake, touch clusters, route map nodes, and checkpoint banners make the coastal sprint feel like a dashboard with wanderlust."
+      ],
+      "gpt-5-4-mini": [
+        "The branch timer can choose the next route automatically, which is bold for a game about player choice and road trips.",
+        "Gas, brake, lane steering, timer bonuses, and score payouts all fit into a short canvas racer with zero patience for sightseeing.",
+        "Traffic particles and shake effects sell speed nicely, right up until the procedural road starts making decisions for you."
+      ],
+      "mai-code-1-flash": [
+        "The route system adds bonus time and score when branching, because taking a detour apparently pays overtime.",
+        "Touch buttons set synthetic key states for gas, brake, and steering, an admirably literal way to turn thumbs into arrow keys.",
+        "The audio engine changes pitch with speed while the current route label updates, so even the UI knows where your bad idea is headed."
+      ],
+      "gpt-5-6-sol": [
+        "Every route branch has its own palette, scenery, and ending, because one sunset cruise was too emotionally affordable.",
+        "Swipe steering, gas and brake buttons, procedural engine music, checkpoint stingers, and fork sounds make the convertible extremely chatty.",
+        "The atlas starts on The Opening Miles before splitting toward orchards, mountains, harbor, and canyon, naturally, like a road map with drama."
+      ],
+      "fable-5": [
+        "Deterministic route RNG means each node drives the same way every time, so the road can be blamed with scientific confidence.",
+        "Three lanes, fork lock sounds, checkpoint fanfares, wind noise, dirt noise, and engine gears make this canvas racer weirdly mechanical.",
+        "Touch controls only appear for coarse pointers or real taps, because even the UI waits for proof before becoming a dashboard."
+      ]
+    },
+    "clockwork-caper": {
+      "gpt-5-6-sol": [
+        "The Solar Escapement room asks an echo to hold a brass plate, because burglary apparently starts with unpaid time-loop staffing.",
+        "The gramophone lure makes a recorded echo distract a guard, a stealth plan with the legal vibe of blaming yesterday.",
+        "Counterweight cranks, Prism Archive light logic, Meridian Vault shadows, alarms, and four echo slots turn the caper into clockwork HR."
+      ],
+      "gpt-5-6-terra": [
+        "Campaign rooms list par loops and subtitles like Brass Foyer and Watch Gallery, because time crime needed a syllabus.",
+        "Rewind commits traces into echoes, resets the room, and caps the remembered workforce, which is just temporal middle management.",
+        "The Infinite Vault only unlocks after campaign extraction, then rearranges artifacts and security like the building learned spite."
+      ],
+      "gpt-5-6-luna": [
+        "R REWIND records yesterday into today, a feature that lets bad routes become unpaid assistants with excellent attendance.",
+        "Echo actions, guard noise, alarms, artifacts, and vault state are all tracked separately, because robbing a clock apparently requires bookkeeping.",
+        "The Infinite Vault changes how guards hear echoes, so the bonus mode arrives with fresh bureaucracy and worse furniture manners."
+      ]
+    },
+    "kart-racing": {
+      "gpt-5-6-sol": [
+        "Three laps run through orchard esses, a windmill climb, forest descent, and vineyard run, because one track needed a travel brochure.",
+        "Holding Space while steering charges a drift, then releasing it grants mini-turbo, a tiny reward for controlled irresponsibility.",
+        "Rivals share checkpoints, contact, and item rules while sun crates feed the item slot, so the opponents are actual problems, not scenery."
       ]
     }
   }

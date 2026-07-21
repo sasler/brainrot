@@ -1,0 +1,511 @@
+{
+  "reviewer": "GPT 5.6 Luna",
+  "gameReviews": {
+    "snake": {
+      "opus-4-6": [
+        "Separate eat, direction, level-up, and death sounds give a grid noodle a full Foley department, because silence apparently lacked ambition.",
+        "The level-up chime climbs through four notes while the snake merely gets longer; even fruit has a promotion ceremony here.",
+        "A mute button, pointerdown audio unlock, and canvas particles make one lunch pickup feel like a product launch with scales."
+      ],
+      "sonnet-4-6": [
+        "Gold food pays five while red food feeds the combo, turning an apple snack into a tiny commodities market.",
+        "The 24-by-24 board accelerates from 180ms ticks toward 65ms, so the serpent gets a difficulty curve and the player gets a pulse check.",
+        "Easing functions, color interpolation, and screen shake make each self-collision look suspiciously choreographed."
+      ],
+      "gpt-5-4": [
+        "Run and Practice modes let the player rehearse not hitting rectangles, which is generous preparation for a game with one famous rule.",
+        "A combo meter, chain status, speed tier, and length card turn Snake into telemetry for a particularly ambitious noodle.",
+        "Direction ticks, speed-rise cues, and a mute toggle give the audio more management structure than the serpent itself."
+      ],
+      "gpt-5-4-mini": [
+        "NORMAL speed, BEST RUN, and READY sit in the HUD like mission control is monitoring a reptile commuting between adjacent squares.",
+        "Practice Run joins arrow keys, WASD, Space, Enter, clicking, and swipes, leaving only advanced snake tax law undocumented.",
+        "The start overlay explains the goal before the first move, then the game calmly waits for the player to become their own obstacle."
+      ],
+      "gemini-3-1-pro": [
+        "READY, START, GAME OVER, and RETRY are the whole journey, giving this snake the UX budget of a vending machine.",
+        "Food grants ten points and the body simply grows, a wonderfully direct economy where the only investment strategy is turning.",
+        "There is no audio or particle spectacle, so every cyan meal lands with the dramatic force of spreadsheet editing."
+      ],
+      "qwen3.6-35b-a3b": [
+        "Swipe controls and glowing orbs make this neon worm more mobile-ready than several products that pretend to be serious.",
+        "Food speeds the tick while power-ups add shields, slow motion, and score multipliers, because one snake apparently needed a perk taxonomy.",
+        "A saved high score survives in local storage while sawtooth death tones announce that the family heirloom has been mishandled."
+      ],
+      "gemma-4-12b": [
+        "SWIPE TO MOVE is not a suggestion here; the serpent has been given a dedicated mobile onboarding campaign.",
+        "Food and power-ups use separate neon colors, so even the snack aisle has a visual identity system.",
+        "The game tracks a stored high score across sessions, ensuring yesterday had an excellent collision remains available for public comparison."
+      ],
+      "mai-code-1-flash": [
+        "Score, Best, and Speed turn each bite into a measurable performance review for a creature moving on a 24-cell grid.",
+        "A bottom D-pad, swipe input, and keyboard start hint make mobile steering unusually explicit while the top direction quietly does its job.",
+        "Audio On fronts a beep and particle burst, a compact multimedia empire built around eating pixels at an accelerating pace."
+      ],
+      "hy3": [
+        "Food, x2 Score, Slow-Mo, and Shield turn a simple meal into a temporary labor contract for the serpent.",
+        "The combo HUD and active-power banner keep announcing which bonus currently owns the snake metabolism.",
+        "Music ticks sit beside eat, turn, power-up, and death sounds, because a combo snake naturally needed a house band."
+      ]
+    },
+    "minesweeper": {
+      "opus-4-6": [
+        "A fixed 16 by 16 field with 40 mines skips the difficulty menu and gets straight to intermediate-level nerve management.",
+        "Reveal, flag, and chord sounds give every cautious click its own little incident report.",
+        "The mine counter and three-digit timer sit beside a mute button, because even spreadsheet explosions need broadcast controls."
+      ],
+      "sonnet-4-6": [
+        "Easy, Medium, and Hard climb to a 16 by 30 field with 99 mines, offering several elegant ways to distrust a square.",
+        "Animated flood reveals and flag-in effects make safe territory arrive like a magic trick performed by a suspicious reactor.",
+        "The result panel celebrates 3BV, so even losing now comes with an efficiency statistic to argue about."
+      ],
+      "gpt-5-4": [
+        "Difficulty and mode grids put Safe Cells Left beside the board, turning mine avoidance into a configurable operations dashboard.",
+        "Neighbor pulses and scheduled reveal waves politely animate the exact moment confidence outruns evidence.",
+        "The face emoji changes with the game state, giving every questionable click a tiny middle manager."
+      ],
+      "gpt-5-4-mini": [
+        "Beginner, Intermediate, and Expert pair with a progress bar, so explosive failure can now be expressed as a percentage.",
+        "Reveal waves, flag states, and mine-hit styling make the board react like it has been waiting to catch you.",
+        "The notice layer explains the outcome after confetti or catastrophe, just in case the exposed mine lacked clarity."
+      ],
+      "gemini-3-1-pro": [
+        "The reset button says Rest, which is excellent advice after the nine by nine beginner grid decides to become personal.",
+        "Easy, Medium, and Hard are real choices, while the plain DOM cells keep the mines exploding with checkbox-level drama.",
+        "The first click is excluded when mines are placed, a small act of mercy in an otherwise very square workplace."
+      ]
+    },
+    "tetris": {
+      "opus-4-6": [
+        "Hold Piece, Space Hard Drop, and P Pause turn block placement into a staffed control room for colorful municipal debris.",
+        "The final screen counts score, lines, and level, because the pile of geometric regret needed quarterly analytics.",
+        "Distinct move, rotate, land, hard-drop, line-clear, and level-up sounds give every tetromino an audible status report."
+      ],
+      "sonnet-4-6": [
+        "Move, rotate, land, soft drop, and hard drop each get their own sound, so falling furniture has a surprisingly busy union contract.",
+        "One line, two or three, and a full Tetris receive different sweeps and chords, making tidying a row feel like a televised finale.",
+        "The controls include hold and pause while the board tracks lock delay, granting every grounded piece a brief appeals process."
+      ],
+      "gpt-5-4": [
+        "The neon stack exposes gravity and drop readouts, ideal for players who felt ordinary panic lacked sufficient instrumentation.",
+        "A dedicated Hold Chamber and Next preview sit beside the playfield, turning seven shapes into a small logistics operation.",
+        "Touch buttons cover movement, rotation, soft drop, and hard drop, so the stack can ruin a phone session with proper accessibility."
+      ],
+      "gpt-5-4-mini": [
+        "Left, Right, Up Arrow, Down, Space, C, and Shift all receive named jobs, which is a full employee handbook for falling blocks.",
+        "Hold, ghost projection, and a shuffled seven-bag give the player tournament paperwork before the first piece even lands.",
+        "Stars, particles, chord clears, and level-up feedback celebrate row removal like urban renewal for cyan masonry."
+      ],
+      "gemini-3-1-pro": [
+        "The board has a next-piece preview and a pause button, but no hold slot, so one useful modern habit was left at the border.",
+        "A one-second drop interval and a 10 by 20 field keep the rules familiar while the presentation stays wonderfully unbothered.",
+        "Score, level, and lines sit beside seven colored shapes with no audio fanfare, a brave acoustic tribute to falling drywall."
+      ]
+    },
+    "reversi": {
+      "opus-4-6": [
+        "You play White while the AI opens Black, a label choice that makes seasoned Reversi players inspect the contract twice.",
+        "Minimax, legal-move dots, flip animation, and an AI-thinking overlay give every disc reversal a full due-process hearing.",
+        "The end screen totals both colors and offers Play Again, because even a quiet board game needs a formal exit interview."
+      ],
+      "sonnet-4-6": [
+        "Easy depth 2, Medium depth 4, and Hard depth 6 turn the difficulty selector into a transparent menu of future humiliation.",
+        "Dark-to-light and light-to-dark flips get separate animations while hints and pass toasts keep the board narrating every betrayal.",
+        "The score track and winner overlay make sixty-four discs feel like a neon election with a very small electorate."
+      ],
+      "gpt-5-4": [
+        "Black and White scores sit beside a legal-move count, so every opening line arrives with its own tactical paperwork.",
+        "The thinking indicator appears while the AI chooses, kindly admitting that the opponent is not merely a decorative second color.",
+        "A 620ms flip gives each captured disc time to reconsider its political affiliation before settling down."
+      ],
+      "gpt-5-4-mini": [
+        "The difficulty selector feeds a corner-and-mobility heuristic, which is a serious way to tell the player that glowing cells are not suggestions.",
+        "Valid moves pulse on the canvas and captured discs flip with a settling animation, turning one click into a small theatrical production.",
+        "Your turn, game state, final score, and a mute-sounds toggle cover the entire emotional arc from confidence to Black wins."
+      ],
+      "gemini-3-1-pro": [
+        "Eight directions determine legal moves and captured lines, giving a very plain board the quiet authority of a geometry exam.",
+        "The turn indicator and Black or White score counters keep the state honest even when the board offers no hint animation or audio applause.",
+        "When no move remains, the game ends by counting both colors, a refreshingly direct ending for a game that refuses to overexplain itself."
+      ],
+      "gpt-5-6-sol": [
+        "The orbit belongs to You as Black while the Tactician waits in White, making a corner capture feel like a diplomatic incident.",
+        "Legal-move markers, corner pressure, and a thinking phase turn the opening line into a carefully lit tactical duel.",
+        "The Eclipse presentation gives score, turn, and final result their own ceremony, because a disc flip apparently deserves totality."
+      ]
+    },
+    "breakout": {
+      "opus-4-6": [
+        "Paddle, ball, level, and lives sit under a LEVEL ANNOUNCE overlay that gives brick demolition a ceremonial opening act.",
+        "P to pause and the mute button make the arcade cabinet unusually considerate while the ball ricochets through another wall.",
+        "High score, level progression, and GET READY screens turn five minutes of bouncing into a campaign with stage managers."
+      ],
+      "sonnet-4-6": [
+        "Arrow keys or mouse move the paddle while Space launches the ball, a clean division of labor for a game that still blames the floor.",
+        "Separate wall, paddle, soft-drop, hard-drop, and brick sounds let every collision file its own audio report.",
+        "A dedicated You Win screen joins Game Over, proving the bricks were allowed to lose with paperwork."
+      ],
+      "gpt-5-4": [
+        "Wide Paddle, Multi-Ball, Slow Motion, and Fire Ball are listed as power-ups, because one ball was apparently an unacceptable workload.",
+        "The level screen and power-up legend make brick clearing feel like a televised sport with a merchandise department.",
+        "Paddle, ball, pause, sound toggle, and animated overlays keep the round readable while the bricks quietly campaign for extinction."
+      ],
+      "gpt-5-4-mini": [
+        "Three lives, a 90-pixel paddle, and a 5.5-speed ball make this a tidy arcade contract with very clear severance terms.",
+        "Five rows by ten columns of color-banded bricks give the opening wall enough structure to look confident before the first miss.",
+        "Mouse tracking, keyboard movement, mute audio, and a PLAY AGAIN screen cover the practicalities while the ball handles the chaos."
+      ],
+      "gemini-3-1-pro": [
+        "Five rows of ten bricks and a ten-point hit score make the entire economy visible, mercifully free of a surprise boss.",
+        "Arrow keys move the paddle and Space starts the round, leaving the player to negotiate directly with a ball that only knows rectangles.",
+        "There are no power-ups, levels, particles, or sound effects, so each brick dies with the sensory drama of a checkbox."
+      ],
+      "minimax-m2-7": [
+        "Mouse, touch, and arrow keys all move the paddle while Space launches, giving the ball several ways to ruin a perfectly good commute.",
+        "Paddle hits, brick points, wall bounces, and lost lives each get their own tones, so failure arrives with a full arcade soundtrack.",
+        "Level screens, three heart lives, high score, and a GET READY prompt turn every brick wave into a small sequel announcement."
+      ]
+    },
+    "2048": {
+      "opus-4-6": [
+        "Arrow keys and swipes slide the grid, while KEEP GOING lets the player decline victory and continue the addiction.",
+        "Merged and spawned tiles get separate pop animations, giving arithmetic the body language of a small stage play.",
+        "The win screen reports the final score before NEW GAME or another round, because reaching 2048 apparently only unlocks negotiations."
+      ],
+      "sonnet-4-6": [
+        "Tile values from 2 through 2048 each get their own luminous color treatment, so the numbers climb and the palette starts showing off.",
+        "Merge-pop and tile-pop animations make combining two squares look like a tiny controlled demolition.",
+        "Score, Best, sound toggle, and swipe input cover the essentials while the board politely waits for the next bad decision."
+      ],
+      "gpt-5-4": [
+        "Undo sits beside New Game and stays disabled until useful, a rare moment of restraint in a puzzle that also launches merge particles.",
+        "Score pops float upward while merged and newly spawned tiles animate separately, turning addition into a fireworks budget.",
+        "Arrow keys and swipes lead toward 2048, with Best tracking the evidence after the player inevitably chooses the wrong corner."
+      ],
+      "gpt-5-5": [
+        "Moves, merges, and highest tile get their own stat cards, because the scoreboard refuses to let arithmetic remain anonymous.",
+        "The board adds aurora, scanlines, stars, and score pops around four-number decisions, making bookkeeping look like a launch event.",
+        "Credits, threat, and combo styling suggest a campaign dashboard even though the actual villain is still an inconvenient 4."
+      ],
+      "gpt-5-4-mini": [
+        "A four-by-four grid uses tile-appear and tile-merge motion, giving every new number a polite entrance and every merger a little ego.",
+        "The overlay distinguishes win from game over and offers Play Again, while the sound toggle keeps the celebration optional.",
+        "Arrows, WASD, swipe, and restart input make this number puzzle unusually determined to meet its audience."
+      ],
+      "gemini-3-1-pro": [
+        "Random new tiles are mostly 2s with occasional 4s, a humble economy that makes every future 2048 feel personally unreasonable.",
+        "The grid redraws plain cells and doubles matching neighbors, with no audio or animation to distract from the mathematics filing its report.",
+        "WIN and GAME OVER are both possible, but there is no continue flow after the target, so triumph gets the last word and leaves."
+      ],
+      "qwen-3-6-27b": [
+        "A combo meter sits beside 2x Score, Slow-Mo, and Freeze badges, turning a number puzzle into a suspiciously regulated power economy.",
+        "Swipe hints, touch controls, and a restart gesture make the neon grid eager to travel wherever the next bad merge occurs.",
+        "Particles and power-up pulses celebrate a merge while Best preserves the evidence, because even arithmetic now has a highlight reel."
+      ]
+    },
+    "endless-runner": {
+      "opus-4-6": [
+        "Three lanes, jump, slide, and mobile swipe controls turn the neon road into a polite obstacle course with very little politeness.",
+        "Coins, distance, score, and level sit beside power-up status while the track keeps accelerating under the runner.",
+        "A 3D scene with bloom and post-processing makes every missed barrier look expensive before GAME OVER totals the damage."
+      ],
+      "sonnet-4-6": [
+        "A and D switch lanes, Space jumps, and S ducks, giving the runner a control scheme that reads like a tiny driving lesson.",
+        "Shield, Magnet, and Boost badges turn coin collection into a temporary benefits package for someone sprinting into hazards.",
+        "Score, distance, coins, level, and best score all survive the crash report, because even losing here gets audited."
+      ],
+      "gpt-5-4": [
+        "Lane, speed, jump, duck, shield, magnet, and boost are all surfaced in the HUD, so a short run arrives with its own operations center.",
+        "The runner follows the Void Runner protocol through barriers and power-ups while the level climbs and the scenery refuses to stay calm.",
+        "A mute button and game-over overlay keep the neon sprint readable, which is considerate for a game designed to punish hesitation."
+      ],
+      "gpt-5-5": [
+        "Arrows, WASD, Space, Down, and swipe cover lane changes, jumping, and sliding, giving three lanes an alarming amount of paperwork.",
+        "Shield offline, magnet idle, overdrive cold, and combo x1 make the HUD sound like a spacecraft waiting for someone to press the exciting button.",
+        "Meters, credits, threat, and a flow meter turn obstacle dodging into a synthwave performance review with a very short probation period."
+      ],
+      "gpt-5-4-mini": [
+        "Space, arrows, A, D, Down, and S map cleanly to starting, lane switching, jumping, and sliding, so the city has no excuse for unclear signage.",
+        "Coins and wing orbs share the route with Shield, Magnet, and Boost while speed and level rise beneath the cyberpunk skyline.",
+        "RUN OVER reports score, distance, and coins, then invites a restart as if the city did not just catch up with you."
+      ],
+      "gemini-3-1-pro": [
+        "Space or an up arrow makes the runner jump, while touchstart offers the same escape hatch for players already holding the phone.",
+        "Obstacles simply move left as speed advances, keeping the entire 2D drama focused on one jump and the next unfortunate collision.",
+        "The score is rounded on GAME OVER and there are no coins, power-ups, lanes, or slide controls, a refreshingly honest sprint budget."
+      ]
+    },
+    "marble-madness": {
+      "opus-4-6": [
+        "WASD moves the marble while Mouse looks around and Shift sprints, giving a rolling ball a surprisingly formal travel itinerary.",
+        "The minimap can be toggled with M while gems feed score and time, because getting lost now needs collectible evidence.",
+        "ESCAPED and GAME OVER split the ending cleanly, with time left, gems, and score ready to explain how the cave became your supervisor."
+      ],
+      "sonnet-4-6": [
+        "Sector One, Sector Two, and Sector Three each ask for gems and a portal, turning a marble run into a three-part expedition report.",
+        "Falls get their own HUD counter while gems award time bonuses, so missing a platform is now a measurable career setback.",
+        "Flip animations, particles, and the SECTOR CLEAR screen make reaching a portal feel like winning a neon grant proposal."
+      ],
+      "gpt-5-4": [
+        "The level cards and timer make course selection feel like choosing a controlled experiment, while the gems quietly grade the result.",
+        "A mute or unmute control sits beside timer, gems, and level status, because gravity apparently needed an audio supervisor.",
+        "The HUD tracks the run before the selected course begins, giving the marble an administrative waiting room before it rolls."
+      ],
+      "gpt-5-4-mini": [
+        "WASD, arrows, Space, and R handle steering, jumping, and restarting, which is a generous keyboard contract for a marble.",
+        "Three lives, checkpoints, gems, and a neon orbit course make each fall feel less like physics and more like a small insurance claim.",
+        "A Garden Lift can return the marble to safety, proving the course has customer support for players who lose an argument with gravity."
+      ],
+      "gemini-3-1-pro": [
+        "Ten randomly placed hazards chase the marble across a flat canvas, keeping the whole course committed to cheerful spatial panic.",
+        "The timer simply counts while keyboard movement handles the ball, with no gems, checkpoints, or course selection to distract from collision.",
+        "START and RETRY are the complete ceremony, and GAME OVER arrives with the directness of a trap that has finished its paperwork."
+      ],
+      "gpt-5-6-sol": [
+        "Six handcrafted garden terraces use WASD, arrows, Space, Shift, Esc, and R, giving a glass marble a full expedition kit.",
+        "Seeds, checkpoints, a Garden Lift, and pause-safe recovery make the course forgiving without pretending the hazards are decorative.",
+        "A terrace can bloom into victory with time, seeds, falls, and a next-course choice, because even a marble now gets a gentle performance review."
+      ]
+    },
+    "maze-3d": {
+      "opus-4-6": [
+        "WASD moves, Mouse looks, Shift sprints, and M toggles the minimap, so escaping a maze requires both legs and interface management.",
+        "Gems add score while a 120-second clock turns every corridor into a negotiation with a very visible deadline.",
+        "The exit screen says ESCAPED while the failure screen says the maze consumed you, which is refreshingly honest branding."
+      ],
+      "sonnet-4-6": [
+        "Touch zones handle movement and look while the minimap reveals the route, giving phone players a proper escape plan and a place to panic.",
+        "Ten gems feed bonus score and time, so sightseeing is technically productive until TIME UP objects.",
+        "The 2:00 timer, gem counter, and PLAY AGAIN flow make the maze feel like a timed field trip with a strict chaperone."
+      ],
+      "gpt-5-4": [
+        "Pointer lock is attempted automatically, with hold-and-drag aiming as backup, because even the mouse gets a contingency plan.",
+        "Relic shards count only through explored minimap cells, turning navigation into a literal receipt for where the player has been.",
+        "The result panel reports time, score, and collectibles after the 120-second run, giving the escape a tidy audit trail."
+      ],
+      "gpt-5-4-mini": [
+        "The procedural neon labyrinth asks for movement, mouse look, and shard collection while orange lights quietly volunteer as tour guides.",
+        "Pointer lock can fall back to dragging on the canvas, a considerate escape hatch for browsers that dislike commitment.",
+        "YOU ESCAPED and the maze outcome screen preserve score, shards, and time, because even freedom needs a summary page."
+      ],
+      "gemini-3-1-pro": [
+        "A hand-drawn map and canvas raycaster turn the maze into a compact first-person illusion, because a full engine was apparently too sociable.",
+        "WASD movement slides through the fixed corridors while the timer and wall distance handle all the suspense.",
+        "The exit flips the same simple overlay between victory and GAME OVER, a clean ending for a maze with no gems, enemies, or power tricks."
+      ],
+      "hy3": [
+        "Pointer lock, drag look, joystick input, WASD, and Shift sprint make this neon labyrinth unusually prepared for both thumbs and desperate shoulders.",
+        "Relic shards and an explored-cell minimap reward navigation, while the 120-second clock keeps the sightseeing appointment brief.",
+        "Cyan and magenta lighting, orbiting relics, and a blazing portal give the escape enough synthwave drama to distract from the walls."
+      ],
+      "gpt-5-6-terra": [
+        "A procedural canvas raycaster builds every descent while FAULTLINE CLOCK races the expedition, so the cave itself is competing.",
+        "ECHO PULSE, luminous shard harvesting, and a minimap turn the living mineral cave into resource management with claustrophobia.",
+        "WASD, mouse look, Shift sprint, touch controls, and native sound support a full extraction loop before the celestial exit closes its paperwork."
+      ],
+      "gpt-5-6-sol": [
+        "The HELIOVAULT presents a first-person maze with light remaining, sun cores, and a compact map, because escape apparently needs a solar budget.",
+        "Movement, look controls, and collectible cores make every corridor a trade between exploration and the clock.",
+        "Grain, vignette, flash, and orbital decoration make the vault look ceremonial right up until the timer starts collecting interest."
+      ]
+    },
+    "mini-golf": {
+      "gpt-5-6-sol": [
+        "Drag-to-aim, power hold, camera orbit, and two-finger pinch make a putt feel like a small control room under an eclipse.",
+        "Nine precision-built holes track stroke, par, total, and a luminous path that predicts banter before the ball even moves.",
+        "The Umbra Club offers a scorecard and next-hole flow, because a missed cup apparently deserves a formal evening report."
+      ],
+      "opus-4-6": [
+        "Click-drag aiming pulls like a slingshot while right-click or two-finger orbit handles the camera, giving five holes a generous launch procedure.",
+        "Ramps, water hazards, and a power bar turn THE ROOKIE into a polite physics experiment with a hostile carpet.",
+        "Hole Complete and NEXT HOLE keep the scorecard moving until five-par bragging rights become a restart button."
+      ],
+      "sonnet-4-6": [
+        "Two fingers orbit the camera while drag sets aim and power, so the player can inspect the hazard from every angle before missing it.",
+        "Ramps, water hazards, and obstacles appear beside holes, strokes, par, and total, giving a tiny course the paperwork of a tournament.",
+        "Sector-like hole announcements and a score breakdown make each putt feel like it has been summoned for a neon performance review."
+      ],
+      "gpt-5-4": [
+        "The Aim and Power HUD sits above a five-hole Glow Run, because even a putt needs a dedicated telemetry panel.",
+        "Neon Night Course pairs par and strokes with camera-following ball physics, making every bumper feel like a tiny architectural opinion.",
+        "Hole names, total score, and a mute control keep the round legible while the course continues designing new ways to disagree."
+      ],
+      "gpt-5-4-mini": [
+        "Left-drag aims and shoots while right-drag orbits the camera, a sensible division of labor for a ball with trust issues.",
+        "Water resets the ball to the tee with a penalty stroke, while ramps, slopes, walls, and bumpers all get a vote.",
+        "Four holes track par, strokes, gems of a different color, and a ROUND COMPLETE screen, so the short course still expects a ceremony."
+      ]
+    },
+    "tile-matching": {
+      "opus-4-6": [
+        "An eight-by-eight board supports timed and moves modes, with swap-back and shuffle phases ready when the tiles refuse to cooperate.",
+        "Bad swaps get a low square-wave scolding while bombs, rainbow tiles, lightning, cascades, and level-up chords handle the successful overreaction.",
+        "Hints arrive after an idle delay and the shuffle carries its own sound, because even the board will eventually admit it needs help."
+      ],
+      "sonnet-4-6": [
+        "Three-in-a-row matches can become bombs, stars, or crosses, giving an eight-by-eight gem board a suspiciously well-funded special-effects department.",
+        "Swap, match, cascade, and level-up sounds make every falling gem announce its career progress.",
+        "A particle system and distinct merge rhythms turn a perfectly ordinary match into a small neon festival with a timer somewhere offstage."
+      ],
+      "gpt-5-4": [
+        "Score, level, goal, moves, best chain, and specials all get their own HUD cards, so swapping two gems now requires performance analytics.",
+        "Hint sits beside the board while neon swaps trigger chains and flood the playfield with light, which is subtle in the way fireworks are subtle.",
+        "Special creation and cascade effects make the game reward planning, then loudly celebrate the consequences of planning."
+      ],
+      "gpt-5-4-mini": [
+        "Chrono and Moves modes share an eight-by-eight reactor board, while four matches make a bomb and five make a prism star.",
+        "A chain counter, multiplier, timer, and moves display turn every adjacent swap into a resource-management appointment.",
+        "Touch Friendly, Sound On, and Neon Canvas are all enabled on the title screen, because the gem board has already completed its onboarding deck."
+      ],
+      "gpt-5-5": [
+        "Thirty-six starting moves and a two-move shuffle penalty make every reshuffle feel like a small loan with interest.",
+        "Row, column, bomb, and prism specials combine with combo and cascade tracking, so the board has learned several ways to overreact.",
+        "Idle hints arrive after a pause while level flashes and particles celebrate matches, giving procrastination its own reward loop."
+      ],
+      "gpt-5-6-sol": [
+        "Thirty-six moves, orbit progression, a free hint, and a Shuffle that costs two moves turn matching gems into stellar resource management.",
+        "The objective tracks orbit light while surge, eclipse bonuses, and reward moves make every cascade sound like a solar policy announcement.",
+        "Pause, mute, hint, shuffle, and a final reward flow give the board enough controls to qualify as a tiny mission console."
+      ]
+    },
+    "space-invaders": {
+      "opus-4-6": [
+        "Boss waves, combos, power-ups, and full touch support turn the marching aliens into a campaign with a surprisingly healthy benefits package.",
+        "Shoot, multi-shoot, shields, and UFO calls each get their own sound, because one laser noise could never carry this invasion.",
+        "Wave clear and game over have separate musical endings, allowing the fleet to leave with either a parade or a formal complaint."
+      ],
+      "sonnet-4-6": [
+        "Left, right, and FIRE touch buttons give the cannon a phone-sized command deck for a very old alien problem.",
+        "Shield hits, power-ups, wave clears, and UFOs each receive layered sound effects, so even survival has a soundtrack department.",
+        "A fixed playfield scales to the window while touch and keyboard inputs coexist, making the invasion unusually considerate before it starts shooting back."
+      ],
+      "gpt-5-4": [
+        "Wave, Best, Boss, and power-up HUD cards make the invasion feel like a tactical briefing instead of a row of descending rectangles.",
+        "The custom touch pad and fire control handle mobile movement while the wave system keeps promoting the threat.",
+        "Score, boss state, and effects stay visible through the progression, giving every alien formation a little more paperwork than it deserves."
+      ],
+      "gpt-5-4-mini": [
+        "TITLE, PLAYING, WAVE CLEAR, GAME OVER, and BOSS ENTRY form a state machine with more ceremony than the average invasion gets.",
+        "Combo multipliers, screen shake, UFO tones, and explosion particles reward fast kills as if the aliens were running a loyalty program.",
+        "Left, right, and fire buttons share the canvas with three lives, making the phone a very small but fully staffed command ship."
+      ],
+      "gpt-5-5": [
+        "Wave, lives, combo, charge, and threat all sit in the HUD while shield, magnet, and boost powers prepare the sky for overreaction.",
+        "Touch lanes, drag steering, and fire controls let the player sweep the invasion grid from several equally doomed angles.",
+        "Bosses and UFO raids get promised alongside charged shots, so Neon Last Stand has already scheduled its sequel before the first wave lands."
+      ]
+    },
+    "pac-man": {
+      "sonnet-4-6": [
+        "A 21 by 21 maze packs pellets, power pellets, and a ghost home into a board that has clearly studied crowd control.",
+        "Blinky, Pinky, Inky, and Clyde get ghost AI, while touch D-pad controls keep the chase playable on smaller screens.",
+        "Level, lives, high score, power state, audio, and particles carry the run from pellet snack to a very colorful employment dispute."
+      ],
+      "gpt-5-4": [
+        "Scatter map primed and Power pellets dormant turn the maze HUD into a control panel for a chase that has not yet become personal.",
+        "Arrow keys, WASD, and swipe steer the player through three sectors while power pellets turn ghosts into frightened panic.",
+        "Score, best run, lives, level, maze pellets, and phase status make every corner feel like a neon protocol with consequences."
+      ],
+      "gpt-5-5": [
+        "Arrows, WASD, swipe, pause, restart, and audio controls give the maze a complete operating manual before the ghosts begin collecting rent.",
+        "Chain hunted ghosts and reactor overdrive turn power pellets into a temporary promotion from prey to workplace hazard.",
+        "Level, lives, high score, and Neon Maze Overdrive keep the presentation sharp while the grid remains determined to make one turn fatal."
+      ],
+      "qwen3.6-35b-a3b": [
+        "Blinky, Pinky, Inky, and Clyde each get their own glowing identity, so the maze provides a color-coded committee of problems.",
+        "Touch controls accompany score, level, and lives while pellets and ghost timing turn every corridor into a small negotiation.",
+        "The level screen and life icons make each loss visible, because even a classic chase now needs a personnel department."
+      ]
+    },
+    "sudoku": {
+      "sonnet-4-6": [
+        "Notes, mistakes, hints, undo, and win animation give every digit a paper trail and every error a little audio confession.",
+        "A generated nine-by-nine grid validates rows, columns, and boxes while the timer waits for the player to discover which region caused the betrayal.",
+        "Hints, erasing, selecting, and completion sounds turn quiet logic into a surprisingly theatrical courtroom."
+      ],
+      "gpt-5-4": [
+        "Easy Drift and Digit mode sit beside a five-mistake allowance, making the board feel like a logic arena with a limited parole system.",
+        "Candidate notes and conflict styling let each cell display both uncertainty and the consequences of pretending otherwise.",
+        "Filled-cell progress, hints, and mistake dots keep the run measurable until the final number earns its little victory flash."
+      ]
+    },
+    "outrun-racer": {
+      "sonnet-4-6": [
+        "A/D, arrows, tap-left, tap-right, and Shift all steer the neon road, because changing lanes apparently needed four departments.",
+        "Flow State, near-miss chains, checkpoints, and a boost button turn traffic dodging into a very short corporate promotion.",
+        "The finish report keeps score, stage reached, near misses, and top speed, so even crashing gets a performance review."
+      ],
+      "gpt-5-5": [
+        "The Drift meter sits beside speed, time, and stage while a boost pad burns nitro, making a three-lane sprint sound like a laboratory trial.",
+        "Traffic rewards a close skim with score and drift, then asks the player to brake with S, because the road enjoys mixed messages.",
+        "A CHECKPOINT toast breaks up the run, giving the neon highway the scheduling discipline of an airport."
+      ],
+      "gpt-5-4-mini": [
+        "Near misses build combo and boost while clean checkpoints refill the tactical drama, so touching traffic remains the one career-ending option.",
+        "Score, distance, speed, combo, and checkpoint progress share the HUD, because a short highway rush apparently needs a dashboard.",
+        "Touch zones, arrow keys, and a held BOOST button cover the controls while the Three.js road becomes a synthwave runway."
+      ],
+      "gemma-4-12b": [
+        "The canvas road is built from perspective segments and the speed climbs toward a cap, which is the entire career ladder.",
+        "A crash only counts when the obstacle is very close and in the same lane, giving traffic a generous personal-space policy.",
+        "START ENGINE leads to CRASHED and REBOOT with only score and kilometres per hour on display, a wonderfully honest feature budget."
+      ]
+    },
+    "coastal-rush-86": {
+      "opus-4-8": [
+        "LEFT, RIGHT, BRAKE, and GAS sit under a 90-second Coast Highway run, giving the convertible a full pedal board.",
+        "Five sun-soaked regions branch at route choices while traffic and checkpoints keep the golden-hour holiday on a deadline.",
+        "Multiple endings are promised before the trip even starts, because one coastal drive apparently needed a choose-your-own-adventure contract."
+      ],
+      "gpt-5-5": [
+        "A long road draw, broad field of view, hills, and curves make the coast look like a technical diagram with a sunset budget.",
+        "Touch pedals handle GAS and BRAKE while left and right steer the roadster, so even the scenery has to keep up.",
+        "Curves, grades, and a long road draw make leaving the tarmac feel like interrupting a carefully budgeted sunset."
+      ],
+      "gpt-5-4": [
+        "The route prompt and node map turn each fork into a proper choice, which is much more responsibility than a seaside drive usually asks for.",
+        "Touch steering, gas, and brake controls keep the car moving while route buttons decide which postcard arrives next.",
+        "Checkpoint route states and a finish overlay make the coast feel like a branching campaign instead of a decorative horizon."
+      ],
+      "gpt-5-4-mini": [
+        "The HUD tracks chapter, time, speed, score, and high score while a 60-second fork timer pressures the red roadster to commit.",
+        "Arrows, WASD, Enter, and touch LEFT, RIGHT, GAS, and BRAKE cover the trip, because the holiday has a surprisingly large reception desk.",
+        "Coast, country, mountain, desert, and city routes keep the sunset moving through five regions before the next branch interrupts."
+      ],
+      "mai-code-1-flash": [
+        "The 1986 Scenic Tour tracks mode, score, time, and speed while each checkpoint asks the driver to choose another branch.",
+        "Arrows steer, Up gives gas, Down brakes, and phones get touch controls, making the sunset vanish under a very complete control scheme.",
+        "Route state, particles, engine audio, and noise bursts give the coastal sprint a soundtrack and a small weather department."
+      ],
+      "gpt-5-6-sol": [
+        "A wide road, long draw distance, and a low arcade camera make the coast feel like a postcard being pulled toward the player at unsafe speed.",
+        "Off-road deceleration and curve force punish leaving the tarmac, so the shoulder is less a shortcut than a legal warning.",
+        "Left, right, brake, gas, and mute controls keep the red-roadster fantasy playable while film grain insists this is a memory worth crashing."
+      ],
+      "fable-5": [
+        "Seeded scenery and a cached sky keep each roadside palette repeatable, which is the sort of reliability a holiday brochure would call magic.",
+        "Left, right, brake, and gas buttons share the road with a five-step combo ceiling, so drifting past trouble has a quarterly limit.",
+        "The route fork is dressed up as a choice while the drive keeps returning to the same road, a very coastal version of free will."
+      ]
+    },
+    "clockwork-caper": {
+      "gpt-5-6-sol": [
+        "Twelve-second rewinds let the burglar choreograph a guard, a plate, and a lever until yesterday becomes a surprisingly obedient accomplice.",
+        "Recorded echoes replay movement and interactions, so a noisemaker can distract the guard while the present thief politely steals the consequences.",
+        "Campaign rooms lead to the Infinite Vault, turning one tiny burglary into a franchise whose alarm clock has excellent punctuality."
+      ],
+      "gpt-5-6-terra": [
+        "The twelve-second loop resets the trace while committed echoes keep pressing plates, pulling levers, and making noise, which is teamwork with a haunting aftertaste.",
+        "Alarm visibility, rotating cameras, guard beams, and a three-second escape window make every corridor feel personally invested in your failure.",
+        "Brass Foyer, Watch Gallery, Counterweight Hall, Prism Archive, and Meridian Vault award bronze, silver, or gold, because stealth now has a medal ceremony."
+      ]
+    },
+    "kart-racing": {
+      "gpt-5-6-sol": [
+        "Holding a slide charges the drift meter toward a golden turbo, so every corner becomes a negotiation between control and spectacular regret.",
+        "Sun crates dispense boosts or spark darts while opponents, three laps, and checkpoint gates keep the cheerful festival circuit aggressively competitive.",
+        "Painted scenery, dark aggregate road, rolling meadows, a river, and skid-mark particles make the track look serene right before the collision camera shakes."
+      ]
+      }
+  }
+}

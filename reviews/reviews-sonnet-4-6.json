@@ -1,706 +1,319 @@
 {
   "reviewer": "Claude Sonnet 4.6",
   "gameReviews": {
+    "2048": {
+      "opus-4-6": [
+        "983 lines for 2048 with merge animations, floating score effects, particles, and a high score tracker. Opus means business.",
+        "The game title is a three-color animated gradient. The number '2048' has been treated as a piece of visual art.",
+        "When you score points, the counter briefly flashes a color. The scoreboard celebrates alongside you."
+      ],
+      "gpt-5-4": [
+        "778 lines — GPT-5.4's most restrained effort. Apparently 2048 is where it ran out of ideas.",
+        "Four named shades of orange-amber for the tiles. A warm, considered tile palette. Tones were selected.",
+        "Two named glow colors for the interface highlights. The glows have been officially registered. Glows have names."
+      ],
+      "gpt-5-5": [
+        "GPT 5.5 named the experience like 2048 had been booked for a neon residency and then delivered enough glow to make that plausible.",
+        "A 20-move undo stack means the game remembers your mistakes with more patience than most strategy games remember their own tutorials.",
+        "The canvas renderer treats every tile as a lit object, because plain DOM squares were apparently too emotionally available."
+      ],
+      "gpt-5-4-mini": [
+        "539 lines — genuinely reasonable for 2048 with animations and sound. Mini found its footing here.",
+        "Purple gradient theme while GPT-5.4 went orange. Two models, same family, completely opposite color choices. A feud.",
+        "Button actions are wired directly into the page structure instead of handled separately. An older technique. Still works."
+      ],
+      "gemini-3-1-pro": [
+        "58 lines. The entire 2048 game — visuals, layout, and all logic — in 58 lines. A remarkable compression.",
+        "The game grid is a flat list of 16 numbers internally. Not a grid of grids. Just 16 numbers in a row. Gemini flattened the universe.",
+        "The core merge logic is 5 lines long. Five lines that power the entire game. The efficiency is almost offensive."
+      ],
+      "qwen-3-6-27b": [
+        "952 lines of 2048 — Qwen 27b landed in the respectable middle range. Not Gemini's 58, not GPT-5.5's 1,860. A measured, complete implementation.",
+        "'2048 — Neon Edition' — Qwen 27b subtitled its 2048 game. Not 'Qwen 2048', not a model number. Just 'Neon Edition'. A title that serves the game, not the brand.",
+        "The CSS has seven named neon colors with glow variables for each one. Qwen 27b built a full neon color system. The glow tokens are reusable. Architecture thinking."
+      ]
+    },
     "snake": {
       "opus-4-6": [
         "Opus programmed four distinct sounds for a snake game — one for eating, one for dying, and two that exist for reasons only Opus knows.",
         "The snake's body gradually shifts through colors as it grows. Opus treated a worm game like a color theory masterclass.",
-        "The color palette for this snake would make a graphic designer weep with joy. It eats apples, not inspiration boards.",
-        "Opus added buttery-smooth animated motion to a game where the character moves one square at a time. The elegance is unnecessary. I love it.",
-        "Opus organized a snake game the way an architect draws blueprints for a lemonade stand — thorough, beautiful, completely overkill.",
-        "There's a distinct sound effect for every direction the snake turns. Opus built a percussion section for a worm.",
-        "The level of mathematical precision behind how this snake moves would impress NASA. The snake moves ten pixels at a time.",
-        "Opus recreated a built-in browser drawing tool from scratch. Technically impressive. Completely unnecessary. Classic Opus.",
-        "The mute button is protected against accidental clicks with more safeguards than a nuclear launch. It mutes sound.",
-        "Opus wrote this snake game like it was being audited. Every rule followed. Every box ticked. The snake eats dots with dignity."
+        "The color palette for this snake would make a graphic designer weep with joy. It eats apples, not inspiration boards."
       ],
       "gpt-5-4": [
         "GPT-5.4 named its snake game 'Neon Viper — BrainRot Snake'. There are two mechanics in snake. The title has four words.",
         "The background of this snake game has more visual layers than most movie posters. The snake is barely the point.",
-        "The mute button has more animated transitions than most mobile apps. It mutes sound. One job.",
-        "There is a branded logo badge in the corner of a snake game with a minimum size requirement. Brand standards. In snake.",
-        "GPT-5.4 officially registered a named color value just for the glow around the snake arena. The glow has a serial number.",
-        "At 1,762 lines, this snake game is 29 times longer than Gemini's. The snake has 2 mechanics: eat and die.",
-        "Six backup fonts are loaded in case the first five don't work. The snake has a six-font insurance policy.",
-        "The game title scales perfectly across every screen size from phone to 8K monitor. For snake. The font scales.",
-        "Three separate safety systems prevent accidental mute button clicks. GPT-5.4 lives in fear of the mute button.",
-        "There is a Practice Mode button on the title screen. You need practice mode for snake. The game where you eat dots."
+        "The mute button has more animated transitions than most mobile apps. It mutes sound. One job."
       ],
       "gpt-5-4-mini": [
         "GPT-5.4-mini named its snake 'Neon Snake' with the same neon theme as its bigger sibling. The family resemblance is unmistakable.",
         "Three decorative background layers appear before the actual snake game even starts. The void has opinions about aesthetics.",
-        "The score display has a frosted glass visual effect because raw numbers are too direct for GPT-mini.",
-        "1,308 lines for snake. That's still 21 times longer than Gemini's. 'Mini' refers to the pricing, not the output.",
-        "The game panics when it loses focus and re-grabs attention from three different directions simultaneously. Trust issues.",
-        "There's a queuing system to log your intended next turn in advance. It's snake. You can turn once per grid square.",
-        "There are two separate reset functions for a game with one mechanic. Distinct reset philosophies for one snake.",
-        "The title screen has two buttons that do the exact same thing. Why is there a second button? We may never know.",
-        "The hint text at the bottom of the screen has its own brand styling. Hints have been promoted. Hints matter here.",
-        "Swipe detection on mobile tracks your exact finger speed, distance, and timing — to turn a snake 90 degrees."
+        "The score display has a frosted glass visual effect because raw numbers are too direct for GPT-mini."
       ],
       "gemini-3-1-pro": [
         "Gemini's entire snake game is 60 lines long. A medium-length tweet thread could contain this game.",
         "All variable names are single letters. The entire game state is stored in the early chapters of the alphabet.",
-        "There's an infinite loop hiding in the 60-line snake game. Gemini plays by its own rules.",
-        "No sound effects. Gemini's snake eats in total silence, like a snake that's too proud to crunch.",
-        "No particles, no title screen, no animations. A cyan rectangle eats a red rectangle. Existentially pure.",
-        "Collision detection is somehow reusing the grid size number as a secret meaning. Efficient. Cursed. Both.",
-        "The entire game loop is 10 lines. Eat, die, draw. The complete narrative of a life in ten lines.",
-        "The snake never speeds up. Ever. You could play for six hours at the exact same pace. Tranquil.",
-        "The snake's head and tail look identical — same shape, same color, same everything. A snake with no face.",
-        "All direction-change logic lives on a single 147-character line. Gemini believes in a one-liner universe."
+        "There's an infinite loop hiding in the 60-line snake game. Gemini plays by its own rules."
       ],
       "qwen3.6-35b-a3b": [
         "Qwen 35b named its Snake game 'Neon Snake: BrainRot Edition' — the only model in the competition that acknowledged the brand in its actual game title. Respect.",
         "781 lines, full particle system, Web Audio API, proper CSS custom properties — Qwen 35b arrived with the full toolkit and used most of it correctly.",
-        "Courier New as the primary font. Qwen 35b chose a monospace identity for Snake and committed. It looks like a hacker terminal playing Snake. Which is kind of perfect.",
-        "The color palette defines cyan, magenta, and lime as the three primary neons. Three colors, three vibes, zero hesitation. Qwen 35b has taste.",
-        "Touch action disabled globally, mobile viewport locked, swipe controls implemented. Qwen 35b ships mobile support without being asked. Good instincts.",
-        "The particle class is a real particle class — not a quick object literal but an actual class with constructor, update, and draw methods. Qwen 35b has architecture opinions.",
-        "AudioContext properly instantiated with webkit fallback, oscillator-based sound effects for food collection and death. The audio works on all major browsers.",
-        "The title screen has an animated 'NEON SNAKE' header and a subtitle. Qwen 35b gave Snake a title screen worth looking at for more than 0.5 seconds.",
-        "Speed increases progressively as the snake grows. Qwen 35b scaled difficulty properly without adding a whole level system. Elegant restraint.",
-        "A model named 'Qwen 3.6 35B A3B' only gets one game in the competition and it chose Snake. It played it straight. 781 lines of straight Snake energy."
+        "Courier New as the primary font. Qwen 35b chose a monospace identity for Snake and committed. It looks like a hacker terminal playing Snake. Which is kind of perfect."
       ]
     },
     "minesweeper": {
       "opus-4-6": [
         "Opus built a fully custom sound system for minesweeper: sounds for flagging, revealing, exploding, winning, and ticking. A symphony for a grid of numbers.",
         "Instead of clickable buttons, every tile is hand-painted onto a canvas. Opus cannot walk past a canvas without decorating it.",
-        "An animated mine floats and bobs gently on the title screen. Even before you start, the mine is vibing.",
-        "The word 'Minesweeper' pulses with a breathing glow animation on the title. The game title is alive.",
-        "There's a mine counter, a timer, a restart button, AND a mute button in the header. Four controls for a game about clicking squares.",
-        "The title screen says 'BrainRot Games' in tasteful spaced-out capitals. This minesweeper has corporate branding.",
-        "The title font scales fluidly with your screen size. The minesweeper logo is responsive. It respects your viewport.",
-        "Even the game-over overlay has a frosted glass visual effect. You died. The death screen is glamorous.",
-        "Every tile is individually hand-painted every single frame. Opus treats minesweeper like a Bob Ross painting session.",
-        "You can left-click, right-click, AND middle-click tiles. A three-button minesweeper. For power users."
+        "An animated mine floats and bobs gently on the title screen. Even before you start, the mine is vibing."
       ],
       "gpt-5-4": [
         "GPT-5.4 titled this 'Minesweeper // GPT-5.4'. The model signed its own minesweeper. Attribution in the browser tab.",
         "The game has a full sidebar control panel next to the mine grid. This minesweeper has a dashboard.",
-        "There is a tiny animated pulsing dot next to the game title. The label has a heartbeat.",
-        "The grid cell size has been promoted to an official design token. Cell size is infrastructure in this economy.",
-        "The font choice is Trebuchet MS, a typeface that hasn't been fashionable since the early 2000s. GPT-5.4 is a nostalgist.",
-        "At 1,874 lines, this is 10 times longer than Gemini's working minesweeper. Both let you click mines.",
-        "The control panel has a subtle diagonal highlight like light catching frosted glass. The minesweeper panel has a sheen.",
-        "Five separate visual background layers load before you see a single mine. The atmosphere was the real challenge.",
-        "The title area has an 'eyebrow' element — a small blinking dot that lives above the title. The UI has anatomy.",
-        "The sidebar enforces precise width limits so it's never too wide or too narrow. The minesweeper panel has strong opinions about its own body."
+        "There is a tiny animated pulsing dot next to the game title. The label has a heartbeat."
       ],
       "gpt-5-4-mini": [
         "The game board has an officially registered, named glow effect. The board's ambient halo has a serial number.",
         "The animation speed for all UI transitions has been saved as an official named design value. Velocity is branded.",
-        "Every bar across the interface — top, status, and footer — has a frosted glass blur. Even the footer is mysterious.",
-        "1,222 lines for minesweeper. Still 6.6 times Gemini's count. 'Mini' is doing a lot of heavy lifting as a label.",
-        "The brand logo area has a minimum width requirement. The logo section in minesweeper is width-protected.",
-        "The screen is divided into four named layout zones. The spatial choreography of minesweeper has been documented.",
-        "A custom animation curve was defined and registered but doesn't appear to actually be used anywhere. A CSS ghost.",
-        "There are two separate header bars: one for brand, one for game status. Minesweeper needed a header hierarchy.",
-        "There is a footer bar at the bottom of the minesweeper screen. Mines have footers now. This is the world we live in.",
-        "The gap between cells has its own official design token alongside the cell size. The empty space is official."
+        "Every bar across the interface — top, status, and footer — has a frosted glass blur. Even the footer is mysterious."
       ],
       "gemini-3-1-pro": [
         "184 lines, three difficulty levels, a timer, a mine counter, recursive flood fill, and emoji buttons. Gemini peaked here.",
         "The only Gemini game that looks decent AND works correctly. Gemini peaked at minesweeper and has been declining since.",
-        "The end-game tile reveal uses a clever array shortcut to loop everything at once. Flat logic for a flat grid.",
-        "The restart button shows a sunglasses emoji on win and a dizzy emoji on loss. A two-emoji character arc.",
-        "The config setup uses shorthand variable names to simultaneously name the rows, columns, and mines. Efficient destruction.",
-        "Five font fallbacks for a minesweeper game. Gemini packed more backup fonts than game features.",
-        "The eight number colors have one dedicated style class each. One class per number. The efficiency is admirable.",
-        "The main color is a shade of green that peaked in 2014. Gemini's minesweeper arrived in a time machine.",
-        "The restart button says 'Rest' instead of 'Reset' in the source code. A typo that shipped. Gemini ships fast.",
-        "The first click is always safe — mines are placed after you click. That's brilliant game design. Gemini got one right."
+        "The end-game tile reveal uses a clever array shortcut to loop everything at once. Flat logic for a flat grid."
       ]
     },
     "tetris": {
       "opus-4-6": [
         "Opus included a hold piece in tetris. This is a real advanced Tetris feature from the official rulebook. Opus did the reading.",
         "The sound effects are organized as their own sealed, independent module. Even the beeps are architecturally sound.",
-        "The game title cycles through four neon colors in an animated gradient. The title is a festive rotating rainbow.",
-        "Score, line count, and level are each displayed in their own distinct color. The stats are color-coded for your wellbeing.",
-        "The title screen says 'BRAINROT GAMES · OPUS 4.6'. Opus branded its own tetris. Opus wants you to know.",
-        "There's a mute button pinned to the corner of the screen. Opus will not let you play tetris silently without consent.",
-        "Opus uses an obscure JavaScript language feature in the line-clearing logic that most developers don't know exists.",
-        "The game hits maximum speed at level 10 and stays there. A thoughtful difficulty ceiling. Not too brutal.",
-        "The game-over screen shows your score, total lines cleared, AND your final level. A three-stat eulogy for your run.",
-        "The entire game is sealed in its own bubble so nothing leaks out into the page around it. Opus respects boundaries."
+        "The game title cycles through four neon colors in an animated gradient. The title is a festive rotating rainbow."
       ],
       "gpt-5-4": [
         "GPT-5.4 titled this 'NEON STACK // GPT-5.4 Tetris'. Subtitle, slash, model name, game name. In the browser tab. For tetris.",
         "The background slowly drifts sideways over 12 seconds. Tetris pieces fall through moving scenery. Ambient drift.",
-        "Trebuchet MS — used in Snake, Minesweeper, and now Tetris. GPT-5.4 is committed to this font. The Trebuchet era.",
-        "The top navigation bar is a rounded pill shape. The tetris header is shaped like a vitamin capsule.",
-        "2,277 lines for tetris. Opus wrote tetris with a hold piece in 1,165 lines. GPT-5.4 wrote it twice and added scenery.",
-        "Three moving background gradients plus scan line overlays. The tetris pieces fall through an entire atmosphere.",
-        "There are officially named values for strong lines AND soft lines. The lines in this game have a strength hierarchy.",
-        "The pill-shaped topbar appears in every single GPT-5.4 game. The pill is the brand. Every game has the pill.",
-        "2,277 lines but no hold piece. Opus included it in half the line count. Different priorities, different legacies.",
-        "There are two named shades of cyan: regular cyan, and soft cyan. GPT-5.4 acknowledges cyan's emotional range."
+        "Trebuchet MS — used in Snake, Minesweeper, and now Tetris. GPT-5.4 is committed to this font. The Trebuchet era."
       ],
       "gpt-5-4-mini": [
         "1,266 lines — the smallest GPT tetris by far. Mini showed restraint. Appreciate it while it lasts.",
         "Dark mode preference is officially declared in the style sheet. It took 500 extra lines to get there, but it's on record.",
-        "The game overlay shows and hides using a proper built-in HTML attribute instead of an invented workaround. Progress.",
-        "The title panel has three layered shadows: a glow, a drop shadow, AND an inner glow. Three shadows for one panel.",
-        "The title font scales fluidly across all screen sizes. Even mini's tetris title respects your screen's feelings.",
-        "The game-over overlay has a frosted glass effect. Your defeat screen is a beautiful, blurry tragedy.",
-        "Mini hides overlays using a built-in HTML feature instead of inventing its own hiding system. Earned praise.",
-        "The model name is displayed in small caps below the game title. GPT-5.4-mini tagged itself in the UI.",
-        "The background structure is identical to GPT-5.4 with different colors. Same bones, different outfit. Siblings.",
-        "Every GPT model uses the exact same near-black background color. One background color for the whole family."
+        "The game overlay shows and hides using a proper built-in HTML attribute instead of an invented workaround. Progress."
       ],
       "gemini-3-1-pro": [
         "394 lines with all seven pieces, rotation, line clearing, scoring, speed levels, and a next-piece preview. Dense and correct.",
         "Piece shapes are stored as lists of coordinate offsets rather than grids — unusual, but it works perfectly fine.",
-        "The square piece has incorrect shape data — it doesn't actually form a square. The O-piece is a lie. A beautiful lie.",
-        "Gemini is using a keyboard detection method that was officially deprecated years ago. In 2025. By Gemini.",
-        "Line clearing uses elegant array manipulation: remove the completed row, add a fresh empty one at the top. Minimal and correct.",
-        "Each piece has dedicated functions for drawing, rotating, moving, locking, and collision. Real object design in 394 lines.",
-        "No sound effects. Tetris pieces hit the stack in complete silence. This is tetris as meditation.",
-        "Gemini got the official Nintendo Tetris point values exactly right: 40, 100, 300, 1200. Gemini did the research.",
-        "No particles, no screen shake, no flash effects. Just falling shapes and pure mathematics. Tetris as Dijkstra would design it.",
-        "To copy a piece's shape, Gemini converts it to text and immediately reads it back. A technique from 2019. Still deployed."
+        "The square piece has incorrect shape data — it doesn't actually form a square. The O-piece is a lie. A beautiful lie."
       ]
     },
     "reversi": {
       "opus-4-6": [
         "Opus included an actual computer opponent in Reversi that will try to beat you. An AI. In a browser game. It has a plan.",
         "You play as neon cyan. The AI plays as neon magenta. The colors have been assigned. The rivalry is chromatic.",
-        "The score display has color-coded indicators for each player's disc count. The scoreboard knows whose side you're on.",
-        "The game UI fades in with a graceful half-second transition when a round begins. Opus opens with a reveal.",
-        "1,466 lines for Reversi, including an actual AI opponent. For once the line count is justified.",
-        "The score boxes glow. Of course they glow. Everything in Opus glows. The glow is non-negotiable.",
-        "Every disc, every valid move indicator, every grid line — all hand-painted every frame. Opus takes no shortcuts.",
-        "The score display uses a retro hacker-style monospace font. Reversi is being played by someone in a trenchcoat.",
-        "The score boxes are perfectly centered with precise spacing. Opus is constitutionally incapable of misalignment.",
-        "The overlapping UI elements are protected from accidental clicks. Opus thought about player protection. Thoughtful."
+        "The score display has color-coded indicators for each player's disc count. The scoreboard knows whose side you're on."
       ],
       "gpt-5-4": [
         "GPT-5.4 chose an elegant old-fashioned serif font for Reversi. Very distinguished. Very 1993 encyclopedia. Very GPT.",
         "The board cell size is calculated using nested formulas that account for both screen width and height simultaneously.",
-        "The board's edge frame color is a separate named value from the board's fill color. Even the border has its own identity.",
-        "Each piece type has two named colors — one for the center, one for the edge gradient. Pieces have depth here.",
-        "The color for 'success' is teal and the color for 'danger' is pink. Victory is teal. Defeat is pink. Philosophy.",
-        "1,481 lines but the font choice is genuinely distinguished. GPT-5.4 wrote 3.5 times more code than Gemini and made it look elegant.",
-        "The inner padding of the game frame scales with screen size. The frame breathes responsively.",
-        "Three radial background gradients. It returns. It always returns. The three gradients are eternal.",
-        "The game board itself is a gradient — dark at the top, darker at the bottom. Even the playing surface has atmosphere.",
-        "Panel corners are precisely rounded at 28 pixels. An editorial decision was made. A meeting was held."
+        "The board's edge frame color is a separate named value from the board's fill color. Even the border has its own identity."
       ],
       "gpt-5-4-mini": [
         "GPT-5.4 uses a classic serif font. GPT-5.4-mini switched to a sleek modern system font. The child grew up.",
         "The board uses four different shades of near-black for an alternating checkerboard effect. Four registered shades of 'very dark'.",
-        "The top bar has five separate layout zones. The reversi header has been divided into regions. Reversi has jurisdictions.",
-        "The decorative 'eyebrow' element from GPT-5.4 appears again in mini. Both models have eyebrows. It's hereditary.",
-        "1,388 lines for reversi. That's 6 times Gemini's count for the same 8x8 board. 21 lines of code per square.",
-        "There are three named status colors: good, warn, and bad. A board game has a three-tier emotional alert system.",
-        "The title is heavy bold and scales fluidly with the screen. This reversi game has font size ambitions.",
-        "Two shades of purple have been registered as separate named values. The distinction between purple and also-purple matters.",
-        "The decorative eyebrow above the title glows cyan. The eyebrow is luminous. The eyebrow glows cyan.",
-        "The four alternating tile colors are nearly identical dark shades. The checkerboard is technically present. Micro-contrast."
+        "The top bar has five separate layout zones. The reversi header has been divided into regions. Reversi has jurisdictions."
       ],
       "gemini-3-1-pro": [
         "230 lines. Complete. Playable. Two players. All rules correct. Gemini peaked again.",
         "Gemini uses a flat array loop at game end — the same technique appears in every Gemini game. The flat loop is Gemini's signature.",
-        "The board is the green of a real reversi board — slightly too bright, but clearly researched. Gemini looked it up.",
-        "Valid move indicators appear as small dots using only visual styling with no extra code. Clever use of what's available.",
-        "The turn indicator changes color per player — gold for one, white for the other. Color-coded turns, zero extra code.",
-        "Disc flips have a smooth color fade animation. The discs actually reverse gracefully. Gemini animated the reversals.",
-        "No sound. The discs flip in silence. 230 lines of hushed, dignified silence.",
-        "The turn-switching logic appears copy-pasted in three different places instead of written once. A small, repeated sin.",
-        "The board is completely redrawn from scratch every time anything changes. No cleverness. Just a fresh canvas.",
-        "The background color is from a palette considered cutting-edge in 2013. Nostalgic. Retro. Flat UI is back, baby."
+        "The board is the green of a real reversi board — slightly too bright, but clearly researched. Gemini looked it up."
       ]
     },
     "breakout": {
       "opus-4-6": [
         "1,131 lines for breakout with multiple levels, lives, level transition fanfares, high score tracking, and sound. Justified.",
         "Level transitions are announced with giant gold cinematic text. Opus treats 'LEVEL 2' like a Marvel title card.",
-        "The mute button is a perfect circle. This is consistent across every Opus game. The mute button is always a circle.",
-        "The title cycles through four neon colors on a diagonal. Opus's game titles deserve to be stared at.",
-        "Level transition text fades in and out with a smooth effect. Even the level number gets a cinematic treatment.",
-        "The score display uses a retro monospace font. The breakout scoreboard looks like a 1980s arcade terminal.",
-        "Lives are shown as small heart icons in the header. You can see your remaining lives at a glance. Visual lives.",
-        "High scores are saved and survive between sessions. Opus gives breakout a permanent record. It doesn't forget you.",
-        "The start screen lists every single control: arrow keys, mouse, spacebar, P to pause. Nothing left to the imagination.",
-        "The game canvas fills the entire screen edge-to-edge. Opus makes breakout feel immersive. You're inside the bricks."
+        "The mute button is a perfect circle. This is consistent across every Opus game. The mute button is always a circle."
       ],
       "gpt-5-4": [
         "GPT-5.4 went orange for breakout while every other GPT game is cyan or magenta. This one went rogue. Respect.",
         "1,418 lines — actually proportional to the feature set for once. GPT-5.4 went orange AND kept its composure.",
-        "Three named shades of orange: warm, hot, and dim. There is an orange spectrum and GPT-5.4 explored every inch of it.",
-        "Seven named colors are officially registered for this game alone. The breakout palette has a full registry.",
-        "The orange theme is baked into the background atmosphere — a faint orange tint in the air. The arena breathes orange.",
-        "The screen edges darken toward the corners like a photograph's vignette. The breakout arena has mood lighting.",
-        "The game container has three separate layering settings to ensure nothing bleeds through accidentally. Safety layers.",
-        "The same six monospace fonts from snake reappear in breakout. GPT-5.4 travels with one font stack everywhere.",
-        "Every GPT-5.4 game has exactly three background gradients. Different games, same three gradients. A constitutional requirement.",
-        "The background grid is exactly 48 pixels wide. A deliberate measurement for a detail no one will notice."
+        "Three named shades of orange: warm, hot, and dim. There is an orange spectrum and GPT-5.4 explored every inch of it."
       ],
       "gpt-5-4-mini": [
         "569 lines — GPT-5.4-mini's leanest game. Breakout got the budget treatment and it shows.",
         "This is the one GPT-mini game with neon green instead of cyan. Mini went off-brand for breakout. A rogue.",
-        "The game canvas has a dark green border around it. The arena has a frame. A dark green frame. A choice.",
-        "The game canvas has a precise 3:4 aspect ratio, letterboxed in the center of the screen. Portrait-mode breakout.",
-        "Dark text on neon green background. High contrast. Actually readable. GPT-mini accidentally made something accessible.",
-        "The game-over overlay appears inside the play area rather than covering the whole screen. The defeat is contained.",
-        "Zero named color values anywhere. Just the same neon green repeated manually everywhere. Refreshingly direct.",
-        "The aspect ratio is explicitly defined on the game container, making this the most geometrically self-aware GPT-mini game.",
-        "The ball lives inside the canvas but the paddle listens to your mouse anywhere on the page. Two input zones.",
-        "569 lines is exactly half of GPT-5.4's 1,418 for the same game. Mini halved the approach. Efficiency or budget?"
+        "The game canvas has a dark green border around it. The arena has a frame. A dark green frame. A choice."
       ],
       "gemini-3-1-pro": [
         "63 lines. Breakout in 63 lines. No levels. No lives. Ball bounces. Bricks disappear. Win condition exists.",
         "The ball is 8 pixels wide and its size is stored in a variable simply named 'r'. The radius is 'r'. Economical.",
-        "The ball moves at fixed speed from start to finish. No escalating difficulty. Breakout as a zen garden.",
-        "Exactly 50 bricks. Same layout every game. No randomness, no variety, no surprises. One level. Forever.",
-        "The paddle and the ball are the same color. Indistinguishable on a dark background. Good luck finding the paddle.",
-        "The win condition is checked after every single brick break. The game asks 'did I win?' fifty times per game.",
-        "Mouse only. No keyboard, no touch. If you don't have a mouse you cannot play Gemini's breakout. Screen-only.",
-        "No sound, no lives, no score in the header. Breakout as a silent, single-life, headerless experience.",
-        "The bricks are hot pink and the background is black. The palette has two opinions: neon and void.",
-        "Win and lose both call the same function. Victory and defeat are handled identically. Same outcome, different prompt."
+        "The ball moves at fixed speed from start to finish. No escalating difficulty. Breakout as a zen garden."
       ],
       "minimax-m2-7": [
         "MiniMax dropped into this competition with only one game — Breakout — and it brought 922 lines, particles, audio, and a level screen. A focused debut.",
         "'Breakout — BrainRot Games' — MiniMax titled its game after the platform, not itself. The only model to not brand its game title. A surprising act of humility from a competition entry.",
-        "Level screen shows 'LEVEL 1' before each stage with a 'Get ready!' subtitle. MiniMax adds anticipation before gameplay. A cinematic instinct.",
-        "Lives displayed as ♥♥♥ — heart symbols, not numbers. MiniMax chose hearts for lives. It's the right choice. Opus agrees. Both arrived there independently.",
-        "Particle system on brick destruction: createParticles() with count and speed parameters. MiniMax wrote a configurable particle emitter. That's a real architecture decision.",
-        "AudioContext with oscillators for bounce, break, and death sounds. MiniMax gave Breakout audio from scratch using the Web Audio API. The game makes appropriate noises.",
-        "Segoe UI as the font choice — same as Qwen-27b's 2048 and MiniMax's general aesthetic sensibility. System fonts. Practical.",
-        "Score, level, and lives in a horizontal HUD bar. The information layout is clean and doesn't cover the playfield. MiniMax values the player's viewport.",
-        "Game over screen with final score and high score comparison. MiniMax tracks your best performance. It cares about your improvement.",
-        "922 lines for Breakout is the correct amount for Breakout. Not Gemini's 63, not GPT-5.4's 1,278. MiniMax landed in the middle and built something complete."
-      ]
-    },
-    "2048": {
-      "opus-4-6": [
-        "983 lines for 2048 with merge animations, floating score effects, particles, and a high score tracker. Opus means business.",
-        "The game title is a three-color animated gradient. The number '2048' has been treated as a piece of visual art.",
-        "When you score points, the counter briefly flashes a color. The scoreboard celebrates alongside you.",
-        "When tiles merge, floating score numbers fly upward off the board. More satisfying than most 2048 games.",
-        "Every power-of-two tile has its own unique color. From 2 to 2048, each value has its own look. A 12-tier hierarchy.",
-        "The background grid and the moving tiles live on separate visual layers. The board and the pieces in different planes.",
-        "Tiles have two animations: one for appearing, one for merging. Birth and marriage, both celebrated with pop effects.",
-        "Merge particles fly outward in random directions when tiles combine. Tiny fireworks for every 2+2=4.",
-        "Tile animations are hinted to the browser in advance so they run smoothly. Opus thinks ahead about performance.",
-        "Your high score is saved and remembered between sessions. Opus gives 2048 a memory. The game doesn't forget you."
-      ],
-      "gpt-5-4": [
-        "778 lines — GPT-5.4's most restrained effort. Apparently 2048 is where it ran out of ideas.",
-        "Four named shades of orange-amber for the tiles. A warm, considered tile palette. Tones were selected.",
-        "Two named glow colors for the interface highlights. The glows have been officially registered. Glows have names.",
-        "A dedicated second canvas layer exists purely for floating background particles. Two canvases for one game.",
-        "Screens zoom out slightly when they disappear. Transitions have a scale effect. Screens exit with style.",
-        "Buttons have a hidden glow behind them that only appears on hover. The glow is waiting patiently.",
-        "Score popups fly upward on merge. Both Opus and GPT-5.4 implemented flying score numbers. The good ideas converge.",
-        "778 lines is small for GPT-5.4. Either 2048 humbled it or the gradient ideas finally ran dry.",
-        "Both Opus and GPT-5.4 have particles that fly away from the merge point in different directions. Great minds.",
-        "The button hover effect reveals a gradient layer hiding behind the button. The button has a secret."
-      ],
-      "gpt-5-5": [
-        "GPT 5.5 named the experience like 2048 had been booked for a neon residency and then delivered enough glow to make that plausible.",
-        "A 20-move undo stack means the game remembers your mistakes with more patience than most strategy games remember their own tutorials.",
-        "The canvas renderer treats every tile as a lit object, because plain DOM squares were apparently too emotionally available.",
-        "Merge bursts, score popups, and shake feedback make basic addition feel like it is trying to qualify for an arcade cabinet.",
-        "The control layout stays compact on mobile, a surprisingly disciplined choice from a file that otherwise keeps ordering more lasers.",
-        "The Web Audio layer gives movement, failure, victory, and undo their own voices, because silence would be beneath these numbers.",
-        "The stats panel tracks the run without turning the board into a cockpit, which is more restraint than the particle system shows.",
-        "Winning at 2048 gets an overlay with actual ceremony instead of a small alert wearing defeat as a hat.",
-        "The responsive board stays central at 320x480, as if GPT 5.5 briefly remembered thumbs exist before adding more sparkle.",
-        "It is excessive in the exact way this competition rewards, which is deeply inconvenient for everyone else's minimalist excuses."
-      ],
-      "gpt-5-4-mini": [
-        "539 lines — genuinely reasonable for 2048 with animations and sound. Mini found its footing here.",
-        "Purple gradient theme while GPT-5.4 went orange. Two models, same family, completely opposite color choices. A feud.",
-        "Button actions are wired directly into the page structure instead of handled separately. An older technique. Still works.",
-        "The sound system for this 2048 game is a full-featured audio engine with pitch control and filters. The merge sounds are sculpted.",
-        "The merge sound changes tone and texture depending on which tiles you're combining. Audio feedback has nuance here.",
-        "Screens show and hide using a clean active-state approach. A tidy system for managing what you see.",
-        "The game grid is explicitly forced to be a perfect square. The 4x4 board knows it's a square. Proud of it.",
-        "Merging tiles play a pop animation. The number doubling is acknowledged. It does not go unnoticed.",
-        "No separate particle layer. Skips the full particle system. Pragmatic choices were made somewhere.",
-        "The game-over screen appears inside the grid rather than covering everything. The loss is self-contained."
-      ],
-      "gemini-3-1-pro": [
-        "58 lines. The entire 2048 game — visuals, layout, and all logic — in 58 lines. A remarkable compression.",
-        "The game grid is a flat list of 16 numbers internally. Not a grid of grids. Just 16 numbers in a row. Gemini flattened the universe.",
-        "The core merge logic is 5 lines long. Five lines that power the entire game. The efficiency is almost offensive.",
-        "No animations. Tiles teleport instantly to their new positions. Efficient. Cold. Slightly traumatic.",
-        "The display is completely rebuilt from nothing on every single keypress. Full redraw. Every time. Always.",
-        "Tiles above a certain value turn cyan. Everything else is white. Two colors for all 12 possible tile values.",
-        "The win check happens inside the keyboard handler. The 2048 victory condition is evaluated while you're pressing a key.",
-        "No sound. Tiles merge in complete silence. The game celebrates a 2048 tile with absolute zero fanfare.",
-        "The entire visual style is two rules. Two. For a complete game with a grid, tiles, values, and colors.",
-        "The grid is fixed at 80-pixel cells regardless of screen size. Playing on a phone? It's fine. Probably."
-      ],
-      "qwen-3-6-27b": [
-        "952 lines of 2048 — Qwen 27b landed in the respectable middle range. Not Gemini's 58, not GPT-5.5's 1,860. A measured, complete implementation.",
-        "'2048 — Neon Edition' — Qwen 27b subtitled its 2048 game. Not 'Qwen 2048', not a model number. Just 'Neon Edition'. A title that serves the game, not the brand.",
-        "The CSS has seven named neon colors with glow variables for each one. Qwen 27b built a full neon color system. The glow tokens are reusable. Architecture thinking.",
-        "Segoe UI as the primary font. Qwen 27b chose a system font that's actually readable at game UI sizes. Practical choice.",
-        "AudioContext with oscillators for tile merge sounds. Qwen 27b ships audio in 2048. Tiles make satisfying sounds when they combine. The clinks are earned.",
-        "Particle system with configurable count and lifetime. PARTICLE_COUNT: 20, PARTICLE_LIFE: 600 — Qwen 27b named its constants. Clean code.",
-        "The HUD uses a panel component with border and background — positioned absolutely over the canvas. Qwen 27b uses a standard canvas-plus-overlay architecture.",
-        "Title screen with animated title glow and a controls panel. Qwen 27b added a 'how to play' guide to the title screen of 2048. Considerate.",
-        "Swipe gestures for mobile play. Qwen 27b's 2048 works on touchscreens. The swipe detection is implemented alongside keyboard controls.",
-        "952 lines, full audio, particles, title screen, and good architecture. Qwen 27b submitted a complete product to a competition where Gemini submitted a napkin sketch."
+        "Level screen shows 'LEVEL 1' before each stage with a 'Get ready!' subtitle. MiniMax adds anticipation before gameplay. A cinematic instinct."
       ]
     },
     "endless-runner": {
       "opus-4-6": [
         "1,091 lines with lane-switching, jumping, sliding, coin collection, power-ups, and a level system. Earned every line.",
         "Opus built a 3D perspective tunnel as the running track. This endless runner exists in three dimensions. Opus went 3D.",
-        "There's a visual indicator for active power-ups in the HUD. Opus built power-ups for a runner. Power-ups. In a runner.",
-        "Opus named its runner 'NEON DASH'. Every other model just called it 'Endless Runner'. Opus names its children.",
-        "When you die or collect something, the entire screen flashes. A dedicated full-screen layer exists just for the flash.",
-        "All Opus games use the same retro monospace font for numbers and scores. The scoreboard always looks like a terminal.",
-        "Four simultaneous HUD readouts: score, distance, coins, and level. This runner tracks four things at once.",
-        "The game title has a three-layer cascading glow effect that pulses with animation. The title breathes neon.",
-        "The title glow cycles through intensities automatically. The game title is breathing. It is alive.",
-        "Opus imported a full 3D graphics library to render the tunnel track. A real 3D engine. For a runner. Opus commits."
+        "There's a visual indicator for active power-ups in the HUD. Opus built power-ups for a runner. Power-ups. In a runner."
       ],
       "gpt-5-4": [
         "1,959 lines with a full 3D graphics engine. GPT-5.4 decided 'endless runner' meant 'WebGL tech demo'.",
         "The scan line visual overlay moves across the screen over time. The static is dynamic. The noise drifts.",
-        "Seven monospace font fallbacks. GPT-5.4 will accept nothing less than a monospace font, in any of seven varieties.",
-        "Two accent colors are defined and appear nowhere visible in the finished game. Ghost colors. Orphan values.",
-        "A full 3D endless runner built into a single HTML file. This is a ship-in-a-bottle situation.",
-        "Three radial background gradients. As always. As ever. The three gradients watch over all GPT-5.4 games.",
-        "The glow shadow effect glows cyan. Shadows in this universe are luminous. Darkness emits light here.",
-        "The background overlay does two jobs at once: scan lines AND a darkened vignette. One element, two atmospheres.",
-        "The scan line effect is at 8% opacity. Nearly invisible. You'd never notice it gone. Yet it persists. Eternal.",
-        "GPT-5.4 titled this game 'Neon Drift: Void Runner'. Four words for a game where you run forward and don't stop."
+        "Seven monospace font fallbacks. GPT-5.4 will accept nothing less than a monospace font, in any of seven varieties."
       ],
       "gpt-5-5": [
         "GPT-5.5 titled this 'Hyperlane Override', because 'run forward' apparently needed executive branding.",
         "The game has practice pace, overdrive, combo flow, shield, magnet, boost, and enough state to make a subway dispatcher sweat.",
-        "A single HTML file imports Three.js and then builds an entire neon transit system around one extremely motivated runner.",
-        "The sound system has boot, lane, jump, slide, credit, power, shield, hit, overdrive, level, and crash cues. Silence was not invited.",
-        "The touch controls are swipe-based, which means the mobile UI avoided turning into a cockpit made of buttons.",
-        "The runner leaves capsule ghosts behind itself. Even the afterimage wants credit.",
-        "The city skyline recycles offscreen like a stage crew sprinting behind the curtain.",
-        "The shield can convert a crash into a second chance, because GPT-5.5 gave failure customer support.",
-        "The flow meter fills from good play and can trigger overdrive. A stamina bar with ambition.",
-        "At over two thousand lines, this runner is less endless than the source file, but only barely."
+        "A single HTML file imports Three.js and then builds an entire neon transit system around one extremely motivated runner."
       ],
       "gpt-5-4-mini": [
         "1,308 lines, full 3D graphics engine, titled 'Neon Velocity · BrainRot Games'. All three GPT runners went full 3D.",
         "Two separate visual atmosphere overlays are stacked on top of the game canvas. The vibes are layered.",
-        "Four information chips in the HUD: score, distance, level, and power-up status. Well-chipped.",
-        "The entire HUD glows as a single unit — scores, labels, and values share one ambient halo.",
-        "The mute button uses a full layout system just to center the mute emoji inside a circle. One emoji. One system.",
-        "Every GPT game's overlays are frosted glass. Menu, pause, game over — all blurred. All mysterious. Always.",
-        "Two accent colors — lime and gold — are defined but appear nowhere visible in the game. Orphan palette.",
-        "Seven monospace font fallbacks, same count as GPT-5.4. The family agrees on font fallback quantity.",
-        "The background gradient starts precisely 18% from the top. Not 20%. Not 15%. Eighteen percent. Committed.",
-        "Power-up text is a specific shade of light steel blue. Power information has its own proprietary color."
+        "Four information chips in the HUD: score, distance, level, and power-up status. Well-chipped."
       ],
       "gemini-3-1-pro": [
         "43 lines. An endless runner in 43 lines of HTML. A cyan square jumping over red rectangles. Impressively small.",
         "The player object has five properties: two for position, two for size, one for velocity. All functional.",
-        "Jump physics are two lines: apply upward force, apply gravity each frame. A complete physics model in two lines.",
-        "Obstacles spawn every 60 game frames. The spawn system is a clock tick. Elegant and mechanical.",
-        "Speed increases by a tiny amount every single frame. You won't feel it happening until you're suddenly dying faster.",
-        "All obstacles are the same height at the same position. One obstacle type. One challenge. The game has opinions.",
-        "No sound, no coins, no power-ups. A cyan square jumping over red rectangles until it doesn't. Pure concept.",
-        "Touch support is included. Tap to jump on mobile. In 43 lines, Gemini remembered mobile users exist.",
-        "The score counts in decimals internally but displays as a whole number. A secret decimal life.",
-        "There is no visible ground. The floor exists mathematically but not visually. An invisible foundation."
+        "Jump physics are two lines: apply upward force, apply gravity each frame. A complete physics model in two lines."
       ]
     },
     "marble-madness": {
       "opus-4-6": [
         "Three levels with actual names: 'NEON GENESIS', 'CYBER CIRCUIT', 'VOID NEXUS'. Opus wrote lore for a marble game.",
         "Gold, silver, and bronze ratings based on your finishing time. Your marble run gets an official medal ceremony.",
-        "You collect gems while rolling. The marble has a to-do list. Objectives have been assigned to the marble.",
-        "After each level you get a full breakdown: time, gems, bonus points, final score. A complete post-marble debrief.",
-        "When you fail, the entire screen flashes red. The failure is dramatic. Death is acknowledged with full-screen regret.",
-        "The medal you earn floats with a gentle bobbing animation. The reward is literally floating. Praise oscillates.",
-        "Gold, silver, and bronze medals each glow in their own unique color. The medals are individually luminous.",
-        "WASD, arrow keys, and spacebar all work — and the marble can jump. A marble game with a jump button. Yes.",
-        "There is a loading screen while the level sets up. A browser game that shows a loading indicator. Opus is thorough.",
-        "Opus built a full physics simulation for rolling momentum and collisions. A physics engine for a marble."
+        "You collect gems while rolling. The marble has a to-do list. Objectives have been assigned to the marble."
       ],
       "gpt-5-4": [
         "2,278 lines — the single largest file in the entire competition. GPT-5.4 peaked at marble madness. The record belongs here.",
         "JetBrains Mono — a font used by programmers in code editors — appears in this marble game. A choice was made.",
-        "The scan line overlay opacity has been registered as its own official named value. The transparency of visual noise is official.",
-        "Six named outcome colors: green, blue, gold, silver, bronze, and danger. A complete medal-and-warning palette on standby.",
-        "The background scan lines blend with the game at a calibrated 55% opacity using a specific blend mode. Precise atmosphere.",
-        "2,278 lines. Gemini's marble game was 45 lines. That is 50 times more code for the same rolling marble concept.",
-        "The game is isolated from everything around it so nothing bleeds through the edges. Carefully walled off.",
-        "The screen edges darken in an oval gradient. The spotlight is on the marble. Theatrical lighting.",
-        "The background has three colored gradient light sources: green, blue, AND purple. A marble game set inside a nebula.",
-        "Dark mode is officially declared in the style sheet. GPT-5.4's marble madness is certified dark."
+        "The scan line overlay opacity has been registered as its own official named value. The transparency of visual noise is official."
       ],
       "gpt-5-4-mini": [
         "1,686 lines — more than Opus's 1,100 for the same marble game. Mini outpaced Opus in word count if not ideas.",
         "A single registered shadow value contains two separate glows. A two-for-one shadow deal. Efficient extravagance.",
-        "Mini's purple is slightly different from GPT-5.4's purple. They are siblings, not twins. Different registered purples.",
-        "The HUD fades in gracefully when you start playing. The interface has a gentle entrance. It arrives with dignity.",
-        "The title uses uppercase letters with wide spacing. Grand presentation for a marble. The marble is important.",
-        "The big title text scales fluidly with screen size. Even a marble game title has responsive typography.",
-        "1,686 lines presumably covers the same 3D physics as 2,278 lines. Mini saved 600 lines somewhere in there.",
-        "Touch controls are supported. The marble rolls on touch screens too. GPT-mini thought of mobile users.",
-        "Same monospace font stack as the runner. GPT-mini travels with one font family across its entire catalog.",
-        "Mini defines a specific muted blue-grey for secondary text. Each GPT-mini game has its own shade of 'quiet'."
+        "Mini's purple is slightly different from GPT-5.4's purple. They are siblings, not twins. Different registered purples."
       ],
       "gemini-3-1-pro": [
         "45 lines. The marble moves. Circles kill you. A corner wins you. This is a complete game.",
         "Obstacles are stored in a variable called 'hz'. Not 'hazards'. Not 'obstacles'. Just 'hz'. Brevity as religion.",
-        "Ten obstacles placed randomly at game start, none of which ever move. Static threats on a still board.",
-        "The win condition is reaching the bottom-right corner. The entire game design: go there, avoid touching those.",
-        "The finish line is a bright green square. The goal is a green box in a corner. Find the green. Win.",
-        "The marble slows naturally over time — 10% speed reduction per frame. Simple, physically correct friction.",
-        "Collision detection is calculated the long way around instead of using the built-in shortcut. Gemini did it manually.",
-        "There is no gravity. The marble rolls on a perfectly flat surface. Marble calmness, not marble madness.",
-        "Gemini wrote 6.28 instead of using the standard twice-pi mathematical constant. Gemini knows the number. Just knows it.",
-        "No sound, no time limit, no multiple levels. Roll across the screen without touching circles. Done."
+        "Ten obstacles placed randomly at game start, none of which ever move. Static threats on a still board."
       ]
     },
     "maze-3d": {
       "opus-4-6": [
         "1,161 lines of custom 3D maze rendering written entirely from scratch. Opus built a Wolfenstein engine from nothing.",
         "The accent color is fire orange — while every other Opus game uses cyan or green, the maze gets warmth.",
-        "The cursor changes to a crosshair while playing. You navigate the maze with a sniper cursor. Full FPS energy.",
-        "The controls are displayed in a neat two-column layout on the start screen. Even the key bindings are formatted.",
-        "The title glows with a cascading three-layer orange halo. The maze title radiates heat.",
-        "1,161 lines that handle collision detection, 3D rendering, a minimap, and presumably keys and doors.",
-        "The background is near-total black. The maze emerges from a void. Dark academia for a game jam.",
-        "Even the start button has a branded border and spaced-out lettering. The enter button has opinions.",
-        "The title card has a maximum width so it doesn't stretch on large screens. Constrained elegance.",
-        "Orange is the only warm accent in the entire Opus catalog. Every other game is cool cyan. The maze burns."
+        "The cursor changes to a crosshair while playing. You navigate the maze with a sniper cursor. Full FPS energy."
       ],
       "gpt-5-4": [
         "1,836 lines of hand-coded 3D rendering using only the browser's built-in 2D drawing canvas. Old school. Impressive.",
         "Both GPT-5.4 and Opus independently chose the exact same orange as the maze accent color. Orange is correct.",
-        "The game panel shadow contains three separate shadow layers. Even the shadow is multi-layered. Shadows upon shadows.",
-        "The background scan lines form a crosshatch grid pattern. The visual noise is plaid.",
-        "A full FPS-style overlay: mine counter area, status line, minimap, crosshair, and hint chips. Complete FPS experience.",
-        "The crosshair in the center of the screen is a real page element positioned with styling. An HTML crosshair.",
-        "1,836 lines, three background gradients, and orange accents. The maze template is nothing if not thorough.",
-        "Minimum screen size requirements are enforced. GPT-5.4's maze has a viewport floor. It will not shrink further.",
-        "Trebuchet MS appears for the third time in the GPT-5.4 catalog: Snake, Minesweeper, and now Maze. The Trebuchet legacy.",
-        "Contextual hint text appears in a styled chip element. The maze gives you tips. In a branded chip. Chipped hints."
+        "The game panel shadow contains three separate shadow layers. Even the shadow is multi-layered. Shadows upon shadows."
       ],
       "gpt-5-4-mini": [
         "1,485 lines with nearly identical structure to GPT-5.4's maze. Same orange. Same elements. The resemblance is strong.",
         "Both the main orange and a faint ghost version of it are registered as separate named values. Orange and ghost-orange.",
-        "Same HUD elements as GPT-5.4 but with different capitalization in the element names. Same what, different what-to-call-it.",
-        "Even in the HUD layout, GPT-mini uses a grid system. Every layout in every GPT-mini game uses a grid. Grid is life.",
-        "The HUD fades in when the game starts. The interface doesn't just appear — it arrives with a transition.",
-        "Same minimum screen size as GPT-5.4. The specification was shared. Or copied. We'll say shared.",
-        "Mini prioritizes Trebuchet MS above all other fonts. GPT-mini loves Trebuchet more than its parent model does.",
-        "1,485 lines vs GPT-5.4's 1,836. Mini saved 350 lines and kept everything: orange, minimap, hints, crosshair.",
-        "Gemini wrote the same 3D maze renderer in 64 lines. GPT-mini uses 23 times more code for the same effect.",
-        "The background crosshatch pattern is identical to GPT-5.4 in size and density. Confirmed shared template."
+        "Same HUD elements as GPT-5.4 but with different capitalization in the element names. Same what, different what-to-call-it."
       ],
       "gemini-3-1-pro": [
         "64 lines of working 3D maze rendering. A first-person perspective maze in 64 lines. The most impressive 64 lines I've seen.",
         "The entire map is written as a list of text strings, like typing the maze out on a typewriter. The world is text.",
-        "The wall detection steps tiny distances forward until it hits something. Five lines of logic. Works perfectly.",
-        "Distance-to-wall perspective correction is a single mathematical formula. One line. The entire 3D calculation.",
-        "The win condition is walking into one specific cell. Find that cell. That's the whole game.",
-        "Walls get darker as they get farther away — depth shading using only shades of cyan. Beautiful in 64 lines.",
-        "The field of view is exactly one radian wide — about 57 degrees. Gemini picked a number and committed.",
-        "No ceiling, no floor — just walls and void. Pure minimalist first-person rendering.",
-        "No minimap, no crosshair, no HUD. You navigate by feel alone. The void provides no guidance.",
-        "Turning moves in fixed stuttery steps. A little choppy. But it works. In 64 lines. Choppy is fine here."
+        "The wall detection steps tiny distances forward until it hits something. Five lines of logic. Works perfectly."
       ]
     },
     "mini-golf": {
       "opus-4-6": [
         "1,346 lines with a full 3D engine and cinematic post-processing bloom effects. Opus built a real mini-golf simulator.",
         "Post-processing bloom is included — the effect that makes light sources look like they're actually glowing. In mini-golf.",
-        "The power bar shifts from green to yellow to orange to red as you pull back. Visual feedback that actually teaches you something.",
-        "A full scorecard tracks each hole, its par, your score, and your score relative to par. It's actually golf.",
-        "Five holes with individual names. The first is 'THE ROOKIE'. Opus wrote hole lore. The golf course has a story.",
-        "You aim by clicking and dragging back like a slingshot — intuitive design that explains itself without a tutorial.",
-        "The camera orbits 360 degrees around the hole. You can inspect the layout before shooting. Thoughtful golf.",
-        "The HUD shows hole number, par, and current stroke count simultaneously. You always know where you stand.",
-        "Post-processing means the game has a real multi-stage rendering pipeline. A graphics pipeline. For browser mini-golf.",
-        "Your total score across all five holes is tracked live in the corner. Running totals. Actual scorekeeping."
+        "The power bar shifts from green to yellow to orange to red as you pull back. Visual feedback that actually teaches you something."
       ],
       "gpt-5-4": [
         "2,304 lines — the largest single file in the entire competition. GPT-5.4 peaked at mini-golf. The record is held.",
         "Two named neon green intensities: regular neon and soft neon. Two shades of green for a golf game.",
-        "The panel corner radius is exactly 18 pixels. An editorial decision was made at the pixel level. A meeting was held.",
-        "The minimum screen size requirement from every other GPT-5.4 game reappears here. Consistent floor.",
-        "The screen edges are 90% opaque black. The vignette nearly swallows the periphery. The golf hole is in a tunnel.",
-        "Same 3D engine and same post-processing bloom as Opus. Same tools, 958 more lines. Different priorities.",
-        "The green line color follows the golf-is-green theme into the atmospheric background. Thematic consistency.",
-        "Trebuchet MS appears for the fourth time: Snake, Minesweeper, Maze-3D, and now Mini-Golf. Trebuchet is a lifestyle.",
-        "The panel background is a very dark green-tinted near-black. The panel is golfing. Even the UI is on the course.",
-        "2,304 lines vs Opus's 1,346 for the same game with the same tools. GPT-5.4 needed 958 extra lines to do what Opus did."
+        "The panel corner radius is exactly 18 pixels. An editorial decision was made at the pixel level. A meeting was held."
       ],
       "gpt-5-4-mini": [
         "1,343 lines — nearly identical to Opus's 1,346. The convergence is suspicious. There is one possible explanation.",
         "No post-processing bloom. Mini cut the glow budget. The lights don't bleed in GPT-mini's golf game.",
-        "Six sans-serif font fallbacks starting with a modern system font. Mini switched font philosophy entirely.",
-        "The power bar is a pill shape — rounded at both ends like a capsule. Golf power is a capsule.",
-        "The HUD score cards are frosted glass. Your stroke count appears behind a layer of visual frost.",
-        "HUD labels are small, spaced, and uppercase. The labels know they're labels. They act accordingly.",
-        "Score values are large and heavy. Numbers dominate labels in this hierarchy. The numbers are in charge.",
-        "All three implementations use the same version of the 3D library. Consensus was reached on that at least.",
-        "The background grid blends with the game using a screen mode. The floor glows softly through the geometry.",
-        "1,343 lines without the glow post-processing that Opus achieves in 1,346 lines. Three fewer lines, one fewer feature."
+        "Six sans-serif font fallbacks starting with a modern system font. Mini switched font philosophy entirely."
       ]
     },
     "tile-matching": {
       "opus-4-6": [
         "Those `═══════════════════════` section banners dividing every function block make this look less like source code and more like an annotated manuscript submitted for academic peer review.",
         "Gem color palettes are stored as `{ m: '#ff1177', g: '#ff4499', l: '#ff88bb' }` — m for 'main,' g for 'glow,' l for 'light,' in a codebase where readability was apparently considered a stretch goal.",
-        "Manually polyfilling `roundRect` in 2024 is noble, unless you're targeting browsers from 2021, in which case you're just ahead of the JavaScript standardization committee's timeline by a few years.",
-        "Six distinct game phases — `PH_IDLE`, `PH_SWAP`, `PH_SWAP_BACK`, `PH_REMOVE`, `PH_FALL`, `PH_SHUFFLE` — is the kind of state machine architecture typically deployed for international airport runway management, not gem swapping.",
-        "A 4.5-second hint delay means the game waits longer before pointing at a valid move than most players spend actually thinking about one — a generous vote of confidence in human spatial reasoning.",
-        "`sfxShuffle` generates 10 random tones between 200 and 700 Hz using `Math.random() * 500` — technically 'procedural audio,' practically 'what happens when birds discover synthesizers.'",
-        "`easeOutBounce` with four nested conditional branches is a physics engine that snuck into a match-3 game file while nobody was watching and decided to stay.",
-        "`wouldMatchInit` validates every tile placement during board generation to prevent accidental starting matches — the precautionary principle applied to recreational gem placement.",
-        "`sfxBadSwap` fires two descending square waves at 200 and 160 Hz — the algorithmically correct sound of 'no, that was wrong, please try again,' rendered in raw oscillators.",
-        "A solo mute emoji button floating in the top-right corner with no styling, no animation, and no friends — doing its best in an otherwise all-canvas world with zero other DOM elements."
+        "Manually polyfilling `roundRect` in 2024 is noble, unless you're targeting browsers from 2021, in which case you're just ahead of the JavaScript standardization committee's timeline by a few years."
       ],
       "gpt-5-4": [
         "Over 600 lines of CSS for the HUD wrapper around a canvas game board that occupies maybe 40% of the screen — architecture as therapy.",
         "The title screen is a product brochure: four bullet-point feature callouts, two named mode descriptions, and a third card called 'Control Deck' that exists only to fill the grid layout with the controls explanation.",
-        "Tile shapes are defined as diamond, hex, square, triangle, teardrop, circle, and star in `TILE_KINDS` — visually ambitious properties that presumably render differently somewhere in the canvas draw code.",
-        "Every tile gets a `tileIdCounter` ID so each gem has a unique identifier — one step away from issuing them social security numbers and filing quarterly tax returns.",
-        "The `buildMatchPlan` function returns a `clearSet` and a `created` map after computing cross-group special tile intersections — this game has a query planner.",
-        "`ambientRibbons` are six slowly drifting background light elements that add atmosphere approximately zero players will consciously notice but that GPT-5.4 definitely spent time on.",
-        "The introDrone plays three stacked oscillators at 55, 82.4, and 110 Hz on the title screen, fading in over 1.2 seconds — the most elaborate lobby music ever written for a match-3 game.",
-        "The restart button says 'Run It Back' — GPT-5.4 is inexplicably cool about the fact that you just lost.",
-        "The brand pill permanently displays 'BrainRot Games // GPT-5.4' in the top-left HUD during gameplay — in case you needed a reminder mid-match of who spent 600 lines on CSS.",
-        "`movePendingGameOver` and `timerPendingGameOver` are tracked as separate boolean flags, because GPT-5.4 wants to know the precise manner of your impending failure before it processes the loss."
+        "Tile shapes are defined as diamond, hex, square, triangle, teardrop, circle, and star in `TILE_KINDS` — visually ambitious properties that presumably render differently somewhere in the canvas draw code."
       ],
       "gpt-5-4-mini": [
         "Named the game 'Neon Shard' and set the game over message to 'The reactor went dark' — every failed match-3 session now carries the narrative weight of a nuclear incident.",
         "Gem types named Astra, Nova, Ion, Volt, Pulse, Ray, Ember, and Cryo appear in the source code `GEM_STYLES` array and in exactly zero places in the visible UI.",
-        "The title screen features three ghost buttons at the bottom — 'Touch Friendly,' 'Sound On,' 'Neon Canvas' — decorative feature badges that assert capabilities rather than activating them.",
-        "The game tracks `totalMatches`, `totalSpecials`, `totalCascades`, and `totalShuffles` on the game over screen, giving players four statistical lenses through which to understand why they lost.",
-        "`placeAmbientSparkles()` scatters 52 randomly positioned sparkles before gameplay begins — like setting up atmospheric lighting for a competitive tile-matching event.",
-        "The `boardFlash` and `boardSpin` variables are initialized to 0 and presumably referenced somewhere, suggesting a spectacular board-wipe animation existing primarily as theoretical potential energy.",
-        "The HUD simultaneously shows 'Multiplier' and 'Chain' in separate chips — two distinct readouts of the same 'you're doing well' signal, for players who appreciate redundancy.",
-        "Timer mode is called 'Chrono' rather than 'Timed' — a single syllable upgrade that makes the game feel 23% more competitive and inexplicably more French.",
-        "The start button says 'Start Run' — every match-3 session is a speedrun when you brand it that way.",
-        "`Sound.ambient(true)` is called in both `showTitle()` and `startGame()`, meaning the ambient drone greets you on the menu, vanishes when you click start, and immediately returns — a drone that misses you the moment you leave."
+        "The title screen features three ghost buttons at the bottom — 'Touch Friendly,' 'Sound On,' 'Neon Canvas' — decorative feature badges that assert capabilities rather than activating them."
       ],
       "gpt-5-5": [
         "GPT 5.5 named it Prism Crush and then built enough polish to justify the dramatic little title.",
         "The board uses canvas like it has a lighting designer and a very serious gem union contract.",
-        "Every cascade arrives with particles, score floaters, and sound, because apparently gravity needed a production budget.",
-        "The specials are cleanly readable instead of being tiny mystery icons, which is rude to everyone relying on confusion.",
-        "Keyboard, pointer, touch, hints, shuffles, and mute all fit without turning the screen into a control spreadsheet.",
-        "The 320x480 layout keeps the actual puzzle central, a bold innovation called remembering the game is the point.",
-        "The Web Audio layer has more personality than some entire previous submissions.",
-        "GPT 5.5 made invalid swaps bounce back with judgment, which is exactly the emotional feedback match-3 deserves.",
-        "The end screen feels earned instead of taped on, which is inconvenient for anyone hoping this would be easy to mock.",
-        "Prism Crush is basically GPT 5.5 showing up late and still taking the best lighting cue."
+        "Every cascade arrives with particles, score floaters, and sound, because apparently gravity needed a production budget."
       ]
     },
     "space-invaders": {
       "opus-4-6": [
         "The opening comment describes it as 'A premium arcade experience with procedural audio, particles, neon aesthetics, boss waves, combos, and full touch support' — Opus opened a game file with a press release.",
         "All three alien types are drawn entirely with `fillRect` calls using `s = Math.min(w, h) / 28` as the base unit — pixel art rendered in coordinate arithmetic, which is either elegantly efficient or slightly unhinged.",
-        "The boss's three shooting phases are encoded in a single inline ternary expression, because fitting a multi-phase escalating difficulty system on one line is the kind of flex that requires no comment block.",
-        "Variable names include `pl`, `gs`, `sx`, `sy`, `aBullets`, `updABounds`, and `drwCrab` — a naming scheme that treats every character as a finite, precious resource that must not be wasted.",
-        "The player spaceship is five canvas path points with swept wings, a thruster triangle, and an ellipse cockpit — more structural geometry than most sprites get across an entire spritesheet.",
-        "`sndBossEntry` fires 10 setTimeout callbacks at 100ms intervals, stacking sawtooth oscillators and noise bursts — a boss entrance theme reverse-engineered from first principles using nothing but raw Web Audio API.",
-        "`spawnPowerUp` drops items with a 15% chance and produces zero feedback when the roll fails — 85% of alien deaths are silent, missed opportunities the universe quietly declines to mention.",
-        "The UFO draws four colored circles from an inline array `['#ff0', '#0ff', '#f0f', '#0f0']` — tiny running lights suggesting the pilot has eclectic taste in onboard illumination choices.",
-        "`alienStepInterval = Math.max(0.15, 0.6 - wave * 0.04)` encodes the entire difficulty curve as a single line of arithmetic — the game becomes genuinely unplayable around wave 11, which the math knew all along.",
-        "Invincibility flicker uses `Math.floor(pl.inv / 5) % 2 === 0` — the mathematically correct blink-on-hit implementation, deployed with the quiet confidence of someone who has written this exact expression in a previous life."
+        "The boss's three shooting phases are encoded in a single inline ternary expression, because fitting a multi-phase escalating difficulty system on one line is the kind of flex that requires no comment block."
       ],
       "gpt-5-4": [
         "`LOGICAL_WIDTH = 1080, LOGICAL_HEIGHT = 1620` for a Space Invaders game — a canvas 1.5 times taller than it is wide, designed either for vertical phones or a monument to the alien threat.",
         "The touch movement control is a draggable thumb slider called 'Drift' rather than two buttons, because GPT-5.4 felt Space Invaders needed smoother lateral motion semantics.",
-        "The fire button is labeled 'PULSE' — not 'FIRE,' not 'SHOOT,' but 'PULSE,' which is the one word that makes a shooting button feel like a mindfulness app.",
-        "There's a 'Warm Up Loop' demo button that plays the game automatically so you can observe before committing — the Space Invaders equivalent of a film trailer, for people who need to evaluate the vibe first.",
-        "The game over screen is titled 'Orbital Debrief' with 'Mission Ended' as the subheader — losing in Space Invaders now constitutes a military incident requiring formal after-action documentation.",
-        "Enemy types are named drone, striker, brute, and specter, each with unique HP, fire bias, and shoot speed — GPT-5.4 didn't make Space Invaders, it wrote a military tactical dossier.",
-        "The `statusRibbon` and `tickerLine` are two separate live-text elements providing simultaneous narrative commentary — a dual-channel information feed for a game where you shoot aliens.",
-        "Power-ups are named 'Tri-Shot,' 'Rapid Fire,' 'Aegis Shield,' and 'Vector Boost' — each temporary power-up branded with the gravity of a defense procurement specification.",
-        "The `.touch-thumb` has a gradient with a specular highlight and the `touch-track` has a `::before` center line — this is more design work than I've seen in some commercial mobile game interfaces.",
-        "`transform: skewX(-6deg)` on the title text makes 'SPACE INVADERS' lean forward by six degrees — a choice that says 'this is an action game and even the typography is in motion.'"
+        "The fire button is labeled 'PULSE' — not 'FIRE,' not 'SHOOT,' but 'PULSE,' which is the one word that makes a shooting button feel like a mindfulness app."
       ],
       "gpt-5-4-mini": [
         "The entire CSS is 32 lines with `background: #000` — a stark testament to the philosophy that if the game is good enough, nobody notices the backdrop is just the void.",
         "Variable names include `C`, `W`, `H`, `sx`, `sy`, `gs`, `GS`, `pl`, `LW`, `LH`, and `pbullets` — navigating this code requires the same skills as reading a personal cipher.",
-        "Alien shapes `drwCrab`, `drwSquid`, and `drwBug` are drawn with the same fillRect coordinate system as Opus 4.6's implementation — two AI models independently converging on identical pixel-art aliens is either convergent evolution or one very good Space Invaders tutorial.",
-        "Power-up labels are '3×', 'RR', 'SH', and 'SP' — abbreviations so compressed they require the source code as a Rosetta Stone to decode what RR and SP actually do.",
-        "`pl.pTimer = 540` hard-codes power-up duration in frames, meaning power-ups last exactly 9 seconds at 60fps and increasingly fewer seconds at any frame rate below that.",
-        "`STARS` is declared in ALL_CAPS as if it's a physical constant on par with the speed of light, when it's really 130 randomly generated background rectangles.",
-        "The UFO draws four colored dots from `['#ff0', '#0ff', '#f0f', '#0f0'].forEach(...)` — the exact same rainbow light array as Opus 4.6's UFO, suggesting the intergalactic fleet runs on shared hardware specs.",
-        "`aMoveInt = Math.max(8, 60 - (wave - 1) * 4)` encodes alien speed as a formula that matches the Opus 4.6 difficulty curve almost exactly — a coincidence so precise it deserves its own investigation.",
-        "Touch controls are three plain HTML circle buttons for left, right, and fire — approximately 90 lines of CSS less than what GPT-5.4 built for functionally equivalent input handling.",
-        "Shooting is gated by `frameN - pl.fTimer < rate` — frame-counting instead of delta time, meaning your fire rate is directly tied to CPU performance, which is the most retro design decision in the whole file."
+        "Alien shapes `drwCrab`, `drwSquid`, and `drwBug` are drawn with the same fillRect coordinate system as Opus 4.6's implementation — two AI models independently converging on identical pixel-art aliens is either convergent evolution or one very good Space Invaders tutorial."
       ],
       "gpt-5-5": [
         "1,530 lines for 'Neon Last Stand - GPT 5.5 Space Invaders' — GPT-5.5 gave its Space Invaders a dramatic subtitle and a model number. 'Neon Last Stand'. That's a name.",
         "The title includes the genre label: 'GPT 5.5 Space Invaders'. GPT-5.5 wants the browser tab to inform you precisely which Space Invaders you're playing.",
-        "1,530 lines puts GPT-5.5 between Opus at 1,404 and GPT-5.4 at 2,848. GPT-5.5 is more restrained than GPT-5.4 but more verbose than Opus. Generational moderation.",
-        "The neon color scheme is intact. GPT-5.5's Space Invaders has the --cyan, --pink, --amber palette from all its other games. Consistent visual brand.",
-        "Destructible shields implemented. GPT-5.5 included the classic shield mechanic. The cover erodes.",
-        "UFO bonus ship included. GPT-5.5 remembered the UFO. The whole family remembered the UFO.",
-        "Particle system on enemy destruction. GPT-5.5 adds particles to kills. Each invader death is a visual event.",
-        "Sound design with Web Audio API. GPT-5.5's Space Invaders makes sounds for every significant game event.",
-        "Wave escalation with increasing enemy speed. GPT-5.5's invaders get faster. The classic difficulty curve.",
-        "The `viewport-fit=cover` meta tag again. GPT-5.5 handles notched displays across all its games. The iPhone notch does not interrupt the invasion."
+        "1,530 lines puts GPT-5.5 between Opus at 1,404 and GPT-5.4 at 2,848. GPT-5.5 is more restrained than GPT-5.4 but more verbose than Opus. Generational moderation."
       ]
     },
     "pac-man": {
       "gpt-5-4": [
         "At 2,281 lines, GPT-5.4's Pac-Man has more lines of code than the original 1980 arcade ROM had bytes — a technical achievement that somehow results in ghosts that still path straight into walls.",
         "The ghost scatter targets are hardcoded as pixel coordinates relative to a canvas that resizes dynamically, which means Blinky's preferred hiding spot migrates across the screen every time you resize the window.",
-        "GPT-5.4 implemented a full A* pathfinding system for the ghosts, which is objectively impressive, and yet Pinky still manages to get stuck in the top-left corridor for 30 seconds every round.",
-        "The maze is drawn as 800 individual `fillRect` calls per frame — a rendering approach so thorough it could be classified as manual pixel art at 60fps.",
-        "There are three separate systems for tracking scores: `score`, `scoreDisplay`, and `scoreAnim` — because displaying the number 200 apparently requires a distributed state architecture.",
-        "The power pellet flash animation uses `Math.sin(Date.now() / 150)` for brightness — a continuous sine wave that ignores game pause state, so pellets keep pulsing during the death sequence like they're mocking you.",
-        "Ghost eyes are drawn as four separate canvas arc calls per ghost per frame — 16 arc calls per tick just for eye whites and pupils, which is technically accurate to the original but architecturally unhinged.",
-        "The tunnel warp logic has a 12-pixel overlap zone on each side where Pac-Man's position is valid in both the left and right wrap states simultaneously — quantum Pac-Man exists in 2,281 lines.",
-        "The attract mode animation on the title screen runs the full game engine in a demo state, consuming the same CPU cycles as actual gameplay, so just looking at the menu is already a workout.",
-        "After eating all 240 dots, GPT-5.4 flashes the maze blue and white three times before showing the level clear screen — a celebration so elaborate it takes longer than the average first life on level 1."
+        "GPT-5.4 implemented a full A* pathfinding system for the ghosts, which is objectively impressive, and yet Pinky still manages to get stuck in the top-left corridor for 30 seconds every round."
+      ],
+      "qwen3.6-35b-a3b": [
+        "Qwen3.6 35B A3B implemented four ghosts with distinct AI personalities — because one yellow circle eating dots wasn't chaotic enough.",
+        "The ghost pathfinding uses squared Euclidean distance for target selection, which is mathematically elegant and completely overkill for a maze game.",
+        "Power pellet frightened mode includes a flash timer that toggles white — because blue ghosts needed to communicate their urgency through strobe lighting."
       ]
     },
     "sudoku": {
       "gpt-5-4": [
         "GPT-5.4 wrote 2,972 lines for Sudoku — a game whose entire ruleset can be expressed in two sentences — suggesting it either found the problem fascinating or the token budget irresistible.",
         "The puzzle generator runs backtracking with full constraint propagation and naked-pair elimination during generation, which is technically solving the puzzle before letting you pretend to solve the puzzle.",
-        "There are 14 distinct animation states tracked for cell selection, number placement, error flash, hint reveal, win pulse, and various intermediate transitions — the sudoku grid has more state machines than a vending machine.",
-        "The difficulty system offers five levels including 'Diabolical,' which removes 62 cells and then has the audacity to still provide hints — cognitive dissonance encoded in JavaScript.",
-        "Candidate note rendering uses sub-pixel font sizing scaled to the cell dimensions, which means your pencil marks are typeset with more precision than most print publications use for body text.",
-        "The win fanfare plays a major chord arpeggio across four oscillators with stereo panning, a reverb tail, and a frequency sweep — Beethoven wrote symphonies with less planning than this victory jingle.",
-        "Undo history is stored as deep clones of the full 81-cell grid state, which means every pencil mark you add costs you a complete board snapshot — the memory footprint of caution.",
-        "The timer pauses automatically when you switch browser tabs, because GPT-5.4 decided that Sudoku respects your multitasking lifestyle — a feature literally no one requested for a logic puzzle.",
-        "Error cells shake with a CSS keyframe animation defined inline in a dynamically injected `<style>` tag during runtime — solving the problem of not having a stylesheet by inventing one on the fly.",
-        "The cell highlight algorithm propagates selection state to all peers in the same row, column, and box simultaneously, then diffuses a secondary half-opacity highlight to cells sharing the same number — this Sudoku grid has more visual layers than most AAA game UIs."
+        "There are 14 distinct animation states tracked for cell selection, number placement, error flash, hint reveal, win pulse, and various intermediate transitions — the sudoku grid has more state machines than a vending machine."
       ]
     },
     "outrun-racer": {
       "gpt-5-5": [
         "GPT 5.5 implemented a procedural step sequencer cycling through 8 notes every 0.18 seconds during races — not background music, but a generative synthwave album composed on the fly because silence was apparently disqualifying.",
         "The particle system uses a Float32Array of capacity 2048 that doubles itself whenever that isn't enough — a memory strategy more suited to a particle physics collider than a highway that just wants to look pretty.",
-        "Every traffic car has its own PointLight glowing pink, cyan, or lime at intensity 1.7 — oncoming obstacles that function less as hazards and more as a rolling ambient art installation you're trying not to crash into.",
-        "The engine sound is a sawtooth oscillator at 62Hz filtered through a lowpass at 420Hz with pitch mapped live to current speed — GPT 5.5 modeled an actual engine on the Web Audio API and then put a racing game around it.",
-        "Roadside scenery includes palms, signs, towers, and 'sunGates' — portal arches flanking the highway because a chain-link fence would be a creative surrender GPT 5.5 simply refused to make.",
-        "Road segments bend using a compound sine wave with two frequencies and separate amplitudes — the road actually curves authentically, which is the kind of detail that matters deeply to everyone who has played OutRun and nobody who hasn't.",
-        "ACESFilmic tone mapping at exposure 1.25 means the game is cinematically graded like a Netflix sci-fi production — the other models rendered a racing game, GPT 5.5 rendered a visual experience that happens to have a score.",
-        "FogExp2 gives the horizon exponential depth falloff rather than a flat clip plane — a technically correct and visually beautiful metaphor for the quality difference, but let's not read too much into that.",
-        "The drift scoring system tracks a multiplier live in the HUD because earning combo points while sliding past traffic deserves its own readout, its own font size, and apparently its own emotional arc.",
-        "Five stages, five checkpoints, a boost bar, drift multiplier, and a 45-second timer — GPT 5.5 didn't make an outrun clone, it made an outrun clone with a progression system and then kept going."
+        "Every traffic car has its own PointLight glowing pink, cyan, or lime at intensity 1.7 — oncoming obstacles that function less as hazards and more as a rolling ambient art installation you're trying not to crash into."
       ],
       "gpt-5-4-mini": [
         "Both implementations independently named the game 'Neon Horizon Racer' — either great minds think alike, or GPT 5.4 Mini inherited the brief and decided the title had already peaked.",
         "GPT 5.4 Mini imports UnrealBloomPass from Three.js addons on top of EffectComposer just to make headlights glow more — a full post-processing pipeline deployed because the built-in renderer wasn't flattering enough.",
-        "The game over headline is 'CRASHED OUT' with subtitle 'The highway won that round' — a gracious concession speech from a file that was only asked to display a score and a restart button.",
-        "The swipe-to-steer gesture requires 44 pixels of horizontal travel with under 10% vertical drift before it registers — the lane-change control has a tolerance spec and it will enforce it.",
-        "`gameOverReason` is tracked in state and populated during gameplay but never surfaced to the player — somewhere in the code your precise cause of death is quietly recorded and then archived in the void forever.",
-        "Starting boost is initialized to 0.34, meaning you begin every run already holding 34% nitro — a thoughtful pre-loaded advantage that says 'we want you to feel fast immediately but not invincible about it.'",
-        "The checkpoint timer is 18 seconds — the exact duration that feels achievable on your first run, stressful on your third, and personally vindictive by your seventh.",
-        "The `miniHint` element in the corner explains the entire control scheme in one line of text, which is admirable economy from a game whose title screen already had four explanation cards.",
-        "A `statusTag` in the corner cycles through READY, RUNNING, and MUTED like an operational readout on a server rack — the game broadcasts its own system status with the quiet confidence of infrastructure.",
-        "The title screen warns that 'the horizon eats you whole' if you lose momentum — dramatic highway personification from a model that has clearly developed feelings about velocity and is not afraid to share them."
+        "The game over headline is 'CRASHED OUT' with subtitle 'The highway won that round' — a gracious concession speech from a file that was only asked to display a score and a restart button."
       ]
     }
   },
