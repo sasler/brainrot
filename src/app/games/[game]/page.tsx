@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getGame, getGames } from "@/lib/games";
-import VersionCard from "@/components/VersionCard";
+import GameVersionSections from "@/components/GameVersionSections";
 import RatingsProvider from "@/components/RatingsProvider";
 import type { Metadata } from "next";
 
@@ -72,27 +72,9 @@ export default async function GamePage({ params }: GamePageProps) {
 
         {/* AI Versions */}
         {game.versions.length > 0 ? (
-          <>
-            <div className="mb-8 flex items-center gap-4">
-              <div className="h-px w-8 bg-gradient-to-r from-transparent to-neon-cyan/50" />
-              <h2 className="font-display text-sm font-semibold tracking-[0.3em] text-neon-cyan">
-                AI IMPLEMENTATIONS
-              </h2>
-              <div className="h-px w-8 bg-gradient-to-l from-transparent to-neon-cyan/50" />
-            </div>
-            <RatingsProvider gameId={game.id}>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {game.versions.map((version, index) => (
-                  <VersionCard
-                    key={version.modelId}
-                    game={game}
-                    version={version}
-                    index={index}
-                  />
-                ))}
-              </div>
-            </RatingsProvider>
-          </>
+          <RatingsProvider gameId={game.id}>
+            <GameVersionSections game={game} />
+          </RatingsProvider>
         ) : (
           <div className="flex flex-col items-center rounded-2xl border border-dashed border-border py-20">
             <div className="mb-4 text-4xl opacity-30">🤖</div>

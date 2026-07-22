@@ -2,13 +2,21 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
-  useCallback,
   type ReactNode,
 } from "react";
 import type { RatingsStorageState } from "@/lib/ratings-types";
+import {
+  ratingFromFeedback,
+  transitionVersionFeedback,
+  type StarValue,
+  type UserVerdict,
+  type VersionFeedback,
+} from "@/lib/ratings-feedback";
 
 export interface RatingData {
   average: number;
@@ -23,69 +31,136 @@ const unavailableStorage: RatingsStorageState = {
 };
 
 interface RatingsContextValue {
-  ratings: Record<string, RatingData>;
-  userVotes: Record<string, number>;
+  feedback: Record<string, VersionFeedback>;
+  userVerdicts: Record<string, UserVerdict>;
   storage: RatingsStorageState | null;
   loading: boolean;
   submitError: string | null;
-  submitRating: (
+  submitVerdict: (
     gameId: string,
     modelId: string,
-    stars: number,
+    verdict: UserVerdict,
   ) => Promise<void>;
 }
 
 const RatingsContext = createContext<RatingsContextValue>({
-  ratings: {},
-  userVotes: {},
+  feedback: {},
+  userVerdicts: {},
   storage: null,
   loading: true,
   submitError: null,
-  submitRating: async () => {},
+  submitVerdict: async () => {},
 });
 
 export function useRatings() {
   return useContext(RatingsContext);
 }
 
-export function useVersionRating(gameId: string, modelId: string) {
-  const { ratings, userVotes, storage, loading, submitError, submitRating } =
-    useRatings();
+export function useVersionFeedback(gameId: string, modelId: string) {
+  const context = useRatings();
   const key = `${gameId}:${modelId}`;
+  const versionFeedback = context.feedback[key] ?? null;
   return {
-    rating: ratings[key] ?? null,
-    userVote: userVotes[key] ?? null,
-    storage,
-    loading,
-    submitError,
-    submit: (stars: number) => submitRating(gameId, modelId, stars),
+    feedback: versionFeedback,
+    rating: ratingFromFeedback(versionFeedback),
+    userVerdict: context.userVerdicts[key] ?? null,
+    storage: context.storage,
+    loading: context.loading,
+    submitError: context.submitError,
+    submit: (verdict: UserVerdict) =>
+      context.submitVerdict(gameId, modelId, verdict),
+  };
+}
+
+export function useVersionRating(gameId: string, modelId: string) {
+  const result = useVersionFeedback(gameId, modelId);
+  return {
+    ...result,
+    userVote:
+      result.userVerdict?.type === "rating"
+        ? result.userVerdict.stars
+        : null,
+    submit: (stars: number) =>
+      result.submit({ type: "rating", stars: stars as StarValue }),
   };
 }
 
 export function useBestRating(gameId: string, modelIds: string[]) {
-  const { ratings } = useRatings();
+  const { feedback } = useRatings();
   let best: (RatingData & { modelId: string }) | null = null;
   for (const modelId of modelIds) {
-    const r = ratings[`${gameId}:${modelId}`];
-    if (r && (!best || r.average > best.average)) {
-      best = { ...r, modelId };
+    const entry = feedback[`${gameId}:${modelId}`];
+    if (!entry || entry.failed || entry.average === null) continue;
+    if (!best || entry.average > best.average) {
+      best = {
+        average: entry.average,
+        count: entry.starCount,
+        modelId,
+      };
     }
   }
   return best;
 }
 
+export function useGameFeedbackSummary(gameId: string, modelIds: string[]) {
+  const { feedback, loading, storage } = useRatings();
+  const failedCount = modelIds.filter(
+    (modelId) => feedback[`${gameId}:${modelId}`]?.failed,
+  ).length;
+  return {
+    activeCount: modelIds.length - failedCount,
+    failedCount,
+    loading,
+    storage,
+  };
+}
+
 interface RatingsProviderProps {
   children: ReactNode;
   gameId?: string;
+  modelId?: string;
+}
+
+function legacyFeedback(
+  ratings: Record<string, RatingData> | undefined,
+): Record<string, VersionFeedback> {
+  if (!ratings) return {};
+  return Object.fromEntries(
+    Object.entries(ratings).map(([key, rating]) => [
+      key,
+      {
+        average: rating.average,
+        starCount: rating.count,
+        failCount: 0,
+        totalVerdicts: rating.count,
+        failRatio: 0,
+        failed: false,
+        failureCategories: {},
+      },
+    ]),
+  );
+}
+
+function legacyVerdicts(votes: Record<string, number> | undefined) {
+  if (!votes) return {};
+  return Object.fromEntries(
+    Object.entries(votes).map(([key, stars]) => [
+      key,
+      { type: "rating", stars: stars as StarValue } satisfies UserVerdict,
+    ]),
+  );
 }
 
 export default function RatingsProvider({
   children,
   gameId,
+  modelId,
 }: RatingsProviderProps) {
-  const scopeKey = gameId ?? "__all__";
-  const [ratings, setRatings] = useState<Record<string, RatingData>>({});
-  const [userVotes, setUserVotes] = useState<Record<string, number>>({});
+  const scopeKey = `${gameId ?? "__all__"}:${modelId ?? "__all__"}`;
+  const [feedback, setFeedback] = useState<Record<string, VersionFeedback>>({});
+  const [userVerdicts, setUserVerdicts] = useState<
+    Record<string, UserVerdict>
+  >({});
   const [storage, setStorage] = useState<RatingsStorageState | null>(null);
   const [loadedScope, setLoadedScope] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -94,47 +169,39 @@ export default function RatingsProvider({
   useEffect(() => {
     const controller = new AbortController();
     let ignore = false;
-    const qs = gameId ? `?gameId=${encodeURIComponent(gameId)}` : "";
+    const params = new URLSearchParams();
+    if (gameId) params.set("gameId", gameId);
+    if (modelId) params.set("modelId", modelId);
+    const qs = params.size > 0 ? `?${params.toString()}` : "";
 
     void Promise.all([
       fetch(`/api/ratings${qs}`, { signal: controller.signal })
-        .then((r) => r.json())
+        .then((response) => response.json())
         .catch((error) => {
           if (error instanceof DOMException && error.name === "AbortError") {
             return null;
           }
-
-          return {
-            ratings: {},
-            storage: unavailableStorage,
-          } as {
-            ratings: Record<string, RatingData>;
-            storage: RatingsStorageState;
-          };
+          return { feedback: {}, storage: unavailableStorage };
         }),
       fetch(`/api/ratings/user${qs}`, { signal: controller.signal })
-        .then((r) => r.json())
+        .then((response) => response.json())
         .catch((error) => {
           if (error instanceof DOMException && error.name === "AbortError") {
             return null;
           }
-
-          return {
-            votes: {},
-            storage: unavailableStorage,
-          } as {
-            votes: Record<string, number>;
-            storage: RatingsStorageState;
-          };
+          return { verdicts: {}, storage: unavailableStorage };
         }),
-    ]).then(([ratingsRes, votesRes]) => {
-      if (ignore || !ratingsRes || !votesRes) {
-        return;
-      }
-
-      setRatings(ratingsRes.ratings ?? {});
-      setUserVotes(votesRes.votes ?? {});
-      setStorage(ratingsRes.storage ?? votesRes.storage ?? null);
+    ]).then(([feedbackResponse, verdictResponse]) => {
+      if (ignore || !feedbackResponse || !verdictResponse) return;
+      setFeedback(
+        feedbackResponse.feedback ?? legacyFeedback(feedbackResponse.ratings),
+      );
+      setUserVerdicts(
+        verdictResponse.verdicts ?? legacyVerdicts(verdictResponse.votes),
+      );
+      setStorage(
+        feedbackResponse.storage ?? verdictResponse.storage ?? unavailableStorage,
+      );
       setSubmitError(null);
       setLoadedScope(scopeKey);
     });
@@ -143,115 +210,81 @@ export default function RatingsProvider({
       ignore = true;
       controller.abort();
     };
-  }, [gameId, scopeKey]);
+  }, [gameId, modelId, scopeKey]);
 
-  const submitRating = useCallback(
-    async (gId: string, modelId: string, stars: number) => {
-      const key = `${gId}:${modelId}`;
+  const submitVerdict = useCallback(
+    async (gId: string, versionModelId: string, verdict: UserVerdict) => {
+      const key = `${gId}:${versionModelId}`;
       setSubmitError(null);
-
       if (storage && !storage.writable) {
         setSubmitError(storage.reason ?? "Ratings are unavailable right now.");
         return;
       }
 
-      // Snapshot previous state for rollback
-      const prevVote = userVotes[key];
-      const prevRating = ratings[key];
-
-      // Optimistic update
-      setUserVotes((prev) => ({ ...prev, [key]: stars }));
-      setRatings((prev) => {
-        const existing = prev[key];
-        if (existing) {
-          const oldTotal = existing.average * existing.count;
-          const delta = stars - (prevVote ?? 0);
-          const newCount = prevVote !== undefined ? existing.count : existing.count + 1;
-          return {
-            ...prev,
-            [key]: {
-              average: Math.round(((oldTotal + delta) / newCount) * 10) / 10,
-              count: newCount,
-            },
-          };
-        }
-        return {
-          ...prev,
-          [key]: { average: stars, count: 1 },
-        };
+      const previousVerdict = userVerdicts[key];
+      const previousFeedback = feedback[key];
+      setUserVerdicts((current) => ({ ...current, [key]: verdict }));
+      setFeedback((current) => {
+        const next = transitionVersionFeedback(
+          current[key] ?? null,
+          previousVerdict,
+          verdict,
+        );
+        return next ? { ...current, [key]: next } : current;
       });
 
       try {
-        const res = await fetch("/api/ratings", {
+        const response = await fetch("/api/ratings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ gameId: gId, modelId, stars }),
+          body: JSON.stringify({
+            gameId: gId,
+            modelId: versionModelId,
+            verdict,
+          }),
         });
-        if (res.ok) {
-          const data = await res.json();
-          setRatings((prev) => ({
-            ...prev,
-            [key]: data.rating,
-          }));
-          setStorage(data.storage ?? storage);
-        } else {
-          const data = (await res.json().catch(() => null)) as
-            | { error?: string; storage?: RatingsStorageState }
-            | null;
-          setStorage(data?.storage ?? storage);
-          setSubmitError(data?.error ?? "Failed to submit rating.");
-          // Revert optimistic update on server error
-          setUserVotes((prev) => {
-            const next = { ...prev };
-            if (prevVote !== undefined) next[key] = prevVote;
-            else delete next[key];
-            return next;
-          });
-          if (prevRating) {
-            setRatings((prev) => ({ ...prev, [key]: prevRating }));
-          } else {
-            setRatings((prev) => {
-              const next = { ...prev };
-              delete next[key];
-              return next;
-            });
-          }
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.feedback) {
+          throw new Error(data?.error ?? "Failed to submit verdict.");
         }
-      } catch {
-        setSubmitError("Failed to submit rating.");
-        // Revert on network failure
-        setUserVotes((prev) => {
-          const next = { ...prev };
-          if (prevVote !== undefined) next[key] = prevVote;
+        setFeedback((current) => ({ ...current, [key]: data.feedback }));
+        setUserVerdicts((current) => ({
+          ...current,
+          [key]: data.userVerdict ?? verdict,
+        }));
+        setStorage(data.storage ?? storage);
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error ? error.message : "Failed to submit verdict.",
+        );
+        setUserVerdicts((current) => {
+          const next = { ...current };
+          if (previousVerdict) next[key] = previousVerdict;
           else delete next[key];
           return next;
         });
-        if (prevRating) {
-          setRatings((prev) => ({ ...prev, [key]: prevRating }));
-        } else {
-          setRatings((prev) => {
-            const next = { ...prev };
-            delete next[key];
-            return next;
-          });
-        }
+        setFeedback((current) => {
+          const next = { ...current };
+          if (previousFeedback) next[key] = previousFeedback;
+          else delete next[key];
+          return next;
+        });
       }
     },
-    [ratings, storage, userVotes],
+    [feedback, storage, userVerdicts],
   );
 
-  return (
-    <RatingsContext
-      value={{
-        ratings,
-        userVotes,
-        storage,
-        loading,
-        submitError,
-        submitRating,
-      }}
-    >
-      {children}
-    </RatingsContext>
+  const value = useMemo(
+    () => ({
+      feedback,
+      userVerdicts,
+      storage,
+      loading,
+      submitError,
+      submitVerdict,
+    }),
+    [feedback, loading, storage, submitError, submitVerdict, userVerdicts],
   );
+
+  return <RatingsContext value={value}>{children}</RatingsContext>;
 }

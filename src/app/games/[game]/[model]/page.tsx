@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getGame, getGames, getGameVersion } from "@/lib/games";
 import RatingsProvider from "@/components/RatingsProvider";
 import RatingInput from "@/components/RatingInput";
+import VersionFailureNotice from "@/components/VersionFailureNotice";
 import { getModelInfo } from "@/lib/modelCatalog";
 import { formatAssetSummary } from "@/lib/assetDisplay";
 import type { Metadata } from "next";
@@ -47,7 +48,8 @@ export default async function PlayPage({ params, searchParams }: PlayPageProps) 
   const iframeSrc = query.test === "1" ? `${version.path}?test=1` : version.path;
 
   return (
-    <div className="fixed inset-0 top-16 flex flex-col bg-background">
+    <RatingsProvider gameId={gameId} modelId={modelId}>
+      <div className="fixed inset-0 top-16 flex flex-col bg-background">
       {/* Compact top bar */}
       <div
         className="flex shrink-0 items-center justify-between border-b border-border bg-surface/80 px-4 py-2"
@@ -87,6 +89,7 @@ export default async function PlayPage({ params, searchParams }: PlayPageProps) 
           >
             {model.displayName}
           </span>
+          <VersionFailureNotice gameId={gameId} modelId={modelId} />
         </div>
         <div className="hidden items-center gap-4 font-mono text-[10px] text-muted sm:flex">
           <span className="text-foreground/60">{version.date}</span>
@@ -115,7 +118,6 @@ export default async function PlayPage({ params, searchParams }: PlayPageProps) 
       </div>
 
       {/* Rating bar */}
-      <RatingsProvider gameId={gameId}>
         <div className="flex shrink-0 items-center justify-center border-t border-border bg-surface/80 px-4 py-2">
           <RatingInput
             gameId={gameId}
@@ -123,7 +125,7 @@ export default async function PlayPage({ params, searchParams }: PlayPageProps) 
             accentColor={model.color}
           />
         </div>
-      </RatingsProvider>
-    </div>
+      </div>
+    </RatingsProvider>
   );
 }
