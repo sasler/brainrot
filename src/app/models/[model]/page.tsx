@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ModelGameCard from "@/components/ModelGameCard";
+import ModelGameSections from "@/components/ModelGameSections";
+import RatingsProvider from "@/components/RatingsProvider";
 import { getModelContribution, getModelContributions } from "@/lib/games";
 
 interface ModelPageProps { params: Promise<{ model: string }>; }
@@ -54,9 +55,9 @@ export default async function ModelPage({ params }: ModelPageProps) {
             <div><div className="mb-2 font-mono text-[9px] tracking-[0.22em] text-muted uppercase">Artifact archive</div><h2 id="model-games-heading" className="font-display text-2xl font-bold text-foreground sm:text-3xl">Everything it built</h2></div>
             <span className="hidden font-mono text-[10px] tracking-wider text-muted sm:block">SELECT A GAME TO LAUNCH</span>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {model.games.map((contribution, index) => <ModelGameCard key={contribution.game.id} contribution={contribution} modelColor={model.color} index={index} />)}
-          </div>
+          <RatingsProvider modelId={model.modelId}>
+            <ModelGameSections games={model.games} modelColor={model.color} />
+          </RatingsProvider>
         </section>
       </div>
     </div>

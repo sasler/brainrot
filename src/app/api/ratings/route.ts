@@ -7,6 +7,14 @@ import {
   withRatingsStorageFailure,
 } from "@/lib/ratings";
 import type { RatingsStorageState } from "@/lib/ratings-types";
+import {
+  buildVersionFeedback,
+  encodeVerdict,
+  parseSubmittedVerdict,
+  ratingFromFeedback,
+  type FeedbackAggregate,
+  type VersionFeedback,
+} from "@/lib/ratings-feedback";
 
 async function getOrCreateVoterId(): Promise<string> {
   const cookieStore = await cookies();
@@ -29,6 +37,7 @@ export async function GET(request: NextRequest) {
   const redis = await getRatingsRedisClient("read");
   if (!redis) {
     return NextResponse.json({
+      feedback: {},
       ratings: {},
       storage: withRatingsStorageFailure(
         storage,
@@ -40,6 +49,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const gameId = searchParams.get("gameId");
+    const modelId = searchParams.get("modelId");
 
     const games = gameId
       ? [getGame(gameId)].filter(Boolean)
@@ -51,35 +61,34 @@ export async function GET(request: NextRequest) {
     for (const game of games) {
       if (!game) continue;
       for (const version of game.versions) {
+        if (modelId && version.modelId !== modelId) continue;
         const k = `rating:${game.id}:${version.modelId}`;
         keys.push(k);
         keyMap.push(`${game.id}:${version.modelId}`);
       }
     }
 
-    if (keys.length === 0) return NextResponse.json({ ratings: {}, storage });
-
-    const results = await redis.hgetallMany<{
-      totalStars?: number;
-      voteCount?: number;
-    }>(keys);
-
-    const ratings: Record<string, { average: number; count: number }> = {};
-    for (let i = 0; i < keys.length; i++) {
-      const data = results[i];
-      if (data && data.voteCount && data.voteCount > 0) {
-        ratings[keyMap[i]] = {
-          average:
-            Math.round((data.totalStars! / data.voteCount) * 10) / 10,
-          count: data.voteCount,
-        };
-      }
+    if (keys.length === 0) {
+      return NextResponse.json({ feedback: {}, ratings: {}, storage });
     }
 
-    return NextResponse.json({ ratings, storage });
+    const results = await redis.hgetallMany<FeedbackAggregate>(keys);
+
+    const ratings: Record<string, { average: number; count: number }> = {};
+    const feedback: Record<string, VersionFeedback> = {};
+    for (let i = 0; i < keys.length; i++) {
+      const versionFeedback = buildVersionFeedback(results[i]);
+      if (!versionFeedback) continue;
+      feedback[keyMap[i]] = versionFeedback;
+      const rating = ratingFromFeedback(versionFeedback);
+      if (rating) ratings[keyMap[i]] = rating;
+    }
+
+    return NextResponse.json({ feedback, ratings, storage });
   } catch {
     return NextResponse.json(
       {
+        feedback: {},
         ratings: {},
         storage: withRatingsStorageFailure(
           storage,
@@ -109,18 +118,19 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { gameId, modelId, stars } = body;
+    const body = (await request.json()) as Record<string, unknown>;
+    const { gameId, modelId } = body;
 
-    if (!gameId || !modelId || stars === undefined) {
+    if (typeof gameId !== "string" || typeof modelId !== "string") {
       return NextResponse.json(
         { error: "Missing fields", storage },
         { status: 400 },
       );
     }
-    if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
+    const verdict = parseSubmittedVerdict(body);
+    if (!verdict) {
       return NextResponse.json(
-        { error: "Stars must be integer 1-5", storage },
+        { error: "Invalid rating or failure verdict", storage },
         { status: 400 },
       );
     }
@@ -137,39 +147,26 @@ export async function POST(request: NextRequest) {
     const voteKey = `vote:${voterId}:${gameId}:${modelId}`;
     const ratingKey = `rating:${gameId}:${modelId}`;
 
-    const existingStars = await redis.get(voteKey);
-
-    if (existingStars !== null) {
-      const delta = stars - existingStars;
-      if (delta !== 0) {
-        await redis.hincrby(ratingKey, "totalStars", delta);
-      }
-      await redis.set(voteKey, stars);
-    } else {
-      await redis.hincrby(ratingKey, "totalStars", stars);
-      await redis.hincrby(ratingKey, "voteCount", 1);
-      await redis.set(voteKey, stars);
-    }
-
-    const data = await redis.hgetall<{
-      totalStars: number;
-      voteCount: number;
-    }>(ratingKey);
-    const average =
-      data && data.voteCount > 0
-        ? Math.round((data.totalStars / data.voteCount) * 10) / 10
-        : 0;
+    const data = await redis.applyVerdict(
+      voteKey,
+      ratingKey,
+      encodeVerdict(verdict),
+    );
+    const feedback = buildVersionFeedback(data);
+    if (!feedback) throw new Error("Verdict update returned no aggregate");
 
     return NextResponse.json({
-      rating: { average, count: data?.voteCount ?? 0 },
-      userVote: stars,
+      feedback,
+      rating: ratingFromFeedback(feedback),
+      userVerdict: verdict,
+      userVote: verdict.type === "rating" ? verdict.stars : null,
       storage,
     });
   } catch {
     return NextResponse.json(
       {
-        error: "Failed to submit rating",
-        storage: withRatingsStorageFailure(storage, "Failed to submit rating."),
+        error: "Failed to submit verdict",
+        storage: withRatingsStorageFailure(storage, "Failed to submit verdict."),
       },
       { status: 500 },
     );

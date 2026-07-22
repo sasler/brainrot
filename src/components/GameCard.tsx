@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 import RatingSummary from "./RatingSummary";
-import { useBestRating } from "./RatingsProvider";
+import { useBestRating, useGameFeedbackSummary } from "./RatingsProvider";
 
 interface GameCardProps {
   game: Game;
@@ -13,10 +13,12 @@ interface GameCardProps {
 
 export default function GameCard({ game, index }: GameCardProps) {
   const versionCount = game.versions.length;
+  const modelIds = game.versions.map((version) => version.modelId);
   const bestRating = useBestRating(
     game.id,
-    game.versions.map((v) => v.modelId),
+    modelIds,
   );
+  const statusSummary = useGameFeedbackSummary(game.id, modelIds);
   const [quote, setQuote] = useState<{
     text: string;
     from: string;
@@ -92,7 +94,22 @@ export default function GameCard({ game, index }: GameCardProps) {
       {/* Footer */}
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-muted">
-          {versionCount > 0 ? (
+          {versionCount > 0 && !statusSummary.loading && statusSummary.storage?.available !== false ? (
+            <>
+              <span
+                className="font-semibold"
+                style={{ color: game.accentColor }}
+              >
+                {statusSummary.activeCount}
+              </span>{" "}
+              active
+              {statusSummary.failedCount > 0 && (
+                <span className="ml-2 text-rose-300/70">
+                  · {statusSummary.failedCount} failed
+                </span>
+              )}
+            </>
+          ) : versionCount > 0 ? (
             <>
               <span
                 className="font-semibold"

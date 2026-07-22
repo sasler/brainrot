@@ -6,7 +6,8 @@ import { getModelInfo } from "@/lib/modelCatalog";
 import type { Game, GameVersion } from "@/lib/games";
 import { formatAssetSummary } from "@/lib/assetDisplay";
 import RatingSummary from "./RatingSummary";
-import { useVersionRating } from "./RatingsProvider";
+import FailureStatus from "./FailureStatus";
+import { useVersionFeedback } from "./RatingsProvider";
 
 interface VersionCardProps {
   game: Game;
@@ -34,7 +35,7 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
   const model = getModelInfo(version.modelId, version.model);
   const modelColor = model.color;
   const assetSummary = formatAssetSummary(version.assets);
-  const { rating } = useVersionRating(game.id, version.modelId);
+  const { feedback, rating } = useVersionFeedback(game.id, version.modelId);
   const [review, setReview] = useState<{ from: string; comment: string } | null>(null);
 
   useEffect(() => {
@@ -49,10 +50,13 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
   return (
     <Link
       href={`/games/${game.id}/${version.modelId}`}
-      className="card-glow group relative flex flex-col overflow-hidden rounded-2xl bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-card-hover focus-visible:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4"
+      className={`card-glow group relative flex flex-col overflow-hidden rounded-2xl bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:bg-card-hover focus-visible:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 ${
+        feedback?.failed ? "border border-rose-400/20" : ""
+      }`}
       data-model-id={version.modelId}
       data-model-color={modelColor}
       data-asset-summary={assetSummary ?? undefined}
+      data-version-status={feedback?.failed ? "failed" : "active"}
       style={
         {
           "--glow-color": modelColor,
@@ -138,6 +142,12 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
       )}
 
       {/* Rating */}
+      {feedback && feedback.failCount > 0 && (
+        <div className="mb-3 rounded-lg border border-rose-400/10 bg-rose-400/5 p-2.5">
+          <FailureStatus feedback={feedback} />
+        </div>
+      )}
+
       {rating && (
         <div className="mb-3">
           <RatingSummary rating={rating} size="sm" accentColor={modelColor} />
@@ -157,7 +167,7 @@ export default function VersionCard({ game, version, index }: VersionCardProps) 
             color: modelColor,
           }}
         >
-          PLAY
+          {feedback?.failed ? "VERIFY" : "PLAY"}
         </span>
       </div>
     </Link>

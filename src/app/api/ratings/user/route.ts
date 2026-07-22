@@ -7,12 +7,18 @@ import {
   withRatingsStorageFailure,
 } from "@/lib/ratings";
 import type { RatingsStorageState } from "@/lib/ratings-types";
+import {
+  normalizeVerdict,
+  type StarValue,
+  type UserVerdict,
+} from "@/lib/ratings-feedback";
 
 export async function GET(request: NextRequest) {
   const storage: RatingsStorageState = getRatingsStorageState();
   const redis = await getRatingsRedisClient("read");
   if (!redis) {
     return NextResponse.json({
+      verdicts: {},
       votes: {},
       storage: withRatingsStorageFailure(
         storage,
@@ -24,11 +30,14 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const voterCookie = cookieStore.get("brainrot_voter");
-    if (!voterCookie) return NextResponse.json({ votes: {}, storage });
+    if (!voterCookie) {
+      return NextResponse.json({ verdicts: {}, votes: {}, storage });
+    }
 
     const voterId = voterCookie.value;
     const { searchParams } = request.nextUrl;
     const gameId = searchParams.get("gameId");
+    const modelId = searchParams.get("modelId");
 
     const games = gameId
       ? [getGame(gameId)].filter(Boolean)
@@ -40,28 +49,35 @@ export async function GET(request: NextRequest) {
     for (const game of games) {
       if (!game) continue;
       for (const version of game.versions) {
+        if (modelId && version.modelId !== modelId) continue;
         const k = `vote:${voterId}:${game.id}:${version.modelId}`;
         keys.push(k);
         keyMap.push(`${game.id}:${version.modelId}`);
       }
     }
 
-    if (keys.length === 0) return NextResponse.json({ votes: {}, storage });
+    if (keys.length === 0) {
+      return NextResponse.json({ verdicts: {}, votes: {}, storage });
+    }
 
     const results = await redis.getMany(keys);
 
     const votes: Record<string, number> = {};
+    const verdicts: Record<string, UserVerdict> = {};
     for (let i = 0; i < keys.length; i++) {
-      const stars = results[i];
-      if (stars !== null) {
-        votes[keyMap[i]] = stars;
+      const verdict = normalizeVerdict(results[i]);
+      if (!verdict) continue;
+      verdicts[keyMap[i]] = verdict;
+      if (verdict.type === "rating") {
+        votes[keyMap[i]] = verdict.stars as StarValue;
       }
     }
 
-    return NextResponse.json({ votes, storage });
+    return NextResponse.json({ verdicts, votes, storage });
   } catch {
     return NextResponse.json(
       {
+        verdicts: {},
         votes: {},
         storage: withRatingsStorageFailure(
           storage,

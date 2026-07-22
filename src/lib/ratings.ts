@@ -6,15 +6,81 @@ type RedisModule = typeof import("redis");
 type NodeRedisClient = ReturnType<RedisModule["createClient"]>;
 
 interface RatingsRedisClient {
-  get(key: string): Promise<number | null>;
-  set(key: string, value: number): Promise<void>;
-  hincrby(key: string, field: string, value: number): Promise<number>;
   hgetall<T extends Record<string, unknown>>(key: string): Promise<T | null>;
-  getMany(keys: string[]): Promise<Array<number | null>>;
+  getMany(keys: string[]): Promise<Array<number | string | null>>;
   hgetallMany<T extends Record<string, unknown>>(
     keys: string[],
   ): Promise<Array<T | null>>;
+  applyVerdict(
+    voteKey: string,
+    ratingKey: string,
+    encodedVerdict: string,
+  ): Promise<Record<string, unknown> | null>;
 }
+
+const APPLY_VERDICT_SCRIPT = `
+local voteKey = KEYS[1]
+local ratingKey = KEYS[2]
+local nextVerdict = ARGV[1]
+
+local function validCategory(category)
+  return category == 'wont-load'
+    or category == 'wont-start'
+    or category == 'controls-broken'
+    or category == 'crash-freeze'
+    or category == 'game-breaking-bug'
+    or category == 'other'
+end
+
+local function parseVerdict(value)
+  if not value then return 'none', 0, '' end
+  local stars = tonumber(value)
+  if stars and stars >= 1 and stars <= 5 and stars == math.floor(stars) then
+    return 'rating', stars, ''
+  end
+  if value == 'fail' then return 'fail', 0, '' end
+  local category = string.match(value, '^fail:(.+)$')
+  if category and validCategory(category) then return 'fail', 0, category end
+  return 'none', 0, ''
+end
+
+local function decrementIfPositive(field, amount)
+  local current = tonumber(redis.call('HGET', ratingKey, field) or '0')
+  if current > 0 then
+    local decrement = math.min(current, amount)
+    redis.call('HINCRBY', ratingKey, field, -decrement)
+  end
+end
+
+local previous = redis.call('GET', voteKey)
+local previousType, previousStars, previousCategory = parseVerdict(previous)
+if previousType == 'rating' then
+  decrementIfPositive('voteCount', 1)
+  local totalStars = tonumber(redis.call('HGET', ratingKey, 'totalStars') or '0')
+  redis.call('HSET', ratingKey, 'totalStars', math.max(0, totalStars - previousStars))
+elseif previousType == 'fail' then
+  decrementIfPositive('failCount', 1)
+  if previousCategory ~= '' then
+    decrementIfPositive('failCategory:' .. previousCategory, 1)
+  end
+end
+
+local nextType, nextStars, nextCategory = parseVerdict(nextVerdict)
+if nextType == 'rating' then
+  redis.call('HINCRBY', ratingKey, 'totalStars', nextStars)
+  redis.call('HINCRBY', ratingKey, 'voteCount', 1)
+elseif nextType == 'fail' then
+  redis.call('HINCRBY', ratingKey, 'failCount', 1)
+  if nextCategory ~= '' then
+    redis.call('HINCRBY', ratingKey, 'failCategory:' .. nextCategory, 1)
+  end
+else
+  return redis.error_reply('Invalid verdict')
+end
+
+redis.call('SET', voteKey, nextVerdict)
+return redis.call('HGETALL', ratingKey)
+`;
 
 function getReadToken() {
   return process.env.KV_REST_API_TOKEN ?? process.env.KV_REST_API_READ_ONLY_TOKEN;
@@ -49,6 +115,20 @@ function normalizeHash<T extends Record<string, unknown>>(
   }
 
   return normalized as T;
+}
+
+function normalizeScriptHash(data: unknown): Record<string, unknown> | null {
+  if (!Array.isArray(data) || data.length === 0) return normalizeHash(data);
+
+  const hash: Record<string, unknown> = {};
+  for (let index = 0; index < data.length; index += 2) {
+    const key = data[index];
+    if (typeof key !== "string") continue;
+    hash[key] = normalizeValue(
+      data[index + 1] as number | string | null | undefined,
+    );
+  }
+  return Object.keys(hash).length > 0 ? hash : null;
 }
 
 function hasRedisUrl() {
@@ -177,32 +257,14 @@ async function getRedisUrlClient(): Promise<RatingsRedisClient | null> {
   const client = await getNodeRedisClient();
   if (!client) return null;
 
-  const get = async (key: string) => {
-    const value = normalizeValue(await client.get(key));
-    return typeof value === "number" ? value : null;
-  };
-
-  const set = async (key: string, value: number) => {
-    await client.set(key, String(value));
-  };
-
-  const hincrby = async (key: string, field: string, value: number) =>
-    client.hIncrBy(key, field, value);
-
   const hgetall = async <T extends Record<string, unknown>>(key: string) =>
     normalizeHash<T>(await client.hGetAll(key));
 
   return {
-    get,
-    set,
-    hincrby,
     hgetall,
     getMany: async (keys: string[]) => {
       const values = await client.mGet(keys);
-      return values.map((value) => {
-        const normalized = normalizeValue(value);
-        return typeof normalized === "number" ? normalized : null;
-      });
+      return values.map((value) => normalizeValue(value));
     },
     hgetallMany: async <T extends Record<string, unknown>>(keys: string[]) => {
       const pipeline = client.multi();
@@ -212,6 +274,17 @@ async function getRedisUrlClient(): Promise<RatingsRedisClient | null> {
       const results = (await pipeline.exec()) ?? [];
       return results.map((value) => normalizeHash<T>(value));
     },
+    applyVerdict: async (
+      voteKey: string,
+      ratingKey: string,
+      encodedVerdict: string,
+    ) =>
+      normalizeScriptHash(
+        await client.eval(APPLY_VERDICT_SCRIPT, {
+          keys: [voteKey, ratingKey],
+          arguments: [encodedVerdict],
+        }),
+      ),
   };
 }
 
@@ -231,18 +304,6 @@ async function getKvRestClient(mode: "read" | "write"): Promise<RatingsRedisClie
             process.env.KV_REST_API_READ_ONLY_TOKEN)!,
   });
 
-  const get = async (key: string) => {
-    const value = normalizeValue(await client.get(key));
-    return typeof value === "number" ? value : null;
-  };
-
-  const set = async (key: string, value: number) => {
-    await client.set(key, value);
-  };
-
-  const hincrby = async (key: string, field: string, value: number) =>
-    client.hincrby(key, field, value);
-
   const hgetall = async <T extends Record<string, unknown>>(key: string) =>
     normalizeHash<T>(
       ((await client.hgetall(key)) as Record<string, number | string> | null) ??
@@ -250,9 +311,6 @@ async function getKvRestClient(mode: "read" | "write"): Promise<RatingsRedisClie
     );
 
   return {
-    get,
-    set,
-    hincrby,
     hgetall,
     getMany: async (keys: string[]) => {
       const pipeline = client.pipeline();
@@ -260,12 +318,9 @@ async function getKvRestClient(mode: "read" | "write"): Promise<RatingsRedisClie
         pipeline.get(key);
       }
       const results = await pipeline.exec();
-      return results.map((value) => {
-        const normalized = normalizeValue(
-          value as number | string | null | undefined,
-        );
-        return typeof normalized === "number" ? normalized : null;
-      });
+      return results.map((value) =>
+        normalizeValue(value as number | string | null | undefined),
+      );
     },
     hgetallMany: async <T extends Record<string, unknown>>(keys: string[]) => {
       const pipeline = client.pipeline();
@@ -275,6 +330,16 @@ async function getKvRestClient(mode: "read" | "write"): Promise<RatingsRedisClie
       const results = await pipeline.exec();
       return results.map((value) => normalizeHash<T>(value));
     },
+    applyVerdict: async (
+      voteKey: string,
+      ratingKey: string,
+      encodedVerdict: string,
+    ) =>
+      normalizeScriptHash(
+        await client.eval(APPLY_VERDICT_SCRIPT, [voteKey, ratingKey], [
+          encodedVerdict,
+        ]),
+      ),
   };
 }
 
