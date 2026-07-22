@@ -169,7 +169,7 @@ export default function RatingInput({
               <button
                 key={category}
                 type="button"
-                disabled={submitting}
+                disabled={submitting || storageDisabled}
                 onClick={() => void submitVerdict({ type: "fail", category })}
                 className="rounded-full border border-rose-300/20 px-3 py-1 font-mono text-[10px] text-rose-100/75 transition-colors hover:border-rose-300/50 hover:bg-rose-300/10 hover:text-rose-100 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
               >
@@ -179,7 +179,7 @@ export default function RatingInput({
           </div>
           <button
             type="button"
-            disabled={submitting}
+            disabled={submitting || storageDisabled}
             onClick={() => void submitVerdict({ type: "fail" })}
             className="self-center font-mono text-[9px] tracking-wider text-muted underline decoration-foreground/20 underline-offset-4 hover:text-foreground disabled:opacity-50"
           >

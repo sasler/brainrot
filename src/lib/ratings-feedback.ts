@@ -125,6 +125,7 @@ export function buildVersionFeedback(
   const starCount = asNonNegativeInteger(aggregate.voteCount);
   const failCount = asNonNegativeInteger(aggregate.failCount);
   const totalStars = Number(aggregate.totalStars ?? 0);
+  const validTotalStars = Number.isFinite(totalStars) && totalStars >= 0;
   const totalVerdicts = starCount + failCount;
   if (totalVerdicts === 0) return null;
 
@@ -136,7 +137,7 @@ export function buildVersionFeedback(
 
   return {
     average:
-      starCount > 0 && Number.isFinite(totalStars)
+      starCount > 0 && validTotalStars
         ? Math.round((totalStars / starCount) * 10) / 10
         : null,
     starCount,

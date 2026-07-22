@@ -49,7 +49,17 @@ async function mockFeedbackApi(
 }
 
 test.describe("community failed version surfaces", () => {
-  const game = getGames().find((candidate) => candidate.versions.length >= 2)!;
+  const game = getGames().find((candidate) => candidate.versions.length >= 2);
+
+  test("has a game fixture with two implementations", () => {
+    expect(
+      game,
+      "games-metadata.json must contain a game with at least two versions",
+    ).toBeDefined();
+  });
+
+  if (!game) return;
+
   const failedVersion = game.versions[0];
   const activeVersion = game.versions[1];
   const failedKey = `${game.id}:${failedVersion.modelId}`;

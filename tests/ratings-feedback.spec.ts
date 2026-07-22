@@ -125,4 +125,17 @@ test.describe("community failure verdict logic", () => {
     };
     expect(buildVersionFeedback(aggregate)).toBeNull();
   });
+
+  test("does not expose averages from corrupted star totals", () => {
+    expect(
+      buildVersionFeedback({ totalStars: -4, voteCount: 1, failCount: 0 }),
+    ).toMatchObject({ average: null, starCount: 1, totalVerdicts: 1 });
+    expect(
+      buildVersionFeedback({
+        totalStars: Number.POSITIVE_INFINITY,
+        voteCount: 1,
+        failCount: 0,
+      }),
+    ).toMatchObject({ average: null, starCount: 1, totalVerdicts: 1 });
+  });
 });
