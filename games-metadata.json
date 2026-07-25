@@ -6244,7 +6244,7 @@
           "model": "Claude Opus 5",
           "modelId": "opus-5",
           "date": "2026-07-25",
-          "linesOfCode": 3255,
+          "linesOfCode": 3321,
           "path": "/games/kart-racing/opus-5/index.html",
           "features": [
             "sound",

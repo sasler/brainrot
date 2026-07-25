@@ -709,10 +709,13 @@
     // The aqueduct deck: the road leaves the ground entirely for its crossing.
     const BRIDGE_CENTRE = SECTOR_START[4] + 34;
     const BRIDGE_HALF = 30;
-    for (let k = -BRIDGE_HALF - 12; k <= BRIDGE_HALF + 12; k++) {
+    for (let k = -BRIDGE_HALF - 34; k <= BRIDGE_HALF + 34; k++) {
       const s = samples[(BRIDGE_CENTRE + k + TRACK_SAMPLES) % TRACK_SAMPLES];
+      // The deck spans the middle; the valley itself runs much further out on
+      // both sides so the land reads as a creek valley rather than a slot cut
+      // into a plateau.
       s.bridge = smoothstep(BRIDGE_HALF + 12, BRIDGE_HALF - 6, Math.abs(k));
-      s.gorge = s.bridge * 27;
+      s.gorge = 30 * smoothstep(BRIDGE_HALF + 34, BRIDGE_HALF - 10, Math.abs(k));
     }
     // Smooth the terrace weighting so the hillside steps do not pop at seams.
     for (let pass = 0; pass < 6; pass++) {
@@ -802,7 +805,9 @@
       const far = lerp(globalBase(x, z), centreY, smoothstep(230, 46, ad))
         + hillDetail(x, z) * smoothstep(edge, edge + 62, ad)
         + terraceRise(ad, s.terrace)
-        - s.gorge * smoothstep(edge, edge + 15, ad);
+        // Full depth just past the deck, then easing back up to the massif so
+        // the crossing spans a broad valley instead of a trench.
+        - s.gorge * smoothstep(edge, edge + 18, ad) * (1 - smoothstep(80, 215, ad));
       return lerp(edgeY, far, t);
     }
 
@@ -905,14 +910,20 @@
     /** Sink an object so no part of its footprint floats above the terrain. */
     const groundedPlacements = [];
     function groundY(x, z, radius) {
+      // Sampled densely enough that the grounding audit, which probes its own
+      // set of angles, can never find ground lower than what we settled on.
       let lowest = surfaceHeight(x, z);
-      for (let k = 0; k < 8; k++) {
-        const a = (k / 8) * Math.PI * 2;
-        lowest = Math.min(lowest, surfaceHeight(x + Math.cos(a) * radius, z + Math.sin(a) * radius));
+      for (let k = 0; k < 20; k++) {
+        const a = (k / 20) * Math.PI * 2;
+        lowest = Math.min(
+          lowest,
+          surfaceHeight(x + Math.cos(a) * radius, z + Math.sin(a) * radius),
+          surfaceHeight(x + Math.cos(a) * radius * 0.6, z + Math.sin(a) * radius * 0.6),
+        );
       }
       return lowest;
     }
-    function place(object, x, z, radius, label, sink = 0.12) {
+    function place(object, x, z, radius, label, sink = 0.3) {
       object.position.set(x, groundY(x, z, radius) - sink, z);
       if (label) groundedPlacements.push({ label, x, z, radius, y: object.position.y, object });
       return object;
@@ -945,6 +956,7 @@
 
     /** Landmarks reserve space around themselves so scatter cannot bury them. */
     const clearings = [];
+    const grandstandAlignments = [];
     function insideClearing(x, z) {
       for (const clearing of clearings) {
         const dx = x - clearing.x, dz = z - clearing.z;
@@ -1254,7 +1266,15 @@
       stand.castShadow = true; stand.receiveShadow = true;
       const offset = sign * (ROAD_HALF + 17);
       place(stand, s.p.x + s.side.x * offset, s.p.z + s.side.z * offset, 12, label);
-      stand.rotation.y = Math.atan2(s.tangent.x, s.tangent.z) + (sign > 0 ? Math.PI / 2 : -Math.PI / 2);
+      // The seating faces the model's +Z. A stand parked on the +side of the
+      // track has to turn back across it, so the quarter turn is negative there.
+      stand.rotation.y = Math.atan2(s.tangent.x, s.tangent.z) + (sign > 0 ? -Math.PI / 2 : Math.PI / 2);
+      // Record how squarely the crowd actually looks at the road, so a stand can
+      // never quietly end up showing the track its back again.
+      grandstandAlignments.push(
+        Math.sin(stand.rotation.y) * -Math.sign(offset) * s.side.x
+        + Math.cos(stand.rotation.y) * -Math.sign(offset) * s.side.z,
+      );
       group.add(stand);
       world.add(group);
 
@@ -1366,53 +1386,90 @@
         if (s.bridge < 0.06) continue;
         spans.push(s);
       }
-      if (!spans.length) return group;
+      if (spans.length < 8) return group;
 
-      // Deck slab + parapets follow the banked centreline.
-      const deckParts = [];
-      for (let i = 0; i < spans.length - 1; i++) {
-        const a = spans[i], b = spans[i + 1];
-        const mid = a.p.clone().lerp(b.p, 0.5);
-        const len = a.p.distanceTo(b.p) * 1.08;
-        const heading = Math.atan2(a.tangent.x, a.tangent.z);
-        const g = mergeParts([
-          part(new THREE.BoxGeometry(ROAD_HALF * 2 + 3.4, 1.5, len), [0, -0.9, 0]),
-          part(new THREE.BoxGeometry(ROAD_HALF * 2 + 4.4, 0.5, len), [0, -0.1, 0]),
-          part(new THREE.BoxGeometry(0.7, 1.5, len), [ROAD_HALF + 1.35, 0.85, 0]),
-          part(new THREE.BoxGeometry(0.7, 1.5, len), [-(ROAD_HALF + 1.35), 0.85, 0]),
-        ]);
-        g.applyMatrix4(new THREE.Matrix4().compose(
-          mid, new THREE.Quaternion().setFromEuler(new THREE.Euler(0, heading, 0)), new THREE.Vector3(1, 1, 1),
-        ));
-        deckParts.push(g);
+      /* The deck is swept along the centreline rather than assembled from
+         per-span boxes: straight boxes on a curving, banked road do not meet,
+         which read as a jagged wall instead of a viaduct. The profile runs from
+         the road edge, up and over the parapet, down the outer face, out to the
+         cornice and in under the soffit. */
+      const DECK_PROFILE = [
+        [-(ROAD_HALF + 0.80), 0.00], [-(ROAD_HALF + 1.10), 0.00],
+        [-(ROAD_HALF + 1.10), 0.78], [-(ROAD_HALF + 1.70), 0.78],
+        [-(ROAD_HALF + 1.70), -0.25], [-(ROAD_HALF + 2.05), -0.38],
+        [-(ROAD_HALF + 2.05), -0.95], [-(ROAD_HALF + 1.15), -3.40],
+        [(ROAD_HALF + 1.15), -3.40], [(ROAD_HALF + 2.05), -0.95],
+        [(ROAD_HALF + 2.05), -0.38], [(ROAD_HALF + 1.70), -0.25],
+        [(ROAD_HALF + 1.70), 0.78], [(ROAD_HALF + 1.10), 0.78],
+        [(ROAD_HALF + 1.10), 0.00], [(ROAD_HALF + 0.80), 0.00],
+      ];
+      {
+        const cols = DECK_PROFILE.length;
+        const positions = new Float32Array(spans.length * cols * 3);
+        const indices = [];
+        for (let i = 0; i < spans.length; i++) {
+          const s = spans[i];
+          for (let c = 0; c < cols; c++) {
+            const [u, v] = DECK_PROFILE[c];
+            const p = (i * cols + c) * 3;
+            positions[p] = s.p.x + s.side.x * u;
+            positions[p + 1] = s.p.y + u * s.bankSlope + v;
+            positions[p + 2] = s.p.z + s.side.z * u;
+          }
+        }
+        for (let i = 0; i < spans.length - 1; i++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const a = i * cols + c, b = a + 1, d = (i + 1) * cols + c, e = d + 1;
+            indices.push(a, b, d, b, e, d);
+          }
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        const deck = new THREE.Mesh(geometry, M.drystone);
+        deck.castShadow = true; deck.receiveShadow = true;
+        group.add(deck);
       }
-      const deck = new THREE.Mesh(mergeParts(deckParts), M.drystone);
-      deck.castShadow = true; deck.receiveShadow = true;
-      group.add(deck);
 
-      // Arches and piers stepping down into the dry creek.
-      for (let i = 2; i < spans.length - 2; i += 9) {
+      // Piers carrying semicircular arches down into the dry creek.
+      const PIER_STEP = 13;
+      const archMaterial = M.stoneCool;
+      for (let i = 4; i < spans.length - 4; i += PIER_STEP) {
         const s = spans[i];
-        const groundHeight = surfaceHeight(s.p.x + s.side.x * 22, s.p.z + s.side.z * 22);
-        const height = Math.max(6, s.p.y - groundHeight - 1.2);
-        const archParts = [
-          part(new THREE.BoxGeometry(4.6, height, 4.6), [0, -1.6 - height / 2, 0]),
-          part(new THREE.BoxGeometry(5.6, 0.8, 5.6), [0, -1.6 - height + 0.4, 0]),
+        const next = spans[Math.min(i + PIER_STEP, spans.length - 1)];
+        const floor = Math.min(
+          surfaceHeight(s.p.x + s.side.x * 26, s.p.z + s.side.z * 26),
+          surfaceHeight(s.p.x - s.side.x * 26, s.p.z - s.side.z * 26),
+        );
+        const drop = Math.max(7, s.p.y - 3.4 - floor);
+        const gap = Math.max(6, s.p.distanceTo(next.p));
+        const radius = Math.min(gap * 0.46, drop * 0.62);
+
+        const parts = [
+          // Battered pier with a plinth at the creek bed.
+          part(new THREE.BoxGeometry(ROAD_HALF * 1.5, drop, 5.0), [0, -3.4 - drop / 2, 0]),
+          part(new THREE.BoxGeometry(ROAD_HALF * 1.5 + 1.4, 1.1, 6.4), [0, -3.4 - drop + 0.55, 0]),
+          part(new THREE.BoxGeometry(ROAD_HALF * 1.5 + 1.0, 0.7, 5.6), [0, -3.75, 0]),
         ];
-        for (let a = 0; a <= 10; a++) {
-          const angle = Math.PI * (a / 10);
-          archParts.push(part(
-            new THREE.BoxGeometry(3.6, 1.5, 1.5),
-            [0, -2.4 - 5.4 + Math.sin(angle) * 5.4, Math.cos(angle) * 5.4],
-            [angle - Math.PI / 2, 0, 0],
+        // Voussoirs springing from the pier to form the arch void.
+        for (let k = 0; k <= 12; k++) {
+          const angle = Math.PI * (k / 12);
+          parts.push(part(
+            new THREE.BoxGeometry(ROAD_HALF * 1.28, 1.35, 1.5),
+            [0, -3.4 - radius + Math.sin(angle) * radius, (gap / 2) - Math.cos(angle) * radius],
+            [-angle, 0, 0],
           ));
         }
-        const pier = new THREE.Mesh(mergeParts(archParts), M.stoneCool);
+        const pier = new THREE.Mesh(mergeParts(parts), archMaterial);
         pier.castShadow = true; pier.receiveShadow = true;
         pier.position.copy(s.p);
         pier.rotation.y = Math.atan2(s.tangent.x, s.tangent.z);
         group.add(pier);
-        groundedPlacements.push({ label: `aqueduct-pier-${i}`, x: s.p.x, z: s.p.z, radius: 3, y: s.p.y - 1.6 - height });
+        groundedPlacements.push({
+          label: `aqueduct-pier-${i}`, x: s.p.x, z: s.p.z, radius: 3,
+          y: s.p.y - 3.4 - drop, object: pier,
+        });
       }
       world.add(group);
       return group;
@@ -2034,12 +2091,20 @@
     /* ── Input ────────────────────────────────────────────────────────────── */
     const keys = Object.create(null);
     const pressed = (...codes) => codes.some((code) => keys[code]);
+    /* Positive steer rotates the kart toward +side. The chase camera sits behind
+       the kart looking down the track, which puts +side on the LEFT of the
+       screen, so the right-hand key has to feed negative steer for the controls
+       to match what the player sees. (Verified on screen, not from the maths:
+       holding the right key must move the kart toward negative sideDistance.) */
+    const STEER_TOWARD_SCREEN_RIGHT = -1;
     function playerInput() {
       if (mode !== "racing" || !raceStarted) return { throttle: 0, brake: 0, steer: 0, drift: false };
+      const right = pressed("KeyD", "ArrowRight") ? 1 : 0;
+      const left = pressed("KeyA", "ArrowLeft") ? 1 : 0;
       return {
         throttle: pressed("KeyW", "ArrowUp") ? 1 : 0,
         brake: pressed("KeyS", "ArrowDown") ? 1 : 0,
-        steer: (pressed("KeyD", "ArrowRight") ? 1 : 0) - (pressed("KeyA", "ArrowLeft") ? 1 : 0),
+        steer: STEER_TOWARD_SCREEN_RIGHT * (right - left),
         drift: pressed("Space"),
       };
     }
@@ -2968,6 +3033,7 @@
           wheelGrounding: "surface-basis-radius-contact",
           sceneryGrounding: groundingReport(),
           treeRoadClearance: Number(Math.min(...treeClearances).toFixed(3)),
+          grandstandFacing: Number(Math.min(...grandstandAlignments).toFixed(4)),
           sunlitFraction: Number((samples.filter((s) => s.light > SUN_THRESHOLD).length / TRACK_SAMPLES).toFixed(3)),
           passiveHazards: 0,
         },

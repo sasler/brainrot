@@ -33,7 +33,7 @@ type RallySnapshot = {
     terrainBlend: { blendWidth: number; maxRoadGap: number };
     wheelGrounding: string;
     sceneryGrounding: { maxClearance: number; maxGap: number; detached: string[]; values: Array<{ label: string; clearance: number }> };
-    treeRoadClearance: number; sunlitFraction: number; passiveHazards: number;
+    treeRoadClearance: number; grandstandFacing: number; sunlitFraction: number; passiveHazards: number;
   };
   physics: { collisionCount: number; contactModel: string; maxWheelClearance: number };
   objects: {
@@ -116,7 +116,9 @@ async function driveLap(page: Page, rivals: number) {
       const target = centreline[(player.progressIndex + 14) % centreline.length];
       const desired = Math.atan2(target.x - player.x, target.z - player.z);
       const delta = Math.atan2(Math.sin(desired - player.heading), Math.cos(desired - player.heading));
-      setSteer(delta > 0.02 ? "KeyD" : delta < -0.02 ? "KeyA" : "");
+      // Positive delta needs the heading to rise, and the LEFT key does that:
+      // the right-hand key steers toward screen-right, i.e. falling heading.
+      setSteer(delta > 0.02 ? "KeyA" : delta < -0.02 ? "KeyD" : "");
       if (!player.offroad) worstOnRoad = Math.max(worstOnRoad, player.wheelClearance);
       snapshot = hooks.advance(0.05);
     }
@@ -300,7 +302,7 @@ test.describe("Claude Opus 5 Sunbeam Kart Rally", () => {
         const target = centreline[(player.progressIndex + 12) % centreline.length];
         const desired = Math.atan2(target.x - player.x, target.z - player.z);
         const delta = Math.atan2(Math.sin(desired - player.heading), Math.cos(desired - player.heading));
-        setSteer(delta > 0.01 ? "KeyD" : delta < -0.01 ? "KeyA" : steer || "KeyA");
+        setSteer(delta > 0.01 ? "KeyA" : delta < -0.01 ? "KeyD" : steer || "KeyD");
         snapshot = hooks.advance(1 / 30);
         maxTier = Math.max(maxTier, snapshot.player.driftTier);
         maxSide = Math.max(maxSide, Math.abs(snapshot.player.sideDistance));
@@ -352,26 +354,41 @@ test.describe("Claude Opus 5 Sunbeam Kart Rally", () => {
     expect(result.snapshot.player.boost).toBe(0);
   });
 
-  test("maps left and right input to the matching world direction", async ({ page }) => {
+  test("steers the way the player sees, not the way the maths runs", async ({ page }) => {
     await openGame(page);
-    const initial = await page.evaluate(() => window.__RALLY_TEST__.start(1));
-    await page.keyboard.down("w");
-    await page.keyboard.down("d");
-    const right = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(1));
-    await page.keyboard.up("d");
-    await page.keyboard.up("w");
+    const run = async (key: string) => {
+      await page.evaluate(() => {
+        window.__RALLY_TEST__.start(1);
+        window.__RALLY_TEST__.setPlayerProgress(680, 0);
+        window.__RALLY_TEST__.setPlayerSpeed(18);
+      });
+      await page.keyboard.down("w");
+      await page.keyboard.down(key);
+      const result = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(1.1));
+      await page.keyboard.up(key);
+      await page.keyboard.up("w");
+      return result;
+    };
 
-    await page.evaluate(() => window.__RALLY_TEST__.start(1));
-    await page.keyboard.down("w");
-    await page.keyboard.down("a");
-    const left = await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(1));
-    await page.keyboard.up("a");
-    await page.keyboard.up("w");
+    const right = await run("d");
+    const left = await run("a");
 
-    // The grid faces +Z, so steering right must swing the heading toward +X.
-    expect(right.player.heading).toBeGreaterThan(initial.player.heading);
-    expect(left.player.heading).toBeLessThan(initial.player.heading);
-    expect(right.player.x).toBeGreaterThan(left.player.x);
+    /* sideDistance is measured along +side, and +side is on the LEFT of the
+       chase camera's view — confirmed by screenshot, not by deriving it. So the
+       right-hand key must carry the kart to NEGATIVE sideDistance. This test
+       previously asserted the raw heading convention and happily locked in
+       inverted controls, which is why it now checks the visible outcome. */
+    expect(right.player.sideDistance).toBeLessThan(-4);
+    expect(left.player.sideDistance).toBeGreaterThan(4);
+    expect(right.player.sideDistance).toBeLessThan(left.player.sideDistance);
+  });
+
+  test("points the grandstand crowds at the track", async ({ page }) => {
+    await openGame(page);
+    const snapshot = await page.evaluate(() => window.__RALLY_TEST__.start(5));
+    // 1 means the seating looks straight across the road; a stand showing the
+    // track its back would score negative.
+    expect(snapshot.environment.grandstandFacing).toBeGreaterThan(0.9);
   });
 
   test("releases held driving controls when the page loses focus", async ({ page }) => {
