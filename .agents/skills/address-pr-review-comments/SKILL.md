@@ -24,8 +24,8 @@ description: Inspect, triage, implement, test, and reply to unresolved BrainRot 
 
 ## Verify and respond
 
-1. Review every resulting diff. Run `npm run update-metadata` after game-file changes and verify its output.
-2. Apply the change-scoped local gate from `verify-changes`; the updated pull request then reruns the complete lint, build, and Playwright gate in CI.
+1. Batch compatible fixes, then review the consolidated diff once. Run `npm run update-metadata` after game-file changes and check its output against the implementation.
+2. Run one applicable change-scoped path from `verify-changes` after the fixes are complete. Reuse passing evidence while the relevant inputs remain unchanged; the updated pull request reruns the complete lint, build, and Playwright gate in CI.
 3. Commit fixes with a Gitmoji subject and the repository's required co-author trailer, then push normally.
 4. Reply to each valid thread with the implementing model, concise fix summary, and commit identifier.
 5. Reply to skipped comments with the triage rationale. Resolve a thread only after its fix or rationale is published.
