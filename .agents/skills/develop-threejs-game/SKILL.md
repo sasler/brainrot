@@ -92,7 +92,7 @@ Do not expose mutating test controls in normal play.
 3. Run `npm run inspect:threejs -- --game <id> --model <id> --state active-play`.
 4. Review the screenshot and inspector report. Metrics are evidence, not a substitute for visual judgment.
 5. Apply the scorecard in [verification.md](references/verification.md).
-6. Apply `verify-changes` for the repository validation handoff.
+6. Pass this inspector result and screenshot review to `verify-changes` as current evidence. Do not rerun the inspector unless relevant inputs changed or the result is stale or ambiguous.
 
 A game may be described as polished only when every scorecard category is at least 2, the average is at least 2.25, an active-play screenshot exists, and no automatic failure applies.
 

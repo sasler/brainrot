@@ -36,4 +36,4 @@ Before changing any game or metadata file, confirm the current branch is a task 
 3. Verify the updated line counts and detected feature flags against the implementation.
 4. Update README tables and project structure whenever games, models, counts, or layout change.
 
-Apply the `verify-changes` skill for targeted gameplay checks and final validation.
+After implementation, apply one targeted path from `verify-changes`, reusing current metadata and gameplay evidence where its inputs have not changed.

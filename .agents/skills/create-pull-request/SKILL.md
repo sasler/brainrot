@@ -5,19 +5,22 @@ description: Prepare and publish a compliant BrainRot pull request by checking s
 
 # Create a Pull Request
 
-## Confirm readiness
+## Publication success criteria
 
-1. Confirm the user requested publication and the task is complete.
-2. Confirm the task branch was created before implementation by the `start-session` workflow. Inspect branch, status, diff, and recent commits.
-3. Stop if on `main`, another default branch, detached HEAD, or an unrelated branch. Never commit or push task changes directly to a default branch, and do not silently retrofit a branch after work has accumulated.
-4. Ensure only task-scoped changes will be staged. Preserve unrelated user changes.
-5. If game files changed, run `npm run update-metadata` and verify line counts and feature flags.
-6. Update README tables, project structure, and other documentation affected by games, models, counts, commands, or repository layout.
-7. Apply the change-scoped local gate from `verify-changes`. Do not publish with known failing applicable checks; the pull request workflow owns the complete lint, build, and Playwright gate.
+Publish when all of these are true:
+
+- The user authorized publication and the requested work is complete.
+- The task branch was created before implementation by `start-session`; it is not a default, detached, or unrelated branch.
+- The diff is task-scoped and unrelated user changes remain unstaged.
+- Game-file changes have current `npm run update-metadata` evidence with line counts and feature flags checked against the implementation.
+- README tables, project structure, and other affected documentation are current.
+- The applicable `verify-changes` path passed for the current diff. Reuse that evidence; rerun it only if relevant files changed or the result is stale or ambiguous.
+
+Stop rather than silently retrofitting a branch after work has accumulated. Never commit or push task changes directly to a default branch.
 
 ## Commit and publish
 
-1. Review the staged diff before committing.
+1. Review the staged diff once before committing.
 2. Start the commit subject with an actual Unicode Gitmoji matching the primary change.
 3. Include the existing required trailer exactly:
 

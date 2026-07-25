@@ -25,6 +25,17 @@ If the client does not discover skills automatically, enumerate `.agents/skills/
 | `frontend-design` | Designing or substantially restyling frontend UI |
 | `playwright-cli` | Interactive browser automation and visual inspection |
 
+## Prompting and Execution Style
+
+BrainRot instructions should give capable models the outcome, repository constraints, and concrete success criteria without scripting their internal process:
+
+- Keep prompts and user-facing updates focused. Before the first tool call, summarize the immediate action in one sentence; update again only for a material finding, changed direction, blocker, or result.
+- Deliver the requested scope completely. Let the model plan, make routine judgment calls, and self-correct; ask only when plausible interpretations would produce materially different work or require new authority.
+- Match written deliverables to the task. Avoid filler sections, repeated summaries, and boilerplate.
+- Define success before acting. Add explicit verification only where change risk or a repository contract requires it, then use one focused path. Reuse current evidence when the relevant inputs have not changed; do not script blanket final re-checks, verifier subagents, or repeated confirmation loops.
+- Delegate only when exact-model game ownership requires it or when a sizeable track is genuinely independent and parallelizable. Do not delegate small work or use a subagent only to double-check the primary agent.
+- Do not instruct a model to suppress thinking or reasoning. Keep internal reasoning and system tags out of user-facing output.
+
 ## Branch Safety
 
 - Before any task that may edit files, commit, or push, apply the `start-session` skill and create a task branch from latest `origin/main`.
@@ -37,5 +48,5 @@ If the client does not discover skills automatically, enumerate `.agents/skills/
 - This file applies repository-wide. Explicit user instructions take precedence; a more deeply nested `AGENTS.md` takes precedence for its subtree.
 - `games-metadata.json` is the source of truth for games, versions, model ownership, reviews, and detected features.
 - A game file may only be created or changed by the exact AI model that owns that version. Resolve ownership from `games-metadata.json`; if the exact model is unavailable, stop instead of substituting another model.
-- Keep local verification scoped to the change. GitHub Actions runs the complete lint, build, and Playwright gate for every pull request, and its required aggregate check is authoritative before merge.
+- Keep local verification scoped to the change and avoid rerunning unchanged evidence. GitHub Actions runs the complete lint, build, and Playwright gate for every pull request, and its required aggregate check is authoritative before merge.
 - Follow `GAME_DEVELOPMENT_GUIDE.md` for game work. Keep detailed workflows in the skills above, not in this file.
