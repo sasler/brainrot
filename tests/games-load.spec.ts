@@ -18,7 +18,7 @@ const ALL_GAMES = [
   { id: "outrun-racer", models: ["gemma-4-12b"] },
   { id: "coastal-rush-86", models: ["gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-6-sol", "fable-5"] },
   { id: "clockwork-caper", models: ["gpt-5-6-sol", "gpt-5-6-terra", "gpt-5-6-luna"] },
-  { id: "kart-racing", models: ["gpt-5-6-sol"] },
+  { id: "kart-racing", models: ["opus-5", "gpt-5-6-sol"] },
 ];
 
 test.describe("Game HTML Files — Load Tests", () => {

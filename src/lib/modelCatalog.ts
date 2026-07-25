@@ -16,6 +16,7 @@ export const MODEL_CATALOG = {
   "sonnet-4-6": { displayName: "Claude Sonnet 4.6", family: "Claude", company: "Anthropic", color: "#D97757" },
   "opus-4-6": { displayName: "Claude Opus 4.6", family: "Claude", company: "Anthropic", color: "#E58A65" },
   "opus-4-8": { displayName: "Claude Opus 4.8", family: "Claude", company: "Anthropic", color: "#F2A07B" },
+  "opus-5": { displayName: "Claude Opus 5", family: "Claude", company: "Anthropic", color: "#FFB68F" },
   "gemini-3-1-pro": { displayName: "Google Gemini 3.1 Pro", family: "Google Gemini", company: "Google", color: "#4285F4" },
   "gemma-4-12b": { displayName: "Google Gemma 4 12B", family: "Google Gemma", company: "Google", color: "#34A853" },
   "qwen-3-6-27b": { displayName: "Qwen3.6-27B", family: "Qwen", company: "Alibaba", color: "#B86CFF" },
