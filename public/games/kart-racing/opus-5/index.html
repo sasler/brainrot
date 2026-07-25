@@ -3205,13 +3205,19 @@
     ui.startButton.textContent = "Drop the flag";
 
     let accumulator = 0;
-    // Under ?test=1 the simulation only advances through the hooks, but the
-    // frame is redrawn every tick so a screenshot never catches a lost buffer.
-    function testRenderLoop() {
-      renderComposed();
-      requestAnimationFrame(testRenderLoop);
+    // Under ?test=1 the simulation only advances through the hooks, so the frame
+    // is redrawn on demand and coalesced to one render per animation frame.
+    // A continuous loop here would saturate software WebGL on CI and starve the
+    // page, so state changes schedule a redraw instead.
+    let testRenderPending = false;
+    function scheduleTestRender() {
+      if (!TEST_MODE || testRenderPending) return;
+      testRenderPending = true;
+      requestAnimationFrame(() => {
+        testRenderPending = false;
+        renderComposed();
+      });
     }
-    function scheduleTestRender() { /* the test render loop keeps the frame fresh */ }
     function animate(now) {
       const frameDt = Math.min(0.05, Math.max(0, (now - lastFrame) / 1000));
       lastFrame = now;
@@ -3242,7 +3248,7 @@
       renderComposed();
       requestAnimationFrame(animate);
     }
-    if (TEST_MODE) requestAnimationFrame(testRenderLoop); else requestAnimationFrame(animate);
+    if (TEST_MODE) scheduleTestRender(); else requestAnimationFrame(animate);
   </script>
 </body>
 </html>
