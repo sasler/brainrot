@@ -1,0 +1,4647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#04070e">
+<title>NORTHLIGHT — Claude Opus 5 Tile Matching</title>
+<style>
+  :root {
+    color-scheme: dark;
+
+    --abyss:     #04070e;
+    --night-hi:  #060a16;
+    --night-lo:  #0d1a33;
+    --ice-near:  #0b1526;
+
+    --rime:      #cfe6f5;
+    --frost:     #e8f4ff;
+    --haze:      #7d97b5;
+    --hairline:  rgba(160, 205, 240, 0.18);
+
+    --aurora-a:  #4ffbdf;
+    --aurora-b:  #7c6cff;
+    --aurora-c:  #ff5fa8;
+    --star:      #ffd88a;
+    --warn:      #ff6b6b;
+
+    --font-display: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --font-ui: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+    /* Written by the layout pass so the DOM rails and the canvas agree. */
+    --rail-w: 250px;
+    --board-x: 320px;
+    --board-y: 36px;
+    --board-size: 640px;
+    --edge: 28px;
+    --top-strip: 64px;
+    --bot-strip: 44px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: var(--abyss);
+  }
+
+  body {
+    font-family: var(--font-ui);
+    color: var(--frost);
+    user-select: none;
+    touch-action: none;
+  }
+
+  button { font: inherit; color: inherit; }
+
+  #app {
+    position: relative;
+    width: 100vw;
+    height: 100dvh;
+    min-height: 100%;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--abyss);
+    animation: nightBreath 24s ease-in-out infinite alternate;
+  }
+
+  @keyframes nightBreath {
+    from { filter: saturate(1) brightness(1); }
+    to   { filter: saturate(1.06) brightness(1.03); }
+  }
+
+  #board {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    outline: none;
+  }
+
+  /* ── HUD ────────────────────────────────────────────────────────────── */
+
+  #hud {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .rail {
+    position: absolute;
+    top: var(--board-y);
+    width: calc(var(--rail-w) - var(--edge));
+    height: var(--board-size);
+    display: flex;
+    flex-direction: column;
+  }
+
+  #railLeft  { left: var(--edge); align-items: flex-start; text-align: left; }
+  #railRight { right: var(--edge); align-items: flex-end; text-align: right; }
+
+  .micro {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--haze);
+    white-space: nowrap;
+  }
+
+  #brand {
+    font-family: var(--font-display);
+    font-size: 15px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--rime);
+    opacity: 0.82;
+  }
+
+  #nightLabel { margin-top: 26px; }
+
+  #nightName {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.15;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--frost);
+    margin-top: 4px;
+    max-width: 100%;
+  }
+
+  #objectiveLabel { margin-top: 28px; }
+
+  #objectiveValue {
+    font-size: 19px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+    color: var(--rime);
+    margin-top: 3px;
+    white-space: nowrap;
+  }
+
+  #objectiveNote {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--haze);
+    margin-top: 4px;
+    min-height: 12px;
+    white-space: nowrap;
+  }
+
+  .gauge {
+    position: relative;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(8, 16, 30, 0.55);
+  }
+
+  .gauge > i {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    height: var(--fill, 0%);
+    transition: height 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  #objectiveGauge { width: 10px; height: 190px; margin-top: 14px; }
+  #objectiveFill { background: linear-gradient(to top, #1c7f9c, var(--aurora-a) 55%, #eafcff); }
+
+  #movesLabel { margin-top: auto; }
+
+  #movesValue {
+    font-size: 64px;
+    font-weight: 600;
+    line-height: 0.94;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    color: var(--frost);
+    margin-bottom: 2px;
+  }
+
+  #movesValue.low { color: var(--warn); animation: lowPulse 1.1s ease-in-out infinite; }
+
+  @keyframes lowPulse {
+    50% { opacity: 0.45; }
+  }
+
+  #scoreLabel { }
+
+  #scoreValue {
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--frost);
+    margin-top: 2px;
+  }
+
+  #scoreDelta {
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--aurora-a);
+    height: 18px;
+    opacity: 0;
+  }
+
+  #scoreDelta.show { animation: deltaRise 0.9s ease-out; }
+
+  @keyframes deltaRise {
+    0%   { opacity: 0; transform: translateY(6px); }
+    22%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
+
+  #chainLabel { margin-top: 24px; }
+  #chainGauge { width: 12px; height: 150px; margin-top: 10px; }
+  #chainFill { background: linear-gradient(to top, var(--aurora-a), var(--aurora-b) 62%, var(--aurora-c)); }
+
+  #chainValue {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--rime);
+    margin-top: 6px;
+  }
+
+  #legend {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    align-items: flex-end;
+  }
+
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .legend-row span {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--haze);
+  }
+
+  .legend-row canvas {
+    width: 26px;
+    height: 26px;
+    display: block;
+  }
+
+  #keyHints {
+    margin-top: 14px;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--haze);
+    line-height: 1.7;
+  }
+
+  #keyHints b { color: var(--rime); font-weight: 600; }
+
+  #actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+  }
+
+  .icon-button {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--hairline);
+    background: rgba(10, 20, 36, 0.6);
+    color: var(--rime);
+    font-size: 12px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.16s, background 0.16s, color 0.16s;
+  }
+
+  .icon-button:hover:not(:disabled),
+  .icon-button:focus-visible {
+    border-color: var(--aurora-a);
+    color: var(--frost);
+    outline: none;
+  }
+
+  .icon-button:disabled { opacity: 0.34; cursor: default; }
+
+  #toast {
+    position: absolute;
+    left: 50%;
+    top: calc(var(--board-y) + var(--board-size) * 0.5);
+    transform: translate(-50%, -50%);
+    padding: 9px 20px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: rgba(6, 12, 24, 0.86);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--rime);
+    white-space: nowrap;
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+    transition: opacity 0.22s;
+  }
+
+  #toast.show { opacity: 1; }
+
+  /* ── Stack layout (narrow or short viewports) ───────────────────────── */
+
+  body[data-layout="stack"] .rail {
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    padding: 8px 12px 0;
+  }
+
+  body[data-layout="stack"] #railLeft {
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+    height: var(--top-strip);
+  }
+
+  body[data-layout="stack"] #railRight {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    height: var(--bot-strip);
+    padding: 0 12px 6px;
+  }
+
+  body[data-layout="stack"] #brand,
+  body[data-layout="stack"] #nightLabel,
+  body[data-layout="stack"] #objectiveLabel,
+  body[data-layout="stack"] #objectiveNote,
+  body[data-layout="stack"] #movesLabel,
+  body[data-layout="stack"] #scoreLabel,
+  body[data-layout="stack"] #chainLabel,
+  body[data-layout="stack"] #chainValue,
+  body[data-layout="stack"] #legend,
+  body[data-layout="stack"] #keyHints,
+  body[data-layout="stack"] #scoreDelta { display: none; }
+
+  body[data-layout="stack"] #nightName {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    margin-top: 0;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-layout="stack"] #objectiveValue { font-size: 13px; margin-top: 0; }
+
+  body[data-layout="stack"] #objectiveGauge {
+    width: auto;
+    flex: 1 1 40px;
+    min-width: 30px;
+    height: 6px;
+    margin: 0;
+    align-self: center;
+  }
+
+  body[data-layout="stack"] #objectiveFill {
+    height: 100% !important;
+    top: 0;
+    right: auto;
+    width: var(--fill, 0%);
+    background: linear-gradient(to right, #1c7f9c, var(--aurora-a) 55%, #eafcff);
+    transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  body[data-layout="stack"] #movesValue {
+    font-size: 26px;
+    margin: 0 0 0 auto;
+    flex: 0 0 auto;
+  }
+
+  body[data-layout="stack"] #scoreValue { font-size: 18px; margin-top: 0; }
+
+  body[data-layout="stack"] #chainGauge {
+    width: 40px;
+    height: 6px;
+    margin: 0;
+  }
+
+  body[data-layout="stack"] #chainFill {
+    height: 100% !important;
+    width: var(--fill, 0%);
+    background: linear-gradient(to right, var(--aurora-a), var(--aurora-b) 62%, var(--aurora-c));
+    transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  body[data-layout="stack"] #actions { margin: 0; }
+  body[data-layout="stack"] .icon-button { width: 28px; height: 28px; }
+
+  /* ── Screens ────────────────────────────────────────────────────────── */
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 42%, rgba(9, 18, 34, 0.82), rgba(4, 7, 14, 0.95) 62%);
+    backdrop-filter: blur(3px);
+  }
+
+  .screen.active { display: flex; }
+
+  .screen .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--aurora-a);
+    margin-bottom: 12px;
+  }
+
+  .screen h1 {
+    font-family: var(--font-display);
+    font-size: clamp(30px, 7vw, 62px);
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+    color: var(--frost);
+    text-indent: 0.3em;
+  }
+
+  .screen h2 {
+    font-family: var(--font-display);
+    font-size: clamp(20px, 4vw, 34px);
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin: 0 0 8px;
+    color: var(--frost);
+    text-indent: 0.22em;
+  }
+
+  .screen p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--haze);
+    margin: 0 0 18px;
+    max-width: 46ch;
+  }
+
+  .screen p.lede { color: var(--rime); font-size: 14px; }
+
+  .primary {
+    padding: 12px 34px;
+    border: 1px solid var(--aurora-a);
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(79, 251, 223, 0.16), rgba(79, 251, 223, 0.04));
+    color: var(--frost);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.18s;
+  }
+
+  .primary:hover, .primary:focus-visible {
+    background: rgba(79, 251, 223, 0.28);
+    outline: none;
+    transform: translateY(-1px);
+  }
+
+  .ghost {
+    margin-top: 12px;
+    padding: 8px 22px;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--haze);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .ghost:hover, .ghost:focus-visible { color: var(--frost); border-color: var(--aurora-a); outline: none; }
+
+  .rules {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+    margin-bottom: 20px;
+    max-width: 640px;
+  }
+
+  .rule {
+    padding: 7px 13px;
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--haze);
+  }
+
+  .rule b { color: var(--rime); font-weight: 600; }
+
+  #nightStrip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 22px;
+    max-width: 620px;
+  }
+
+  .night-chip {
+    width: 46px;
+    padding: 5px 0 4px;
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    background: rgba(9, 18, 34, 0.6);
+    color: var(--haze);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    cursor: pointer;
+    transition: border-color 0.16s, color 0.16s;
+  }
+
+  .night-chip:hover, .night-chip:focus-visible {
+    border-color: var(--aurora-a);
+    color: var(--frost);
+    outline: none;
+  }
+
+  .night-chip em {
+    display: block;
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+    color: var(--star);
+    min-height: 10px;
+  }
+
+  .stars {
+    font-size: 30px;
+    letter-spacing: 0.16em;
+    color: var(--star);
+    margin-bottom: 12px;
+    min-height: 34px;
+  }
+
+  .stars .dim { color: rgba(125, 151, 181, 0.35); }
+
+  .results {
+    display: flex;
+    gap: 26px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .result { min-width: 92px; }
+
+  .result span {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--haze);
+    margin-bottom: 4px;
+  }
+
+  .result strong {
+    font-size: 24px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--frost);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #app, #app * {
+      animation-duration: 0.001s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001s !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="board" tabindex="0" aria-label="Northlight match-three board"></canvas>
+
+  <div id="hud">
+    <div class="rail" id="railLeft">
+      <div id="brand">Northlight</div>
+      <div class="micro" id="nightLabel">Night 01</div>
+      <div id="nightName">First Light</div>
+      <div class="micro" id="objectiveLabel">Score</div>
+      <div id="objectiveValue">0 / 2,500</div>
+      <div id="objectiveNote"></div>
+      <div class="gauge" id="objectiveGauge"><i id="objectiveFill"></i></div>
+      <div class="micro" id="movesLabel">Moves</div>
+      <div id="movesValue">20</div>
+    </div>
+
+    <div class="rail" id="railRight">
+      <div class="micro" id="scoreLabel">Score</div>
+      <div id="scoreValue">0</div>
+      <div id="scoreDelta"></div>
+      <div class="micro" id="chainLabel">Chain</div>
+      <div class="gauge" id="chainGauge"><i id="chainFill"></i></div>
+      <div id="chainValue">&times;1</div>
+      <div id="legend"></div>
+      <div id="keyHints"><b>H</b> Hint &middot; <b>S</b> Shuffle<br><b>M</b> Mute &middot; <b>P</b> Pause &middot; <b>R</b> Retry</div>
+      <div id="actions">
+        <button class="icon-button" id="hintButton" type="button" title="Hint (H)" aria-label="Hint">?</button>
+        <button class="icon-button" id="shuffleButton" type="button" title="Shuffle, costs one move (S)" aria-label="Shuffle">&#8646;</button>
+        <button class="icon-button" id="audioButton" type="button" title="Mute (M)" aria-label="Mute">&#9673;</button>
+        <button class="icon-button" id="pauseButton" type="button" title="Pause (P)" aria-label="Pause">&#8214;</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <section class="screen active" id="titleScreen" data-screen="title">
+    <div class="eyebrow">Claude Opus 5 &middot; Tile Matching</div>
+    <h1>Northlight</h1>
+    <p class="lede">Twelve nights across the frozen sea. Match the crystals, break the rime, and the sky answers every chain you build.</p>
+    <div id="nightStrip"></div>
+    <div class="rules">
+      <div class="rule"><b>Match 4</b> Fracture</div>
+      <div class="rule"><b>L or T</b> Frost bloom</div>
+      <div class="rule"><b>Match 5</b> Aurora core</div>
+      <div class="rule"><b>Combine two</b> for something larger</div>
+    </div>
+    <button class="primary" id="startButton" type="button">Begin the crossing</button>
+    <p style="margin-top:16px;font-size:10px;letter-spacing:.18em;text-transform:uppercase">Drag or click to swap &middot; Arrows and Enter also work &middot; Hint is free, shuffle costs a move</p>
+  </section>
+
+  <section class="screen" id="introScreen" data-screen="intro">
+    <div class="eyebrow" id="introNight">Night 01</div>
+    <h2 id="introName">First Light</h2>
+    <p class="lede" id="introObjective">Score 2,500</p>
+  </section>
+
+  <section class="screen" id="pauseScreen" data-screen="paused">
+    <div class="eyebrow">The ice holds</div>
+    <h2>Paused</h2>
+    <p id="pauseObjective">&nbsp;</p>
+    <button class="primary" id="resumeButton" type="button">Resume</button>
+    <button class="ghost" id="quitButton" type="button">Back to the map</button>
+  </section>
+
+  <section class="screen" id="completeScreen" data-screen="complete">
+    <div class="eyebrow">The night clears</div>
+    <h2 id="completeName">First Light</h2>
+    <div class="stars" id="completeStars"></div>
+    <div class="results">
+      <div class="result"><span>Score</span><strong id="completeScore">0</strong></div>
+      <div class="result"><span>Aurora rush</span><strong id="completeRush">0</strong></div>
+      <div class="result"><span>Best chain</span><strong id="completeChain">0</strong></div>
+    </div>
+    <button class="primary" id="nextLevelButton" type="button">Next night</button>
+    <button class="ghost" id="replayLevelButton" type="button">Play it again</button>
+  </section>
+
+  <section class="screen" id="failedScreen" data-screen="failed">
+    <div class="eyebrow">The light goes out</div>
+    <h2>Night lost</h2>
+    <p id="failedCopy">You ran out of moves.</p>
+    <button class="primary" id="retryButton" type="button">Try again</button>
+    <button class="ghost" id="abandonButton" type="button">Back to the map</button>
+  </section>
+
+  <section class="screen" id="finishScreen" data-screen="finish">
+    <div class="eyebrow">Landfall</div>
+    <h1>Northlight</h1>
+    <div class="stars" id="finishStars"></div>
+    <p class="lede" id="finishCopy">Twelve nights crossed.</p>
+    <button class="primary" id="replayButton" type="button">Cross again</button>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ══════════════════════════════════════════════════════════════════════
+     CONSTANTS
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const GRID = 9;
+  const TYPES = 7;
+
+  const NONE = 0;
+  const FRACTURE_ROW = 1;
+  const FRACTURE_COL = 2;
+  const BLOOM = 3;
+  const CORE = 4;
+
+  const BASE_GEM_SCORE = 60;
+  const DETONATION_SCORE = 80;
+  const RIME_SCORE = 200;
+  const ENCASED_SCORE = 150;
+  const RUSH_MOVE_SCORE = 500;
+  const MAX_CHAIN_MULT = 8;
+  const SHUFFLE_COST = 1;
+  const HINT_IDLE_MS = 5000;
+
+  const FUSION = {
+    LINE_LINE: 1200,
+    LINE_BLOOM: 2500,
+    BLOOM_BLOOM: 4000,
+    CORE_LINE: 5000,
+    CORE_BLOOM: 6500,
+    CORE_CORE: 12000,
+  };
+
+  const SWAP_MS = 180;
+  const CLEAR_MS = 200;
+  const FALL_MS = 250;
+  const DETONATE_STAGGER = 55;
+
+  const TEST_MODE = new URLSearchParams(location.search).get("test") === "1";
+  const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const STORAGE_KEY = "northlight.progress.v1";
+
+  // ── Power-ups: fracture beams, frost blooms, aurora cores and the aurora rush ──
+  const GEMS = [
+    { name: "Glacier", shape: "brilliant", core: "#3fd0ff", light: "#c4f4ff", dark: "#0a5b8c", alt: "#5ef0d6", pitch: 0 },
+    { name: "Verdant", shape: "hex",       core: "#4bf0a8", light: "#c9ffe6", dark: "#0a6b4a", alt: "#a6ff6b", pitch: 3 },
+    { name: "Amber",   shape: "cushion",   core: "#ffc45a", light: "#fff0c8", dark: "#8a5210", alt: "#ff8f4d", pitch: 5 },
+    { name: "Rose",    shape: "pear",      core: "#ff5f97", light: "#ffd2e3", dark: "#8c1743", alt: "#ff6ad5", pitch: 7 },
+    { name: "Violet",  shape: "rhombus",   core: "#a06bff", light: "#e5d5ff", dark: "#3f1a7c", alt: "#5f7bff", pitch: 10 },
+    { name: "Bone",    shape: "trilliant", core: "#c6d4e6", light: "#fdfeff", dark: "#3d4a5e", alt: "#9fb4cf", pitch: 12 },
+    { name: "Coral",   shape: "star",      core: "#ff6a4d", light: "#ffd0c0", dark: "#872808", alt: "#ffab3d", pitch: 15 },
+  ];
+
+  const CORE_COLORS = ["#4ffbdf", "#7c6cff", "#ff5fa8", "#ffd88a", "#4bf0a8", "#3fd0ff", "#ff6a4d"];
+
+  /* ══════════════════════════════════════════════════════════════════════
+     LEVELS
+     Mask legend: "." open · "#" hole · "o" rime 1 · "O" rime 2 · "x" drift ice
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const LEVELS = [
+    {
+      name: "First Light", moves: 20, types: 5, star2: 25000, star3: 36000,
+      objective: { kind: "score", target: 3000 },
+      mask: [
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+      ],
+    },
+    {
+      name: "Thin Ice", moves: 18, types: 5, star2: 39000, star3: 57000,
+      objective: { kind: "rime" },
+      mask: [
+        ".........",
+        ".........",
+        "..oooo...",
+        "..oooo...",
+        "..oooo...",
+        "..oooo...",
+        ".........",
+        ".........",
+        ".........",
+      ],
+    },
+    {
+      name: "The Narrows", moves: 20, types: 5, star2: 19000, star3: 27000,
+      objective: { kind: "collect", colors: [0], perColor: 20 },
+      mask: [
+        ".........",
+        ".........",
+        "#.......#",
+        "##.....##",
+        "###...###",
+        "##.....##",
+        "#.......#",
+        ".........",
+        ".........",
+      ],
+    },
+    {
+      name: "Crown", moves: 22, types: 6, star2: 15000, star3: 22000,
+      objective: { kind: "score", target: 8000 },
+      mask: [
+        ".#.#.#.#.",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        ".........",
+        "##.....##",
+        "###...###",
+      ],
+    },
+    {
+      name: "Frostbite", moves: 32, types: 6, star2: 23000, star3: 33000,
+      objective: { kind: "rime" },
+      mask: [
+        ".ooooooo.",
+        ".........",
+        "...x.x...",
+        ".........",
+        "..x...x..",
+        ".........",
+        "...x.x...",
+        ".........",
+        ".ooooooo.",
+      ],
+    },
+    {
+      name: "The Ring", moves: 26, types: 6, star2: 15000, star3: 22000,
+      objective: { kind: "collect", colors: [4], perColor: 16 },
+      mask: [
+        ".........",
+        ".........",
+        ".........",
+        "...###...",
+        "...###...",
+        "...###...",
+        ".........",
+        ".........",
+        ".........",
+      ],
+    },
+    {
+      name: "Double Glaze", moves: 37, types: 6, star2: 27000, star3: 39000,
+      objective: { kind: "rime" },
+      mask: [
+        "###ooo###",
+        "##.OOO.##",
+        "#.o...o.#",
+        "..O...O..",
+        "...ooo...",
+        "..O...O..",
+        "#.o...o.#",
+        "##.OOO.##",
+        "###ooo###",
+      ],
+    },
+    {
+      name: "Split Floe", moves: 24, types: 6, star2: 18000, star3: 27000,
+      objective: { kind: "score", target: 7000 },
+      mask: [
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#....",
+      ],
+    },
+    {
+      name: "Blizzard", moves: 28, types: 7, star2: 21000, star3: 30000,
+      objective: { kind: "collect", colors: [2, 3], perColor: 13 },
+      mask: [
+        ".........",
+        ".x.....x.",
+        ".........",
+        "...x.x...",
+        "....x....",
+        "...x.x...",
+        ".........",
+        ".x.....x.",
+        ".........",
+      ],
+    },
+    {
+      name: "The Vault", moves: 42, types: 7, star2: 18000, star3: 27000,
+      objective: { kind: "rime" },
+      mask: [
+        "###...###",
+        "###...###",
+        "###ooo###",
+        "ooooooooo",
+        "ooooooooo",
+        "ooooooooo",
+        "###ooo###",
+        "###...###",
+        "###...###",
+      ],
+    },
+    {
+      name: "Long Night", moves: 28, types: 7, star2: 11000, star3: 15000,
+      objective: { kind: "score", target: 8800 },
+      mask: [
+        "##.....##",
+        "#.......#",
+        ".........",
+        ".........",
+        "....#....",
+        ".........",
+        ".........",
+        "#.......#",
+        "##.....##",
+      ],
+    },
+    {
+      name: "Northlight", moves: 48, types: 7, star2: 22000, star3: 31000,
+      objective: { kind: "dual", scoreTarget: 12000 },
+      mask: [
+        "##.....##",
+        "#..o.o..#",
+        ".oOO.OOo.",
+        "..O.x.O..",
+        "....o....",
+        "..O.x.O..",
+        ".oOO.OOo.",
+        "#..o.o..#",
+        "##.....##",
+      ],
+    },
+  ];
+
+  const LEVEL_COUNT = LEVELS.length;
+
+  /* ══════════════════════════════════════════════════════════════════════
+     UTILITIES
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Gameplay randomness lives on state.random (seedable). Anything purely cosmetic uses this
+  // instead, so particle counts and frame timing can never perturb a seeded run.
+  const fxRandom = Math.random;
+
+  const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+  const easeInQuad = (t) => t * t;
+
+  function easeOutBack(t) {
+    const c = 1.70158;
+    return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
+  }
+
+  function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  function mixHex(a, b, t) {
+    const A = hexToRgb(a);
+    const B = hexToRgb(b);
+    return `rgb(${Math.round(lerp(A[0], B[0], t))},${Math.round(lerp(A[1], B[1], t))},${Math.round(lerp(A[2], B[2], t))})`;
+  }
+
+  function rgba(hex, alpha) {
+    const [r, g, b] = hexToRgb(hex);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  const formatNumber = (n) => Math.round(n).toLocaleString("en-US");
+
+  const keyOf = (r, c) => r * GRID + c;
+  const rowOf = (k) => (k / GRID) | 0;
+  const colOf = (k) => k % GRID;
+
+  function wait(ms) {
+    if (ms <= 0) return Promise.resolve();
+    return new Promise((resolve) => setTimeout(resolve, ms / state.speed));
+  }
+
+  function readProgress() {
+    const empty = { stars: new Array(LEVEL_COUNT).fill(0), best: new Array(LEVEL_COUNT).fill(0) };
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return empty;
+      const parsed = JSON.parse(raw);
+      for (let i = 0; i < LEVEL_COUNT; i += 1) {
+        empty.stars[i] = clamp(Number(parsed?.stars?.[i]) || 0, 0, 3);
+        empty.best[i] = Math.max(0, Number(parsed?.best?.[i]) || 0);
+      }
+    } catch (error) {
+      void error; // Sandboxed iframes have an opaque origin; storage access throws.
+    }
+    return empty;
+  }
+
+  function writeProgress() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ stars: state.stars, best: state.best }));
+    } catch (error) {
+      void error;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     LEVEL PARSING
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function parseMask(rows) {
+    const mask = [];
+    const rime = [];
+    const encased = [];
+    let openCells = 0;
+    let holes = 0;
+    let rimeCells = 0;
+    let rimeLayers = 0;
+    let driftCells = 0;
+
+    for (let r = 0; r < GRID; r += 1) {
+      mask[r] = [];
+      rime[r] = [];
+      encased[r] = [];
+      for (let c = 0; c < GRID; c += 1) {
+        const ch = rows[r][c];
+        const open = ch !== "#";
+        mask[r][c] = open ? 1 : 0;
+        rime[r][c] = ch === "o" ? 1 : ch === "O" ? 2 : 0;
+        encased[r][c] = ch === "x" ? 2 : 0;
+        if (open) openCells += 1; else holes += 1;
+        if (rime[r][c] > 0) { rimeCells += 1; rimeLayers += rime[r][c]; }
+        if (encased[r][c] > 0) driftCells += 1;
+      }
+    }
+
+    return { mask, rime, encased, openCells, holes, rimeCells, rimeLayers, driftCells };
+  }
+
+  // Every open cell must sit in a column segment whose top cell can spawn.
+  function checkRefill(mask) {
+    for (let c = 0; c < GRID; c += 1) {
+      let sawSpawner = false;
+      for (let r = 0; r < GRID; r += 1) {
+        if (mask[r][c] === 0) { sawSpawner = false; continue; }
+        if (r === 0 || mask[r - 1][c] === 0) sawSpawner = true;
+        if (!sawSpawner) return false;
+      }
+    }
+    return true;
+  }
+
+  function levelInfo(index) {
+    const level = LEVELS[index];
+    const parsed = parseMask(level.mask);
+    const objective = { kind: level.objective.kind };
+
+    if (objective.kind === "score") {
+      objective.target = level.objective.target;
+    } else if (objective.kind === "rime") {
+      objective.target = parsed.rimeLayers;
+    } else if (objective.kind === "collect") {
+      objective.colors = level.objective.colors.slice();
+      objective.perColor = level.objective.perColor;
+      objective.target = level.objective.colors.length * level.objective.perColor;
+    } else {
+      objective.target = parsed.rimeLayers;
+      objective.scoreTarget = level.objective.scoreTarget;
+    }
+
+    return {
+      index,
+      name: level.name,
+      moves: level.moves,
+      types: level.types,
+      star2: level.star2,
+      star3: level.star3,
+      objective,
+      openCells: parsed.openCells,
+      holes: parsed.holes,
+      rimeCells: parsed.rimeCells,
+      rimeLayers: parsed.rimeLayers,
+      encased: parsed.driftCells,
+      refillOk: checkRefill(parsed.mask),
+      parsed,
+    };
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     STATE
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const progress = readProgress();
+
+  const state = {
+    random: Math.random,
+    speed: TEST_MODE ? 8 : 1,
+    time: 0,
+
+    screen: "title",
+    level: 0,
+    info: null,
+
+    board: [],
+    mask: [],
+    rime: [],
+    encased: [],
+
+    score: 0,
+    totalScore: 0,
+    moves: 0,
+    chain: 0,
+    chainEase: 0,
+    bestChain: 0,
+    rimeCleared: 0,
+    collected: new Array(TYPES).fill(0),
+    objective: null,
+    rushScore: 0,
+
+    active: false,
+    locked: false,
+    paused: false,
+    rushing: false,
+
+    selection: null,
+    cursor: { r: 4, c: 4 },
+    hover: null,
+    dragging: false,
+    dragOrigin: null,
+    pointerId: null,
+
+    hint: null,
+    idle: 0,
+
+    dying: [],
+    particles: [],
+    rings: [],
+    beams: [],
+    shocks: [],
+    floaters: [],
+    snow: [],
+    shake: 0,
+    flash: 0,
+
+    stars: progress.stars,
+    best: progress.best,
+
+    muted: false,
+    audioLog: [],
+
+    layout: {
+      width: 0, height: 0, dpr: 1,
+      boardX: 0, boardY: 0, boardSize: 0, cell: 0,
+      railW: 0, mode: "rails",
+    },
+  };
+
+  let nextTileId = 1;
+
+  const effectBudget = () => (REDUCED_MOTION ? 110 : state.layout.width < 700 || state.layout.height < 560 ? 340 : 620);
+
+  /* ── Board helpers ───────────────────────────────────────────────────── */
+
+  const inBounds = (r, c) => r >= 0 && r < GRID && c >= 0 && c < GRID;
+  const isOpen = (r, c) => inBounds(r, c) && state.mask[r][c] === 1;
+  const isBlocked = (r, c) => !inBounds(r, c) || state.mask[r][c] === 0 || state.encased[r][c] > 0;
+  const tileAt = (r, c) => (inBounds(r, c) ? state.board[r][c] : null);
+  const isSpawner = (r, c) => isOpen(r, c) && (r === 0 || isBlocked(r - 1, c));
+
+  function matchable(r, c) {
+    if (!isOpen(r, c) || state.encased[r][c] > 0) return false;
+    const tile = state.board[r][c];
+    return Boolean(tile) && tile.special !== CORE;
+  }
+
+  function cellCenter(r, c) {
+    const { boardX, boardY, cell } = state.layout;
+    return { x: boardX + (c + 0.5) * cell, y: boardY + (r + 0.5) * cell };
+  }
+
+  function createTile(type, r, c, special = NONE) {
+    const pos = cellCenter(r, c);
+    return {
+      id: nextTileId++,
+      type,
+      special,
+      r,
+      c,
+      x: pos.x,
+      y: pos.y,
+      fx: pos.x,
+      fy: pos.y,
+      tx: pos.x,
+      ty: pos.y,
+      at: 1,
+      ad: 1,
+      ease: easeOutCubic,
+      scale: 1,
+      born: 0,
+      wobble: fxRandom() * Math.PI * 2,
+    };
+  }
+
+  function placeTile(tile, r, c, snap) {
+    tile.r = r;
+    tile.c = c;
+    state.board[r][c] = tile;
+    const pos = cellCenter(r, c);
+    tile.tx = pos.x;
+    tile.ty = pos.y;
+    if (snap) {
+      tile.x = pos.x;
+      tile.y = pos.y;
+      tile.fx = pos.x;
+      tile.fy = pos.y;
+      tile.at = 1;
+      tile.ad = 1;
+    }
+  }
+
+  function animateTile(tile, duration, ease = easeOutCubic) {
+    tile.fx = tile.x;
+    tile.fy = tile.y;
+    tile.at = 0;
+    tile.ad = Math.max(1, duration);
+    tile.ease = ease;
+  }
+
+  function relayoutTiles() {
+    if (state.board.length !== GRID) return;
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (tile) placeTile(tile, r, c, true);
+      }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     LEVEL SETUP
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function randomType(r, c) {
+    const limit = state.info.types;
+    for (let attempt = 0; attempt < 14; attempt += 1) {
+      const type = Math.floor(state.random() * limit) % limit;
+      const h1 = tileAt(r, c - 1);
+      const h2 = tileAt(r, c - 2);
+      const v1 = tileAt(r - 1, c);
+      const v2 = tileAt(r - 2, c);
+      const runH = h1 && h2 && h1.type === type && h2.type === type;
+      const runV = v1 && v2 && v1.type === type && v2.type === type;
+      if (!runH && !runV) return type;
+    }
+    return Math.floor(state.random() * limit) % limit;
+  }
+
+  function dealBoard() {
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        state.board[r][c] = null;
+      }
+    }
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        if (!isOpen(r, c)) continue;
+        const tile = createTile(randomType(r, c), r, c);
+        state.board[r][c] = tile;
+      }
+    }
+    let guard = 0;
+    while ((findMatches().length > 0 || !findAnyMove()) && guard < 40) {
+      guard += 1;
+      for (let r = 0; r < GRID; r += 1) {
+        for (let c = 0; c < GRID; c += 1) {
+          const tile = state.board[r][c];
+          if (tile) tile.type = randomType(r, c);
+        }
+      }
+    }
+  }
+
+  function setupLevel(index) {
+    const info = levelInfo(index);
+    state.level = index;
+    state.info = info;
+    state.mask = info.parsed.mask.map((row) => row.slice());
+    state.rime = info.parsed.rime.map((row) => row.slice());
+    state.encased = info.parsed.encased.map((row) => row.slice());
+    state.board = Array.from({ length: GRID }, () => new Array(GRID).fill(null));
+
+    state.score = 0;
+    state.moves = info.moves;
+    state.chain = 0;
+    state.chainEase = 0;
+    state.bestChain = 0;
+    state.rimeCleared = 0;
+    state.rushScore = 0;
+    state.collected = new Array(TYPES).fill(0);
+    state.objective = {
+      kind: info.objective.kind,
+      target: info.objective.target,
+      scoreTarget: info.objective.scoreTarget,
+      colors: info.objective.colors ? info.objective.colors.slice() : undefined,
+      perColor: info.objective.perColor,
+    };
+
+    state.selection = null;
+    state.hint = null;
+    state.idle = 0;
+    state.dying.length = 0;
+    state.particles.length = 0;
+    state.rings.length = 0;
+    state.beams.length = 0;
+    state.shocks.length = 0;
+    state.floaters.length = 0;
+    state.rushing = false;
+    state.locked = false;
+    state.paused = false;
+
+    const start = firstOpenCell();
+    state.cursor = { r: start.r, c: start.c };
+
+    dealBoard();
+    relayoutTiles();
+    invalidateBed();
+    updateHud();
+  }
+
+  function firstOpenCell() {
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        if (isOpen(r, c) && state.encased[r][c] === 0) return { r, c };
+      }
+    }
+    return { r: 0, c: 0 };
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     MATCH DETECTION
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function collectRuns() {
+    const runs = [];
+
+    for (let r = 0; r < GRID; r += 1) {
+      let start = 0;
+      while (start < GRID) {
+        if (!matchable(r, start)) { start += 1; continue; }
+        const type = state.board[r][start].type;
+        let end = start + 1;
+        while (end < GRID && matchable(r, end) && state.board[r][end].type === type) end += 1;
+        if (end - start >= 3) {
+          const cells = [];
+          for (let c = start; c < end; c += 1) cells.push(keyOf(r, c));
+          runs.push({ type, horizontal: true, cells });
+        }
+        start = end;
+      }
+    }
+
+    for (let c = 0; c < GRID; c += 1) {
+      let start = 0;
+      while (start < GRID) {
+        if (!matchable(start, c)) { start += 1; continue; }
+        const type = state.board[start][c].type;
+        let end = start + 1;
+        while (end < GRID && matchable(end, c) && state.board[end][c].type === type) end += 1;
+        if (end - start >= 3) {
+          const cells = [];
+          for (let r = start; r < end; r += 1) cells.push(keyOf(r, c));
+          runs.push({ type, horizontal: false, cells });
+        }
+        start = end;
+      }
+    }
+
+    return runs;
+  }
+
+  function findMatches() {
+    const runs = collectRuns();
+    if (runs.length === 0) return [];
+
+    const owner = new Map();
+    const groups = [];
+
+    for (const run of runs) {
+      let target = -1;
+      for (const cell of run.cells) {
+        const found = owner.get(cell);
+        if (found !== undefined) { target = found; break; }
+      }
+      if (target === -1) {
+        target = groups.length;
+        groups.push({ type: run.type, cells: new Set(), runs: [] });
+      }
+      const group = groups[target];
+      group.runs.push(run);
+      for (const cell of run.cells) {
+        const previous = owner.get(cell);
+        if (previous !== undefined && previous !== target) {
+          const merged = groups[previous];
+          for (const other of merged.cells) { group.cells.add(other); owner.set(other, target); }
+          for (const otherRun of merged.runs) group.runs.push(otherRun);
+          merged.cells.clear();
+          merged.runs.length = 0;
+        }
+        group.cells.add(cell);
+        owner.set(cell, target);
+      }
+    }
+
+    return groups
+      .filter((group) => group.cells.size >= 3)
+      .map((group) => {
+        let longest = 0;
+        let longestRun = null;
+        let hasH = false;
+        let hasV = false;
+        for (const run of group.runs) {
+          if (run.cells.length > longest) { longest = run.cells.length; longestRun = run; }
+          if (run.horizontal) hasH = true; else hasV = true;
+        }
+        return {
+          type: group.type,
+          cells: [...group.cells],
+          runs: group.runs,
+          longest,
+          longestRun,
+          hasH,
+          hasV,
+        };
+      });
+  }
+
+  function classifyGroup(group) {
+    if (group.longest >= 5) return CORE;
+    if (group.hasH && group.hasV) return BLOOM;
+    if (group.longest === 4) return group.longestRun.horizontal ? FRACTURE_ROW : FRACTURE_COL;
+    return NONE;
+  }
+
+  function placementCell(group, preferred) {
+    if (preferred) {
+      for (const key of preferred) if (group.cells.includes(key)) return key;
+    }
+    if (group.hasH && group.hasV) {
+      const horizontal = new Set();
+      const vertical = new Set();
+      for (const run of group.runs) {
+        for (const cell of run.cells) (run.horizontal ? horizontal : vertical).add(cell);
+      }
+      for (const cell of horizontal) if (vertical.has(cell)) return cell;
+    }
+    const cells = group.longestRun ? group.longestRun.cells : group.cells;
+    return cells[Math.floor(cells.length / 2)];
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     SCORING AND OBJECTIVES
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const matchScore = (k) => BASE_GEM_SCORE * k * (1 + 0.35 * Math.max(0, k - 3));
+  const chainMult = (step) => Math.min(Math.max(step, 1), MAX_CHAIN_MULT);
+
+  function addScore(amount) {
+    const rounded = Math.round(amount);
+    state.score += rounded;
+    return rounded;
+  }
+
+  function objectiveProgress() {
+    const o = state.objective;
+    if (!o) return 0;
+    if (o.kind === "score") return Math.min(state.score, o.target);
+    if (o.kind === "collect") {
+      return o.colors.reduce((sum, type) => sum + Math.min(state.collected[type], o.perColor), 0);
+    }
+    return Math.min(state.rimeCleared, o.target);
+  }
+
+  function objectiveComplete() {
+    const o = state.objective;
+    if (!o) return false;
+    if (o.kind === "dual") return state.rimeCleared >= o.target && state.score >= o.scoreTarget;
+    return objectiveProgress() >= o.target;
+  }
+
+  function starsEarned() {
+    const info = state.info;
+    if (state.score >= info.star3) return 3;
+    if (state.score >= info.star2) return 2;
+    return 1;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     SPECIALS
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const isLine = (special) => special === FRACTURE_ROW || special === FRACTURE_COL;
+
+  function dominantType() {
+    const counts = new Array(TYPES).fill(0);
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (tile && tile.special !== CORE) counts[tile.type] += 1;
+      }
+    }
+    let best = 0;
+    for (let t = 1; t < TYPES; t += 1) if (counts[t] > counts[best]) best = t;
+    return best;
+  }
+
+  function blastArea(tile, forcedType) {
+    const cells = [];
+    const { r, c } = tile;
+
+    if (tile.special === FRACTURE_ROW) {
+      for (let cc = 0; cc < GRID; cc += 1) if (isOpen(r, cc)) cells.push(keyOf(r, cc));
+      addBeam(cellCenter(r, 0), cellCenter(r, GRID - 1), GEMS[tile.type].core);
+    } else if (tile.special === FRACTURE_COL) {
+      for (let rr = 0; rr < GRID; rr += 1) if (isOpen(rr, c)) cells.push(keyOf(rr, c));
+      addBeam(cellCenter(0, c), cellCenter(GRID - 1, c), GEMS[tile.type].core);
+    } else if (tile.special === BLOOM) {
+      for (let rr = r - 2; rr <= r + 2; rr += 1) {
+        for (let cc = c - 2; cc <= c + 2; cc += 1) {
+          if (Math.abs(rr - r) + Math.abs(cc - c) <= 2 && isOpen(rr, cc)) cells.push(keyOf(rr, cc));
+        }
+      }
+      addShock(cellCenter(r, c), state.layout.cell * 2.6, GEMS[tile.type].light);
+    } else if (tile.special === CORE) {
+      const type = forcedType === undefined || forcedType === null ? dominantType() : forcedType;
+      for (let rr = 0; rr < GRID; rr += 1) {
+        for (let cc = 0; cc < GRID; cc += 1) {
+          const other = state.board[rr][cc];
+          if (other && other.special !== CORE && other.type === type) cells.push(keyOf(rr, cc));
+        }
+      }
+      cells.push(keyOf(r, c));
+      addShock(cellCenter(r, c), state.layout.cell * 4.2, CORE_COLORS[type % CORE_COLORS.length]);
+    }
+
+    return cells;
+  }
+
+  // Breadth-first chain reaction: every special caught in a clear fires its own blast.
+  function expandSpecials(initial, forcedType) {
+    const cleared = new Set(initial);
+    const queue = [...initial];
+    const fired = new Set();
+    const order = [];
+
+    while (queue.length > 0) {
+      const key = queue.shift();
+      if (fired.has(key)) continue;
+      const tile = state.board[rowOf(key)][colOf(key)];
+      if (!tile || tile.special === NONE) { fired.add(key); continue; }
+      fired.add(key);
+      order.push({ key, special: tile.special });
+      for (const next of blastArea(tile, forcedType)) {
+        cleared.add(next);
+        if (!fired.has(next)) queue.push(next);
+      }
+    }
+
+    return { cells: cleared, fired: order };
+  }
+
+  function fusionKind(a, b) {
+    const sa = a.special;
+    const sb = b.special;
+    if (sa === CORE && sb === CORE) return "CORE_CORE";
+    if ((sa === CORE && sb === BLOOM) || (sb === CORE && sa === BLOOM)) return "CORE_BLOOM";
+    if ((sa === CORE && isLine(sb)) || (sb === CORE && isLine(sa))) return "CORE_LINE";
+    if (sa === CORE || sb === CORE) return "CORE_PLAIN";
+    if (sa === BLOOM && sb === BLOOM) return "BLOOM_BLOOM";
+    if ((sa === BLOOM && isLine(sb)) || (sb === BLOOM && isLine(sa))) return "LINE_BLOOM";
+    if (isLine(sa) && isLine(sb)) return "LINE_LINE";
+    return null;
+  }
+
+  // Returns the initial clear set plus a flat bonus; expandSpecials chains the rest.
+  function prepareFusion(kind, a, b) {
+    const cells = new Set();
+    const partner = a.special === CORE ? b : a;
+    const core = a.special === CORE ? a : b;
+    const anchor = a; // The tile the player dragged; it now sits on the destination cell.
+
+    const pushRow = (r) => { for (let c = 0; c < GRID; c += 1) if (isOpen(r, c)) cells.add(keyOf(r, c)); };
+    const pushCol = (c) => { for (let r = 0; r < GRID; r += 1) if (isOpen(r, c)) cells.add(keyOf(r, c)); };
+
+    if (kind === "LINE_LINE") {
+      pushRow(anchor.r);
+      pushCol(anchor.c);
+      addBeam(cellCenter(anchor.r, 0), cellCenter(anchor.r, GRID - 1), "#eafcff", 10);
+      addBeam(cellCenter(0, anchor.c), cellCenter(GRID - 1, anchor.c), "#eafcff", 10);
+      return { cells, bonus: FUSION.LINE_LINE, audio: "fuse:crosscut", name: "Crosscut" };
+    }
+
+    if (kind === "LINE_BLOOM") {
+      for (let d = -1; d <= 1; d += 1) { pushRow(anchor.r + d); pushCol(anchor.c + d); }
+      for (let d = -1; d <= 1; d += 1) {
+        addBeam(cellCenter(clamp(anchor.r + d, 0, GRID - 1), 0), cellCenter(clamp(anchor.r + d, 0, GRID - 1), GRID - 1), "#c4f4ff", 14);
+        addBeam(cellCenter(0, clamp(anchor.c + d, 0, GRID - 1)), cellCenter(GRID - 1, clamp(anchor.c + d, 0, GRID - 1)), "#c4f4ff", 14);
+      }
+      return { cells, bonus: FUSION.LINE_BLOOM, audio: "fuse:split", name: "Glacier Split" };
+    }
+
+    if (kind === "BLOOM_BLOOM") {
+      for (let r = 0; r < GRID; r += 1) {
+        for (let c = 0; c < GRID; c += 1) {
+          if (Math.abs(r - anchor.r) + Math.abs(c - anchor.c) <= 4 && isOpen(r, c)) cells.add(keyOf(r, c));
+        }
+      }
+      addShock(cellCenter(anchor.r, anchor.c), state.layout.cell * 5.4, "#ffffff", 0.9);
+      return { cells, bonus: FUSION.BLOOM_BLOOM, audio: "fuse:whiteout", name: "Whiteout" };
+    }
+
+    if (kind === "CORE_LINE" || kind === "CORE_BLOOM") {
+      const type = partner.type;
+      let index = 0;
+      for (let r = 0; r < GRID; r += 1) {
+        for (let c = 0; c < GRID; c += 1) {
+          const tile = state.board[r][c];
+          if (!tile || tile.special === CORE || tile.type !== type) continue;
+          tile.special = kind === "CORE_BLOOM" ? BLOOM : index % 2 === 0 ? FRACTURE_ROW : FRACTURE_COL;
+          tile.born = 0;
+          index += 1;
+          cells.add(keyOf(r, c));
+        }
+      }
+      cells.add(keyOf(core.r, core.c));
+      cells.add(keyOf(partner.r, partner.c));
+      addShock(cellCenter(anchor.r, anchor.c), state.layout.cell * 5, CORE_COLORS[type % CORE_COLORS.length], 0.8);
+      return {
+        cells,
+        bonus: kind === "CORE_BLOOM" ? FUSION.CORE_BLOOM : FUSION.CORE_LINE,
+        audio: kind === "CORE_BLOOM" ? "fuse:storm" : "fuse:volley",
+        name: kind === "CORE_BLOOM" ? "Aurora Storm" : "Aurora Volley",
+      };
+    }
+
+    if (kind === "CORE_CORE") {
+      for (let r = 0; r < GRID; r += 1) {
+        for (let c = 0; c < GRID; c += 1) {
+          if (state.board[r][c]) cells.add(keyOf(r, c));
+        }
+      }
+      for (let r = 0; r < GRID; r += 1) {
+        for (let c = 0; c < GRID; c += 1) {
+          if (state.encased[r][c] > 0) damageEncasement(r, c);
+        }
+      }
+      state.flash = 1;
+      addShock(cellCenter(anchor.r, anchor.c), state.layout.boardSize, "#ffffff", 1);
+      return { cells, bonus: FUSION.CORE_CORE, audio: "fuse:eclipse", name: "Total Eclipse" };
+    }
+
+    // Core swapped against an ordinary gem: clear that colour.
+    const type = partner.type;
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (tile && tile.special !== CORE && tile.type === type) cells.add(keyOf(r, c));
+      }
+    }
+    cells.add(keyOf(core.r, core.c));
+    addShock(cellCenter(anchor.r, anchor.c), state.layout.cell * 4.2, CORE_COLORS[type % CORE_COLORS.length]);
+    return { cells, bonus: 0, audio: "fire:core", name: GEMS[type].name };
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     CLEARING, GRAVITY, REFILL
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function damageEncasement(r, c) {
+    if (state.encased[r][c] <= 0) return 0;
+    state.encased[r][c] -= 1;
+    invalidateBed();
+    const pos = cellCenter(r, c);
+    burst(pos.x, pos.y, "#cfe6f5", 10, 90);
+    if (state.encased[r][c] === 0) {
+      sfx("ice");
+      addRing(pos, state.layout.cell * 0.9, "#e8f4ff");
+    }
+    return ENCASED_SCORE;
+  }
+
+  function performClear(cells, step) {
+    let gained = 0;
+    let removed = 0;
+    const neighbours = new Set();
+    const mult = chainMult(step);
+
+    for (const key of cells) {
+      const r = rowOf(key);
+      const c = colOf(key);
+      const tile = state.board[r][c];
+      if (!tile) continue;
+
+      state.board[r][c] = null;
+      removed += 1;
+      state.collected[tile.type] += 1;
+      tile.dying = 0;
+      state.dying.push(tile);
+
+      const colour = tile.special === CORE ? "#eafcff" : GEMS[tile.type].core;
+      burst(tile.x, tile.y, colour, tile.special === NONE ? 8 : 16, tile.special === NONE ? 110 : 190);
+
+      if (state.rime[r][c] > 0) {
+        state.rime[r][c] -= 1;
+        state.rimeCleared += 1;
+        gained += RIME_SCORE;
+        invalidateBed();
+        burst(tile.x, tile.y, "#cfe6f5", 12, 130);
+        sfx("rime");
+      }
+
+      if (isOpen(r - 1, c) && state.encased[r - 1][c] > 0) neighbours.add(keyOf(r - 1, c));
+      if (isOpen(r + 1, c) && state.encased[r + 1][c] > 0) neighbours.add(keyOf(r + 1, c));
+      if (isOpen(r, c - 1) && state.encased[r][c - 1] > 0) neighbours.add(keyOf(r, c - 1));
+      if (isOpen(r, c + 1) && state.encased[r][c + 1] > 0) neighbours.add(keyOf(r, c + 1));
+    }
+
+    for (const key of neighbours) gained += damageEncasement(rowOf(key), colOf(key));
+
+    return { gained: gained * mult, removed };
+  }
+
+  function applyGravity() {
+    let moved = 0;
+    for (let c = 0; c < GRID; c += 1) {
+      let write = GRID - 1;
+      for (let r = GRID - 1; r >= 0; r -= 1) {
+        if (isBlocked(r, c)) { write = r - 1; continue; }
+        const tile = state.board[r][c];
+        if (!tile) continue;
+        if (write !== r) {
+          state.board[r][c] = null;
+          placeTile(tile, write, c, false);
+          animateTile(tile, FALL_MS, easeInQuad);
+          moved += 1;
+        }
+        write -= 1;
+      }
+    }
+    return moved;
+  }
+
+  function refillBoard() {
+    const { cell, boardY } = state.layout;
+    let spawned = 0;
+
+    for (let c = 0; c < GRID; c += 1) {
+      let r = 0;
+      while (r < GRID) {
+        if (isBlocked(r, c)) { r += 1; continue; }
+        let end = r;
+        while (end < GRID && !isBlocked(end, c)) end += 1;
+
+        let empty = 0;
+        for (let rr = r; rr < end; rr += 1) {
+          if (state.board[rr][c]) break;
+          empty += 1;
+        }
+
+        for (let i = 0; i < empty; i += 1) {
+          const rr = r + i;
+          const tile = createTile(randomType(rr, c), rr, c);
+          if (r === 0) {
+            tile.y = boardY - (empty - i - 0.5) * cell;
+            tile.x = cellCenter(rr, c).x;
+          } else {
+            tile.scale = 0.05;
+            tile.emerging = true;
+            burst(tile.x, tile.y, "#cfe6f5", 5, 60);
+          }
+          placeTile(tile, rr, c, false);
+          animateTile(tile, FALL_MS, easeOutCubic);
+          spawned += 1;
+        }
+
+        r = end;
+      }
+    }
+    return spawned;
+  }
+
+  function settleTiles() {
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (!tile) continue;
+        tile.x = tile.tx;
+        tile.y = tile.ty;
+        tile.at = 1;
+        tile.scale = 1;
+        tile.emerging = false;
+      }
+    }
+  }
+
+  async function collapse() {
+    const moved = applyGravity();
+    const spawned = refillBoard();
+    if (moved + spawned > 0) {
+      sfx("land");
+      await wait(FALL_MS + 40);
+    }
+    settleTiles();
+    return moved + spawned;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     CASCADE RESOLUTION
+     ══════════════════════════════════════════════════════════════════════ */
+
+  async function resolveCascade(preferred, startStep) {
+    let step = startStep || 0;
+
+    for (;;) {
+      const groups = findMatches();
+      if (groups.length === 0) break;
+
+      step += 1;
+      state.chain = step;
+      state.chainEase = Math.max(state.chainEase, step);
+      state.bestChain = Math.max(state.bestChain, step);
+      sfx("match", step);
+
+      const clearSet = new Set();
+      const forges = [];
+
+      for (const group of groups) {
+        const special = classifyGroup(group);
+        for (const key of group.cells) clearSet.add(key);
+        if (special !== NONE) {
+          forges.push({ key: placementCell(group, preferred), special, type: group.type });
+        }
+      }
+
+      for (const forge of forges) clearSet.delete(forge.key);
+
+      let base = 0;
+      for (const group of groups) base += matchScore(group.cells.length);
+
+      const expanded = expandSpecials(clearSet);
+      const detonated = expanded.cells.size - clearSet.size;
+      if (expanded.fired.length > 0) {
+        for (const entry of expanded.fired) {
+          sfx(entry.special === BLOOM ? "fire:bloom" : entry.special === CORE ? "fire:core" : "fire:line", entry.key);
+        }
+        state.shake = Math.min(1, state.shake + 0.35);
+        await wait(DETONATE_STAGGER * Math.min(expanded.fired.length, 6));
+      }
+
+      const mult = chainMult(step);
+      const result = performClear(expanded.cells, step);
+      const turnScore = addScore((base + detonated * DETONATION_SCORE) * mult + result.gained);
+      floatScore(expanded.cells, turnScore, step);
+
+      for (const forge of forges) {
+        const tile = state.board[rowOf(forge.key)][colOf(forge.key)];
+        if (!tile) continue;
+        tile.special = forge.special;
+        tile.type = forge.type;
+        tile.born = 0;
+        tile.scale = 1.45;
+        sfx(forge.special === CORE ? "forge:core" : forge.special === BLOOM ? "forge:bloom" : "forge:line");
+        addRing(cellCenter(tile.r, tile.c), state.layout.cell * 1.1, forge.special === CORE ? "#eafcff" : GEMS[forge.type].light);
+      }
+
+      updateHud();
+      await wait(CLEAR_MS);
+      await collapse();
+      preferred = null;
+    }
+
+    state.chain = 0;
+    return step;
+  }
+
+  async function resolveFusionSwap(a, b) {
+    const kind = fusionKind(a, b);
+    // Read the fused colour before the components are spent. Any further core swept up by this
+    // blast has to clear the colour this fusion named, not whatever is most common on the board.
+    const forcedType = a.special === CORE ? b.type : b.special === CORE ? a.type : null;
+    const plan = prepareFusion(kind, a, b);
+
+    // The two components are spent by the fusion itself; they must not also fire individually.
+    a.special = NONE;
+    b.special = NONE;
+
+    state.chain = 1;
+    state.chainEase = 6;
+    state.bestChain = Math.max(state.bestChain, 1);
+    sfx(plan.audio);
+    state.shake = 1;
+    showToast(plan.name);
+
+    await wait(DETONATE_STAGGER * 3);
+
+    const expanded = expandSpecials(plan.cells, forcedType);
+    const result = performClear(expanded.cells, 1);
+    const gained = addScore(expanded.cells.size * DETONATION_SCORE + plan.bonus + result.gained);
+    floatScore(expanded.cells, gained, 3);
+
+    updateHud();
+    await wait(CLEAR_MS + 80);
+    await collapse();
+    return resolveCascade(null, 1);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     TURNS
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const adjacent = (a, b) => Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
+
+  function canInteract() {
+    return state.active && !state.locked && !state.paused && !state.rushing && state.screen === "play" && state.moves > 0;
+  }
+
+  function swappable(r, c) {
+    return isOpen(r, c) && state.encased[r][c] === 0 && Boolean(state.board[r][c]);
+  }
+
+  function swapCells(a, b) {
+    const ta = state.board[a.r][a.c];
+    const tb = state.board[b.r][b.c];
+    state.board[a.r][a.c] = tb;
+    state.board[b.r][b.c] = ta;
+    if (ta) { ta.r = b.r; ta.c = b.c; }
+    if (tb) { tb.r = a.r; tb.c = a.c; }
+  }
+
+  function animateSwap(ta, tb) {
+    placeTile(ta, ta.r, ta.c, false);
+    placeTile(tb, tb.r, tb.c, false);
+    animateTile(ta, SWAP_MS);
+    animateTile(tb, SWAP_MS);
+  }
+
+  async function attemptSwap(a, b) {
+    if (!canInteract()) return false;
+    if (!adjacent(a, b) || !swappable(a.r, a.c) || !swappable(b.r, b.c)) return false;
+
+    state.locked = true;
+    state.selection = null;
+    state.hint = null;
+    state.idle = 0;
+
+    const ta = state.board[a.r][a.c];
+    const tb = state.board[b.r][b.c];
+
+    swapCells(a, b);
+    animateSwap(ta, tb);
+    sfx("swap");
+    await wait(SWAP_MS);
+    settleTiles();
+
+    if (fusionKind(ta, tb)) {
+      state.moves -= 1;
+      updateHud();
+      await resolveFusionSwap(ta, tb);
+      await finishTurn();
+      return true;
+    }
+
+    if (findMatches().length === 0) {
+      swapCells(a, b);
+      animateSwap(ta, tb);
+      sfx("reject");
+      await wait(SWAP_MS);
+      settleTiles();
+      state.locked = false;
+      return false;
+    }
+
+    state.moves -= 1;
+    updateHud();
+    await resolveCascade([keyOf(b.r, b.c), keyOf(a.r, a.c)], 0);
+    await finishTurn();
+    return true;
+  }
+
+  async function detonateAt(r, c) {
+    if (!canInteract()) return false;
+    const tile = tileAt(r, c);
+    if (!tile || tile.special === NONE) return false;
+
+    state.locked = true;
+    state.selection = null;
+    state.hint = null;
+    state.moves -= 1;
+    updateHud();
+
+    sfx(tile.special === BLOOM ? "fire:bloom" : tile.special === CORE ? "fire:core" : "fire:line");
+    state.shake = Math.min(1, state.shake + 0.5);
+
+    const expanded = expandSpecials(new Set([keyOf(r, c)]));
+    const result = performClear(expanded.cells, 1);
+    const gained = addScore(expanded.cells.size * DETONATION_SCORE + result.gained);
+    floatScore(expanded.cells, gained, 2);
+
+    await wait(CLEAR_MS);
+    await collapse();
+    await resolveCascade(null, 1);
+    await finishTurn();
+    return true;
+  }
+
+  async function finishTurn() {
+    updateHud();
+
+    if (state.active && objectiveComplete()) {
+      await auroraRush();
+      completeLevel();
+      state.locked = false;
+      return;
+    }
+
+    if (state.active && state.moves <= 0) {
+      failLevel();
+      state.locked = false;
+      return;
+    }
+
+    if (state.active && !findAnyMove()) {
+      showToast("No moves — the floe turns");
+      await shuffleBoard(false);
+    }
+
+    state.locked = false;
+    updateHud();
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     MOVE SEARCH, HINTS, SHUFFLE
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const FUSION_VALUE = {
+    CORE_CORE: [FUSION.CORE_CORE, "core fusion"],
+    CORE_BLOOM: [FUSION.CORE_BLOOM, "core fusion"],
+    CORE_LINE: [FUSION.CORE_LINE, "core fusion"],
+    CORE_PLAIN: [1800, "aurora core"],
+    BLOOM_BLOOM: [FUSION.BLOOM_BLOOM, "bloom fusion"],
+    LINE_BLOOM: [FUSION.LINE_BLOOM, "bloom fusion"],
+    LINE_LINE: [FUSION.LINE_LINE, "line fusion"],
+  };
+
+  function evaluateSwap(a, b) {
+    if (!swappable(a.r, a.c) || !swappable(b.r, b.c)) return null;
+    const ta = state.board[a.r][a.c];
+    const tb = state.board[b.r][b.c];
+
+    const kind = fusionKind(ta, tb);
+    if (kind) {
+      const [bonus, reason] = FUSION_VALUE[kind];
+      return { a, b, score: 200 + bonus / 40, reason };
+    }
+
+    swapCells(a, b);
+    const groups = findMatches();
+    let score = 0;
+    let reason = "plain match";
+
+    if (groups.length > 0) {
+      const encasedSeen = new Set();
+      for (const group of groups) {
+        score += group.cells.length;
+        const special = classifyGroup(group);
+        if (special === CORE) { score += 160; reason = "aurora core"; }
+        else if (special === BLOOM) { score += 80; if (reason === "plain match") reason = "frost bloom"; }
+        else if (special !== NONE) { score += 40; if (reason === "plain match") reason = "fracture"; }
+
+        for (const key of group.cells) {
+          const r = rowOf(key);
+          const c = colOf(key);
+          if (state.rime[r][c] > 0) score += 30;
+          const around = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
+          for (const [rr, cc] of around) {
+            if (isOpen(rr, cc) && state.encased[rr][cc] > 0) encasedSeen.add(keyOf(rr, cc));
+          }
+        }
+      }
+      score += encasedSeen.size * 25;
+    }
+
+    swapCells(a, b);
+    return groups.length > 0 ? { a, b, score, reason } : null;
+  }
+
+  function eachSwap(visit) {
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        if (c + 1 < GRID) {
+          const result = visit({ r, c }, { r, c: c + 1 });
+          if (result) return result;
+        }
+        if (r + 1 < GRID) {
+          const result = visit({ r, c }, { r: r + 1, c });
+          if (result) return result;
+        }
+      }
+    }
+    return null;
+  }
+
+  function findAnyMove() {
+    return eachSwap((a, b) => (evaluateSwap(a, b) ? { a, b } : null));
+  }
+
+  function findBestMove() {
+    let best = null;
+    eachSwap((a, b) => {
+      const result = evaluateSwap(a, b);
+      if (result && (!best || result.score > best.score)) best = result;
+      return null;
+    });
+    return best;
+  }
+
+  function requestHint(force) {
+    if (!state.active || state.locked) return state.hint;
+    if (!force && state.hint) return state.hint;
+    const move = findBestMove();
+    if (!move) return null;
+    state.hint = { a: move.a, b: move.b, score: move.score, reason: move.reason, t: 0 };
+    if (force) sfx("hint");
+    return state.hint;
+  }
+
+  function reshuffleTypes() {
+    const tiles = [];
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        if (state.board[r][c] && state.encased[r][c] === 0) tiles.push(state.board[r][c]);
+      }
+    }
+
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const types = tiles.map((tile) => tile.type);
+      for (let i = types.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(state.random() * (i + 1));
+        const tmp = types[i];
+        types[i] = types[j];
+        types[j] = tmp;
+      }
+      tiles.forEach((tile, index) => { tile.type = types[index]; });
+      if (findMatches().length === 0 && findAnyMove()) return true;
+    }
+
+    // Fall back to a fresh deal of the loose tiles.
+    for (let guard = 0; guard < 60; guard += 1) {
+      for (const tile of tiles) tile.type = Math.floor(state.random() * state.info.types) % state.info.types;
+      if (findMatches().length === 0 && findAnyMove()) return true;
+    }
+    return false;
+  }
+
+  async function shuffleBoard(manual) {
+    if (state.rushing) return false;
+    // The automatic recovery runs from inside finishTurn and owns the lock; a player-driven
+    // shuffle must never re-deal tiles a swap or cascade is still resolving against.
+    if (manual && (state.locked || !state.active)) return false;
+    if (manual && state.moves <= SHUFFLE_COST) return false;
+
+    state.locked = true;
+    state.hint = null;
+    if (manual) {
+      state.moves -= SHUFFLE_COST;
+      showToast("Shuffle · one move");
+    }
+
+    sfx("shuffle");
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (tile) { tile.scale = 0.4; tile.born = 0; }
+      }
+    }
+
+    reshuffleTypes();
+    await wait(260);
+    settleTiles();
+    updateHud();
+    state.locked = false;
+
+    if (manual && state.moves <= 0) failLevel();
+    return true;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     AURORA RUSH AND LEVEL FLOW
+     ══════════════════════════════════════════════════════════════════════ */
+
+  async function auroraRush() {
+    if (state.moves <= 0) return;
+
+    state.rushing = true;
+    state.rushScore = 0;
+    showToast("Aurora rush");
+    state.chain = MAX_CHAIN_MULT;
+    state.chainEase = MAX_CHAIN_MULT;
+
+    const budget = state.moves;
+    for (let i = 0; i < budget; i += 1) {
+      state.moves -= 1;
+      state.rushScore += addScore(RUSH_MOVE_SCORE);
+
+      const candidates = [];
+      for (let r = 0; r < GRID; r += 1) {
+        for (let c = 0; c < GRID; c += 1) {
+          const tile = state.board[r][c];
+          if (tile && tile.special === NONE && state.encased[r][c] === 0) candidates.push(tile);
+        }
+      }
+      if (candidates.length > 0) {
+        const tile = candidates[Math.floor(state.random() * candidates.length)];
+        tile.special = BLOOM;
+        tile.born = 0;
+        tile.scale = 1.4;
+        addRing(cellCenter(tile.r, tile.c), state.layout.cell * 0.9, "#c4f4ff");
+      }
+
+      sfx("rush", i);
+      updateHud();
+      await wait(Math.max(55, 110 - i * 4));
+    }
+
+    const primed = new Set();
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (tile && tile.special !== NONE) primed.add(keyOf(r, c));
+      }
+    }
+
+    if (primed.size > 0) {
+      state.shake = 1;
+      state.flash = 0.7;
+      const expanded = expandSpecials(primed);
+      const result = performClear(expanded.cells, 3);
+      state.rushScore += addScore(expanded.cells.size * DETONATION_SCORE * 3 + result.gained);
+      floatScore(expanded.cells, state.rushScore, 5);
+      await wait(CLEAR_MS + 60);
+      await collapse();
+      await resolveCascade(null, 3);
+    }
+
+    state.rushing = false;
+    state.chain = 0;
+    updateHud();
+  }
+
+  function showScreen(name) {
+    state.screen = name;
+    for (const section of document.querySelectorAll(".screen")) {
+      section.classList.toggle("active", section.dataset.screen === name);
+    }
+    updateHud();
+  }
+
+  function setupAndShow(index) {
+    setupLevel(index);
+    state.active = true;
+    sfx("objective", 0);
+  }
+
+  async function beginLevel(index) {
+    setupAndShow(index);
+    const info = state.info;
+    document.getElementById("introNight").textContent = `Night ${String(index + 1).padStart(2, "0")}`;
+    document.getElementById("introName").textContent = info.name;
+    document.getElementById("introObjective").textContent = objectiveSentence();
+    showScreen("intro");
+    sfx("ui");
+    await wait(REDUCED_MOTION ? 300 : 1400);
+    if (state.screen === "intro") showScreen("play");
+    startMusic();
+  }
+
+  function objectiveSentence() {
+    const o = state.objective;
+    if (o.kind === "score") return `Score ${formatNumber(o.target)}`;
+    if (o.kind === "rime") return `Break ${o.target} layers of rime`;
+    if (o.kind === "collect") {
+      const names = o.colors.map((type) => `${o.perColor} ${GEMS[type].name}`);
+      return `Collect ${names.join(" and ")}`;
+    }
+    return `Break ${o.target} rime layers and score ${formatNumber(o.scoreTarget)}`;
+  }
+
+  function completeLevel() {
+    state.active = false;
+    const stars = starsEarned();
+    state.stars[state.level] = Math.max(state.stars[state.level], stars);
+    state.best[state.level] = Math.max(state.best[state.level], state.score);
+    state.totalScore += state.score;
+    writeProgress();
+    buildNightStrip();
+
+    document.getElementById("completeName").textContent = state.info.name;
+    document.getElementById("completeStars").innerHTML = starMarkup(stars);
+    document.getElementById("completeScore").textContent = formatNumber(state.score);
+    document.getElementById("completeRush").textContent = formatNumber(state.rushScore);
+    document.getElementById("completeChain").textContent = String(state.bestChain);
+    document.getElementById("nextLevelButton").textContent =
+      state.level >= LEVEL_COUNT - 1 ? "See the crossing" : "Next night";
+
+    sfx("complete");
+    sfx("star", stars);
+    showScreen("complete");
+  }
+
+  function failLevel(message) {
+    state.active = false;
+    const o = state.objective;
+    let shortfall = "";
+    if (o.kind === "score") shortfall = `${formatNumber(Math.max(0, o.target - state.score))} short of the target.`;
+    else if (o.kind === "collect") shortfall = `${Math.max(0, o.target - objectiveProgress())} crystals still uncollected.`;
+    else shortfall = `${Math.max(0, o.target - state.rimeCleared)} rime layers still frozen.`;
+
+    document.getElementById("failedCopy").textContent = `${message || "You ran out of moves."} ${shortfall}`;
+    sfx("fail");
+    showScreen("failed");
+  }
+
+  function starMarkup(count) {
+    let html = "";
+    for (let i = 0; i < 3; i += 1) html += i < count ? "★" : '<span class="dim">★</span>';
+    return html;
+  }
+
+  function nextLevel() {
+    if (state.level >= LEVEL_COUNT - 1) {
+      const total = state.stars.reduce((sum, value) => sum + value, 0);
+      document.getElementById("finishStars").textContent = `${total} / ${LEVEL_COUNT * 3}`;
+      document.getElementById("finishCopy").textContent =
+        `Twelve nights crossed for ${formatNumber(state.totalScore)} points and ${total} stars.`;
+      showScreen("finish");
+      return;
+    }
+    beginLevel(state.level + 1);
+  }
+
+  function retryLevel() {
+    // Replacing the board mid-resolution would leave the in-flight swap writing into a level
+    // that no longer exists. The complete and failed screens both release the lock first.
+    if (state.locked) return;
+    beginLevel(state.level);
+  }
+
+  function startCampaign() {
+    state.totalScore = 0;
+    beginLevel(0);
+  }
+
+  function togglePause(force) {
+    const next = force === undefined ? !state.paused : force;
+    if (next === state.paused) return;
+    if (next && state.screen !== "play") return;
+    if (!next && state.screen !== "paused") return;
+    state.paused = next;
+    if (next) {
+      document.getElementById("pauseObjective").textContent = objectiveSentence();
+      stopMusic();
+      showScreen("paused");
+    } else {
+      showScreen("play");
+      startMusic();
+    }
+    sfx("ui");
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     AUDIO — procedural Web Audio, no external files
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const audio = {
+    ctx: null,
+    master: null,
+    send: null,
+    whiteBuffer: null,
+    brownBuffer: null,
+    failed: false,
+    frameVoices: 0,
+  };
+
+  function ensureAudio() {
+    if (audio.ctx || audio.failed) return audio.ctx;
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) { audio.failed = true; return null; }
+
+    try {
+      const ctx = new Ctor();
+
+      const compressor = ctx.createDynamicsCompressor();
+      compressor.threshold.value = -16;
+      compressor.ratio.value = 4;
+      compressor.knee.value = 14;
+      compressor.attack.value = 0.004;
+      compressor.release.value = 0.22;
+      compressor.connect(ctx.destination);
+
+      const master = ctx.createGain();
+      master.gain.value = 0.85;
+      master.connect(compressor);
+
+      // A feedback delay stands in for the space under the ice.
+      const delay = ctx.createDelay(1);
+      delay.delayTime.value = 0.28;
+      const feedback = ctx.createGain();
+      feedback.gain.value = 0.32;
+      const tail = ctx.createBiquadFilter();
+      tail.type = "lowpass";
+      tail.frequency.value = 4500;
+      const send = ctx.createGain();
+      send.gain.value = 1;
+
+      send.connect(delay);
+      delay.connect(feedback);
+      feedback.connect(delay);
+      delay.connect(tail);
+      tail.connect(master);
+
+      const white = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const wData = white.getChannelData(0);
+      for (let i = 0; i < wData.length; i += 1) wData[i] = Math.random() * 2 - 1;
+
+      const brown = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
+      const bData = brown.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < bData.length; i += 1) {
+        last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+        bData[i] = last * 3.2;
+      }
+
+      audio.ctx = ctx;
+      audio.master = master;
+      audio.send = send;
+      audio.whiteBuffer = white;
+      audio.brownBuffer = brown;
+    } catch (error) {
+      void error;
+      audio.failed = true;
+    }
+
+    return audio.ctx;
+  }
+
+  function resumeAudio() {
+    const ctx = ensureAudio();
+    if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+  }
+
+  function envelope(gain, time, attack, hold, release, peak) {
+    const level = Math.max(0.0004, peak);
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(level, time + attack);
+    gain.gain.setValueAtTime(level, time + attack + hold);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + attack + hold + release);
+  }
+
+  function routeVoice(node, sendAmount, pan) {
+    const ctx = audio.ctx;
+    let tail = node;
+    if (pan) {
+      const panner = ctx.createStereoPanner();
+      panner.pan.value = clamp(pan, -1, 1);
+      tail.connect(panner);
+      tail = panner;
+    }
+    tail.connect(audio.master);
+    if (sendAmount) {
+      const bus = ctx.createGain();
+      bus.gain.value = sendAmount;
+      tail.connect(bus);
+      bus.connect(audio.send);
+    }
+  }
+
+  function tone(options) {
+    const ctx = ensureAudio();
+    if (!ctx || state.muted || audio.frameVoices > 12) return;
+    audio.frameVoices += 1;
+
+    const start = ctx.currentTime + (options.delay || 0);
+    const attack = options.attack === undefined ? 0.006 : options.attack;
+    const hold = options.hold === undefined ? 0.02 : options.hold;
+    const release = options.release === undefined ? options.duration || 0.2 : options.release;
+
+    const osc = ctx.createOscillator();
+    osc.type = options.type || "sine";
+    osc.frequency.setValueAtTime(options.frequency, start);
+    if (options.bend) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(24, options.bend), start + attack + hold + release);
+    }
+    if (options.detune) osc.detune.setValueAtTime(options.detune, start);
+
+    const gain = ctx.createGain();
+    envelope(gain, start, attack, hold, release, options.volume === undefined ? 0.08 : options.volume);
+    osc.connect(gain);
+    routeVoice(gain, options.send, options.pan);
+
+    osc.start(start);
+    osc.stop(start + attack + hold + release + 0.06);
+  }
+
+  function noise(options) {
+    const ctx = ensureAudio();
+    if (!ctx || state.muted || audio.frameVoices > 12) return;
+    audio.frameVoices += 1;
+
+    const start = ctx.currentTime + (options.delay || 0);
+    const duration = options.duration || 0.12;
+
+    const source = ctx.createBufferSource();
+    source.buffer = audio.whiteBuffer;
+    source.playbackRate.value = options.rate || 1;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = options.filter || "bandpass";
+    filter.frequency.setValueAtTime(options.frequency || 2000, start);
+    if (options.sweep) filter.frequency.exponentialRampToValueAtTime(Math.max(60, options.sweep), start + duration);
+    filter.Q.value = options.q === undefined ? 1 : options.q;
+
+    const gain = ctx.createGain();
+    envelope(gain, start, options.attack === undefined ? 0.004 : options.attack, 0.01, duration, options.volume === undefined ? 0.05 : options.volume);
+
+    source.connect(filter);
+    filter.connect(gain);
+    routeVoice(gain, options.send, options.pan);
+
+    source.start(start);
+    source.stop(start + duration + 0.08);
+  }
+
+  const CASCADE_STEPS = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22, 24];
+  const ROOT = 293.66; // D4
+
+  function sfx(id, argument) {
+    state.audioLog.push(id);
+    if (state.audioLog.length > 200) state.audioLog.shift();
+
+    switch (id) {
+      case "select":
+        tone({ frequency: 660, bend: 880, duration: 0.06, type: "triangle", volume: 0.07, send: 0.2 });
+        noise({ frequency: 5200, filter: "highpass", duration: 0.02, volume: 0.02 });
+        break;
+
+      case "reject":
+        tone({ frequency: 220, bend: 178, duration: 0.07, type: "square", volume: 0.055 });
+        tone({ frequency: 174, bend: 140, duration: 0.07, type: "square", volume: 0.045, delay: 0.055 });
+        noise({ frequency: 300, filter: "lowpass", duration: 0.09, volume: 0.03 });
+        break;
+
+      case "swap":
+        tone({ frequency: 1180, duration: 0.04, type: "sine", volume: 0.05, send: 0.3 });
+        tone({ frequency: 1770, duration: 0.04, type: "sine", volume: 0.03, send: 0.3, delay: 0.01 });
+        noise({ frequency: 6000, filter: "highpass", duration: 0.014, volume: 0.02 });
+        break;
+
+      case "land":
+        noise({ frequency: 800, filter: "lowpass", duration: 0.05, volume: 0.024, rate: 0.85 + Math.random() * 0.3 });
+        break;
+
+      case "match": {
+        const step = Math.max(1, argument || 1);
+        const semitones = CASCADE_STEPS[Math.min(step, CASCADE_STEPS.length - 1)];
+        const f = ROOT * Math.pow(2, semitones / 12);
+        tone({ frequency: f, duration: 0.26, release: 0.26, type: "sine", volume: 0.09, send: 0.35 });
+        tone({ frequency: f * 2, duration: 0.22, release: 0.22, type: "sine", volume: 0.035, send: 0.35 });
+        tone({ frequency: f * 3, duration: 0.18, release: 0.18, type: "triangle", volume: 0.018, send: 0.35 });
+        noise({ frequency: 3000 + 400 * step, q: 6, duration: 0.09, volume: 0.03, send: 0.3 });
+        break;
+      }
+
+      case "rime":
+        noise({ frequency: 900, q: 2, duration: 0.12, volume: 0.05 });
+        tone({ frequency: 140, bend: 96, duration: 0.06, type: "sawtooth", volume: 0.035 });
+        break;
+
+      case "ice":
+        noise({ frequency: 2200, filter: "highpass", duration: 0.22, volume: 0.06, send: 0.5 });
+        tone({ frequency: 400, bend: 180, duration: 0.2, type: "sine", volume: 0.05, send: 0.5 });
+        break;
+
+      case "forge:line":
+        tone({ frequency: 400, bend: 1600, duration: 0.22, type: "sine", volume: 0.07, send: 0.4 });
+        tone({ frequency: 600, bend: 2400, duration: 0.22, type: "triangle", volume: 0.035, send: 0.4 });
+        noise({ frequency: 2000, sweep: 7000, duration: 0.24, volume: 0.035 });
+        break;
+
+      case "forge:bloom":
+        tone({ frequency: 380, bend: 1500, duration: 0.24, type: "sine", volume: 0.07, send: 0.45 });
+        tone({ frequency: 90, duration: 0.18, type: "sine", volume: 0.09 });
+        noise({ frequency: 1800, sweep: 6200, duration: 0.26, volume: 0.04 });
+        break;
+
+      case "forge:core":
+        for (let i = 0; i < 3; i += 1) {
+          tone({ frequency: ROOT * Math.pow(2, (12 + i * 5) / 12), duration: 0.2, type: "sine", volume: 0.07, delay: i * 0.05, send: 0.55 });
+        }
+        noise({ frequency: 2400, sweep: 8000, duration: 0.3, volume: 0.04, send: 0.4 });
+        break;
+
+      case "fire:line": {
+        const pan = argument === undefined ? 0 : (colOf(argument) / (GRID - 1)) * 1.2 - 0.6;
+        tone({ frequency: 900, bend: 120, duration: 0.3, type: "sawtooth", volume: 0.06, send: 0.35, pan });
+        noise({ frequency: 4000, sweep: 400, duration: 0.3, volume: 0.045, pan });
+        break;
+      }
+
+      case "fire:bloom":
+        tone({ frequency: 60, duration: 0.14, type: "sine", volume: 0.11 });
+        tone({ frequency: 220, duration: 0.4, release: 0.4, type: "square", volume: 0.03, send: 0.4 });
+        tone({ frequency: 331, duration: 0.4, release: 0.4, type: "square", volume: 0.024, send: 0.4 });
+        tone({ frequency: 440, duration: 0.4, release: 0.4, type: "square", volume: 0.02, send: 0.4 });
+        noise({ frequency: 1200, filter: "lowpass", duration: 0.28, volume: 0.05 });
+        break;
+
+      case "fire:core":
+        for (let i = 0; i < 8; i += 1) {
+          const semitones = CASCADE_STEPS[Math.min(i, CASCADE_STEPS.length - 1)];
+          tone({
+            frequency: ROOT * Math.pow(2, semitones / 12),
+            duration: 0.16, type: "sine", volume: 0.055, delay: i * 0.045, send: 0.55,
+          });
+        }
+        break;
+
+      case "fuse:crosscut":
+      case "fuse:split":
+      case "fuse:whiteout":
+      case "fuse:volley":
+      case "fuse:storm":
+      case "fuse:eclipse": {
+        const tier = { "fuse:crosscut": 0, "fuse:split": 1, "fuse:whiteout": 2, "fuse:volley": 3, "fuse:storm": 4, "fuse:eclipse": 5 }[id];
+        const swell = 0.4 + tier * 0.16;
+        tone({ frequency: 45, duration: swell, release: swell, type: "sine", volume: 0.12 });
+        tone({ frequency: ROOT / 2, bend: ROOT * 2, duration: swell, release: swell, type: "sawtooth", volume: 0.05, send: 0.5 });
+        for (let i = 0; i <= tier; i += 1) {
+          tone({
+            frequency: ROOT * Math.pow(2, CASCADE_STEPS[Math.min(i * 2, CASCADE_STEPS.length - 1)] / 12),
+            duration: 0.3, type: "sine", volume: 0.06, delay: i * 0.07, send: 0.5,
+          });
+        }
+        noise({ frequency: 500, sweep: 5200, duration: swell, volume: tier >= 3 ? 0.07 : 0.04, send: 0.4 });
+        break;
+      }
+
+      case "objective": {
+        const progress = clamp(argument || 0, 0, 1);
+        tone({ frequency: 520 + 380 * progress, duration: 0.09, type: "sine", volume: 0.05, send: 0.3 });
+        break;
+      }
+
+      case "star": {
+        const count = Math.max(1, argument || 1);
+        const bells = [1046.5, 1318.5, 1568];
+        for (let i = 0; i < count; i += 1) {
+          tone({ frequency: bells[i % bells.length], duration: 0.5, release: 0.5, type: "sine", volume: 0.07, delay: i * 0.14, send: 0.6 });
+        }
+        break;
+      }
+
+      case "rush": {
+        const index = argument || 0;
+        tone({ frequency: ROOT * Math.pow(2, (12 + index) / 12), duration: 0.14, type: "sine", volume: 0.07, send: 0.45 });
+        tone({ frequency: 70, duration: 0.1, type: "sine", volume: 0.08 });
+        break;
+      }
+
+      case "complete": {
+        const notes = [0, 5, 7, 12, 16, 19];
+        notes.forEach((semitones, i) => {
+          tone({ frequency: ROOT * Math.pow(2, semitones / 12), duration: 0.7, release: 0.7, type: "triangle", volume: 0.06, delay: i * 0.11, send: 0.55 });
+        });
+        noise({ frequency: 900, sweep: 4200, duration: 1.1, volume: 0.035, send: 0.5 });
+        break;
+      }
+
+      case "fail":
+        tone({ frequency: ROOT, bend: ROOT * 0.79, duration: 1.2, release: 1.2, type: "sawtooth", volume: 0.05, send: 0.5 });
+        tone({ frequency: 55, duration: 1, release: 1, type: "sine", volume: 0.09 });
+        noise({ frequency: 1400, sweep: 300, duration: 1, volume: 0.03 });
+        break;
+
+      case "shuffle":
+        noise({ frequency: 4000, sweep: 500, duration: 0.4, volume: 0.045 });
+        tone({ frequency: 70, duration: 0.6, release: 0.6, type: "sawtooth", volume: 0.06, send: 0.4 });
+        break;
+
+      case "hint":
+        tone({ frequency: 1400, duration: 0.05, type: "sine", volume: 0.04, send: 0.4 });
+        tone({ frequency: 2100, duration: 0.05, type: "sine", volume: 0.02, delay: 0.06, send: 0.4 });
+        break;
+
+      case "ui":
+      default:
+        tone({ frequency: 1400, duration: 0.03, type: "sine", volume: 0.03 });
+        break;
+    }
+  }
+
+  /* ── background music bed: D aeolian pad, 68 BPM ─────────────────────── */
+
+  const music = { timer: null, bar: 0, nextTime: 0, wind: null, windGain: null, playing: false };
+
+  const CHORDS = [
+    [0, 3, 7, 10],   // Dm7
+    [8, 12, 15, 19], // Bb maj7
+    [3, 7, 10, 14],  // F maj7
+    [5, 8, 12, 15],  // Gm7
+  ];
+
+  const BAR_SECONDS = (60 / 68) * 4;
+
+  function scheduleBar(startTime) {
+    const ctx = audio.ctx;
+    const chord = CHORDS[(music.bar >> 1) % CHORDS.length];
+    const tense = state.active && state.moves <= 5;
+    const cutoff = tense ? 420 : 700;
+
+    for (const semitones of chord) {
+      for (let d = -1; d <= 1; d += 2) {
+        const osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = (ROOT / 2) * Math.pow(2, semitones / 12);
+        osc.detune.value = d * 6;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(cutoff, startTime);
+        filter.Q.value = 0.7;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.022, startTime + 1.6);
+        gain.gain.setValueAtTime(0.022, startTime + BAR_SECONDS - 0.6);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + BAR_SECONDS + 1.2);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audio.master);
+
+        const bus = ctx.createGain();
+        bus.gain.value = 0.4;
+        gain.connect(bus);
+        bus.connect(audio.send);
+
+        osc.start(startTime);
+        osc.stop(startTime + BAR_SECONDS + 1.4);
+      }
+    }
+
+    const sub = ctx.createOscillator();
+    sub.type = "sine";
+    sub.frequency.value = (ROOT / 4) * Math.pow(2, chord[0] / 12);
+    const subGain = ctx.createGain();
+    subGain.gain.setValueAtTime(0.0001, startTime);
+    subGain.gain.exponentialRampToValueAtTime(0.05, startTime + 0.6);
+    subGain.gain.exponentialRampToValueAtTime(0.0001, startTime + BAR_SECONDS);
+    sub.connect(subGain);
+    subGain.connect(audio.master);
+    sub.start(startTime);
+    sub.stop(startTime + BAR_SECONDS + 0.2);
+
+    // The board answers the music: deep chains ring bells on the beat grid.
+    if (state.chain >= 3) {
+      for (let i = 0; i < 5; i += 1) {
+        const bell = ctx.createOscillator();
+        bell.type = "sine";
+        bell.frequency.value = ROOT * 2 * Math.pow(2, CASCADE_STEPS[Math.min(i + state.chain, CASCADE_STEPS.length - 1)] / 12);
+        const bellGain = ctx.createGain();
+        const at = startTime + i * (BAR_SECONDS / 8);
+        envelope(bellGain, at, 0.005, 0.01, 0.4, 0.03);
+        bell.connect(bellGain);
+        bellGain.connect(audio.master);
+        bell.start(at);
+        bell.stop(at + 0.5);
+      }
+    }
+
+    music.bar += 1;
+  }
+
+  function startMusic() {
+    if (music.playing || state.muted) return;
+    const ctx = ensureAudio();
+    if (!ctx) return;
+
+    music.playing = true;
+    music.nextTime = ctx.currentTime + 0.1;
+
+    if (!music.wind) {
+      const wind = ctx.createBufferSource();
+      wind.buffer = audio.brownBuffer;
+      wind.loop = true;
+      const band = ctx.createBiquadFilter();
+      band.type = "bandpass";
+      band.frequency.value = 500;
+      band.Q.value = 0.8;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.05;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 300;
+      lfo.connect(lfoGain);
+      lfoGain.connect(band.frequency);
+      const gain = ctx.createGain();
+      gain.gain.value = 0.018;
+      wind.connect(band);
+      band.connect(gain);
+      gain.connect(audio.master);
+      wind.start();
+      lfo.start();
+      music.wind = wind;
+      music.windGain = gain;
+    } else {
+      music.windGain.gain.value = 0.018;
+    }
+
+    music.timer = setInterval(() => {
+      if (!audio.ctx || state.muted) return;
+      while (music.nextTime < audio.ctx.currentTime + 0.6) {
+        scheduleBar(music.nextTime);
+        music.nextTime += BAR_SECONDS;
+      }
+    }, 25);
+  }
+
+  function stopMusic() {
+    if (music.timer) { clearInterval(music.timer); music.timer = null; }
+    if (music.windGain) music.windGain.gain.value = 0;
+    music.playing = false;
+  }
+
+  function playMusic() {
+    // Kept as the public entry point for the background music bed.
+    startMusic();
+  }
+
+  function setMuted(value) {
+    state.muted = value;
+    if (audio.master) audio.master.gain.value = value ? 0 : 0.85;
+    const button = document.getElementById("audioButton");
+    button.innerHTML = value ? "&#9678;" : "&#9673;";
+    button.setAttribute("aria-label", value ? "Unmute" : "Mute");
+    if (value) stopMusic();
+    else if (state.screen === "play") playMusic();
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     EFFECTS
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function spawnParticle(x, y, colour, options) {
+    if (state.particles.length >= effectBudget()) return;
+    const angle = options.angle === undefined ? fxRandom() * Math.PI * 2 : options.angle;
+    const speed = options.speed === undefined ? 120 : options.speed;
+    state.particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (options.lift || 0),
+      life: 0,
+      span: options.span === undefined ? 0.6 : options.span,
+      size: options.size === undefined ? 2.4 : options.size,
+      colour,
+      gravity: options.gravity === undefined ? 420 : options.gravity,
+      spin: (fxRandom() - 0.5) * 8,
+      angle: fxRandom() * Math.PI,
+    });
+  }
+
+  function burst(x, y, colour, count, power) {
+    const total = REDUCED_MOTION ? Math.ceil(count * 0.35) : count;
+    for (let i = 0; i < total; i += 1) {
+      spawnParticle(x, y, colour, {
+        angle: (i / total) * Math.PI * 2 + fxRandom() * 0.5,
+        speed: power * (0.45 + fxRandom() * 0.75),
+        span: 0.45 + fxRandom() * 0.5,
+        size: 1.4 + fxRandom() * 2.6,
+        lift: 30,
+      });
+    }
+  }
+
+  function addRing(pos, maxRadius, colour, width) {
+    if (state.rings.length > 40) return;
+    state.rings.push({ x: pos.x, y: pos.y, r: maxRadius * 0.15, max: maxRadius, life: 0, span: 0.45, colour, width: width || 2.5 });
+  }
+
+  function addBeam(from, to, colour, width) {
+    if (state.beams.length > 40) return;
+    state.beams.push({ x1: from.x, y1: from.y, x2: to.x, y2: to.y, life: 0, span: 0.34, colour, width: width || 7 });
+  }
+
+  function addShock(pos, radius, colour, strength) {
+    if (state.shocks.length > 24) return;
+    state.shocks.push({ x: pos.x, y: pos.y, max: radius, life: 0, span: 0.55, colour, strength: strength || 0.6 });
+    state.shake = Math.min(1, state.shake + (strength || 0.5) * 0.6);
+  }
+
+  function floatScore(cells, amount, chain) {
+    if (amount <= 0 || cells.size === 0) return;
+    let sx = 0;
+    let sy = 0;
+    let n = 0;
+    for (const key of cells) {
+      const pos = cellCenter(rowOf(key), colOf(key));
+      sx += pos.x;
+      sy += pos.y;
+      n += 1;
+    }
+    const tier = clamp(chain / 6, 0, 1);
+    state.floaters.push({
+      x: sx / n,
+      y: sy / n,
+      text: `+${formatNumber(amount)}`,
+      life: 0,
+      span: 1.1,
+      size: 17 + tier * 16,
+      colour: chain >= 5 ? "#ff5fa8" : chain >= 3 ? "#7c6cff" : "#4ffbdf",
+    });
+    if (chain >= 2) {
+      state.floaters.push({
+        x: sx / n,
+        y: sy / n - 26,
+        text: `chain ×${Math.min(chain, MAX_CHAIN_MULT)}`,
+        life: 0,
+        span: 0.9,
+        size: 11,
+        colour: "#e8f4ff",
+      });
+    }
+  }
+
+  let toastTimer = null;
+  function showToast(message, duration) {
+    const node = document.getElementById("toast");
+    node.textContent = message;
+    node.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => node.classList.remove("show"), (duration || 1300) / state.speed);
+  }
+
+  function updateEffects(dt) {
+    for (let i = state.particles.length - 1; i >= 0; i -= 1) {
+      const p = state.particles[i];
+      p.life += dt;
+      if (p.life >= p.span) { state.particles.splice(i, 1); continue; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += p.gravity * dt;
+      p.vx *= 1 - 1.6 * dt;
+      p.angle += p.spin * dt;
+    }
+
+    for (let i = state.rings.length - 1; i >= 0; i -= 1) {
+      const ring = state.rings[i];
+      ring.life += dt;
+      if (ring.life >= ring.span) state.rings.splice(i, 1);
+    }
+
+    for (let i = state.beams.length - 1; i >= 0; i -= 1) {
+      const beam = state.beams[i];
+      beam.life += dt;
+      if (beam.life >= beam.span) state.beams.splice(i, 1);
+    }
+
+    for (let i = state.shocks.length - 1; i >= 0; i -= 1) {
+      const shock = state.shocks[i];
+      shock.life += dt;
+      if (shock.life >= shock.span) state.shocks.splice(i, 1);
+    }
+
+    for (let i = state.floaters.length - 1; i >= 0; i -= 1) {
+      const floater = state.floaters[i];
+      floater.life += dt;
+      floater.y -= 34 * dt;
+      if (floater.life >= floater.span) state.floaters.splice(i, 1);
+    }
+
+    for (let i = state.dying.length - 1; i >= 0; i -= 1) {
+      const tile = state.dying[i];
+      tile.dying += dt;
+      if (tile.dying >= 0.24) state.dying.splice(i, 1);
+    }
+
+    state.shake = Math.max(0, state.shake - dt * 2.6);
+    state.flash = Math.max(0, state.flash - dt * 1.8);
+    state.chainEase = Math.max(0, state.chainEase - dt * 2.4);
+  }
+
+  function updateSnow(dt) {
+    const { width, height } = state.layout;
+    if (REDUCED_MOTION) return;
+    if (state.snow.length < 70) {
+      state.snow.push({
+        x: fxRandom() * width,
+        y: fxRandom() * height,
+        vx: 6 + fxRandom() * 16,
+        vy: 10 + fxRandom() * 26,
+        size: 0.6 + fxRandom() * 1.6,
+        alpha: 0.12 + fxRandom() * 0.3,
+        phase: fxRandom() * Math.PI * 2,
+      });
+    }
+    for (const flake of state.snow) {
+      flake.phase += dt * 1.4;
+      flake.x += (flake.vx + Math.sin(flake.phase) * 8) * dt;
+      flake.y += flake.vy * dt;
+      if (flake.y > height + 4) { flake.y = -4; flake.x = fxRandom() * width; }
+      if (flake.x > width + 4) flake.x = -4;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     LAYOUT
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const canvas = document.getElementById("board");
+  const ctx = canvas.getContext("2d");
+  let bedCanvas = null;
+  let bedDirty = true;
+
+  function invalidateBed() { bedDirty = true; }
+
+  function resize() {
+    const width = Math.max(1, window.innerWidth);
+    const height = Math.max(1, window.innerHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const mode = width >= 1024 && height >= 540 ? "rails" : "stack";
+    let railW = 0;
+    let boardSize;
+    let boardY;
+    const edge = 28;
+
+    if (mode === "rails") {
+      railW = clamp(Math.round(width * 0.195), 168, 252);
+      const gap = clamp(Math.round(width * 0.05), 24, 72);
+      const topPad = 36;
+      const botPad = 44;
+      const availW = width - 2 * (railW + gap);
+      const availH = height - topPad - botPad;
+      boardSize = clamp(Math.min(availW, availH), 240, 720);
+      boardY = topPad + (availH - boardSize) / 2;
+      document.documentElement.style.setProperty("--rail-w", `${railW}px`);
+      document.documentElement.style.setProperty("--edge", `${edge}px`);
+    } else {
+      const topStrip = height < 520 ? 52 : 64;
+      const botStrip = 44;
+      const availW = width - 16;
+      const availH = height - topStrip - botStrip;
+      boardSize = clamp(Math.min(availW, availH), 200, 560);
+      boardY = topStrip + (availH - boardSize) / 2;
+      document.documentElement.style.setProperty("--top-strip", `${topStrip}px`);
+      document.documentElement.style.setProperty("--bot-strip", `${botStrip}px`);
+    }
+
+    const boardX = (width - boardSize) / 2;
+
+    state.layout.width = width;
+    state.layout.height = height;
+    state.layout.dpr = dpr;
+    state.layout.mode = mode;
+    state.layout.railW = railW;
+    state.layout.boardSize = boardSize;
+    state.layout.boardX = boardX;
+    state.layout.boardY = boardY;
+    state.layout.cell = boardSize / GRID;
+
+    document.body.dataset.layout = mode;
+    document.documentElement.style.setProperty("--board-x", `${boardX}px`);
+    document.documentElement.style.setProperty("--board-y", `${boardY}px`);
+    document.documentElement.style.setProperty("--board-size", `${boardSize}px`);
+
+    spriteCache.clear();
+    invalidateBed();
+    relayoutTiles();
+    buildLegend();
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     HUD
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const hudRefs = {};
+  let lastScore = 0;
+
+  function hud(id) {
+    if (!hudRefs[id]) hudRefs[id] = document.getElementById(id);
+    return hudRefs[id];
+  }
+
+  const OBJECTIVE_LABEL = { score: "Score", rime: "Rime", collect: "Collect", dual: "Rime & score" };
+
+  function updateHud() {
+    const info = state.info;
+    if (!info) return;
+
+    hud("nightLabel").textContent = `Night ${String(state.level + 1).padStart(2, "0")}`;
+    hud("nightName").textContent = info.name;
+
+    const o = state.objective;
+    const progress = objectiveProgress();
+    hud("objectiveLabel").textContent = OBJECTIVE_LABEL[o.kind];
+    hud("objectiveValue").textContent = `${formatNumber(progress)} / ${formatNumber(o.target)}`;
+
+    if (o.kind === "collect") {
+      hud("objectiveNote").textContent = o.colors.map((type) => `${Math.min(state.collected[type], o.perColor)} ${GEMS[type].name}`).join(" · ");
+    } else if (o.kind === "dual") {
+      hud("objectiveNote").textContent = `Score ${formatNumber(Math.min(state.score, o.scoreTarget))} / ${formatNumber(o.scoreTarget)}`;
+    } else {
+      hud("objectiveNote").textContent = "";
+    }
+
+    const fraction = o.target > 0 ? clamp(progress / o.target, 0, 1) : 1;
+    hud("objectiveFill").style.setProperty("--fill", `${(fraction * 100).toFixed(1)}%`);
+
+    hud("movesValue").textContent = String(Math.max(0, state.moves));
+    hud("movesValue").classList.toggle("low", state.active && state.moves <= 3);
+
+    hud("scoreValue").textContent = formatNumber(state.score);
+    if (state.score > lastScore) {
+      const delta = hud("scoreDelta");
+      delta.textContent = `+${formatNumber(state.score - lastScore)}`;
+      delta.classList.remove("show");
+      void delta.offsetWidth;
+      delta.classList.add("show");
+    }
+    lastScore = state.score;
+
+    hud("shuffleButton").disabled = !state.active || state.moves <= SHUFFLE_COST || state.locked;
+    hud("hintButton").disabled = !state.active || state.locked;
+  }
+
+  function buildNightStrip() {
+    const strip = hud("nightStrip");
+    strip.innerHTML = "";
+    for (let i = 0; i < LEVEL_COUNT; i += 1) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "night-chip";
+      chip.dataset.night = String(i);
+      const stars = state.stars[i];
+      chip.innerHTML = `${String(i + 1).padStart(2, "0")}<em>${stars > 0 ? "★".repeat(stars) : "&nbsp;"}</em>`;
+      chip.title = LEVELS[i].name;
+      chip.addEventListener("click", () => { resumeAudio(); beginLevel(i); });
+      strip.appendChild(chip);
+    }
+  }
+
+  function buildLegend() {
+    const legend = hud("legend");
+    if (!legend || legend.dataset.built === "1") return;
+    legend.dataset.built = "1";
+    const rows = [
+      { special: FRACTURE_ROW, label: "Fracture" },
+      { special: BLOOM, label: "Frost bloom" },
+      { special: CORE, label: "Aurora core" },
+    ];
+    for (const row of rows) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "legend-row";
+      const chip = document.createElement("canvas");
+      chip.width = 52;
+      chip.height = 52;
+      wrapper.appendChild(chip);
+      const label = document.createElement("span");
+      label.textContent = row.label;
+      wrapper.appendChild(label);
+      legend.appendChild(wrapper);
+      drawLegendChip(chip, row.special);
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     GEM SPRITES — faceted crystal, baked once per type and size
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const spriteCache = new Map();
+  const TAU = Math.PI * 2;
+  const LIGHT = [-0.575, -0.818];
+
+  function shapePoints(shape, r) {
+    const points = [];
+    const polygon = (n, rotation, rx, ry) => {
+      for (let i = 0; i < n; i += 1) {
+        const a = rotation + (i / n) * TAU;
+        points.push([Math.cos(a) * rx, Math.sin(a) * ry]);
+      }
+    };
+
+    switch (shape) {
+      case "brilliant": polygon(12, -Math.PI / 2, r, r); break;
+      case "hex": polygon(6, 0, r * 1.02, r * 0.96); break;
+      case "cushion": polygon(8, Math.PI / 8, r * 1.03, r * 1.03); break;
+      case "trilliant": polygon(3, -Math.PI / 2, r * 1.18, r * 1.18); break;
+      case "rhombus":
+        points.push([0, -r * 1.16], [r * 0.64, 0], [0, r * 1.16], [-r * 0.64, 0]);
+        break;
+      case "star": {
+        for (let i = 0; i < 10; i += 1) {
+          const radius = i % 2 === 0 ? r * 1.14 : r * 0.47;
+          const a = -Math.PI / 2 + (i * Math.PI) / 5;
+          points.push([Math.cos(a) * radius, Math.sin(a) * radius]);
+        }
+        break;
+      }
+      case "pear":
+      default: {
+        const list = [
+          [0, -r * 1.18], [r * 0.44, -r * 0.62], [r * 0.74, -r * 0.04],
+          [r * 0.68, r * 0.56], [r * 0.36, r * 0.96], [0, r * 1.08],
+          [-r * 0.36, r * 0.96], [-r * 0.68, r * 0.56], [-r * 0.74, -r * 0.04],
+          [-r * 0.44, -r * 0.62],
+        ];
+        for (const point of list) points.push(point);
+        break;
+      }
+    }
+
+    return points;
+  }
+
+  function tracePolygon(target, points, offsetX, offsetY, scale) {
+    target.beginPath();
+    for (let i = 0; i < points.length; i += 1) {
+      const x = points[i][0] * (scale || 1) + (offsetX || 0);
+      const y = points[i][1] * (scale || 1) + (offsetY || 0);
+      if (i === 0) target.moveTo(x, y); else target.lineTo(x, y);
+    }
+    target.closePath();
+  }
+
+  function facetLight(p0, p1) {
+    const mx = (p0[0] + p1[0]) * 0.5;
+    const my = (p0[1] + p1[1]) * 0.5;
+    const length = Math.hypot(mx, my) || 1;
+    const dot = (mx / length) * LIGHT[0] + (my / length) * LIGHT[1];
+    return clamp(0.5 + 0.5 * dot, 0, 1);
+  }
+
+  function makeSurface(size) {
+    const dpr = state.layout.dpr;
+    const surface = document.createElement("canvas");
+    surface.width = Math.max(2, Math.ceil(size * dpr));
+    surface.height = Math.max(2, Math.ceil(size * dpr));
+    const c2d = surface.getContext("2d");
+    c2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { surface, c2d, size };
+  }
+
+  function paintFacets(g, points, inner, dark, light, alpha, invert, offsetX, offsetY) {
+    g.save();
+    g.globalAlpha = alpha;
+    for (let i = 0; i < points.length; i += 1) {
+      const j = (i + 1) % points.length;
+      let k = facetLight(points[i], points[j]);
+      if (invert) k = 1 - k;
+      g.beginPath();
+      g.moveTo(inner[i][0] + offsetX, inner[i][1] + offsetY);
+      g.lineTo(inner[j][0] + offsetX, inner[j][1] + offsetY);
+      g.lineTo(points[j][0] + offsetX, points[j][1] + offsetY);
+      g.lineTo(points[i][0] + offsetX, points[i][1] + offsetY);
+      g.closePath();
+      g.fillStyle = mixHex(dark, light, Math.pow(k, 1.6));
+      g.fill();
+    }
+    g.restore();
+  }
+
+  function paintCrystal(g, gem, r, special) {
+    const points = special === CORE ? shapePoints("brilliant", r * 1.02) : shapePoints(gem.shape, r);
+    const inner = points.map(([x, y]) => [x * 0.44, y * 0.44]);
+
+    // Contact shadow on the ice.
+    g.save();
+    g.globalAlpha = 0.45;
+    g.fillStyle = "#02040a";
+    g.beginPath();
+    g.ellipse(0, r * 0.72, r * 1.04, r * 0.3, 0, 0, TAU);
+    g.fill();
+    g.restore();
+
+    if (special === CORE) {
+      // Type-less crystal: every facet takes a different band of the aurora.
+      for (let i = 0; i < points.length; i += 1) {
+        const j = (i + 1) % points.length;
+        const hue = CORE_COLORS[i % CORE_COLORS.length];
+        const k = facetLight(points[i], points[j]);
+        g.beginPath();
+        g.moveTo(inner[i][0], inner[i][1]);
+        g.lineTo(inner[j][0], inner[j][1]);
+        g.lineTo(points[j][0], points[j][1]);
+        g.lineTo(points[i][0], points[i][1]);
+        g.closePath();
+        g.fillStyle = mixHex("#0a1626", hue, 0.35 + k * 0.65);
+        g.fill();
+      }
+      const core = g.createRadialGradient(0, 0, 0, 0, 0, r * 0.5);
+      core.addColorStop(0, "#ffffff");
+      core.addColorStop(0.6, "#cfe6f5");
+      core.addColorStop(1, "#5a7fb8");
+      tracePolygon(g, inner);
+      g.fillStyle = core;
+      g.fill();
+    } else {
+      paintFacets(g, points, inner, gem.dark, gem.light, 1, false, 0, 0);
+
+      const table = g.createLinearGradient(-r * 0.4, -r * 0.4, r * 0.35, r * 0.42);
+      table.addColorStop(0, gem.light);
+      table.addColorStop(0.55, gem.core);
+      table.addColorStop(1, mixHex(gem.core, gem.dark, 0.55));
+      tracePolygon(g, inner);
+      g.fillStyle = table;
+      g.fill();
+      g.strokeStyle = rgba(gem.light, 0.5);
+      g.lineWidth = 1;
+      g.stroke();
+
+      // Refraction: the same facets bent through the stone.
+      g.save();
+      tracePolygon(g, points);
+      g.clip();
+      paintFacets(g, points, inner, mixHex(gem.dark, gem.alt, 0.6), gem.alt, 0.16, true, r * 0.1, r * 0.13);
+      g.restore();
+    }
+
+    // Specular: a small hard glint on the crown plus a thin crescent along the girdle.
+    g.save();
+    g.globalCompositeOperation = "lighter";
+    g.globalAlpha = 0.7;
+    g.fillStyle = "#ffffff";
+    g.beginPath();
+    g.ellipse(-r * 0.3, -r * 0.42, r * 0.13, r * 0.075, -0.62, 0, TAU);
+    g.fill();
+    g.globalAlpha = 0.3;
+    g.beginPath();
+    g.ellipse(-r * 0.14, -r * 0.2, r * 0.07, r * 0.045, -0.62, 0, TAU);
+    g.fill();
+    g.globalAlpha = 0.22;
+    g.beginPath();
+    g.ellipse(r * 0.28, r * 0.36, r * 0.32, r * 0.06, -0.7, 0, TAU);
+    g.fill();
+    g.restore();
+
+    // Girdle.
+    tracePolygon(g, points);
+    g.strokeStyle = special === CORE ? "rgba(232,244,255,0.85)" : rgba(gem.light, 0.75);
+    g.lineWidth = 1.4;
+    g.stroke();
+    g.strokeStyle = "rgba(0,0,0,0.55)";
+    g.lineWidth = 0.7;
+    g.stroke();
+
+    return points;
+  }
+
+  function paintSpecialMark(g, gem, r, special) {
+    if (special === NONE || special === CORE) return;
+
+    g.save();
+    if (special === FRACTURE_ROW || special === FRACTURE_COL) {
+      if (special === FRACTURE_COL) g.rotate(Math.PI / 2);
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      const crack = () => {
+        g.beginPath();
+        g.moveTo(-r * 0.92, 0);
+        g.lineTo(-r * 0.34, -r * 0.16);
+        g.lineTo(r * 0.06, r * 0.14);
+        g.lineTo(r * 0.5, -r * 0.12);
+        g.lineTo(r * 0.92, 0);
+        g.stroke();
+      };
+      const chevrons = () => {
+        for (const dir of [-1, 1]) {
+          g.beginPath();
+          g.moveTo(dir * r * 0.55, -r * 0.34);
+          g.lineTo(dir * r * 0.9, 0);
+          g.lineTo(dir * r * 0.55, r * 0.34);
+          g.stroke();
+        }
+      };
+      // Dark backing first, so the mark reads on pale crystals too.
+      g.strokeStyle = "rgba(6,12,24,0.8)";
+      g.lineWidth = Math.max(3, r * 0.24);
+      crack();
+      g.lineWidth = Math.max(2.2, r * 0.16);
+      chevrons();
+      g.strokeStyle = "rgba(255,255,255,0.96)";
+      g.lineWidth = Math.max(1.6, r * 0.13);
+      crack();
+      g.globalAlpha = 0.7;
+      g.lineWidth = Math.max(1, r * 0.07);
+      chevrons();
+    } else if (special === BLOOM) {
+      g.strokeStyle = "rgba(6,12,24,0.7)";
+      g.lineWidth = Math.max(2.6, r * 0.2);
+      g.lineCap = "round";
+      for (let i = 0; i < 6; i += 1) {
+        const a = (i / 6) * TAU;
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.lineTo(Math.cos(a) * r * 0.82, Math.sin(a) * r * 0.82);
+        g.stroke();
+      }
+      g.strokeStyle = "rgba(255,255,255,0.95)";
+      g.lineWidth = Math.max(1.3, r * 0.1);
+      for (let i = 0; i < 6; i += 1) {
+        const a = (i / 6) * TAU;
+        const dx = Math.cos(a);
+        const dy = Math.sin(a);
+        g.beginPath();
+        g.moveTo(0, 0);
+        g.lineTo(dx * r * 0.82, dy * r * 0.82);
+        g.moveTo(dx * r * 0.5, dy * r * 0.5);
+        g.lineTo(dx * r * 0.5 - dy * r * 0.24, dy * r * 0.5 + dx * r * 0.24);
+        g.moveTo(dx * r * 0.5, dy * r * 0.5);
+        g.lineTo(dx * r * 0.5 + dy * r * 0.24, dy * r * 0.5 - dx * r * 0.24);
+        g.stroke();
+      }
+      g.globalAlpha = 0.5;
+      g.strokeStyle = "#ffffff";
+      g.lineWidth = 1.2;
+      tracePolygon(g, shapePoints("hex", r * 1.06));
+      g.stroke();
+    }
+    g.restore();
+    void gem;
+  }
+
+  function buildGemSprite(type, special) {
+    const cell = state.layout.cell;
+    const r = cell * 0.4;
+    const pad = r * 1.55;
+    const { surface, c2d } = makeSurface(pad * 2);
+    const gem = GEMS[type];
+
+    c2d.translate(pad, pad);
+
+    // Restrained halo — the light in this world comes from the sky, not the stones.
+    const halo = c2d.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 1.5);
+    halo.addColorStop(0, rgba(special === CORE ? "#eafcff" : gem.core, special === NONE ? 0.14 : 0.24));
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    c2d.fillStyle = halo;
+    c2d.beginPath();
+    c2d.arc(0, 0, r * 1.5, 0, TAU);
+    c2d.fill();
+
+    const scale = special === BLOOM ? 1.08 : 1;
+    c2d.save();
+    c2d.scale(scale, scale);
+    paintCrystal(c2d, gem, r, special);
+    paintSpecialMark(c2d, gem, r, special);
+    c2d.restore();
+
+    return { surface, size: pad * 2, pad };
+  }
+
+  function buildMirrorSprite(base) {
+    const { surface, c2d, size } = makeSurface(base.size);
+    c2d.save();
+    c2d.translate(0, base.size * 0.55);
+    c2d.scale(1, -0.55);
+    c2d.drawImage(base.surface, 0, 0, size, size);
+    c2d.restore();
+
+    const fade = c2d.createLinearGradient(0, 0, 0, size);
+    fade.addColorStop(0, "rgba(0,0,0,0.3)");
+    fade.addColorStop(1, "rgba(0,0,0,1)");
+    c2d.globalCompositeOperation = "destination-out";
+    c2d.fillStyle = fade;
+    c2d.fillRect(0, 0, size, size);
+
+    return { surface, size, pad: base.pad };
+  }
+
+  function buildCausticSprite(type, special) {
+    const cell = state.layout.cell;
+    const width = cell * 1.7;
+    const { surface, c2d } = makeSurface(width);
+    const colour = special === CORE ? "#eafcff" : GEMS[type].core;
+    const half = width / 2;
+
+    c2d.translate(half, half);
+    const glow = c2d.createRadialGradient(0, 0, 0, 0, 0, half);
+    glow.addColorStop(0, rgba(colour, 0.55));
+    glow.addColorStop(0.45, rgba(colour, 0.14));
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    c2d.fillStyle = glow;
+    c2d.beginPath();
+    c2d.arc(0, 0, half, 0, TAU);
+    c2d.fill();
+
+    c2d.strokeStyle = rgba(colour, 0.4);
+    c2d.lineWidth = Math.max(1, cell * 0.03);
+    c2d.lineCap = "round";
+    for (let i = 0; i < 4; i += 1) {
+      const a = (i / 4) * Math.PI;
+      c2d.beginPath();
+      c2d.moveTo(-Math.cos(a) * half * 0.9, -Math.sin(a) * half * 0.5);
+      c2d.lineTo(Math.cos(a) * half * 0.9, Math.sin(a) * half * 0.5);
+      c2d.stroke();
+    }
+
+    return { surface, size: width, pad: half };
+  }
+
+  function getSprite(type, special, variant) {
+    const key = `${type}|${special}|${Math.round(state.layout.cell)}|${state.layout.dpr}|${variant}`;
+    let sprite = spriteCache.get(key);
+    if (sprite) return sprite;
+
+    if (variant === "gem") sprite = buildGemSprite(type, special);
+    else if (variant === "mirror") sprite = buildMirrorSprite(getSprite(type, special, "gem"));
+    else sprite = buildCausticSprite(type, special);
+
+    spriteCache.set(key, sprite);
+    return sprite;
+  }
+
+  function drawLegendChip(chip, special) {
+    const g = chip.getContext("2d");
+    const r = 18;
+    g.clearRect(0, 0, chip.width, chip.height);
+    g.translate(chip.width / 2, chip.height / 2);
+    paintCrystal(g, GEMS[special === CORE ? 0 : special === BLOOM ? 5 : 4], r, special);
+    paintSpecialMark(g, GEMS[4], r, special);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     WORLD RENDERING
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const RIBBONS = [
+    { y: 0.13, amp: 0.045, freq: 1.7, speed: 0.055, hue: 0 },
+    { y: 0.23, amp: 0.07, freq: 1.1, speed: -0.038, hue: 0 },
+    { y: 0.09, amp: 0.035, freq: 2.3, speed: 0.085, hue: 1 },
+    { y: 0.31, amp: 0.06, freq: 1.4, speed: -0.068, hue: 1 },
+    { y: 0.18, amp: 0.09, freq: 0.85, speed: 0.048, hue: 2 },
+  ];
+
+  const STARS = [];
+  for (let i = 0; i < 130; i += 1) {
+    STARS.push({ x: Math.random(), y: Math.random() * 0.55, size: Math.random() * 1.3 + 0.3, twinkle: Math.random() * TAU });
+  }
+
+  function auroraTier() {
+    // The sky is the board: ribbon count, hue and brightness follow the live cascade chain.
+    const live = Math.max(state.chain, state.chainEase);
+    if (live >= 8) return { count: 5, alpha: 4.6, hues: 3, flare: 1 };
+    if (live >= 5) return { count: 5, alpha: 3.6, hues: 3, flare: 0.6 };
+    if (live >= 3) return { count: 4, alpha: 2.8, hues: 2, flare: 0.25 };
+    if (live >= 1) return { count: 3, alpha: 2.2, hues: 1, flare: 0 };
+    return { count: 3, alpha: 1.7, hues: 1, flare: 0 };
+  }
+
+  function drawSky(width, height) {
+    const sky = ctx.createLinearGradient(0, 0, 0, height * 0.72);
+    sky.addColorStop(0, "#060a16");
+    sky.addColorStop(0.55, "#091327");
+    sky.addColorStop(1, "#0d1a33");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    for (const star of STARS) {
+      const twinkle = REDUCED_MOTION ? 0.6 : 0.45 + 0.55 * Math.abs(Math.sin(state.time * 0.6 + star.twinkle));
+      ctx.globalAlpha = twinkle * 0.7;
+      ctx.fillStyle = "#dce9ff";
+      ctx.fillRect(star.x * width, star.y * height, star.size, star.size);
+    }
+    ctx.restore();
+
+    const tier = auroraTier();
+    const hues = ["#4ffbdf", "#7c6cff", "#ff5fa8"];
+    const phase = REDUCED_MOTION ? 0 : state.time;
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    for (let i = 0; i < tier.count; i += 1) {
+      const ribbon = RIBBONS[i];
+      if (ribbon.hue >= tier.hues) continue;
+      const colour = hues[ribbon.hue];
+      const baseY = ribbon.y * height;
+      const widths = [86, 48, 22];
+      const alphas = [0.05, 0.09, 0.14];
+
+      for (let pass = 0; pass < 3; pass += 1) {
+        const w = widths[pass] * (height / 720);
+        const gradient = ctx.createLinearGradient(0, baseY - w, 0, baseY + w);
+        gradient.addColorStop(0, "rgba(0,0,0,0)");
+        gradient.addColorStop(0.5, rgba(colour, Math.min(0.85, alphas[pass] * tier.alpha)));
+        gradient.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        for (let x = -20; x <= width + 20; x += 24) {
+          const t = x / Math.max(1, width);
+          const y = baseY
+            + Math.sin(t * TAU * ribbon.freq + phase * ribbon.speed * 6) * ribbon.amp * height
+            + Math.sin(t * TAU * ribbon.freq * 2.7 + phase * ribbon.speed * 9) * ribbon.amp * height * 0.35
+            + Math.sin(t * TAU * ribbon.freq * 0.5 - phase * ribbon.speed * 3) * ribbon.amp * height * 0.2;
+          if (x === -20) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      if (tier.hues >= 2) {
+        ctx.globalAlpha = 0.12 * tier.alpha;
+        ctx.strokeStyle = rgba(colour, 0.5);
+        ctx.lineWidth = 1;
+        for (let k = 0; k < 14; k += 1) {
+          const x = ((k + 0.5) / 14) * width + Math.sin(phase * 0.3 + k) * 10;
+          const t = x / Math.max(1, width);
+          const y = baseY + Math.sin(t * TAU * ribbon.freq + phase * ribbon.speed * 6) * ribbon.amp * height;
+          ctx.beginPath();
+          ctx.moveTo(x, y - height * 0.06);
+          ctx.lineTo(x, y + height * 0.1);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    if (tier.flare > 0) {
+      const flare = ctx.createLinearGradient(0, 0, 0, height);
+      flare.addColorStop(0, rgba("#7c6cff", 0.06 * tier.flare));
+      flare.addColorStop(0.5, rgba("#ff5fa8", 0.05 * tier.flare));
+      flare.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = flare;
+      ctx.fillRect(0, 0, width, height);
+    }
+    ctx.restore();
+  }
+
+  function drawIce(width, height) {
+    const horizon = height * 0.44;
+    const ice = ctx.createLinearGradient(0, horizon, 0, height);
+    ice.addColorStop(0, "#070d18");
+    ice.addColorStop(0.35, "#0a1322");
+    ice.addColorStop(1, "#0b1526");
+    ctx.fillStyle = ice;
+    ctx.fillRect(0, horizon, width, height - horizon);
+
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.strokeStyle = "rgba(120,180,230,0.10)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, horizon);
+    ctx.lineTo(width, horizon);
+    ctx.stroke();
+
+    const tier = auroraTier();
+    const phase = REDUCED_MOTION ? 0 : state.time;
+    for (let i = 0; i < 3; i += 1) {
+      const cx = width * (0.2 + 0.3 * i) + Math.sin(phase * 0.11 + i * 2) * width * 0.12;
+      const cy = horizon + (height - horizon) * (0.3 + 0.25 * i);
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, width * 0.34);
+      glow.addColorStop(0, rgba(i === 2 ? "#7c6cff" : "#4ffbdf", 0.05 * (1 + tier.flare)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, width * 0.34, (height - horizon) * 0.4, 0, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.strokeStyle = "rgba(150,200,240,0.07)";
+    for (let i = 0; i < 7; i += 1) {
+      const y = horizon + ((i + 1) / 8) * (height - horizon);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      for (let x = 0; x <= width; x += 60) {
+        ctx.lineTo(x, y + Math.sin(x * 0.008 + i * 1.7) * 5);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    if (!REDUCED_MOTION) {
+      ctx.save();
+      ctx.fillStyle = "#dce9ff";
+      for (const flake of state.snow) {
+        ctx.globalAlpha = flake.alpha;
+        ctx.fillRect(flake.x, flake.y, flake.size, flake.size);
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawBed() {
+    const { boardSize, cell, dpr } = state.layout;
+    if (!bedCanvas || bedCanvas.width !== Math.ceil(boardSize * dpr)) {
+      bedCanvas = document.createElement("canvas");
+      bedCanvas.width = Math.max(2, Math.ceil(boardSize * dpr));
+      bedCanvas.height = Math.max(2, Math.ceil(boardSize * dpr));
+      bedDirty = true;
+    }
+    if (!bedDirty) return bedCanvas;
+
+    const g = bedCanvas.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, boardSize, boardSize);
+
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const x = c * cell;
+        const y = r * cell;
+
+        if (!isOpen(r, c)) {
+          g.fillStyle = "#02040a";
+          g.fillRect(x, y, cell, cell);
+          const shade = g.createLinearGradient(x, y, x, y + cell);
+          shade.addColorStop(0, "rgba(0,0,0,0.8)");
+          shade.addColorStop(1, "rgba(30,60,90,0.16)");
+          g.fillStyle = shade;
+          g.fillRect(x, y, cell, cell);
+          continue;
+        }
+
+        g.fillStyle = "rgba(178,220,255,0.035)";
+        g.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+        g.strokeStyle = "rgba(150,200,240,0.07)";
+        g.lineWidth = 1;
+        g.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
+
+        // Rime is frost crusted into the floor of the cell: soft, matte, no hard frame.
+        const layers = state.rime[r][c];
+        if (layers > 0) {
+          g.save();
+          const glow = g.createRadialGradient(x + cell / 2, y + cell / 2, cell * 0.1, x + cell / 2, y + cell / 2, cell * 0.66);
+          glow.addColorStop(0, layers >= 2 ? "rgba(226,244,255,0.6)" : "rgba(200,230,248,0.34)");
+          glow.addColorStop(1, layers >= 2 ? "rgba(140,192,226,0.24)" : "rgba(140,192,226,0.13)");
+          g.fillStyle = glow;
+          g.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+
+          g.globalAlpha = layers >= 2 ? 0.7 : 0.46;
+          g.strokeStyle = "#f2fbff";
+          g.lineWidth = 1.2;
+          const spokes = layers >= 2 ? 11 : 7;
+          for (let i = 0; i < spokes; i += 1) {
+            const a = (i / spokes) * TAU + (r + c) * 0.4;
+            const len = cell * (0.24 + ((i * 7) % 5) * 0.05);
+            g.beginPath();
+            g.moveTo(x + cell / 2, y + cell / 2);
+            g.lineTo(x + cell / 2 + Math.cos(a) * len, y + cell / 2 + Math.sin(a) * len);
+            g.stroke();
+          }
+
+          g.globalAlpha = layers >= 2 ? 0.55 : 0.3;
+          g.lineWidth = layers >= 2 ? 2 : 1.2;
+          g.strokeRect(x + 2.5, y + 2.5, cell - 5, cell - 5);
+
+          if (layers >= 2) {
+            g.globalAlpha = 0.5;
+            g.setLineDash([3, 4]);
+            g.strokeRect(x + 6.5, y + 6.5, cell - 13, cell - 13);
+            g.setLineDash([]);
+          }
+          g.restore();
+        }
+      }
+    }
+
+    bedDirty = false;
+    return bedCanvas;
+  }
+
+  function drawTile(tile, alpha, scaleOverride) {
+    const cell = state.layout.cell;
+    const gemSprite = getSprite(tile.type, tile.special, "gem");
+    const mirror = getSprite(tile.type, tile.special, "mirror");
+    const caustic = getSprite(tile.type, tile.special, "caustic");
+
+    const bob = REDUCED_MOTION ? 0 : Math.sin(state.time * 1.4 + tile.wobble) * cell * 0.012;
+    const scale = (scaleOverride === undefined ? tile.scale : scaleOverride) || 1;
+    const x = tile.x;
+    const y = tile.y + bob;
+
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.26;
+    ctx.drawImage(mirror.surface, x - mirror.pad, y + cell * 0.28, mirror.size, mirror.size);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = alpha * (tile.special === NONE ? 0.18 : 0.32);
+    ctx.drawImage(caustic.surface, x - caustic.pad, y - caustic.pad + cell * 0.34, caustic.size, caustic.size);
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    if (tile.special === CORE && !REDUCED_MOTION) ctx.rotate(state.time * 0.35);
+    if (scale !== 1) ctx.scale(scale, scale);
+    ctx.drawImage(gemSprite.surface, -gemSprite.pad, -gemSprite.pad, gemSprite.size, gemSprite.size);
+    ctx.restore();
+  }
+
+  function drawEncasement() {
+    const { boardX, boardY, cell } = state.layout;
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const layers = state.encased[r][c];
+        if (layers <= 0) continue;
+        const x = boardX + c * cell;
+        const y = boardY + r * cell;
+
+        // Drift ice is a solid block sitting on top of the crystal: opaque, bevelled, obviously in the way.
+        ctx.save();
+        const block = ctx.createLinearGradient(x, y, x + cell, y + cell);
+        block.addColorStop(0, `rgba(214,240,255,${0.44 + layers * 0.16})`);
+        block.addColorStop(0.45, `rgba(126,178,214,${0.4 + layers * 0.14})`);
+        block.addColorStop(1, `rgba(240,250,255,${0.46 + layers * 0.16})`);
+        ctx.fillStyle = block;
+        ctx.fillRect(x + 1, y + 1, cell - 2, cell - 2);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x + 2, y + cell - 2);
+        ctx.lineTo(x + 2, y + 2);
+        ctx.lineTo(x + cell - 2, y + 2);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(24,58,90,0.75)";
+        ctx.beginPath();
+        ctx.moveTo(x + cell - 2, y + 2);
+        ctx.lineTo(x + cell - 2, y + cell - 2);
+        ctx.lineTo(x + 2, y + cell - 2);
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.75;
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x + cell * 0.18, y + cell * 0.1);
+        ctx.lineTo(x + cell * 0.46, y + cell * 0.48);
+        ctx.lineTo(x + cell * 0.22, y + cell * 0.9);
+        ctx.moveTo(x + cell * 0.6, y + cell * 0.08);
+        ctx.lineTo(x + cell * 0.82, y + cell * 0.54);
+        ctx.lineTo(x + cell * 0.66, y + cell * 0.92);
+        ctx.stroke();
+
+        if (layers >= 2) {
+          ctx.globalAlpha = 0.5;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x + 6.5, y + 6.5, cell - 13, cell - 13);
+        }
+        ctx.restore();
+      }
+    }
+  }
+
+  function drawOverlays() {
+    const { boardX, boardY, cell } = state.layout;
+    const outline = (r, c, colour, width, inset) => {
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = width;
+      ctx.strokeRect(boardX + c * cell + inset, boardY + r * cell + inset, cell - inset * 2, cell - inset * 2);
+    };
+
+    if (state.hover && state.screen === "play" && isOpen(state.hover.r, state.hover.c)) {
+      outline(state.hover.r, state.hover.c, "rgba(207,230,245,0.28)", 1.5, 3);
+    }
+
+    if (state.screen === "play" && isOpen(state.cursor.r, state.cursor.c)) {
+      outline(state.cursor.r, state.cursor.c, "rgba(232,244,255,0.5)", 1.5, 5);
+    }
+
+    if (state.selection) {
+      const pulse = 0.6 + 0.4 * Math.sin(state.time * 6);
+      outline(state.selection.r, state.selection.c, rgba("#4ffbdf", 0.35 + pulse * 0.5), 2.5, 2);
+      const centre = cellCenter(state.selection.r, state.selection.c);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.strokeStyle = rgba("#4ffbdf", 0.25 * pulse);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(centre.x, centre.y, cell * 0.62, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (state.hint && state.screen === "play" && !state.locked) {
+      const pulse = 0.5 + 0.5 * Math.sin(state.time * 4);
+      for (const cellRef of [state.hint.a, state.hint.b]) {
+        outline(cellRef.r, cellRef.c, rgba("#e8f4ff", 0.25 + pulse * 0.45), 2, 4);
+      }
+      const from = cellCenter(state.hint.a.r, state.hint.a.c);
+      const to = cellCenter(state.hint.b.r, state.hint.b.c);
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.strokeStyle = rgba("#4ffbdf", 0.3 + pulse * 0.35);
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 5]);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawEffects() {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    for (const beam of state.beams) {
+      const t = beam.life / beam.span;
+      ctx.globalAlpha = (1 - t) * 0.85;
+      const gradient = ctx.createLinearGradient(beam.x1, beam.y1, beam.x2, beam.y2);
+      gradient.addColorStop(0, "rgba(255,255,255,0)");
+      gradient.addColorStop(0.5, beam.colour);
+      gradient.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = beam.width * (1 - t * 0.6);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+    }
+
+    for (const shock of state.shocks) {
+      const t = shock.life / shock.span;
+      const radius = shock.max * easeOutCubic(t);
+      // Three thinning passes read as a soft pressure wave rather than a drawn circle.
+      for (let pass = 0; pass < 3; pass += 1) {
+        ctx.globalAlpha = (1 - t) * shock.strength * [0.5, 0.28, 0.14][pass];
+        ctx.strokeStyle = shock.colour;
+        ctx.lineWidth = Math.max(0.6, [3, 9, 20][pass] * (1 - t));
+        ctx.beginPath();
+        ctx.arc(shock.x, shock.y, radius - pass * radius * 0.045, 0, TAU);
+        ctx.stroke();
+      }
+    }
+
+    for (const ring of state.rings) {
+      const t = ring.life / ring.span;
+      ctx.globalAlpha = (1 - t) * 0.8;
+      ctx.strokeStyle = ring.colour;
+      ctx.lineWidth = ring.width * (1 - t);
+      ctx.beginPath();
+      ctx.arc(ring.x, ring.y, lerp(ring.r, ring.max, easeOutCubic(t)), 0, TAU);
+      ctx.stroke();
+    }
+
+    for (const particle of state.particles) {
+      const t = particle.life / particle.span;
+      ctx.globalAlpha = (1 - t) * 0.9;
+      ctx.fillStyle = particle.colour;
+      ctx.save();
+      ctx.translate(particle.x, particle.y);
+      ctx.rotate(particle.angle);
+      const size = particle.size * (1 - t * 0.5);
+      ctx.fillRect(-size * 0.5, -size * 0.5, size, size * 1.6);
+      ctx.restore();
+    }
+
+    ctx.restore();
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const floater of state.floaters) {
+      const t = floater.life / floater.span;
+      ctx.globalAlpha = clamp(1 - Math.pow(t, 2.2), 0, 1);
+      ctx.font = `600 ${floater.size}px ${FLOATER_FONT}`;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(4,7,14,0.75)";
+      ctx.strokeText(floater.text, floater.x, floater.y);
+      ctx.fillStyle = floater.colour;
+      ctx.fillText(floater.text, floater.x, floater.y);
+    }
+    ctx.restore();
+  }
+
+  const FLOATER_FONT = 'ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif';
+
+  function drawRailVignettes(width, height) {
+    if (state.layout.mode !== "rails") return;
+    const railW = state.layout.railW;
+    ctx.save();
+    for (const side of [0, 1]) {
+      const gradient = ctx.createLinearGradient(side === 0 ? 0 : width, 0, side === 0 ? railW : width - railW, 0);
+      gradient.addColorStop(0, "rgba(4,7,14,0.72)");
+      gradient.addColorStop(1, "rgba(4,7,14,0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(side === 0 ? 0 : width - railW, 0, railW, height);
+    }
+    ctx.restore();
+  }
+
+  function draw() {
+    const { width, height, boardX, boardY, boardSize } = state.layout;
+    ctx.clearRect(0, 0, width, height);
+
+    drawSky(width, height);
+    drawIce(width, height);
+
+    const shake = REDUCED_MOTION ? 0 : state.shake;
+    ctx.save();
+    if (shake > 0) {
+      ctx.translate((Math.random() - 0.5) * shake * 10, (Math.random() - 0.5) * shake * 10);
+    }
+
+    // Board shell.
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.7)";
+    ctx.shadowBlur = 34;
+    ctx.fillStyle = "rgba(5,10,20,0.62)";
+    ctx.fillRect(boardX - 6, boardY - 6, boardSize + 12, boardSize + 12);
+    ctx.restore();
+
+    ctx.strokeStyle = "rgba(160,205,240,0.22)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boardX - 6.5, boardY - 6.5, boardSize + 13, boardSize + 13);
+
+    ctx.drawImage(drawBed(), boardX, boardY, boardSize, boardSize);
+
+    // Crystals only exist inside the tray; a stone falling in must not be visible above it.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(boardX, boardY, boardSize, boardSize);
+    ctx.clip();
+
+    for (const tile of state.dying) {
+      const t = clamp(tile.dying / 0.24, 0, 1);
+      drawTile(tile, 1 - t, (1 - t) * 1.3);
+    }
+
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (tile) drawTile(tile, 1);
+      }
+    }
+
+    ctx.restore();
+
+    drawEncasement();
+    drawOverlays();
+    drawEffects();
+    ctx.restore();
+
+    drawRailVignettes(width, height);
+
+    if (state.flash > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = rgba("#4ffbdf", state.flash * 0.22);
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     SIMULATION LOOP
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function updateTiles(dt) {
+    for (let r = 0; r < GRID; r += 1) {
+      for (let c = 0; c < GRID; c += 1) {
+        const tile = state.board[r][c];
+        if (!tile) continue;
+        if (tile.at < 1) {
+          tile.at = Math.min(1, tile.at + (dt * 1000) / tile.ad);
+          const eased = tile.ease(tile.at);
+          tile.x = lerp(tile.fx, tile.tx, eased);
+          tile.y = lerp(tile.fy, tile.ty, eased);
+        }
+        tile.born += dt;
+        if (tile.emerging) {
+          tile.scale = Math.min(1, tile.scale + dt * 5);
+          if (tile.scale >= 1) tile.emerging = false;
+        } else if (tile.scale !== 1) {
+          tile.scale = lerp(tile.scale, 1, Math.min(1, dt * 10));
+          if (Math.abs(tile.scale - 1) < 0.01) tile.scale = 1;
+        }
+      }
+    }
+  }
+
+  let shownChain = -1;
+
+  function syncChain() {
+    const chain = Math.min(Math.max(state.chain, 0), MAX_CHAIN_MULT);
+    if (chain === shownChain) return;
+    shownChain = chain;
+    hud("chainFill").style.setProperty("--fill", `${((chain / MAX_CHAIN_MULT) * 100).toFixed(1)}%`);
+    hud("chainValue").innerHTML = `&times;${Math.max(1, chain)}`;
+  }
+
+  let lastFrame = 0;
+
+  function frame(now) {
+    const raw = lastFrame ? (now - lastFrame) / 1000 : 0.016;
+    lastFrame = now;
+    const dt = Math.min(0.05, Math.max(0, raw));
+    state.time += dt;
+    audio.frameVoices = 0;
+
+    const scaled = dt * state.speed;
+    if (!state.paused) {
+      updateTiles(scaled);
+      updateEffects(scaled);
+    }
+    updateSnow(dt);
+    syncChain();
+
+    if (state.screen === "play" && state.active && !state.locked && !state.hint) {
+      state.idle += dt * 1000;
+      if (state.idle >= HINT_IDLE_MS) {
+        state.idle = 0;
+        requestHint(false);
+      }
+    }
+
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     INPUT
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function pointerCell(event) {
+    const rect = canvas.getBoundingClientRect();
+    const { boardX, boardY, cell } = state.layout;
+    const c = Math.floor((event.clientX - rect.left - boardX) / cell);
+    const r = Math.floor((event.clientY - rect.top - boardY) / cell);
+    return inBounds(r, c) ? { r, c } : null;
+  }
+
+  function select(cell) {
+    state.selection = cell;
+    state.cursor = { r: cell.r, c: cell.c };
+    state.hint = null;
+    state.idle = 0;
+    sfx("select");
+  }
+
+  function onPointerDown(event) {
+    resumeAudio();
+    if (state.screen !== "play") return;
+    canvas.focus({ preventScroll: true });
+
+    const cell = pointerCell(event);
+    if (!cell) { state.selection = null; return; }
+
+    state.pointerId = event.pointerId;
+    state.dragOrigin = { x: event.clientX, y: event.clientY, cell };
+    state.dragging = true;
+
+    const tile = tileAt(cell.r, cell.c);
+    const held = state.selection;
+
+    if (held && held.r === cell.r && held.c === cell.c) {
+      if (tile && tile.special !== NONE) { state.dragging = false; void detonateAt(cell.r, cell.c); return; }
+      state.selection = null;
+      return;
+    }
+
+    if (held && adjacent(held, cell)) {
+      state.dragging = false;
+      const from = held;
+      state.selection = null;
+      void attemptSwap(from, cell);
+      return;
+    }
+
+    if (swappable(cell.r, cell.c)) select(cell);
+    else state.selection = null;
+  }
+
+  function onPointerMove(event) {
+    const cell = pointerCell(event);
+    state.hover = cell;
+
+    if (!state.dragging || !state.dragOrigin || state.screen !== "play") return;
+
+    const dx = event.clientX - state.dragOrigin.x;
+    const dy = event.clientY - state.dragOrigin.y;
+    const threshold = state.layout.cell * 0.35;
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
+
+    const from = state.dragOrigin.cell;
+    const to = Math.abs(dx) > Math.abs(dy)
+      ? { r: from.r, c: from.c + (dx > 0 ? 1 : -1) }
+      : { r: from.r + (dy > 0 ? 1 : -1), c: from.c };
+
+    state.dragging = false;
+    state.dragOrigin = null;
+    state.selection = null;
+    if (inBounds(to.r, to.c)) void attemptSwap(from, to);
+  }
+
+  function onPointerUp(event) {
+    if (!state.dragging || !state.dragOrigin) { state.dragging = false; state.dragOrigin = null; return; }
+    const cell = pointerCell(event);
+    const from = state.dragOrigin.cell;
+    state.dragging = false;
+    state.dragOrigin = null;
+    if (cell && adjacent(from, cell)) {
+      state.selection = null;
+      void attemptSwap(from, cell);
+    }
+  }
+
+  function moveCursor(dr, dc) {
+    let r = state.cursor.r;
+    let c = state.cursor.c;
+    for (let step = 0; step < GRID; step += 1) {
+      r += dr;
+      c += dc;
+      if (!inBounds(r, c)) return;
+      if (isOpen(r, c)) { state.cursor = { r, c }; sfx("ui"); return; }
+    }
+  }
+
+  const ARROWS = {
+    ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1],
+    w: [-1, 0], s: [1, 0], a: [0, -1], d: [0, 1],
+    W: [-1, 0], S: [1, 0], A: [0, -1], D: [0, 1],
+  };
+
+  function onKeyDown(event) {
+    resumeAudio();
+    const key = event.key;
+
+    if (key === "m" || key === "M") { setMuted(!state.muted); event.preventDefault(); return; }
+
+    if (key === "p" || key === "P") {
+      if (state.screen === "play" || state.screen === "paused") { togglePause(); event.preventDefault(); }
+      return;
+    }
+
+    if (key === "Escape") {
+      if (state.selection) state.selection = null;
+      else if (state.screen === "play" || state.screen === "paused") togglePause();
+      event.preventDefault();
+      return;
+    }
+
+    if (state.screen === "title") {
+      if (key === "Enter" || key === " ") { startCampaign(); event.preventDefault(); }
+      return;
+    }
+
+    if (state.screen === "complete") {
+      if (key === "n" || key === "N" || key === "Enter" || key === " ") { nextLevel(); event.preventDefault(); }
+      return;
+    }
+
+    if (state.screen === "failed") {
+      if (key === "r" || key === "R" || key === "Enter" || key === " ") { retryLevel(); event.preventDefault(); }
+      return;
+    }
+
+    if (state.screen === "finish") {
+      if (key === "Enter" || key === " ") { startCampaign(); event.preventDefault(); }
+      return;
+    }
+
+    if (state.screen !== "play") return;
+
+    // These mirror the HUD buttons, which updateHud disables while a turn is resolving.
+    if (key === "h" || key === "H") { requestHint(true); event.preventDefault(); return; }
+    if ((key === "s" || key === "S") && !event.ctrlKey && !event.metaKey) {
+      if (!state.locked) void shuffleBoard(true);
+      event.preventDefault();
+      return;
+    }
+    if (key === "r" || key === "R") {
+      if (!state.locked) retryLevel();
+      event.preventDefault();
+      return;
+    }
+
+    const arrow = ARROWS[key];
+    if (arrow) {
+      event.preventDefault();
+      if (state.selection) {
+        const from = state.selection;
+        const to = { r: from.r + arrow[0], c: from.c + arrow[1] };
+        state.selection = null;
+        if (inBounds(to.r, to.c)) void attemptSwap(from, to);
+      } else {
+        moveCursor(arrow[0], arrow[1]);
+      }
+      return;
+    }
+
+    if (key === "Enter" || key === " ") {
+      event.preventDefault();
+      const { r, c } = state.cursor;
+      const tile = tileAt(r, c);
+      if (state.selection && state.selection.r === r && state.selection.c === c) {
+        if (tile && tile.special !== NONE) void detonateAt(r, c);
+        else state.selection = null;
+        return;
+      }
+      if (swappable(r, c)) select({ r, c });
+    }
+  }
+
+  function bindEvents() {
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointercancel", () => { state.dragging = false; state.dragOrigin = null; });
+    canvas.addEventListener("pointerleave", () => { state.hover = null; });
+    canvas.addEventListener("dblclick", (event) => {
+      const cell = pointerCell(event);
+      if (cell) void detonateAt(cell.r, cell.c);
+    });
+    canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+    window.addEventListener("keydown", onKeyDown);
+
+    document.getElementById("startButton").addEventListener("click", () => { resumeAudio(); startCampaign(); });
+    document.getElementById("resumeButton").addEventListener("click", () => togglePause(false));
+    document.getElementById("quitButton").addEventListener("click", () => { state.paused = false; state.active = false; stopMusic(); showScreen("title"); });
+    document.getElementById("nextLevelButton").addEventListener("click", () => { resumeAudio(); nextLevel(); });
+    document.getElementById("replayLevelButton").addEventListener("click", () => retryLevel());
+    document.getElementById("retryButton").addEventListener("click", () => { resumeAudio(); retryLevel(); });
+    document.getElementById("abandonButton").addEventListener("click", () => { state.active = false; stopMusic(); showScreen("title"); });
+    document.getElementById("replayButton").addEventListener("click", () => { resumeAudio(); startCampaign(); });
+
+    document.getElementById("hintButton").addEventListener("click", () => { resumeAudio(); requestHint(true); });
+    document.getElementById("shuffleButton").addEventListener("click", () => { resumeAudio(); void shuffleBoard(true); });
+    document.getElementById("audioButton").addEventListener("click", () => { resumeAudio(); setMuted(!state.muted); });
+    document.getElementById("pauseButton").addEventListener("click", () => togglePause());
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) { stopMusic(); if (state.screen === "play") togglePause(true); }
+    });
+
+    window.addEventListener("resize", resize);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     DETERMINISTIC TEST INTERFACE (?test=1 only)
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function snapshot() {
+    const o = state.objective || { kind: "score", target: 0 };
+    return {
+      grid: GRID,
+      board: state.board.map((row) => row.map((tile) => (tile ? { type: tile.type, special: tile.special, id: tile.id } : null))),
+      mask: state.mask.map((row) => row.slice()),
+      rime: state.rime.map((row) => row.slice()),
+      encased: state.encased.map((row) => row.slice()),
+      score: state.score,
+      moves: state.moves,
+      level: state.level,
+      levelName: state.info ? state.info.name : "",
+      types: state.info ? state.info.types : 0,
+      objective: {
+        kind: o.kind,
+        target: o.target,
+        progress: objectiveProgress(),
+        complete: objectiveComplete(),
+        colors: o.colors ? o.colors.slice() : undefined,
+        perColor: o.perColor,
+        scoreTarget: o.scoreTarget,
+        collected: state.collected.slice(),
+      },
+      chain: state.chain,
+      bestChain: state.bestChain,
+      rimeCleared: state.rimeCleared,
+      rushScore: state.rushScore,
+      stars: state.info ? starsEarned() : 0,
+      bestStars: state.stars.slice(),
+      hasMove: Boolean(findAnyMove()),
+      matchCount: findMatches().length,
+      hint: state.hint ? { a: state.hint.a, b: state.hint.b, score: state.hint.score, reason: state.hint.reason } : null,
+      active: state.active,
+      locked: state.locked,
+      paused: state.paused,
+      rushing: state.rushing,
+      screen: state.screen,
+      reducedMotion: REDUCED_MOTION,
+      particleCount: state.particles.length,
+      effectBudget: effectBudget(),
+      layout: {
+        width: state.layout.width,
+        height: state.layout.height,
+        boardX: state.layout.boardX,
+        boardY: state.layout.boardY,
+        boardSize: state.layout.boardSize,
+        cell: state.layout.cell,
+        mode: state.layout.mode,
+      },
+    };
+  }
+
+  function installTestInterface() {
+    window.__northlightTest = {
+      constants: {
+        GRID, TYPES, LEVEL_COUNT,
+        NONE, FRACTURE_ROW, FRACTURE_COL, BLOOM, CORE,
+        BASE_GEM_SCORE, DETONATION_SCORE, RIME_SCORE, ENCASED_SCORE,
+        RUSH_MOVE_SCORE, MAX_CHAIN_MULT, SHUFFLE_COST, HINT_IDLE_MS,
+        FUSION,
+      },
+
+      snapshot,
+
+      setSeed(seed) {
+        state.random = mulberry32(seed);
+        return true;
+      },
+
+      setSpeed(multiplier) {
+        state.speed = clamp(Number(multiplier) || 1, 0.25, 40);
+      },
+
+      startCampaign() { startCampaign(); },
+
+      startLevel(index) {
+        setupAndShow(clamp(index | 0, 0, LEVEL_COUNT - 1));
+        showScreen("play");
+      },
+
+      levelTable() {
+        return LEVELS.map((_, index) => {
+          const info = levelInfo(index);
+          return {
+            index: info.index,
+            name: info.name,
+            moves: info.moves,
+            types: info.types,
+            objective: {
+              kind: info.objective.kind,
+              target: info.objective.target,
+              colors: info.objective.colors,
+              scoreTarget: info.objective.scoreTarget,
+            },
+            openCells: info.openCells,
+            holes: info.holes,
+            rimeCells: info.rimeCells,
+            rimeLayers: info.rimeLayers,
+            encased: info.encased,
+            refillOk: info.refillOk,
+            star2: info.star2,
+            star3: info.star3,
+          };
+        });
+      },
+
+      setBoard(matrix, specials) {
+        for (let r = 0; r < GRID; r += 1) {
+          for (let c = 0; c < GRID; c += 1) {
+            if (!isOpen(r, c)) { state.board[r][c] = null; continue; }
+            const type = clamp(matrix[r][c] | 0, 0, TYPES - 1);
+            state.board[r][c] = createTile(type, r, c);
+          }
+        }
+        if (Array.isArray(specials)) {
+          for (const entry of specials) {
+            const tile = tileAt(entry.r, entry.c);
+            if (tile) tile.special = entry.special;
+          }
+        }
+        state.dying.length = 0;
+        relayoutTiles();
+        updateHud();
+        return true;
+      },
+
+      setMask(mask) {
+        for (let r = 0; r < GRID; r += 1) {
+          for (let c = 0; c < GRID; c += 1) {
+            state.mask[r][c] = mask[r][c] ? 1 : 0;
+            if (state.mask[r][c] === 0) {
+              state.board[r][c] = null;
+              state.rime[r][c] = 0;
+              state.encased[r][c] = 0;
+            } else if (!state.board[r][c]) {
+              state.board[r][c] = createTile(randomType(r, c), r, c);
+            }
+          }
+        }
+        relayoutTiles();
+        invalidateBed();
+        return true;
+      },
+
+      setRime(cells) {
+        for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) state.rime[r][c] = 0;
+        for (const entry of cells || []) {
+          if (isOpen(entry.r, entry.c)) state.rime[entry.r][entry.c] = clamp(entry.layers === undefined ? 1 : entry.layers, 0, 2);
+        }
+        state.rimeCleared = 0;
+        invalidateBed();
+        updateHud();
+      },
+
+      setEncased(cells) {
+        for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) state.encased[r][c] = 0;
+        for (const entry of cells || []) {
+          if (isOpen(entry.r, entry.c)) state.encased[entry.r][entry.c] = clamp(entry.layers === undefined ? 2 : entry.layers, 0, 2);
+        }
+        invalidateBed();
+        updateHud();
+      },
+
+      setMoves(value) { state.moves = Math.max(0, value | 0); updateHud(); },
+      setScore(value) { state.score = Math.max(0, value | 0); lastScore = state.score; updateHud(); },
+
+      setObjective(spec) {
+        const kind = spec.kind || "score";
+        state.objective = {
+          kind,
+          target: spec.target === undefined ? (kind === "score" ? 1 : 1) : Math.max(1, spec.target),
+          colors: spec.colors ? spec.colors.slice() : undefined,
+          perColor: spec.perColor === undefined ? (spec.colors ? Math.ceil((spec.target || 1) / spec.colors.length) : undefined) : spec.perColor,
+          scoreTarget: spec.scoreTarget,
+        };
+        state.collected = new Array(TYPES).fill(0);
+        state.rimeCleared = 0;
+        updateHud();
+      },
+
+      swap(r1, c1, r2, c2) { return attemptSwap({ r: r1, c: c1 }, { r: r2, c: c2 }); },
+      detonate(r, c) { return detonateAt(r, c); },
+
+      async resolve() {
+        state.locked = true;
+        await resolveCascade(null, 0);
+        state.locked = false;
+        updateHud();
+        return snapshot();
+      },
+
+      async collapse() {
+        await collapse();
+        updateHud();
+        return snapshot();
+      },
+
+      async shuffle(manual) { return shuffleBoard(Boolean(manual)); },
+
+      async hint(force) { return requestHint(Boolean(force)); },
+      bestMove() {
+        const move = findBestMove();
+        return move ? { a: move.a, b: move.b, score: move.score, reason: move.reason } : null;
+      },
+
+      async finishTurn() { await finishTurn(); },
+      async runAuroraRush() { await auroraRush(); return snapshot(); },
+      completeLevel() { completeLevel(); },
+      failLevel(message) { failLevel(message); },
+      nextLevel() { nextLevel(); },
+      restartLevel() { retryLevel(); },
+
+      audioEvents() { return state.audioLog.slice(); },
+      clearAudioEvents() { state.audioLog.length = 0; },
+
+      cellRect(r, c) {
+        const { boardX, boardY, cell } = state.layout;
+        return { x: boardX + c * cell, y: boardY + r * cell, w: cell, h: cell };
+      },
+    };
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     BOOT
+     ══════════════════════════════════════════════════════════════════════ */
+
+  function boot() {
+    resize();
+    bindEvents();
+    setupLevel(0);
+    state.active = false;
+    buildNightStrip();
+    setMuted(false);
+    showScreen("title");
+    if (TEST_MODE) installTestInterface();
+    requestAnimationFrame(frame);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

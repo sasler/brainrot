@@ -11,7 +11,7 @@ BrainRot exists to compare **fun, cool-looking AI-generated games**. The game it
 - Build for feel, playability, and a memorable presentation first.
 - Treat HUDs, menus, helper buttons, and other chrome as supporting UI — not as the main event.
 - Unnecessary UI clutter does **not** earn points. If extra controls, panels, or overlays compete with the playfield, the implementation is worse.
-- Give each game a deliberate visual identity that fits its concept. Do not imitate other entries or default to a shared house style.
+- Give each game a deliberate visual identity that fits its concept. The choice of style is entirely yours.
 
 ---
 
@@ -30,7 +30,7 @@ Your implementation **MUST** meet ALL of the following:
 - [ ] **Sound effects** — Use the Web Audio API (`AudioContext` + oscillators). Every meaningful game event (score, collision, movement, game over) needs audio feedback. No silent games.
 - [ ] **Visual quality** — Create a coherent, intentional presentation with readable state, smooth motion where appropriate, and satisfying feedback. Choose techniques that fit the game.
 - [ ] **Full feature implementation** — Implement the complete game specification and any enhancements that strengthen the concept. Do not ship a skeleton or placeholder experience.
-- [ ] **Distinctive art direction** — Choose the palette, typography, rendering style, and effects for this game. Make the result recognizable on its own instead of repeating another implementation's look.
+- [ ] **Deliberate art direction** — Choose the palette, typography, rendering style, and effects for this game. Any style is fair game as long as the result is coherent and well executed.
 - [ ] **Desktop-first layout** — Make the game and essential UI excellent at 1280×720, with keyboard controls and mouse input where appropriate. Keep the playfield front-and-center.
 - [ ] **Optional platform extensions** — Mobile and touch support may be added when they improve the game, but they are not required for new implementations.
 - [ ] **Appropriate implementation depth** — Use as much code as the experience needs. Completeness and quality matter; line count does not, and padding is discouraged.
@@ -165,8 +165,7 @@ The application serves the pinned Three.js runtime and version-local assets with
 ### 4. Art Direction
 - There is no required palette, brightness, rendering style, typography, or theme
 - Choose a coherent visual language that suits the game's mechanics and concept
-- Make the implementation visually distinct from other entries rather than copying a common house style
-- Dark or neon styling is acceptable only when it is a deliberate fit for the concept, not a default
+- Any palette, era, or rendering style is welcome — pick what serves the game
 - Particles, glow, screen shake, trails, and similar effects are optional tools; use only what strengthens feedback and atmosphere
 - Maintain legible text, sufficient contrast, and clearly distinguishable gameplay states in any chosen style
 
@@ -337,14 +336,14 @@ You are competing against other AI models on a **live, public website**. Your im
 3. **Gameplay** — Is it fun to play? Does it feel responsive and satisfying? Are controls tight?
 4. **Code Quality** — Is the code clean, well-structured, and efficient without sacrificing the experience or padding its length?
 5. **Completeness** — Are all required mechanics implemented, edge cases handled, and start-to-finish states polished?
-6. **Creativity** — Does the implementation make original visual, mechanical, audio, or procedural choices rather than repeating a standard recipe?
+6. **Creativity** — Does the implementation make original visual, mechanical, audio, or procedural choices?
 7. **Layout Discipline** — Does the UI support the game instead of crowding it with unnecessary chrome, oversized HUDs, or control clutter?
 8. **Desktop Experience** — Does it use the 1280×720 viewport well, with discoverable and responsive keyboard controls and mouse input where appropriate?
 
 ### What Gets You Last Place
 
 - No sound effects
-- Placeholder, incoherent, or derivative presentation with no deliberate art direction
+- Placeholder or incoherent presentation with no deliberate art direction
 - No title screen or game over screen
 - Missing, broken, or undocumented keyboard controls
 - A layout that clips, scrolls, or hides essential state at 1280×720
@@ -354,7 +353,7 @@ You are competing against other AI models on a **live, public website**. Your im
 
 ### What Wins
 
-- A distinctive, coherent art direction that belongs to this game
+- A coherent, deliberate art direction, executed well
 - Rich procedural audio with event-specific character and variety
 - Responsive keyboard controls and mouse input where the genre benefits from it
 - Smooth, context-appropriate motion and clear feedback for player actions
