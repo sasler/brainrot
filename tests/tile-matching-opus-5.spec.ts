@@ -199,6 +199,19 @@ async function playLevel(page: Page, index = 0) {
 
 const snapshot = (page: Page) => page.evaluate(() => window.__northlightTest.snapshot());
 
+/**
+ * A swap charges its move before the cascade resolves, so polling on `moves` alone can return
+ * while the board is still locked. Hold out for the whole turn to finish.
+ */
+async function settledMoves(page: Page, expected: number, timeout = 20_000) {
+  await expect
+    .poll(async () => {
+      const state = await snapshot(page);
+      return state.locked ? null : state.moves;
+    }, { timeout })
+    .toBe(expected);
+}
+
 const totalCleared = (state: Snapshot) => state.objective.collected.reduce((sum, value) => sum + value, 0);
 
 const boardIsFull = (state: Snapshot) =>
@@ -664,6 +677,8 @@ test.describe("Claude Opus 5 Tile Matching — Northlight", () => {
     const setup = async () => {
       await page.evaluate((board) => {
         window.__northlightTest.setSeed(44);
+        // Real animation speed: this test is about input reaching a board that is genuinely busy.
+        window.__northlightTest.setSpeed(1);
         window.__northlightTest.setBoard(board);
         window.__northlightTest.setObjective({ kind: "score", target: 9_999_999 });
         window.__northlightTest.setMoves(10);
@@ -683,18 +698,19 @@ test.describe("Claude Opus 5 Tile Matching — Northlight", () => {
     await page.mouse.down();
     await page.mouse.move(to.x, to.y, { steps: 6 });
     await page.mouse.up();
-    await expect.poll(async () => (await snapshot(page)).moves).toBe(9);
+    await settledMoves(page, 9);
 
     // Click, then click the neighbour.
     await setup();
     await page.mouse.click(from.x, from.y);
     await page.mouse.click(to.x, to.y);
-    await expect.poll(async () => (await snapshot(page)).moves).toBe(9);
+    await settledMoves(page, 9);
 
     // Keyboard: move the cursor from (0,0), hold with Enter, then push with an arrow.
     await page.evaluate((board) => {
       window.__northlightTest.setSeed(44);
       window.__northlightTest.startLevel(0);
+      window.__northlightTest.setSpeed(1);
       window.__northlightTest.setBoard(board);
       window.__northlightTest.setObjective({ kind: "score", target: 9_999_999 });
       window.__northlightTest.setMoves(10);
@@ -703,7 +719,7 @@ test.describe("Claude Opus 5 Tile Matching — Northlight", () => {
     for (let i = 0; i < 2; i += 1) await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");
     await page.keyboard.press("ArrowDown");
-    await expect.poll(async () => (await snapshot(page)).moves).toBe(9);
+    await settledMoves(page, 9);
 
     // Tap-to-detonate a bloom.
     await page.evaluate(
@@ -904,7 +920,7 @@ test.describe("Claude Opus 5 Tile Matching — Northlight", () => {
 
     // Once the turn is over the same keys work normally.
     await page.keyboard.press("s");
-    await expect.poll(async () => (await snapshot(page)).moves).toBe(8);
+    await settledMoves(page, 8);
   });
 
   test("replays identically from a seed, because effects never touch the gameplay stream", async ({ page }) => {
