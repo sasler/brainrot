@@ -4370,6 +4370,19 @@
           ]
         },
         {
+          "model": "Claude Opus 5",
+          "modelId": "opus-5",
+          "date": "2026-07-26",
+          "linesOfCode": 4632,
+          "path": "/games/tile-matching/opus-5/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles",
+            "powerups"
+          ]
+        },
+        {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-04-09",

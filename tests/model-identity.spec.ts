@@ -32,9 +32,10 @@ test.describe("Model identity system", () => {
     await page.goto("/games/tile-matching");
 
     const cards = page.locator('[data-model-id][data-model-color]');
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(7);
     await expect(cards.locator("h3")).toHaveText([
       "Claude Opus 4.6",
+      "Claude Opus 5",
       "Claude Sonnet 4.6",
       "OpenAI GPT 5.4",
       "OpenAI GPT 5.4 Mini",
