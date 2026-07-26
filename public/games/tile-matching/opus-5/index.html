@@ -1931,6 +1931,9 @@
 
   async function resolveFusionSwap(a, b) {
     const kind = fusionKind(a, b);
+    // Read the fused colour before the components are spent. Any further core swept up by this
+    // blast has to clear the colour this fusion named, not whatever is most common on the board.
+    const forcedType = a.special === CORE ? b.type : b.special === CORE ? a.type : null;
     const plan = prepareFusion(kind, a, b);
 
     // The two components are spent by the fusion itself; they must not also fire individually.
@@ -1946,7 +1949,6 @@
 
     await wait(DETONATE_STAGGER * 3);
 
-    const forcedType = a.special === CORE ? b.type : b.special === CORE ? a.type : null;
     const expanded = expandSpecials(plan.cells, forcedType);
     const result = performClear(expanded.cells, 1);
     const gained = addScore(expanded.cells.size * DETONATION_SCORE + plan.bonus + result.gained);
@@ -2208,6 +2210,9 @@
 
   async function shuffleBoard(manual) {
     if (state.rushing) return false;
+    // The automatic recovery runs from inside finishTurn and owns the lock; a player-driven
+    // shuffle must never re-deal tiles a swap or cascade is still resolving against.
+    if (manual && (state.locked || !state.active)) return false;
     if (manual && state.moves <= SHUFFLE_COST) return false;
 
     state.locked = true;
@@ -2390,6 +2395,9 @@
   }
 
   function retryLevel() {
+    // Replacing the board mid-resolution would leave the in-flight swap writing into a level
+    // that no longer exists. The complete and failed screens both release the lock first.
+    if (state.locked) return;
     beginLevel(state.level);
   }
 
@@ -4316,10 +4324,18 @@
 
     if (state.screen !== "play") return;
 
+    // These mirror the HUD buttons, which updateHud disables while a turn is resolving.
     if (key === "h" || key === "H") { requestHint(true); event.preventDefault(); return; }
-    if (key === "s" && !event.ctrlKey && !event.metaKey) { void shuffleBoard(true); event.preventDefault(); return; }
-    if (key === "S") { void shuffleBoard(true); event.preventDefault(); return; }
-    if (key === "r" || key === "R") { retryLevel(); event.preventDefault(); return; }
+    if ((key === "s" || key === "S") && !event.ctrlKey && !event.metaKey) {
+      if (!state.locked) void shuffleBoard(true);
+      event.preventDefault();
+      return;
+    }
+    if (key === "r" || key === "R") {
+      if (!state.locked) retryLevel();
+      event.preventDefault();
+      return;
+    }
 
     const arrow = ARROWS[key];
     if (arrow) {

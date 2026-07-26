@@ -4373,7 +4373,7 @@
           "model": "Claude Opus 5",
           "modelId": "opus-5",
           "date": "2026-07-26",
-          "linesOfCode": 4632,
+          "linesOfCode": 4648,
           "path": "/games/tile-matching/opus-5/index.html",
           "features": [
             "sound",

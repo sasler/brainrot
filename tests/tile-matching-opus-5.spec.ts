@@ -126,7 +126,6 @@ declare global {
 }
 
 const GRID = 9;
-const HUGE = 9_999_999;
 
 /** Diagonal ramp over seven types — adjacent cells never repeat, so the board has no match anywhere. */
 const stableBoard: number[][] = Array.from({ length: GRID }, (_, r) =>
@@ -833,6 +832,81 @@ test.describe("Claude Opus 5 Tile Matching — Northlight", () => {
     await expect(page.locator("#app")).toHaveCSS("animation-duration", "0.001s");
   });
 
+  test("a core caught in a fusion blast clears the fused colour, not the dominant one", async ({ page }) => {
+    await openGame(page);
+    await playLevel(page);
+
+    // Checkerboard: type 0 fills every other cell, so it is unambiguously the dominant colour.
+    const board = Array.from({ length: GRID }, (_, r) =>
+      Array.from({ length: GRID }, (_, c) => ((r + c) % 2 === 0 ? 0 : 1 + ((r * 3 + c) % 3))),
+    );
+    board[4][5] = 4; // the gem the core is fused with
+    board[6][3] = 4; // a fracture riding the same colour, aimed at row 6
+
+    const constants = await page.evaluate(() => window.__northlightTest.constants);
+    await page.evaluate(
+      ({ matrix, CORE, FRACTURE_ROW }) => {
+        window.__northlightTest.setSeed(64);
+        window.__northlightTest.setObjective({ kind: "score", target: 9_999_999 });
+        window.__northlightTest.setBoard(matrix, [
+          { r: 4, c: 4, special: CORE },
+          { r: 6, c: 3, special: FRACTURE_ROW },
+          { r: 6, c: 7, special: CORE }, // swept up by the fracture, fires second
+        ]);
+        window.__northlightTest.setMoves(10);
+        window.__northlightTest.setScore(0);
+      },
+      { matrix: board, CORE: constants.CORE, FRACTURE_ROW: constants.FRACTURE_ROW },
+    );
+
+    const before = await snapshot(page);
+    const dominant = before.board.flat().filter((tile) => tile?.type === 0 && tile.special === 0).length;
+    expect(dominant).toBeGreaterThan(35);
+
+    expect(await page.evaluate(() => window.__northlightTest.swap(4, 4, 4, 5))).toBe(true);
+
+    const after = await snapshot(page);
+    expect(after.objective.collected[4]).toBeGreaterThanOrEqual(2);
+    // The second core must inherit colour 4. If it fell back to the dominant colour it would
+    // have swept every type-0 gem off the board in one go.
+    expect(after.objective.collected[0]).toBeLessThan(dominant);
+  });
+
+  test("ignores retry and shuffle hotkeys while a turn is still resolving", async ({ page }) => {
+    await openGame(page);
+    await playLevel(page);
+
+    await page.evaluate((matrix) => {
+      window.__northlightTest.setSeed(101);
+      window.__northlightTest.setSpeed(0.5); // stretch the cascade so the keys land mid-flight
+      window.__northlightTest.setBoard(matrix);
+      window.__northlightTest.setObjective({ kind: "score", target: 9_999_999 });
+      window.__northlightTest.setMoves(10);
+    }, fourMatchBoard());
+
+    // Start the swap without awaiting it, so the board is mid-resolution.
+    await page.evaluate(() => { void window.__northlightTest.swap(2, 2, 3, 2); });
+    await expect.poll(async () => (await snapshot(page)).locked).toBe(true);
+
+    await page.keyboard.press("s");
+    await page.keyboard.press("S");
+    await page.keyboard.press("r");
+    await page.keyboard.press("R");
+
+    await expect.poll(async () => (await snapshot(page)).locked, { timeout: 15_000 }).toBe(false);
+    await page.evaluate(() => window.__northlightTest.setSpeed(30));
+
+    const state = await snapshot(page);
+    expect(state.level, "retry must not have restarted the night").toBe(0);
+    expect(state.moves, "only the swap may charge a move").toBe(9);
+    expect(state.matchCount).toBe(0);
+    expect(boardIsFull(state)).toBe(true);
+
+    // Once the turn is over the same keys work normally.
+    await page.keyboard.press("s");
+    await expect.poll(async () => (await snapshot(page)).moves).toBe(8);
+  });
+
   test("replays identically from a seed, because effects never touch the gameplay stream", async ({ page }) => {
     await openGame(page);
 
@@ -873,6 +947,5 @@ test.describe("Claude Opus 5 Tile Matching — Northlight", () => {
 
     expect(await page.evaluate(() => "__northlightTest" in window)).toBe(false);
     expect(errors).toEqual([]);
-    void HUGE;
   });
 });
