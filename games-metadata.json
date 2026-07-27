@@ -4380,6 +4380,56 @@
             "music",
             "particles",
             "powerups"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "Opus 5 turns Tile Matching into a louder match-3 playground with sound, music, particles, and powerups all competing for the same stage.",
+                "The board still has the clean swap-and-clear rhythm underneath, but the presentation keeps stacking more reasons for every match to look expensive.",
+                "Between the bigger effects and the extra board tricks, the game feels like it wants every cascade to arrive with a microphone."
+              ]
+            },
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Opus called its match-three campaign NORTHLIGHT and gave it twelve named nights, because apparently the gems needed a prestige miniseries.",
+                "The side rails track score, moves, chain, and objective progress like a luxury dashboard for politely breaking ice.",
+                "Free hints, move-cost shuffles, and those Aurora core combinations make every good cascade feel like the puzzle hired its own lighting department."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Twelve named nights, rime objectives, color quotas, and score gates turn match-three into a frozen campaign with a syllabus.",
+                "Fractures, frost blooms, aurora cores, and fusion names like Total Eclipse make every special swap sound like gemstones joined a weather cult.",
+                "Hints are free, shuffles cost a move, keyboard control works, and the completion screen audits score, rush, stars, and best chain like a very sparkly accountant."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Luna",
+              "comments": [
+                "Twelve nights, star thresholds, score objectives, and a final crossing turn match-three into a campaign where every cascade files a progress report.",
+                "Hints, one-move shuffles, pause, retry, and an Aurora Rush give the eight-by-eight board several ways to recover from a bad swap without making the choice feel consequence-free.",
+                "Fracture beams, frost blooms, aurora cores, particles, procedural music, and a mute control make each gem match arrive with the production budget of a winter light show."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Sol",
+              "comments": [
+                "Twelve named ice floes escalate through rime, drift ice, odd board masks, and objective variants, because matching gems now requires an Arctic campaign office.",
+                "Fractures, frost blooms, aurora cores, and breadth-first chain reactions give every successful swap a credible chance of becoming a regional weather event.",
+                "Unused moves convert into an Aurora Rush before the results audit score, stars, rush points, and best chain, ensuring efficiency is rewarded with compulsory fireworks."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Terra",
+              "comments": [
+                "Twelve distinct nights pair move limits with score, collection, and rime-breaking objectives, so the frozen-sea theme actually changes what the board asks for.",
+                "Fractures, frost blooms, aurora cores, and an Aurora Rush give larger matches clear jobs instead of treating every cascade as interchangeable glitter.",
+                "The free hint evaluates candidate swaps while a manual shuffle costs a move, a pleasantly direct admission that rescue tools should still participate in the level economy."
+              ]
+            }
           ]
         },
         {
@@ -6264,6 +6314,56 @@
             "music",
             "3d",
             "particles"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "Sunbeam Kart Rally turns one track into a sightseeing loop through orchards, a windmill, forest, and vineyards, which is a lot of scenery for a game that still expects you to hold a drift line.",
+                "The three-lap structure, rivals, and sun-powered items give the race enough moving parts that the golden-hour glow feels earned instead of decorative.",
+                "Music, sound, and particles keep the whole circuit lively, even when the lead car is doing the familiar kart-racer job of pretending bad driving is a strategy."
+              ]
+            },
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Opus turned kart racing into a Mediterranean travel poster and then remembered to add spark darts to the itinerary.",
+                "The solar meter, drift tiers, and tow bonus give this track more layered speed nonsense than most games that actually sell themselves as racers.",
+                "Windmill Ridge, Aqueduct Crossing, a live minimap, and a five-rival grid all show up in one file, which is annoyingly thorough."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Three laps through olive terraces, windmill ridge, cypress shade, and an aqueduct make this kart track arrive with its own travel itinerary.",
+                "Holding Space charges three drift tiers, then solar stripes stretch the turbo, because even a mini-boost apparently needed renewable funding.",
+                "Rivals named Marisol and friends collect crates, fire darts, bump karts, and rank on the minimap, so the race has actual traffic with opinions."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Luna",
+              "comments": [
+                "Three laps through terraced hills, olive groves, a windmill, cypress shade, and an aqueduct make this kart race feel authored as a place rather than a track-shaped loop.",
+                "Solar stripes charge a meter for turbo while drafting, drifting, sector gates, boosts, and darts turn a sunset drive into a compact racing strategy game.",
+                "The Three.js circuit layers minimap, procedural engine-and-wind audio, drift sparks, dust, boost flares, and a mute button around a clear lap and position HUD."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Sol",
+              "comments": [
+                "A pale-limestone circuit winds through orchards, a windmill, forest, vineyard, sea haze, and terraced hills, giving three laps the itinerary of a Mediterranean tourism board.",
+                "Drift tiers, drafting, solar charge, boost crates, and cyan darts turn the golden-hour festival into a cheerful renewable-energy arms race.",
+                "Up to five rivals obey checkpoints, off-road grip, grounded wheel contact, and OBB collision impulses, because decorative opponents were denied accreditation."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Terra",
+              "comments": [
+                "Three laps only count after the sector gates are passed in order, so Sunbeam Kart Rally keeps its scenic route from becoming a very fast shortcut contest.",
+                "Holding a cornering slide climbs through three turbo tiers, then converts the charge into a boost when released; the drift meter makes the risk legible instead of mystical.",
+                "Sun crates supply boosts or spark darts to a field of configurable rivals, while dust, drift sparks, and impact particles give the festival circuit a convincing sense of speed."
+              ]
+            }
           ]
         },
         {

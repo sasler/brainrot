@@ -322,6 +322,11 @@
       ]
     },
     "tile-matching": {
+      "opus-5": [
+        "Twelve named ice floes escalate through rime, drift ice, odd board masks, and objective variants, because matching gems now requires an Arctic campaign office.",
+        "Fractures, frost blooms, aurora cores, and breadth-first chain reactions give every successful swap a credible chance of becoming a regional weather event.",
+        "Unused moves convert into an Aurora Rush before the results audit score, stars, rush points, and best chain, ensuring efficiency is rewarded with compulsory fireworks."
+      ],
       "opus-4-6": [
         "Bomb, rainbow, and lightning gems each get dedicated sounds and effects, because matching three ordinary jewels lacked executive presence.",
         "Hints, shuffles, combos, level thresholds, floating text, rings, and sparkles turn grid housekeeping into a casino operations manual.",
@@ -473,6 +478,13 @@
         "Loops, echoes, alarms, timeline, and vault status make every heist feel like a beautifully typeset incident-response dashboard.",
         "Vault traces can be committed or discarded while guards react to echo noise, turning time travel into meticulous version control.",
         "The campaign and vault use separate visibility and collision paths, because even temporal burglars deserve duplicated security bureaucracy."
+      ]
+    },
+    "kart-racing": {
+      "opus-5": [
+        "A pale-limestone circuit winds through orchards, a windmill, forest, vineyard, sea haze, and terraced hills, giving three laps the itinerary of a Mediterranean tourism board.",
+        "Drift tiers, drafting, solar charge, boost crates, and cyan darts turn the golden-hour festival into a cheerful renewable-energy arms race.",
+        "Up to five rivals obey checkpoints, off-road grip, grounded wheel contact, and OBB collision impulses, because decorative opponents were denied accreditation."
       ]
     }
   }

@@ -337,6 +337,11 @@
       ]
     },
     "tile-matching": {
+      "opus-5": [
+        "Twelve nights, star thresholds, score objectives, and a final crossing turn match-three into a campaign where every cascade files a progress report.",
+        "Hints, one-move shuffles, pause, retry, and an Aurora Rush give the eight-by-eight board several ways to recover from a bad swap without making the choice feel consequence-free.",
+        "Fracture beams, frost blooms, aurora cores, particles, procedural music, and a mute control make each gem match arrive with the production budget of a winter light show."
+      ],
       "opus-4-6": [
         "An eight-by-eight board supports timed and moves modes, with swap-back and shuffle phases ready when the tiles refuse to cooperate.",
         "Bad swaps get a low square-wave scolding while bombs, rainbow tiles, lightning, cascades, and level-up chords handle the successful overreaction.",
@@ -501,6 +506,11 @@
       ]
     },
     "kart-racing": {
+      "opus-5": [
+        "Three laps through terraced hills, olive groves, a windmill, cypress shade, and an aqueduct make this kart race feel authored as a place rather than a track-shaped loop.",
+        "Solar stripes charge a meter for turbo while drafting, drifting, sector gates, boosts, and darts turn a sunset drive into a compact racing strategy game.",
+        "The Three.js circuit layers minimap, procedural engine-and-wind audio, drift sparks, dust, boost flares, and a mute button around a clear lap and position HUD."
+      ],
       "gpt-5-6-sol": [
         "Holding a slide charges the drift meter toward a golden turbo, so every corner becomes a negotiation between control and spectacular regret.",
         "Sun crates dispense boosts or spark darts while opponents, three laps, and checkpoint gates keep the cheerful festival circuit aggressively competitive.",
