@@ -722,4 +722,120 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     // And spending it actually moves fuel, rather than being silently refused.
     expect(state.spent.fuel).toBeLessThan(state.held.fuel);
   });
+
+  test("the readout says what the approach costs in every unresolved state", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    // On approach with the whole sack the course has not resolved, so the
+    // prediction times out. That used to print "Deadline … still in transit"
+    // and drop the approach cost entirely — the one number that says what to
+    // do, withheld exactly where the player is most stuck.
+    const onApproach = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      api.replayWitness(0.86);
+      api.setWarp(0);
+      const snap = api.advance(0.05);
+      return {
+        outcome: snap.predicted?.outcome,
+        collected: snap.collected,
+        buoys: snap.contract!.buoys,
+        text: document.getElementById("predictText")!.textContent ?? "",
+        sub: document.getElementById("predictSub")!.textContent ?? "",
+      };
+    });
+
+    expect(onApproach.collected).toBe(onApproach.buoys);
+    expect(onApproach.outcome).toBe("timeout");
+    // Names the job, not just the clock.
+    expect(onApproach.text.toLowerCase()).toContain("brake");
+    // Quotes the cost to match, and what is left to pay it with.
+    expect(onApproach.sub).toMatch(/[\d.]+ Δv to match/);
+    expect(onApproach.sub).toMatch(/left/);
+    expect(onApproach.sub).toMatch(/Chime in/);
+  });
+
+  test("the destination is named in the field and tracks it", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    const tag = await page.evaluate(async () => {
+      const api = window.__PERIHELION_TEST__;
+      const contract = api.loadCampaign(0) as { destName: string };
+      api.replayWitness(0.5);
+      api.setWarp(0);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const el = document.getElementById("destTag")!;
+      const first = { left: el.style.left, top: el.style.top };
+      api.advance(6);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return {
+        destName: contract.destName,
+        shown: document.getElementById("destName")!.textContent,
+        range: document.getElementById("destRange")!.textContent ?? "",
+        on: el.classList.contains("on"),
+        first,
+        second: { left: el.style.left, top: el.style.top },
+      };
+    });
+
+    // The sack has an address, and it is on screen.
+    expect(tag.on).toBe(true);
+    expect(tag.shown).toBe(tag.destName);
+    expect(tag.range).toMatch(/[\d.]+/);
+    // Worlds do not hold still, so neither does the tag.
+    expect(`${tag.second.left},${tag.second.top}`).not.toBe(`${tag.first.left},${tag.first.top}`);
+  });
+
+  test("the sound is struck and released, never a held tone", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.addInitScript(() => {
+      // Record every oscillator the game builds, and whether anything schedules
+      // a frequency change on it after it starts. A voice that slides in pitch
+      // under a continuous gain is what made the old bed sound like a fault.
+      const w = window as never as Record<string, unknown>;
+      const log: Array<{ freq: number; automated: boolean; stopped: boolean }> = [];
+      w.__OSC__ = log;
+      const make = AudioContext.prototype.createOscillator;
+      AudioContext.prototype.createOscillator = function () {
+        const osc = make.call(this);
+        const entry = { freq: 0, automated: false, stopped: false };
+        log.push(entry);
+        const origStop = osc.stop.bind(osc);
+        osc.stop = (...a: [number?]) => { entry.stopped = true; return origStop(...a); };
+        const origStart = osc.start.bind(osc);
+        osc.start = (...a: [number?]) => { entry.freq = osc.frequency.value; return origStart(...a); };
+        for (const m of ["setTargetAtTime", "linearRampToValueAtTime", "exponentialRampToValueAtTime"] as const) {
+          const orig = osc.frequency[m].bind(osc.frequency);
+          // @ts-expect-error test shim
+          osc.frequency[m] = (...a: number[]) => { entry.automated = true; return orig(...a); };
+        }
+        return osc;
+      };
+    });
+    await openGame(page);
+
+    const osc = await page.evaluate(async () => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      document.getElementById("muteBtn")!.click();
+      document.getElementById("muteBtn")!.click();
+      api.replayWitness(0.5);
+      await new Promise((r) => setTimeout(r, 1200));
+      type OscEntry = { automated: boolean; stopped: boolean };
+      const log = (window as never as Record<string, OscEntry[]>).__OSC__;
+      return {
+        total: log.length,
+        held: log.filter((o) => !o.stopped).length,
+        sliding: log.filter((o) => o.automated && !o.stopped).length,
+      };
+    });
+
+    // Every pitched voice is scheduled to stop. Nothing runs forever, and
+    // nothing that runs has its pitch driven while it runs.
+    expect(osc.total).toBeGreaterThan(0);
+    expect(osc.sliding, "no oscillator may slide in pitch while sustaining").toBe(0);
+    expect(osc.held, "every oscillator must be released").toBe(0);
+  });
 });

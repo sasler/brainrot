@@ -186,6 +186,31 @@
   #banner .big { font-size: 21px; letter-spacing: .1em; color: var(--brass-bright); }
   #banner .sm  { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--patina); margin-top: 5px; }
 
+  /* The destination, tagged in the field. Without it the sack has no address.
+     The label rides above the world so it never sits on the disc it names; the
+     engraved hoops below it are the mark of the exact spot. */
+  #destTag {
+    position: absolute; left: 0; top: 0; transform: translate(-50%, -100%);
+    text-align: center; white-space: nowrap; pointer-events: none;
+    padding-bottom: 20px; opacity: 0; transition: opacity .25s;
+  }
+  #destTag.on { opacity: 1; }
+  #destTag .nm {
+    font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--patina); text-shadow: 0 0 6px var(--void), 0 0 12px var(--void);
+  }
+  #destTag.near .nm { color: var(--brass-bright); }
+  #destTag .rng {
+    font-size: 10px; letter-spacing: .14em; color: var(--ivory-dim);
+    text-shadow: 0 0 6px var(--void), 0 0 12px var(--void); margin-top: 2px;
+  }
+  #destTag.near .rng { color: var(--brass); }
+  #destTag .tick {
+    width: 1px; height: 13px; margin: 4px auto 0; background: var(--patina); opacity: .7;
+  }
+  #destTag.near .tick { background: var(--brass-bright); }
+  #destTag .arrow { font-size: 13px; color: var(--patina); margin-bottom: 3px; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; }
   }
@@ -227,6 +252,13 @@
   </div>
 
   <button id="muteBtn" type="button" aria-pressed="false">Sound on</button>
+
+  <div id="destTag">
+    <div class="arrow" id="destArrow"></div>
+    <div class="nm" id="destName">—</div>
+    <div class="rng" id="destRange">—</div>
+    <div class="tick"></div>
+  </div>
 
   <div id="banner"><div class="big display"></div><div class="sm"></div></div>
 
@@ -2073,17 +2105,20 @@ class Orrery {
 }
 /* ============================================================================
    7. SOUND
-   The orrery is tuned to itself. Every contract derives its scale from the
-   ratios of its own orbital periods, folded into one octave, so a system with
-   worlds near a 3:2 resonance literally sings a fifth. Those ratios are snapped
-   to equal temperament on the way in, so the orrery plays its own intervals in
-   tune rather than approximately. The proximity voice is the probe's own
-   acceleration, made audible.
+   An instrument room, not a warning panel. The bed is a slow chord progression
+   in the contract's own key, voiced in fifths so it stays modal whatever the
+   orrery hands it, floating in a procedurally built reverb. Every voice is
+   struck and released with an envelope: nothing here holds a continuous tone or
+   slides in pitch, because that is what turns a soundtrack into interference.
    ========================================================================== */
 
-/** Octave, fifth, root — the drone, relative to the contract's key. */
-const DRONE_RATIOS = [0.5, 0.75, 1];
 const BASE_HZ = 196;   // the untuned root, before a contract supplies its own
+
+// Root, fifth, octave, twelfth. No thirds, so a chord cannot be the wrong
+// quality for whatever mode the orrery's periods happen to imply.
+const PAD_VOICING = [0, 7, 12, 19];
+// i · VI · III · VII, the natural-minor loop ambient music has always run on.
+const PROGRESSION = [0, 8, 3, 10];
 
 class PostAudio {
   constructor() {
@@ -2094,6 +2129,8 @@ class PostAudio {
     this.root = BASE_HZ;
     this.scale = this.degrees.map((d) => BASE_HZ * Math.pow(2, d / 12));
     this.started = false;
+    this.musicOn = false;
+    this.ambience = 0;
   }
 
   ensure() {
@@ -2107,15 +2144,65 @@ class PostAudio {
     this.ctx = ctx;
 
     this.master = ctx.createGain();
-    this.master.gain.value = 0.85;
-    this.master.connect(ctx.destination);
+    this.master.gain.value = 0.9;
+    // A gentle limiter, so a burn landing on top of a chord change cannot stack
+    // into the clipping that made the old mix sound broken.
+    this.limiter = ctx.createDynamicsCompressor();
+    this.limiter.threshold.value = -12;
+    this.limiter.knee.value = 18;
+    this.limiter.ratio.value = 6;
+    this.limiter.attack.value = 0.006;
+    this.limiter.release.value = 0.22;
+    this.master.connect(this.limiter);
+    this.limiter.connect(ctx.destination);
 
     this.bus = ctx.createGain();
     this.bus.gain.value = this.muted ? 0 : 1;
     this.bus.connect(this.master);
 
-    // Noise bed, generated once and reused for every thruster burst.
-    const len = Math.floor(ctx.sampleRate * 1.6);
+    this.buildReverb();
+    this.buildNoise();
+    this.buildBeds();
+    return ctx;
+  }
+
+  /**
+   * A reverb, built rather than loaded: decaying noise is a perfectly good
+   * impulse response, and it is the single thing that makes a handful of
+   * oscillators sound like a room instead of a test tone.
+   */
+  buildReverb() {
+    const ctx = this.ctx;
+    const seconds = 3.4;
+    const len = Math.floor(ctx.sampleRate * seconds);
+    const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c += 1) {
+      const data = ir.getChannelData(c);
+      for (let i = 0; i < len; i += 1) {
+        const t = i / len;
+        // Squared-ish decay, with the first few milliseconds pulled down so the
+        // tail blooms instead of slapping.
+        const bloom = Math.min(1, i / (ctx.sampleRate * 0.02));
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.6) * bloom;
+      }
+    }
+    const convolver = ctx.createConvolver();
+    convolver.buffer = ir;
+    const wet = ctx.createGain();
+    wet.gain.value = 0.9;
+    convolver.connect(wet);
+    wet.connect(this.bus);
+
+    // Everything that wants space sends here instead of connecting dry.
+    this.send = ctx.createGain();
+    this.send.gain.value = 1;
+    this.send.connect(convolver);
+    this.reverb = convolver;
+  }
+
+  buildNoise() {
+    const ctx = this.ctx;
+    const len = Math.floor(ctx.sampleRate * 2.5);
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = buf.getChannelData(0);
     let last = 0;
@@ -2125,9 +2212,54 @@ class PostAudio {
       data[i] = last * 3.2;
     }
     this.noise = buf;
+  }
 
-    this.buildDrone();
-    return ctx;
+  /**
+   * The two continuous layers. Both are noise through a filter rather than an
+   * oscillator, so when they move they sound like air moving, not like a tone
+   * drifting out of tune.
+   */
+  buildBeds() {
+    const ctx = this.ctx;
+
+    // Pad bus: where the chord progression lands.
+    this.padGain = ctx.createGain();
+    this.padGain.gain.value = 0;
+    this.padFilter = ctx.createBiquadFilter();
+    this.padFilter.type = "lowpass";
+    this.padFilter.frequency.value = 900;
+    this.padFilter.Q.value = 0.6;
+    this.padGain.connect(this.padFilter);
+    this.padFilter.connect(this.bus);
+    const padSend = ctx.createGain();
+    padSend.gain.value = 0.5;
+    this.padFilter.connect(padSend);
+    padSend.connect(this.send);
+
+    // Proximity: the well the probe is falling through, as moving air. The old
+    // voice was a sine sliding through two octaves, which is the definition of
+    // a hum.
+    const wind = ctx.createBufferSource();
+    wind.buffer = this.noise;
+    wind.loop = true;
+    const windFilter = ctx.createBiquadFilter();
+    windFilter.type = "lowpass";
+    windFilter.frequency.value = 220;
+    windFilter.Q.value = 0.8;
+    const windGain = ctx.createGain();
+    windGain.gain.value = 0;
+    wind.connect(windFilter);
+    windFilter.connect(windGain);
+    windGain.connect(this.bus);
+    wind.start();
+    this.windGain = windGain;
+    this.windFilter = windFilter;
+
+    this.warnLevel = 0;
+    this.warnRate = 0;
+    this.nextWarn = 0;
+    this.nextChord = 0;
+    this.chordIndex = 0;
   }
 
   /**
@@ -2161,94 +2293,6 @@ class PostAudio {
     this.degrees = degrees.slice().sort((a, b) => a - b);
     this.scale = this.degrees.map((d) => base * Math.pow(2, d / 12));
     this.root = base * (periods[0] > 26 ? 0.5 : 1);
-    if (this.drone) {
-      const now = this.ctx.currentTime;
-      for (let i = 0; i < this.droneOsc.length; i += 1) {
-        this.droneOsc[i].frequency.setTargetAtTime(this.root * DRONE_RATIOS[i], now, 0.6);
-      }
-    }
-  }
-
-  buildDrone() {
-    const ctx = this.ctx;
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 430;
-    filter.Q.value = 3;
-    gain.connect(filter);
-    filter.connect(this.bus);
-
-    // Octave, fifth, root of the contract's own key. Exact ratios: the previous
-    // 1.005 partial beat against the melody's root roughly once a second, which
-    // is the sound of an instrument out of tune rather than one breathing.
-    this.droneOsc = [];
-    const types = ["triangle", "sawtooth", "sine"];
-    const weights = [0.5, 0.09, 0.22];
-    for (let i = 0; i < DRONE_RATIOS.length; i += 1) {
-      const osc = ctx.createOscillator();
-      osc.type = types[i];
-      osc.frequency.value = BASE_HZ * DRONE_RATIOS[i];
-      const og = ctx.createGain();
-      og.gain.value = weights[i];
-      osc.connect(og);
-      og.connect(gain);
-      osc.start();
-      this.droneOsc.push(osc);
-    }
-
-    // Slow sweep on the filter: the instrument breathing.
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.035;
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 190;
-    lfo.connect(lfoGain);
-    lfoGain.connect(filter.frequency);
-    lfo.start();
-
-    this.drone = gain;
-    this.droneFilter = filter;
-
-    // Proximity voice: gain and pitch ride the probe's own acceleration.
-    const prox = ctx.createOscillator();
-    prox.type = "sine";
-    prox.frequency.value = 150;
-    const proxGain = ctx.createGain();
-    proxGain.gain.value = 0;
-    prox.connect(proxGain);
-    proxGain.connect(this.bus);
-    prox.start();
-    this.prox = prox;
-    this.proxGain = proxGain;
-
-    // Warning voice: one tone, pulsed. Silent until the clock is short, and
-    // then it ticks faster. Two squares three hertz apart said the same thing
-    // by beating against each other, which read as a fault rather than a clock.
-    const warnGain = ctx.createGain();
-    warnGain.gain.value = 0;
-    warnGain.connect(this.bus);
-    const warn = ctx.createOscillator();
-    warn.type = "triangle";
-    warn.frequency.value = 392;
-    const warnLevel = ctx.createGain();
-    warnLevel.gain.value = 0.5;
-    warn.connect(warnLevel);
-    warnLevel.connect(warnGain);
-    warn.start();
-
-    const pulse = ctx.createOscillator();
-    pulse.type = "square";
-    pulse.frequency.value = 1.4;
-    const pulseDepth = ctx.createGain();
-    pulseDepth.gain.value = 0.5;
-    pulse.connect(pulseDepth);
-    pulseDepth.connect(warnLevel.gain);
-    pulse.start();
-
-    this.warnOsc = warn;
-    this.warnPulse = pulse;
-    this.warnGain = warnGain;
   }
 
   setMuted(muted) {
@@ -2258,24 +2302,26 @@ class PostAudio {
 
   setAmbience(level) {
     if (!this.ctx) return;
-    this.drone.gain.setTargetAtTime(level * 0.34, this.ctx.currentTime, 0.4);
+    this.ambience = level;
+    this.padGain.gain.setTargetAtTime(level * 0.5, this.ctx.currentTime, 1.4);
   }
 
-  /** |a| of the probe, sonified. Deep wells growl; open space is quiet. */
+  /** |a| of the probe, as air rather than as a tone. Deep wells breathe harder. */
   setProximity(accel) {
     if (!this.ctx) return;
     const f = clamp(Math.log10(1 + accel * 6) / 1.5, 0, 1);
     const now = this.ctx.currentTime;
-    this.proxGain.gain.setTargetAtTime(f * f * 0.03, now, 0.09);
-    this.prox.frequency.setTargetAtTime(84 + f * 110, now, 0.12);
+    this.windGain.gain.setTargetAtTime(f * f * 0.16, now, 0.25);
+    this.windFilter.frequency.setTargetAtTime(180 + f * 520, now, 0.3);
   }
 
+  /** Struck, not gated. The clock running down should read as a bell, not a fault. */
   setWarning(level, rate) {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    this.warnGain.gain.setTargetAtTime(level * 0.11, now, 0.1);
-    this.warnPulse.frequency.setTargetAtTime(1.2 + rate * 0.09, now, 0.2);
+    this.warnLevel = level;
+    this.warnRate = rate;
   }
+
+  /* -- Voices ------------------------------------------------------------- */
 
   burst({ freq = 180, dur = 0.4, gain = 0.4, bp = 700, q = 1.1, sweep = 0.4 }) {
     const ctx = this.ensure();
@@ -2294,6 +2340,7 @@ class PostAudio {
     g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
     filter.frequency.exponentialRampToValueAtTime(Math.max(60, bp * sweep), now + dur);
     src.connect(filter); filter.connect(g); g.connect(this.bus);
+    g.connect(this.send);
     src.start(now);
     src.stop(now + dur + 0.05);
 
@@ -2309,7 +2356,7 @@ class PostAudio {
     thump.start(now); thump.stop(now + dur + 0.05);
   }
 
-  tone(freq, { dur = 0.5, gain = 0.16, type = "triangle", delay = 0, detune = 0, decay = 0.7 } = {}) {
+  tone(freq, { dur = 0.5, gain = 0.16, type = "triangle", delay = 0, detune = 0, decay = 0.7, attack = 0.014, space = 0.5 } = {}) {
     const ctx = this.ensure();
     if (!ctx) return;
     const now = ctx.currentTime + delay;
@@ -2319,57 +2366,126 @@ class PostAudio {
     osc.detune.value = detune;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(gain, now + 0.014);
+    g.gain.exponentialRampToValueAtTime(gain, now + attack);
     g.gain.exponentialRampToValueAtTime(0.0001, now + dur * decay + 0.05);
-    osc.connect(g); g.connect(this.bus);
+    osc.connect(g);
+    g.connect(this.bus);
+    if (space > 0) {
+      const s = ctx.createGain();
+      s.gain.value = space;
+      g.connect(s);
+      s.connect(this.send);
+    }
     osc.start(now); osc.stop(now + dur + 0.08);
   }
 
   /** A struck bell, tuned to the contract's own scale. */
   bell(index, gain = 0.2) {
     const f = this.scale[index % this.scale.length] * (index >= this.scale.length ? 2 : 1);
-    this.tone(f, { dur: 1.5, gain, type: "sine", decay: 0.85 });
-    this.tone(f * 2, { dur: 0.9, gain: gain * 0.5, type: "sine" });
-    this.tone(f * 3.01, { dur: 0.5, gain: gain * 0.24, type: "sine" });
-    this.burst({ freq: f, dur: 0.1, gain: 0.1, bp: f * 5, q: 3 });
+    this.tone(f, { dur: 2.2, gain, type: "sine", decay: 0.85, space: 0.8 });
+    this.tone(f * 2, { dur: 1.2, gain: gain * 0.45, type: "sine", space: 0.7 });
+    this.tone(f * 3.01, { dur: 0.6, gain: gain * 0.18, type: "sine", space: 0.6 });
   }
 
   /**
-   * The music bed. Its key is the contract's orbital ratios and its tempo is
-   * the destination's year, so every orrery loops a phrase only it could play.
+   * One chord of the bed. Each note is a pair four cents apart — the standard
+   * way to make a pad breathe — struck with a two-second swell and released
+   * into the tail, so chords overlap rather than switch.
+   */
+  voiceChord(rootHz, at, dur) {
+    const ctx = this.ensure();
+    if (!ctx) return;
+    for (let v = 0; v < PAD_VOICING.length; v += 1) {
+      const f = rootHz * Math.pow(2, PAD_VOICING[v] / 12);
+      if (f > 2200) continue;
+      const level = 0.16 / (1 + v * 0.55);
+      for (const cents of [-4, 4]) {
+        const osc = ctx.createOscillator();
+        osc.type = v === 0 ? "sine" : "triangle";
+        osc.frequency.value = f;
+        osc.detune.value = cents;
+        // Swell in, hold most of the way, release into the next chord's swell.
+        // The hold has to outlast the following attack or the bed breathes out
+        // to silence between chords.
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, at);
+        g.gain.exponentialRampToValueAtTime(level, at + 1.4);
+        g.gain.setValueAtTime(level, at + dur * 0.74);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+        osc.connect(g);
+        g.connect(this.padGain);
+        osc.start(at);
+        osc.stop(at + dur + 0.1);
+      }
+    }
+  }
+
+  /**
+   * The bed. Its key is the contract's orbital ratios and its pace is the
+   * destination's year, so every orrery drifts through a progression only it
+   * could play.
    */
   startMusic(periodSeconds) {
     const ctx = this.ensure();
     if (!ctx) return;
     this.musicOn = true;
-    this.beat = clamp(periodSeconds / 16, 0.55, 2.3);
-    this.nextBeat = ctx.currentTime + 0.25;
-    this.beatIndex = 0;
+    this.beat = clamp(periodSeconds / 10, 1.1, 3.4);
+    this.nextChord = ctx.currentTime + 0.2;
+    this.nextNote = ctx.currentTime + 2.4;
+    this.chordIndex = 0;
+    this.noteIndex = 0;
   }
 
   stopMusic() { this.musicOn = false; }
 
-  /** Called every frame; schedules a quarter-second ahead of the clock. */
+  /** Called every frame; schedules a little ahead of the clock. */
   playMusic() {
-    if (!this.musicOn || !this.ctx) return;
+    if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    const figure = [0, 2, 1, 3, 2, 4, 3, 1];
+    this.serviceWarning(now);
+    if (!this.musicOn) return;
+
+    const chordDur = this.beat * 3;
     let guard = 0;
-    while (this.nextBeat < now + 0.3 && guard < 12) {
-      const i = this.beatIndex;
-      const step = figure[i % figure.length];
-      const octave = i % 16 >= 8 ? 2 : 1;
-      const f = this.scale[step % this.scale.length] * octave;
-      const at = this.nextBeat - now;
-      this.tone(f, { dur: this.beat * 1.5, gain: 0.052, type: "triangle", delay: at, decay: 0.62 });
-      if (i % 4 === 0) {
-        this.tone(this.scale[0] * 0.5, { dur: this.beat * 2.4, gain: 0.06, type: "sine", delay: at, decay: 0.8 });
+    while (this.nextChord < now + 0.5 && guard < 4) {
+      const step = PROGRESSION[this.chordIndex % PROGRESSION.length];
+      this.voiceChord(this.root * Math.pow(2, (step - 12) / 12), this.nextChord, chordDur * 1.5);
+      this.nextChord += chordDur;
+      this.chordIndex += 1;
+      guard += 1;
+    }
+
+    // A sparse line over the top, from the orrery's own degrees.
+    const figure = [4, 2, 5, 3, 6, 2, 4, 1];
+    guard = 0;
+    while (this.nextNote < now + 0.5 && guard < 4) {
+      const i = this.noteIndex;
+      if (i % 3 !== 2) {
+        const step = figure[i % figure.length] % this.scale.length;
+        const octave = i % 8 >= 4 ? 2 : 1;
+        this.tone(this.scale[step] * octave, {
+          dur: this.beat * 2.4, gain: 0.07, type: "sine",
+          delay: Math.max(0, this.nextNote - now), decay: 0.8, attack: 0.09, space: 0.9,
+        });
       }
-      if (i % 8 === 6) {
-        this.tone(this.scale[this.scale.length - 1] * 2, { dur: this.beat, gain: 0.028, type: "sine", delay: at + this.beat * 0.5 });
-      }
-      this.nextBeat += this.beat;
-      this.beatIndex += 1;
+      this.nextNote += this.beat;
+      this.noteIndex += 1;
+      guard += 1;
+    }
+  }
+
+  /** Discrete strikes whose spacing tightens as the contract runs out. */
+  serviceWarning(now) {
+    if (this.warnLevel <= 0.001) { this.nextWarn = 0; return; }
+    if (this.nextWarn === 0) this.nextWarn = now;
+    const gap = clamp(1.9 - this.warnRate * 0.055, 0.42, 1.9);
+    let guard = 0;
+    while (this.nextWarn < now + 0.25 && guard < 4) {
+      this.tone(this.root * 1.5, {
+        dur: 0.55, gain: 0.055 + this.warnLevel * 0.05, type: "triangle",
+        delay: Math.max(0, this.nextWarn - now), decay: 0.5, space: 0.5,
+      });
+      this.nextWarn += gap;
       guard += 1;
     }
   }
@@ -2387,20 +2503,20 @@ class PostAudio {
     const s = this.scale;
     for (let i = 0; i < 5; i += 1) {
       const f = s[i % s.length] * (i >= s.length ? 2 : 1);
-      this.tone(f, { dur: 1.4, gain: 0.17, type: "sine", delay: i * 0.13, decay: 0.9 });
-      this.tone(f * 2, { dur: 0.7, gain: 0.07, type: "sine", delay: i * 0.13 });
+      this.tone(f, { dur: 2.4, gain: 0.15, type: "sine", delay: i * 0.16, decay: 0.9, space: 0.9 });
+      this.tone(f * 2, { dur: 1.1, gain: 0.055, type: "sine", delay: i * 0.16, space: 0.8 });
     }
-    this.burst({ freq: 140, dur: 1.1, gain: 0.14, bp: 900, q: 1.4, sweep: 0.25 });
+    this.voiceChord(this.root, this.ctx.currentTime, 6);
   }
 
   lost(kind) {
-    const root = kind === "star" ? 150 : kind === "escape" ? 96 : 120;
-    for (let i = 0; i < 4; i += 1) {
-      this.tone(root * Math.pow(0.82, i), {
-        dur: 1.5, gain: 0.15, type: "sawtooth", delay: i * 0.1, detune: i * -14, decay: 0.85,
+    const root = kind === "star" ? this.root : kind === "escape" ? this.root * 0.5 : this.root * 0.75;
+    for (let i = 0; i < 3; i += 1) {
+      this.tone(root * Math.pow(2, -i / 12), {
+        dur: 2.6, gain: 0.1, type: "triangle", delay: i * 0.18, decay: 0.9, space: 0.9,
       });
     }
-    this.burst({ freq: root * 0.6, dur: 1.3, gain: 0.3, bp: 500, q: 0.7, sweep: 0.12 });
+    this.burst({ freq: root * 0.5, dur: 1.4, gain: 0.16, bp: 380, q: 0.7, sweep: 0.2 });
   }
 
   dispose() {
@@ -2431,6 +2547,10 @@ const dom = {
   predictText: el("predictText"),
   predictSub: el("predictSub"),
   muteBtn: el("muteBtn"),
+  destTag: el("destTag"),
+  destArrow: el("destArrow"),
+  destName: el("destName"),
+  destRange: el("destRange"),
   hud: ["hudTop", "hudClock", "hudFuel", "hudCargo", "hudPredict"].map(el),
 };
 
@@ -2444,6 +2564,9 @@ const AIM_FINE = 0.12;  // Shift multiplier — about 4.8°/s
 
 const _v3a = new THREE.Vector3();
 const _v3b = new THREE.Vector3();
+const _v3c = new THREE.Vector3();
+const _v3d = new THREE.Vector3();
+const _destState = { x: 0, y: 0, z: 0, range: 0, rel: 0 };
 const _plane = new THREE.Plane();
 const _ray = new THREE.Raycaster();
 const _ndc = new THREE.Vector2();
@@ -2640,6 +2763,7 @@ class Game {
 
   setHudVisible(on) {
     for (const node of dom.hud) node.classList.toggle("hidden", !on);
+    if (!on) dom.destTag.classList.remove("on");
   }
 
   showTitle() {
@@ -2735,7 +2859,10 @@ class Game {
         Confirmed route flies in ${c.witness.flight.toFixed(1)}s for ${c.witness.total.toFixed(2)} Δv.
         ${(c.basin * 100).toFixed(1)}% of nearby launches still deliver, which is why this one is graded
         <b style="color:var(--patina)">${c.grade.name}</b>. The mast holds
-        ${(c.fuel - launchCap(c.fuel)).toFixed(2)} Δv back for arrival.
+        ${(c.fuel - launchCap(c.fuel)).toFixed(2)} Δv back for arrival — you will need it, because
+        ${c.destName} only signs for the sack inside its approach sphere at under
+        <b style="color:var(--patina)">${c.capSpeed.toFixed(2)} Δv</b> of relative speed. Collecting
+        the buoys is half the contract; braking to match is the other half.
       </p>
       <div class="actions">
         <button class="act" data-action="launch">Take the mast</button>
@@ -2925,7 +3052,7 @@ class Game {
     this.audio.setAmbience(1);
     const destOrbit = this.contract.sys.bodies[this.contract.dest].orbit;
     this.audio.startMusic(destOrbit ? destOrbit.period : 24);
-    this.banner(this.contract.destName, "Destination");
+    this.banner(this.contract.destName, `Capture under ${this.contract.capSpeed.toFixed(2)} Δv`);
   }
 
   restartContract() {
@@ -3174,6 +3301,59 @@ class Game {
     this.showResult(false, reason);
   }
 
+  /** Where the destination is, and how far off, relative to the probe. */
+  destState(out) {
+    const c = this.contract;
+    c.sys.bodyState(c.dest, this.simT, _bs);
+    const p = this.probePosition(_v3c);
+    const s = this.launched && this.probeState ? this.probeState : null;
+    out.x = _bs[0]; out.y = _bs[1]; out.z = _bs[2];
+    out.range = Math.hypot(_bs[0] - p.x, _bs[1] - p.y, _bs[2] - p.z);
+    out.rel = s ? Math.hypot(s.vx - _bs[3], s.vy - _bs[4], s.vz - _bs[5]) : Infinity;
+    return out;
+  }
+
+  /**
+   * Tag the destination in the field. The approach hoops move with a world that
+   * is often a speck at the far side of the orrery, so without a label there is
+   * nothing on screen that says which of five worlds the sack is addressed to.
+   */
+  updateDestTag(dest) {
+    const c = this.contract;
+    const cam = this.orrery.camera;
+    _v3d.set(dest.x, dest.y, dest.z).project(cam);
+    const w = dom.canvas.clientWidth, h = dom.canvas.clientHeight;
+    const behind = _v3d.z > 1;
+    let x = (_v3d.x * 0.5 + 0.5) * w;
+    let y = (-_v3d.y * 0.5 + 0.5) * h;
+    if (behind) { x = w - x; y = h - y; }
+
+    // The label hangs above its anchor, and the prediction plate owns the
+    // bottom centre, so the keep-out box is not symmetric.
+    const padX = 72, padTop = 84, padBottom = 124;
+    const cx = clamp(x, padX, Math.max(padX, w - padX));
+    const cy = clamp(y, padTop, Math.max(padTop, h - padBottom));
+    if (behind || cx !== x || cy !== y) {
+      const dx = x - w / 2, dy = y - h / 2;
+      const ang = Math.atan2(dy, dx);
+      const idx = Math.round((ang + Math.PI) / (Math.PI / 4)) % 8;
+      dom.destArrow.textContent = ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"][idx];
+    } else {
+      dom.destArrow.textContent = "";
+    }
+    x = cx; y = cy;
+
+    dom.destTag.style.left = `${x}px`;
+    dom.destTag.style.top = `${y}px`;
+    dom.destName.textContent = c.destName;
+    // Inside the sphere the only number that matters is the speed limit.
+    dom.destRange.textContent = dest.range <= c.capRadius && this.launched
+      ? `${dest.rel.toFixed(2)} / ${c.capSpeed.toFixed(2)} Δv`
+      : `${dest.range.toFixed(1)} out`;
+    dom.destTag.classList.toggle("near", dest.range <= c.capRadius);
+    dom.destTag.classList.add("on");
+  }
+
   banner(big, small) {
     dom.banner.querySelector(".big").textContent = big;
     dom.banner.querySelector(".sm").textContent = small;
@@ -3241,7 +3421,7 @@ class Game {
 
   /* -- HUD --------------------------------------------------------------- */
 
-  updateHud() {
+  updateHud(dest) {
     const c = this.contract;
     if (!c) return;
     dom.contractName.textContent = c.spec.name;
@@ -3273,6 +3453,17 @@ class Game {
 
     const p = this.predicted;
     if (!p) return;
+
+    // The whole job, in one number: what this course costs to stop against
+    // what is left to stop with. It used to be printed only while coasting,
+    // which is precisely not the state a player is stuck in on approach —
+    // there it read "Deadline", in red, one small burn away from a win.
+    const cost = Number.isFinite(p.closestSpeed) ? p.closestSpeed : null;
+    const affordable = cost !== null && cost <= this.fuel;
+    const stopLine = cost === null
+      ? `No approach to ${c.destName} inside ${PREDICT_HORIZON}s.`
+      : `Closest pass: ${cost.toFixed(2)} Δv to match ${c.destName}, ${this.fuel.toFixed(2)} left.`;
+
     let text = "Coasting", tone = "warn", sub = "";
     if (p.outcome === OUTCOME.CAPTURED) {
       const full = p.buoys >= c.beacons.length;
@@ -3287,21 +3478,24 @@ class Game {
       text = "Into the lamp"; tone = "bad"; sub = `In ${p.t.toFixed(1)}s.`;
     } else if (p.outcome === OUTCOME.ESCAPED) {
       text = "Escape"; tone = "bad"; sub = "This course leaves the orrery.";
-    } else if (p.outcome === OUTCOME.TIMEOUT) {
-      text = "Deadline";
-      tone = "bad";
-      sub = `The chime goes in ${p.t.toFixed(1)}s, still in transit.`;
     } else {
-      // The one number that decides whether this course is still a delivery:
-      // what it costs to stop, against what is left to stop with. Amber while
-      // that is still affordable, red once the course cannot be paid for.
-      text = `Coasting · ${p.buoys}/${c.beacons.length} buoys`;
-      const approach = Number.isFinite(p.closestSpeed);
-      tone = approach && p.closestSpeed <= this.fuel ? "warn" : "bad";
-      sub = approach
-        ? `Nearest approach to ${c.destName}: ${p.closestSpeed.toFixed(2)} Δv to stop, ${this.fuel.toFixed(2)} left.`
-        : `No approach to ${c.destName} inside ${PREDICT_HORIZON}s.`;
+      // Coasting and Deadline are the same situation — a course that has not
+      // resolved — so they say the same useful thing. Only the clock differs.
+      const held = this.collected >= c.beacons.length;
+      text = held ? `Sack aboard · brake to ${c.destName}` : `Coasting · ${p.buoys}/${c.beacons.length} buoys`;
+      tone = affordable ? "warn" : "bad";
+      sub = p.outcome === OUTCOME.TIMEOUT
+        ? `${stopLine} Chime in ${p.t.toFixed(1)}s.`
+        : stopLine;
     }
+
+    // Inside the sphere, the speed limit is the only thing left to fly.
+    if (dest && this.launched && dest.range <= c.capRadius && p.outcome !== OUTCOME.CAPTURED) {
+      text = `Inside the sphere · ${c.destName}`;
+      tone = dest.rel < c.capSpeed ? "ok" : "warn";
+      sub = `Relative speed ${dest.rel.toFixed(2)} — the postmaster signs under ${c.capSpeed.toFixed(2)}.`;
+    }
+
     dom.predictText.textContent = text;
     dom.predictText.className = tone;
     dom.predictSub.textContent = sub;
@@ -3373,7 +3567,11 @@ class Game {
         if (core) core.rotation.y += dt * 0.9;
         node.halo.material.opacity = 0.4 + Math.sin(now * 0.0025 + node.data.x) * 0.16;
       }
-      const pulse = 0.24 + Math.sin(now * 0.0018) * 0.1;
+      // The approach sphere is the target, so it pulses like one — brighter,
+      // and brighter still once the probe is inside it.
+      const dest = this.destState(_destState);
+      const inside = dest.range <= this.contract.capRadius;
+      const pulse = (inside ? 0.62 : 0.42) + Math.sin(now * 0.0022) * 0.16;
       for (const child of this.orrery.captureRing.children) child.material.opacity = pulse;
 
       this.orrery.updateCamera(probePos, dt);
@@ -3390,7 +3588,10 @@ class Game {
         this.audio.setWarning(0, 0);
       }
 
-      if (this.state === "ready" || this.state === "flight") this.updateHud();
+      if (flying) {
+        this.updateDestTag(dest);
+        this.updateHud(dest);
+      }
     }
 
     this.orrery.render();
