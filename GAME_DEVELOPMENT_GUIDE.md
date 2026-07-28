@@ -86,6 +86,8 @@ These describe desired gameplay outcomes, not a mandatory effects recipe. Interp
 
 **Sunbeam Kart Rally**: Golden-hour Three.js kart racing across a three-lap festival circuit with up to five opponents, checkpoint-valid competition, drifting and mini-turbos, two readable item types, authored orchard, windmill, forest, and vineyard landmarks, and deterministic test hooks.
 
+**Perihelion Post**: Analytic Kepler worlds and a symplectic probe, a plotted course that runs the same propagator as live flight, generation that ships no contract without a flown witness, difficulty measured as the width of the surviving launch window, mail buoys and a capture that rejects an over-speed arrival, and audio tuned to the system's own orbital ratios.
+
 ---
 
 ## Architecture
@@ -124,7 +126,8 @@ public/games/
 ├── space-invaders/
 │   └── ...
 ├── clockwork-caper/
-└── kart-racing/
+├── kart-racing/
+└── perihelion/
     └── ...
 ```
 
@@ -324,6 +327,19 @@ Add this to the `versions` array of the appropriate game.
 - Lean race HUD with position, lap, time, held item, drift charge, and minimap
 - Title, countdown, pause, finish standings, restart, and cohesive procedural engine, music, collision, drift, item, lap, and finish audio
 - Pinned local Three.js runtime, deterministic `?test=1` hooks and diagnostics, active-play inspector evidence, and no remote creative assets
+
+### Perihelion Post
+- Original Three.js orbital-mechanics puzzle: fly the mail between worlds of a brass orrery
+- Every world rides a closed Kepler orbit solved analytically, so body position at any time is exact and the whole simulation is seekable and reproducible from a seed
+- The probe integrates with kick-drift-kick leapfrog at fixed step with adaptive substepping near periapsis; specific orbital energy must not visibly drift
+- A live plotted course that runs the same propagator over the same steps as live flight, terminating on impact, capture, or escape, and naming the predicted outcome in the HUD
+- Contracts are generated backwards from a witness — a launch the generator has flown itself to a successful capture — and no contract ships without one
+- Difficulty is measured, not declared: the fraction of a fixed neighbourhood of launches around the witness that still deliver, graded from Gentle to Needle
+- Mail buoys hung on the witness path, a hard delta-v budget spent across launch and mid-course corrections, and a destination that must be captured below a relative-speed threshold rather than merely reached
+- Six fixed-seed campaign contracts with a monotonic measured difficulty curve, plus an endless seeded postal route
+- Responsive keyboard aiming and firing with mouse aiming on the plotted course, time-rate control including hold, camera orbit and zoom
+- Title, briefing with live route plotting, capture and failure screens, and procedural Web Audio whose scale is derived from the system's own orbital period ratios
+- Pinned local Three.js runtime, deterministic `?test=1` hooks and diagnostics, no creative assets, no remote requests
 
 ## Quality Expectations (CRITICAL)
 

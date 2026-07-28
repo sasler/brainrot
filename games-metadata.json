@@ -6405,6 +6405,27 @@
           ]
         }
       ]
+    },
+    {
+      "id": "perihelion",
+      "name": "Perihelion Post",
+      "description": "Fly the mail through a brass orrery on real orbital mechanics, plotting a live course through worlds that will not hold still for you.",
+      "icon": "🛰️",
+      "accentColor": "#7fd7c4",
+      "versions": [
+        {
+          "model": "Claude Opus 5",
+          "modelId": "opus-5",
+          "date": "2026-07-28",
+          "linesOfCode": 3613,
+          "path": "/games/perihelion/opus-5/index.html",
+          "features": [
+            "sound",
+            "music",
+            "3d"
+          ]
+        }
+      ]
     }
   ],
   "modelReviews": [

@@ -32,14 +32,17 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     // Tagline
     await expect(page.getByText("100% AI-generated")).toBeVisible();
 
-    // Arena section with 18 game cards
+    // Arena section with 19 game cards
     const arena = page.locator("#arena");
     const gameCards = arena.locator('a[href^="/games/"]');
-    await expect(gameCards).toHaveCount(18);
+    await expect(gameCards).toHaveCount(19);
 
     // Game card titles present in arena section
     await expect(
       arena.locator('a[href="/games/snake"]').getByRole("heading", { name: "Snake" }),
+    ).toBeVisible();
+    await expect(
+      arena.locator('a[href="/games/perihelion"]').getByRole("heading", { name: "Perihelion Post" }),
     ).toBeVisible();
     await expect(
       arena.locator('a[href="/games/pac-man"]').getByRole("heading", { name: "Pac-Man" }),
@@ -187,7 +190,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.games).toHaveLength(18);
+    expect(data.games).toHaveLength(19);
     expect(data.games.map((g: { id: string }) => g.id)).toEqual([
       "snake",
       "minesweeper",
@@ -207,6 +210,7 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       "coastal-rush-86",
       "clockwork-caper",
       "kart-racing",
+      "perihelion",
     ]);
   });
 

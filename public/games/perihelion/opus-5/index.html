@@ -1,0 +1,3612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Perihelion Post — Mail Across the Orrery</title>
+<style>
+  :root {
+    /* Material roles. An antique machined instrument, not a nebula. */
+    --void:        #080d1a;   /* atmosphere / background            */
+    --void-deep:   #04060e;
+    --plate:       #131a2c;   /* world base: instrument plate       */
+    --plate-lit:   #1c2438;
+    --brass:       #c9a15a;   /* structural secondary: armatures    */
+    --brass-bright:#f0d5a0;
+    --brass-dim:   #6f5a30;
+    --copper:      #b4714a;   /* interactive neutral                */
+    --patina:      #7fd7c4;   /* objective / reward: verdigris      */
+    --patina-deep: #2c7b70;
+    --ivory:       #efe6d2;   /* engraved line work, primary text   */
+    --ivory-dim:   #948d7d;
+    --lamp:        #ffd9a0;   /* the star: warm filament            */
+    --alarm:       #e2603f;   /* hazard / damage                    */
+    --rule:        rgba(201,161,90,.22);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; margin: 0; overflow: hidden;
+    background: var(--void-deep);
+  }
+  body {
+    font: 400 14px/1.5 ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+    color: var(--ivory);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+  button { font: inherit; cursor: pointer; }
+  .hidden { display: none !important; }
+
+  #stage { position: fixed; inset: 0; display: block; width: 100%; height: 100%; outline: none; }
+
+  #ui { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+
+  /* ---- Engraved instrument plates. Same material language as the world. ---- */
+  .plate {
+    position: absolute;
+    background:
+      linear-gradient(160deg, rgba(28,36,56,.90), rgba(10,14,26,.86));
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 7px 11px;
+    box-shadow: 0 1px 0 rgba(240,213,160,.09) inset, 0 6px 18px rgba(0,0,0,.45);
+  }
+  .label {
+    font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--brass); opacity: .82;
+  }
+  .value { font-size: 17px; letter-spacing: .04em; color: var(--ivory); font-variant-numeric: tabular-nums; }
+  .value.small { font-size: 13px; }
+
+  .display {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-weight: 400; letter-spacing: .012em;
+  }
+
+  /* ---- HUD: hugs the edges, never crosses the field ---- */
+  #hudTop    { top: 14px; left: 14px; min-width: 210px; }
+  #hudClock  { top: 14px; right: 14px; text-align: right; min-width: 132px; }
+  #hudFuel   { bottom: 14px; left: 14px; width: 214px; }
+  #hudCargo  { bottom: 14px; right: 14px; text-align: right; min-width: 150px; }
+  #hudPredict{ bottom: 14px; left: 50%; transform: translateX(-50%); min-width: 320px; text-align: center; }
+
+  #contractName { margin-top: 1px; }
+  #contractLine { font-size: 10px; color: var(--ivory-dim); letter-spacing: .06em; margin-top: 3px; }
+
+  .gauge {
+    position: relative; height: 7px; margin: 6px 0 4px;
+    background: rgba(4,6,14,.8);
+    border: 1px solid rgba(201,161,90,.3);
+  }
+  .gauge > i {
+    position: absolute; inset: 1px auto 1px 1px; display: block;
+    background: linear-gradient(90deg, var(--patina-deep), var(--patina));
+    transition: width .12s linear;
+  }
+  .gauge.warn > i { background: linear-gradient(90deg, #8a4527, var(--alarm)); }
+  .gauge .tick { position: absolute; top: -3px; bottom: -3px; width: 1px; background: rgba(201,161,90,.45); }
+
+  #predictText { letter-spacing: .1em; text-transform: uppercase; font-size: 12px; }
+  #predictText.ok    { color: var(--patina); }
+  #predictText.warn  { color: var(--brass-bright); }
+  #predictText.bad   { color: var(--alarm); }
+  #predictSub { font-size: 10px; color: var(--ivory-dim); letter-spacing: .05em; margin-top: 3px; }
+
+  .beads { display: flex; gap: 5px; justify-content: flex-end; margin-top: 5px; }
+  .bead {
+    width: 9px; height: 9px; transform: rotate(45deg);
+    border: 1px solid var(--patina-deep); background: transparent;
+  }
+  .bead.on { background: var(--patina); box-shadow: 0 0 7px rgba(127,215,196,.7); border-color: var(--patina); }
+
+  /* ---- Full screens ---- */
+  #screen {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    pointer-events: none;
+  }
+  #screen.on { pointer-events: auto; }
+  .card {
+    /* The play page gives the iframe roughly 544px at a 720px viewport, so
+       every screen has to land inside that without a scrollbar. */
+    width: min(680px, calc(100vw - 48px));
+    max-height: calc(100vh - 26px);
+    overflow: auto;
+    padding: 20px 30px 18px;
+    background: linear-gradient(155deg, rgba(22,29,47,.97), rgba(8,11,22,.97));
+    border: 1px solid rgba(201,161,90,.42);
+    box-shadow: 0 0 0 1px rgba(4,6,14,.9), 0 26px 70px rgba(0,0,0,.7);
+    position: relative;
+  }
+  /* engraved corner brackets */
+  .card::before, .card::after {
+    content: ""; position: absolute; width: 22px; height: 22px;
+    border-color: var(--brass); border-style: solid; opacity: .75;
+  }
+  .card::before { left: 7px; top: 7px; border-width: 1px 0 0 1px; }
+  .card::after  { right: 7px; bottom: 7px; border-width: 0 1px 1px 0; }
+
+  .eyebrow { font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--patina); margin: 0 0 10px; }
+  h1 { margin: 0; font-size: clamp(30px, 5vw, 44px); line-height: .95; color: var(--brass-bright); font-weight: 400; }
+  h1 small { display: block; font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--ivory-dim); margin-top: 8px; font-family: ui-monospace, Consolas, monospace; }
+  h2 { margin: 0 0 3px; font-size: 23px; font-weight: 400; color: var(--brass-bright); }
+  .lede { color: var(--ivory-dim); font-size: 12.5px; line-height: 1.55; margin: 11px 0 0; }
+  .rule { height: 1px; margin: 13px 0; background: linear-gradient(90deg, transparent, var(--brass-dim) 18%, var(--brass-dim) 82%, transparent); }
+
+  .specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 0; }
+  .spec { border-left: 1px solid var(--rule); padding-left: 9px; }
+  .spec .label { display: block; margin-bottom: 2px; }
+
+  .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px 18px; margin: 11px 0 0; font-size: 10px; color: var(--ivory-dim); }
+  .keys div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dotted rgba(201,161,90,.16); padding-bottom: 3px; }
+  .keys b { color: var(--brass); font-weight: 400; letter-spacing: .06em; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+  button.act {
+    background: linear-gradient(180deg, #e5c88c, #b98d3f);
+    border: 1px solid #f0d5a0; color: #1b1405;
+    padding: 9px 20px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    transition: filter .12s, transform .12s;
+  }
+  button.act.ghost { background: transparent; color: var(--brass); border-color: var(--brass-dim); }
+  button.act:hover { filter: brightness(1.12); transform: translateY(-1px); }
+  button.act:active { transform: translateY(1px); }
+  button.act:disabled { filter: saturate(.15) brightness(.7); cursor: default; transform: none; }
+
+  .contracts { display: grid; gap: 4px; margin-top: 10px; }
+  .contract {
+    display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 12px;
+    padding: 5px 10px; border: 1px solid var(--rule); background: rgba(8,12,22,.55);
+    cursor: pointer; text-align: left; color: var(--ivory); font: inherit;
+  }
+  .contract:hover, .contract:focus-visible { border-color: var(--brass); background: rgba(28,36,56,.7); outline: none; }
+  .contract .num { color: var(--brass); font-size: 12px; letter-spacing: .1em; }
+  .contract .nm { font-size: 13px; line-height: 1.15; }
+  .contract .sub { font-size: 9.5px; line-height: 1.25; color: var(--ivory-dim); letter-spacing: .04em; }
+  .contract .grade { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--patina); }
+  .contract[data-done="1"] .num::after { content: " ✦"; color: var(--patina); }
+
+  .plot { margin-top: 18px; }
+  .plot .bar { height: 3px; background: rgba(4,6,14,.8); border: 1px solid var(--rule); position: relative; }
+  .plot .bar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--patina); width: 0; transition: width .1s linear; }
+  .plot .msg { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--brass); margin-bottom: 6px; }
+
+  #muteBtn {
+    position: absolute; top: 14px; right: 160px; pointer-events: auto;
+    background: rgba(10,14,26,.85); border: 1px solid var(--rule); color: var(--brass);
+    padding: 6px 10px; font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+  }
+  #muteBtn:hover { border-color: var(--brass); color: var(--brass-bright); }
+
+  #banner {
+    position: absolute; left: 50%; top: 13%; transform: translate(-50%, -50%);
+    text-align: center; opacity: 0; transition: opacity .3s;
+  }
+  #banner.on { opacity: 1; }
+  #banner .big { font-size: 21px; letter-spacing: .1em; color: var(--brass-bright); }
+  #banner .sm  { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--patina); margin-top: 5px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage" tabindex="0" aria-label="Perihelion Post orrery"></canvas>
+
+<div id="ui">
+  <div class="plate" id="hudTop">
+    <span class="label">Contract</span>
+    <div class="value small display" id="contractName">—</div>
+    <div id="contractLine">—</div>
+  </div>
+
+  <div class="plate" id="hudClock">
+    <span class="label">Elapsed</span>
+    <div class="value" id="clockValue">0<span style="font-size:11px;color:var(--ivory-dim)">s</span></div>
+    <div class="gauge" id="clockGauge"><i style="width:100%"></i></div>
+    <div class="label" id="warpValue" style="letter-spacing:.14em">×1</div>
+  </div>
+
+  <div class="plate" id="hudFuel">
+    <span class="label">Reaction mass · Δv</span>
+    <div class="value" id="fuelValue">0.00</div>
+    <div class="gauge" id="fuelGauge"><i style="width:100%"></i></div>
+    <div class="label" id="burnValue" style="letter-spacing:.1em">Aim —</div>
+  </div>
+
+  <div class="plate" id="hudCargo">
+    <span class="label">Mail buoys</span>
+    <div class="value" id="cargoValue">0 / 0</div>
+    <div class="beads" id="cargoBeads"></div>
+  </div>
+
+  <div class="plate" id="hudPredict">
+    <div id="predictText" class="warn">Plotting</div>
+    <div id="predictSub">—</div>
+  </div>
+
+  <button id="muteBtn" type="button" aria-pressed="false">Sound on</button>
+
+  <div id="banner"><div class="big display"></div><div class="sm"></div></div>
+
+  <section id="screen" class="on" aria-live="polite"></section>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/vendor/three/0.185.1/three.module.min.js",
+    "three/addons/": "/vendor/three/0.185.1/addons/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+
+/* ============================================================================
+   PERIHELION POST
+   A mail run through a brass orrery.
+
+   The physics is the game, so it is the part that has to be right:
+     - Every world rides a closed Kepler orbit, solved analytically. Position at
+       any time t is exact and cheap, which makes the whole simulation seekable
+       and bit-for-bit reproducible from a seed.
+     - The probe integrates with kick-drift-kick leapfrog at fixed step with
+       adaptive substepping near periapsis, where acceleration spikes.
+     - The predicted ribbon runs the *same* propagator over the *same* steps as
+       live flight, so what you are shown is not an approximation of where you
+       will go. It is where you will go.
+     - No contract ships without a witness: a launch the generator has actually
+       flown to a successful capture. Difficulty is measured, not asserted —
+       it is the width of the basin of launches around that witness that still
+       deliver the mail.
+   ========================================================================== */
+
+const TAU = Math.PI * 2;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isTest = new URLSearchParams(location.search).get("test") === "1";
+
+/* -- Seeded RNG. Same seed, same orrery, forever. ------------------------- */
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeRng(seed) {
+  const next = mulberry32(seed);
+  return {
+    next,
+    range: (lo, hi) => lo + next() * (hi - lo),
+    int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
+    pick: (arr) => arr[Math.floor(next() * arr.length)],
+    sign: () => (next() < 0.5 ? -1 : 1),
+  };
+}
+
+const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = (t) => t * t * (3 - 2 * t);
+
+/* ============================================================================
+   1. KEPLER
+   Bodies never integrate. They are solved.
+   ========================================================================== */
+
+/** Solve M = E - e·sin E for the eccentric anomaly. Newton from a warm start. */
+function eccentricAnomaly(M, e) {
+  if (e < 1e-9) return M;
+  let E = M + e * Math.sin(M) * (1 + e * Math.cos(M));
+  for (let i = 0; i < 5; i += 1) {
+    const s = Math.sin(E);
+    const f = E - e * s - M;
+    if (Math.abs(f) < 1e-12) break;
+    E -= f / (1 - e * Math.cos(E));
+  }
+  return E;
+}
+
+/**
+ * Body state in its own orbital frame, lifted into world space by argument of
+ * periapsis and inclination. Writes 6 floats: position then velocity.
+ */
+function orbitState(orbit, t, out, o) {
+  const M = orbit.M0 + orbit.n * t;
+  const e = orbit.e;
+  const E = eccentricAnomaly(M, e);
+  const cosE = Math.cos(E);
+  const sinE = Math.sin(E);
+  const a = orbit.a;
+  const r = a * (1 - e * cosE);
+  const sq = Math.sqrt(1 - e * e);
+
+  // In-plane position (x forward through periapsis, z along +90°).
+  const px = a * (cosE - e);
+  const pz = a * sq * sinE;
+
+  // In-plane velocity: derivative of the above through Ė = n·a/r.
+  const edot = (orbit.n * a) / r;
+  const vx = -edot * sinE;
+  const vz = edot * sq * cosE;
+
+  // Tilt the orbital plane about X, then swing periapsis about Y.
+  const ci = orbit.cosI, si = orbit.sinI;
+  const cw = orbit.cosW, sw = orbit.sinW;
+
+  const x1 = px, y1 = -pz * si, z1 = pz * ci;
+  out[o]     = x1 * cw + z1 * sw;
+  out[o + 1] = y1;
+  out[o + 2] = -x1 * sw + z1 * cw;
+
+  const x2 = vx, y2 = -vz * si, z2 = vz * ci;
+  out[o + 3] = x2 * cw + z2 * sw;
+  out[o + 4] = y2;
+  out[o + 5] = -x2 * sw + z2 * cw;
+}
+
+/** Same as orbitState but position only — the hot path inside the integrator. */
+function orbitPosition(orbit, t, out, o) {
+  const E = eccentricAnomaly(orbit.M0 + orbit.n * t, orbit.e);
+  const a = orbit.a;
+  const px = a * (Math.cos(E) - orbit.e);
+  const pz = a * Math.sqrt(1 - orbit.e * orbit.e) * Math.sin(E);
+  const y1 = -pz * orbit.sinI, z1 = pz * orbit.cosI;
+  out[o]     = px * orbit.cosW + z1 * orbit.sinW;
+  out[o + 1] = y1;
+  out[o + 2] = -px * orbit.sinW + z1 * orbit.cosW;
+}
+
+function makeOrbit(a, e, omega, M0, mu, inclination = 0, retrograde = false) {
+  const n = (retrograde ? -1 : 1) * Math.sqrt(mu / (a * a * a));
+  return {
+    a, e, omega, M0, n, inclination,
+    cosI: Math.cos(inclination), sinI: Math.sin(inclination),
+    cosW: Math.cos(omega), sinW: Math.sin(omega),
+    period: TAU / Math.abs(n),
+  };
+}
+
+/* ============================================================================
+   2. SYSTEM
+   A star (or two), worlds, moons. Parents always precede children so one
+   forward pass resolves the whole ephemeris.
+   ========================================================================== */
+
+const G_STAR = 460;         // gravitational parameter of a nominal primary
+const ESCAPE_RADIUS = 118;  // past here, the post is lost to the dark
+
+class System {
+  constructor(bodies) {
+    this.bodies = bodies;
+    this.count = bodies.length;
+    this.pos = new Float64Array(bodies.length * 3);
+    this.state = new Float64Array(bodies.length * 6);
+    this.mu = new Float64Array(bodies.length);
+    this.softR2 = new Float64Array(bodies.length);
+    this.hitR2 = new Float64Array(bodies.length);
+    for (let i = 0; i < bodies.length; i += 1) {
+      this.mu[i] = bodies[i].mu;
+      // Soften only strictly inside the surface; impacts are caught separately,
+      // so this exists purely to keep the search stable when a candidate clips.
+      this.softR2[i] = (bodies[i].radius * 0.75) ** 2;
+      this.hitR2[i] = bodies[i].radius ** 2;
+    }
+    this._posT = NaN;
+    this._stateT = NaN;
+  }
+
+  /** Positions of every body at time t. Cached on t — callers hammer this. */
+  positions(t) {
+    if (t === this._posT) return this.pos;
+    const { bodies, pos } = this;
+    for (let i = 0; i < bodies.length; i += 1) {
+      const b = bodies[i];
+      const o = i * 3;
+      if (!b.orbit) {
+        pos[o] = b.fixed[0]; pos[o + 1] = b.fixed[1]; pos[o + 2] = b.fixed[2];
+      } else {
+        orbitPosition(b.orbit, t, pos, o);
+        if (b.parent >= 0) {
+          const p = b.parent * 3;
+          pos[o] += pos[p]; pos[o + 1] += pos[p + 1]; pos[o + 2] += pos[p + 2];
+        }
+      }
+    }
+    this._posT = t;
+    return pos;
+  }
+
+  /** Positions and velocities. Needed for capture checks and rendering. */
+  states(t) {
+    if (t === this._stateT) return this.state;
+    const { bodies, state } = this;
+    for (let i = 0; i < bodies.length; i += 1) {
+      const b = bodies[i];
+      const o = i * 6;
+      if (!b.orbit) {
+        state[o] = b.fixed[0]; state[o + 1] = b.fixed[1]; state[o + 2] = b.fixed[2];
+        state[o + 3] = 0; state[o + 4] = 0; state[o + 5] = 0;
+      } else {
+        orbitState(b.orbit, t, state, o);
+        if (b.parent >= 0) {
+          const p = b.parent * 6;
+          for (let k = 0; k < 6; k += 1) state[o + k] += state[p + k];
+        }
+      }
+    }
+    this._stateT = t;
+    return state;
+  }
+
+  bodyState(index, t, out) {
+    const s = this.states(t);
+    const o = index * 6;
+    for (let k = 0; k < 6; k += 1) out[k] = s[o + k];
+    return out;
+  }
+}
+
+/* ============================================================================
+   3. PROPAGATOR
+   One code path. Live flight, the predicted ribbon, the witness search and the
+   basin measurement all run through here, which is why the ribbon is exact.
+   ========================================================================== */
+
+const SIM_DT = 1 / 60;          // base step, in simulation seconds
+const SUBSTEP_ACCEL = 5.5;      // acceleration above which we subdivide
+const MAX_SUBSTEPS = 8;
+
+const _acc = new Float64Array(3);
+
+function accelerationAt(sys, pos, x, y, z, out) {
+  let ax = 0, ay = 0, az = 0;
+  const { mu, softR2, count } = sys;
+  for (let i = 0; i < count; i += 1) {
+    const o = i * 3;
+    const dx = pos[o] - x, dy = pos[o + 1] - y, dz = pos[o + 2] - z;
+    let r2 = dx * dx + dy * dy + dz * dz;
+    if (r2 < softR2[i]) r2 = softR2[i];
+    const inv = mu[i] / (r2 * Math.sqrt(r2));
+    ax += dx * inv; ay += dy * inv; az += dz * inv;
+  }
+  out[0] = ax; out[1] = ay; out[2] = az;
+}
+
+function makeProbeState(x, y, z, vx, vy, vz, t) {
+  return { x, y, z, vx, vy, vz, t, ax: 0, ay: 0, az: 0, primed: false };
+}
+
+function primeState(sys, s) {
+  accelerationAt(sys, sys.positions(s.t), s.x, s.y, s.z, _acc);
+  s.ax = _acc[0]; s.ay = _acc[1]; s.az = _acc[2];
+  s.primed = true;
+}
+
+/** One kick-drift-kick step. Reuses the trailing kick as the next lead kick. */
+function integrate(sys, s, dt) {
+  const half = dt * 0.5;
+  s.vx += half * s.ax; s.vy += half * s.ay; s.vz += half * s.az;
+  s.x += dt * s.vx; s.y += dt * s.vy; s.z += dt * s.vz;
+  s.t += dt;
+  accelerationAt(sys, sys.positions(s.t), s.x, s.y, s.z, _acc);
+  s.ax = _acc[0]; s.ay = _acc[1]; s.az = _acc[2];
+  s.vx += half * s.ax; s.vy += half * s.ay; s.vz += half * s.az;
+}
+
+/** Adaptive step: subdivide where the field is steep, i.e. near periapsis. */
+function advanceOne(sys, s, dt) {
+  const mag = Math.hypot(s.ax, s.ay, s.az);
+  let sub = 1;
+  if (mag > SUBSTEP_ACCEL) {
+    sub = clamp(Math.ceil(Math.sqrt(mag / SUBSTEP_ACCEL)), 1, MAX_SUBSTEPS);
+  }
+  const h = dt / sub;
+  for (let k = 0; k < sub; k += 1) integrate(sys, s, h);
+  return sub;
+}
+
+const OUTCOME = {
+  FLYING: "flying",
+  CAPTURED: "captured",
+  IMPACT: "impact",
+  STAR: "star",
+  ESCAPED: "escaped",
+  TIMEOUT: "timeout",
+};
+
+const _bs = new Float64Array(6);
+
+/**
+ * Fly a probe state forward.
+ *
+ * opts.duration   simulation seconds to cover
+ * opts.dest       destination body index, or -1
+ * opts.capture    { radius, speed }
+ * opts.beacons    array of { x, y, z, r, taken } — mutated when collected
+ * opts.onSample   (state, stepIndex) => void, for ribbon capture
+ * opts.sampleEvery
+ * opts.stopOnEvent whether capture/impact ends the run
+ */
+function propagate(sys, s, opts) {
+  if (!s.primed) primeState(sys, s);
+  const duration = opts.duration;
+  const dt = opts.dt || SIM_DT;
+  const steps = Math.max(1, Math.round(duration / dt));
+  const dest = opts.dest ?? -1;
+  const capRadius = opts.capture ? opts.capture.radius : 0;
+  const capSpeed = opts.capture ? opts.capture.speed : 0;
+  const beacons = opts.beacons;
+  const sampleEvery = opts.sampleEvery || 0;
+  const onSample = opts.onSample;
+  const stopOnEvent = opts.stopOnEvent !== false;
+
+  let collected = opts.collectedStart || 0;
+  let closest = Infinity;
+  let closestSpeed = Infinity;
+  let closestT = s.t;
+
+  if (onSample) onSample(s, 0);
+
+  for (let i = 0; i < steps; i += 1) {
+    advanceOne(sys, s, dt);
+    const pos = sys.positions(s.t);
+
+    // Contact with any world.
+    for (let b = 0; b < sys.count; b += 1) {
+      const o = b * 3;
+      const dx = s.x - pos[o], dy = s.y - pos[o + 1], dz = s.z - pos[o + 2];
+      const d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 > sys.hitR2[b]) continue;
+      if (stopOnEvent) {
+        return finish(sys.bodies[b].kind === "star" ? OUTCOME.STAR : OUTCOME.IMPACT, b);
+      }
+    }
+
+    // Capture: close enough, and slow enough relative to the world.
+    if (dest >= 0) {
+      const o = dest * 3;
+      const dx = s.x - pos[o], dy = s.y - pos[o + 1], dz = s.z - pos[o + 2];
+      const d = Math.hypot(dx, dy, dz);
+      if (d < capRadius * 2.4) {
+        sys.bodyState(dest, s.t, _bs);
+        const rel = Math.hypot(s.vx - _bs[3], s.vy - _bs[4], s.vz - _bs[5]);
+        const score = d + rel * 1.15;
+        if (score < closest) { closest = score; closestSpeed = rel; closestT = s.t; }
+        if (d < capRadius && rel < capSpeed && stopOnEvent) {
+          return finish(OUTCOME.CAPTURED, dest);
+        }
+      }
+    }
+
+    // Mail buoys.
+    if (beacons) {
+      for (let b = 0; b < beacons.length; b += 1) {
+        const bc = beacons[b];
+        if (bc.taken) continue;
+        const dx = s.x - bc.x, dy = s.y - bc.y, dz = s.z - bc.z;
+        if (dx * dx + dy * dy + dz * dz <= bc.r * bc.r) {
+          bc.taken = true;
+          collected += 1;
+          if (opts.onBeacon) opts.onBeacon(b);
+        }
+      }
+    }
+
+    if (Math.hypot(s.x, s.y, s.z) > ESCAPE_RADIUS && stopOnEvent) {
+      return finish(OUTCOME.ESCAPED, -1);
+    }
+
+    if (sampleEvery && onSample && i % sampleEvery === 0) onSample(s, i + 1);
+  }
+
+  if (onSample) onSample(s, steps);
+  return finish(OUTCOME.FLYING, -1);
+
+  function finish(outcome, body) {
+    return { outcome, body, t: s.t, collected, closest, closestSpeed, closestT };
+  }
+}
+
+/* ============================================================================
+   4. GENERATION
+   Worlds first, then a witness, then the route, then the difficulty.
+   ========================================================================== */
+
+const WORLD_NAMES = [
+  "Vesper", "Cinder", "Halcyon", "Marrow", "Tessellate", "Orsolat", "Pell",
+  "Quill", "Saltmarch", "Brine", "Ferrant", "Ossuary", "Lantern", "Kettle",
+  "Verdigris", "Astrolabe", "Cardamom", "Nocturne", "Fathom", "Reliquary",
+];
+
+const PALETTES = {
+  rock:  [0x8d6f52, 0x77685c, 0x9a5f43, 0x6d7566, 0xa88356],
+  gas:   [0xb98c56, 0x8a7fa8, 0x6f9a91, 0xc08a63, 0x7d8fb5],
+  moon:  [0xa9a091, 0x8e9aa0, 0xb0a37f],
+};
+
+function buildSystem(rng, params) {
+  const bodies = [];
+  const nameSource = WORLD_NAMES.slice();
+  const takeName = () => nameSource.splice(Math.floor(rng.next() * nameSource.length), 1)[0];
+
+  if (params.binary) {
+    // Two lamps about a common barycentre at the origin. Modelled as a pair on
+    // mirrored circular orbits, which keeps them exactly Keplerian and exact.
+    const sep = rng.range(7.0, 8.6);
+    const muEach = G_STAR * 0.5;
+    const n = Math.sqrt((2 * muEach) / (sep * sep * sep));
+    const phase = rng.range(0, TAU);
+    for (let i = 0; i < 2; i += 1) {
+      const orbit = makeOrbit(sep * 0.5, 0, 0, phase + i * Math.PI, 1, 0);
+      orbit.n = n;
+      orbit.period = TAU / n;
+      bodies.push({
+        name: i === 0 ? "Lamp Major" : "Lamp Minor",
+        kind: "star", mu: muEach, radius: 2.15 - i * 0.32,
+        parent: -1, orbit, color: i === 0 ? 0xffd9a0 : 0xffc27a, seedPhase: rng.next(),
+      });
+    }
+  } else {
+    bodies.push({
+      name: "The Lamp", kind: "star", mu: G_STAR, radius: 2.62,
+      parent: -1, orbit: null, fixed: [0, 0, 0], color: 0xffd9a0, seedPhase: rng.next(),
+    });
+  }
+
+  const starMu = params.binary ? G_STAR : G_STAR;
+  const planetCount = params.planets;
+  const radii = [];
+  let radius = params.innerRadius;
+  for (let i = 0; i < planetCount; i += 1) {
+    radii.push(radius);
+    radius *= rng.range(params.spacing[0], params.spacing[1]);
+  }
+
+  for (let i = 0; i < planetCount; i += 1) {
+    const isGas = params.gasIndex === i || (params.gasIndex === undefined && i === planetCount - 1);
+    const bodyRadius = isGas ? rng.range(1.9, 2.35) : rng.range(0.88, 1.22);
+    const mu = isGas ? rng.range(9.5, 13.5) : rng.range(3.4, 6.2);
+    const inclination = params.flat || i === params.departure || i === params.destHint
+      ? 0
+      : rng.range(-0.07, 0.07);
+    const orbit = makeOrbit(
+      radii[i],
+      params.circular ? 0 : rng.range(0, 0.11),
+      rng.range(0, TAU),
+      rng.range(0, TAU),
+      starMu,
+      inclination,
+    );
+    bodies.push({
+      name: takeName(),
+      kind: isGas ? "gas" : "rock",
+      mu, radius: bodyRadius, parent: -1, orbit,
+      color: rng.pick(isGas ? PALETTES.gas : PALETTES.rock),
+      hasRing: isGas,
+      seedPhase: rng.next(),
+      planetIndex: i,
+    });
+  }
+
+  // Moons hang off the largest world present.
+  if (params.moons > 0) {
+    let host = -1;
+    let hostMu = 0;
+    for (let i = 0; i < bodies.length; i += 1) {
+      if (bodies[i].kind === "gas" && bodies[i].mu > hostMu) { host = i; hostMu = bodies[i].mu; }
+    }
+    if (host >= 0) {
+      let ma = bodies[host].radius * rng.range(2.5, 3.1);
+      for (let m = 0; m < params.moons; m += 1) {
+        const orbit = makeOrbit(ma, 0, rng.range(0, TAU), rng.range(0, TAU), bodies[host].mu, 0);
+        bodies.push({
+          name: takeName(),
+          kind: "moon", mu: rng.range(0.30, 0.55), radius: rng.range(0.46, 0.6),
+          parent: host, orbit, color: rng.pick(PALETTES.moon), seedPhase: rng.next(),
+        });
+        ma *= rng.range(1.55, 1.85);
+      }
+    }
+  }
+
+  return new System(bodies);
+}
+/* ----------------------------------------------------------------------------
+   A tabulated copy of the system. The witness search flies thousands of
+   candidate launches; solving Kepler at every step of every one of them is
+   waste, because they all walk the same time grid. Solve once, index after.
+   -------------------------------------------------------------------------- */
+class TabulatedSystem {
+  constructor(sys, dt, samples) {
+    this.dt = dt;
+    this.samples = samples;
+    this.count = sys.count;
+    this.bodies = sys.bodies;
+    this.mu = sys.mu;
+    this.softR2 = sys.softR2;
+    this.hitR2 = sys.hitR2;
+    this.stride = sys.count * 6;
+    this.table = new Float64Array((samples + 1) * this.stride);
+    for (let k = 0; k <= samples; k += 1) {
+      this.table.set(sys.states(k * dt), k * this.stride);
+    }
+    this.pos = new Float64Array(sys.count * 3);
+    this.state = new Float64Array(sys.count * 6);
+  }
+
+  _index(t) {
+    const k = Math.round(t / this.dt);
+    return (k < 0 ? 0 : k > this.samples ? this.samples : k) * this.stride;
+  }
+
+  positions(t) {
+    const base = this._index(t);
+    const { table, pos, count } = this;
+    for (let i = 0; i < count; i += 1) {
+      const s = base + i * 6, o = i * 3;
+      pos[o] = table[s]; pos[o + 1] = table[s + 1]; pos[o + 2] = table[s + 2];
+    }
+    return pos;
+  }
+
+  states(t) {
+    const base = this._index(t);
+    for (let i = 0; i < this.stride; i += 1) this.state[i] = this.table[base + i];
+    return this.state;
+  }
+
+  bodyState(index, t, out) {
+    const base = this._index(t) + index * 6;
+    for (let k = 0; k < 6; k += 1) out[k] = this.table[base + k];
+    return out;
+  }
+}
+
+/* -- Launch geometry ------------------------------------------------------ */
+
+const MAST_FACTOR = 2.6;   // the mail mast stands this many radii above home
+const _dir = new Float64Array(3);
+const _mast = new Float64Array(3);
+
+/** Prograde-relative burn basis: heading 0 points along the world's motion. */
+function burnDirection(vx, vy, vz, heading, out) {
+  const sp = Math.hypot(vx, vy, vz) || 1;
+  const ux = vx / sp, uy = vy / sp, uz = vz / sp;
+  // "left" in the ecliptic: û × ŷ, normalised.
+  let wx = uz, wy = 0, wz = -ux;
+  const wl = Math.hypot(wx, wy, wz) || 1;
+  wx /= wl; wz /= wl;
+  const c = Math.cos(heading), s = Math.sin(heading);
+  out[0] = ux * c + wx * s;
+  out[1] = uy * c + wy * s;
+  out[2] = uz * c + wz * s;
+  return out;
+}
+
+function mastPosition(sys, depIndex, t, out) {
+  sys.bodyState(depIndex, t, _bs);
+  const r = Math.hypot(_bs[0], _bs[1], _bs[2]) || 1;
+  const h = sys.bodies[depIndex].radius * MAST_FACTOR;
+  out[0] = _bs[0] + (_bs[0] / r) * h;
+  out[1] = _bs[1] + (_bs[1] / r) * h;
+  out[2] = _bs[2] + (_bs[2] / r) * h;
+  return out;
+}
+
+function launchState(sys, depIndex, t0, heading, dv) {
+  sys.bodyState(depIndex, t0, _bs);
+  const vx = _bs[3], vy = _bs[4], vz = _bs[5];
+  burnDirection(vx, vy, vz, heading, _dir);
+  mastPosition(sys, depIndex, t0, _mast);
+  return makeProbeState(
+    _mast[0], _mast[1], _mast[2],
+    vx + _dir[0] * dv, vy + _dir[1] * dv, vz + _dir[2] * dv,
+    t0,
+  );
+}
+
+/* -- The search flight ----------------------------------------------------
+   Coarse, tabulated, and only interested in one question: does this launch
+   ever come near a world it could be captured by, and how much would stopping
+   there cost? Beacon coverage rides along for the basin measurement.
+   ------------------------------------------------------------------------ */
+function searchFlight(sys, s, opts) {
+  primeState(sys, s);
+  const dt = opts.dt;
+  const steps = Math.max(1, Math.round(opts.duration / dt));
+  const cands = opts.cands;
+  const beacons = opts.beacons;
+  const hits = beacons ? new Uint8Array(beacons.length) : null;
+  let best = null;
+
+  for (let i = 0; i < steps; i += 1) {
+    advanceOne(sys, s, dt);
+    const pos = sys.positions(s.t);
+
+    for (let b = 0; b < sys.count; b += 1) {
+      const o = b * 3;
+      const dx = s.x - pos[o], dy = s.y - pos[o + 1], dz = s.z - pos[o + 2];
+      if (dx * dx + dy * dy + dz * dz <= sys.hitR2[b]) {
+        return { outcome: sys.bodies[b].kind === "star" ? OUTCOME.STAR : OUTCOME.IMPACT, best, hits, t: s.t };
+      }
+    }
+
+    for (let c = 0; c < cands.length; c += 1) {
+      const idx = cands[c];
+      const o = idx * 3;
+      const dx = s.x - pos[o], dy = s.y - pos[o + 1], dz = s.z - pos[o + 2];
+      const d2 = dx * dx + dy * dy + dz * dz;
+      const reach = opts.capRadius[c] * 2.6;
+      if (d2 > reach * reach) continue;
+      const d = Math.sqrt(d2);
+      sys.bodyState(idx, s.t, _bs);
+      const rel = Math.hypot(s.vx - _bs[3], s.vy - _bs[4], s.vz - _bs[5]);
+      const miss = Math.max(0, d - opts.capRadius[c] * 0.55);
+      const score = miss * 2.4 + rel;
+      if (!best || score < best.score) {
+        best = { body: idx, cand: c, t: s.t, d, rel, score };
+      }
+    }
+
+    if (hits) {
+      for (let b = 0; b < beacons.length; b += 1) {
+        if (hits[b]) continue;
+        const bc = beacons[b];
+        const dx = s.x - bc.x, dy = s.y - bc.y, dz = s.z - bc.z;
+        if (dx * dx + dy * dy + dz * dz <= bc.r * bc.r) hits[b] = 1;
+      }
+    }
+
+    if (Math.hypot(s.x, s.y, s.z) > ESCAPE_RADIUS) {
+      return { outcome: OUTCOME.ESCAPED, best, hits, t: s.t };
+    }
+  }
+  return { outcome: OUTCOME.FLYING, best, hits, t: s.t };
+}
+
+/* -- Witness search -------------------------------------------------------
+   Coarse-to-fine over (launch time, heading, magnitude). No contract ships
+   without a launch the generator has flown itself.
+   ------------------------------------------------------------------------ */
+
+const SEARCH_DT = 1 / 24;
+const DV_RANGE = [2.15, 6.35];
+const MIN_FLIGHT = 11;      // below this it is a hop, not a route
+const BASIN_FLOOR = 0.02;   // a contract nobody can repeat is not a contract
+
+function* planWitness(sys, plan) {
+  const { departure, cands, capRadius, horizon, t0Span } = plan;
+  const tsys = new TabulatedSystem(sys, SEARCH_DT, Math.ceil((t0Span + horizon) / SEARCH_DT) + 4);
+
+  const coarse = { nt: 10, nh: 32, nd: 4 };
+  const results = [];
+
+  const evaluate = (t0, heading, dv) => {
+    const s = launchState(tsys, departure, t0, heading, dv);
+    const r = searchFlight(tsys, s, {
+      dt: SEARCH_DT, duration: horizon, cands, capRadius,
+    });
+    if (!r.best) return null;
+    if (r.best.t - t0 < MIN_FLIGHT) return null;             // no instant arrivals
+    const total = dv + r.best.rel;
+    if (total > plan.dvCeiling) return null;
+    const entry = {
+      t0, heading, dv,
+      body: r.best.body, cand: r.best.cand,
+      tEnc: r.best.t, d: r.best.d, rel: r.best.rel,
+      total,
+      score: r.best.score + dv * 0.28 + (r.best.t - t0) * 0.006,
+    };
+    results.push(entry);
+    return entry;
+  };
+
+  const totalCoarse = coarse.nt * coarse.nh * coarse.nd;
+  let done = 0;
+  for (let a = 0; a < coarse.nt; a += 1) {
+    const t0 = (a / coarse.nt) * t0Span;
+    for (let b = 0; b < coarse.nh; b += 1) {
+      const heading = (b / coarse.nh) * TAU;
+      for (let c = 0; c < coarse.nd; c += 1) {
+        const dv = lerp(DV_RANGE[0], DV_RANGE[1], coarse.nd === 1 ? 0.5 : c / (coarse.nd - 1));
+        evaluate(t0, heading, dv);
+        done += 1;
+      }
+    }
+    yield (done / totalCoarse) * 0.62;
+  }
+
+  if (results.length === 0) return null;
+  results.sort((p, q) => p.score - q.score);
+
+  // Refine around the strongest few. Coarse grids find the basin; this finds
+  // the floor of it.
+  const seeds = results.slice(0, 6);
+  const refined = [];
+  const dT = t0Span / coarse.nt, dH = TAU / coarse.nh;
+  const dD = (DV_RANGE[1] - DV_RANGE[0]) / Math.max(1, coarse.nd - 1);
+  for (let i = 0; i < seeds.length; i += 1) {
+    const seed = seeds[i];
+    for (let a = -1; a <= 1; a += 1) {
+      for (let b = -2; b <= 2; b += 1) {
+        for (let c = -1; c <= 1; c += 1) {
+          const t0 = clamp(seed.t0 + a * dT * 0.5, 0, t0Span);
+          const entry = evaluate(t0, seed.heading + b * dH * 0.4, clamp(seed.dv + c * dD * 0.45, DV_RANGE[0], DV_RANGE[1]));
+          if (entry) refined.push(entry);
+        }
+      }
+    }
+    yield 0.62 + ((i + 1) / seeds.length) * 0.3;
+  }
+
+  // Keep the coarse survivors as well as the refined ones. The refined list all
+  // sits in one valley; the coarse list is where the *wide* launches live, and
+  // a tutorial contract needs a wide launch far more than a cheap one.
+  const pool = results.concat(refined);
+  pool.sort((p, q) => p.score - q.score);
+
+  // Greedy diversity: a shortlist of launches that are actually different from
+  // each other, so the difficulty pass has a real spread to choose between.
+  const chosen = [];
+  for (const entry of pool) {
+    let distinct = true;
+    for (const kept of chosen) {
+      const dh = Math.abs(((entry.heading - kept.heading + Math.PI * 3) % TAU) - Math.PI);
+      if (dh < 0.22 && Math.abs(entry.dv - kept.dv) < 0.45 && Math.abs(entry.t0 - kept.t0) < 1.6) {
+        distinct = false;
+        break;
+      }
+    }
+    if (distinct) chosen.push(entry);
+    if (chosen.length >= 18) break;
+  }
+  return chosen;
+}
+
+/**
+ * Confirm a candidate at full fidelity against the real system, with
+ * substepping and no tabulation. Returns the confirmed witness or null.
+ *
+ * The witness is a launch plus a single retro burn taken the instant the probe
+ * crosses into the approach sphere. That burn nulls relative motion exactly, so
+ * capture is guaranteed rather than hoped for.
+ */
+function confirmWitness(sys, plan, candidate) {
+  const capRadius = plan.capRadius[candidate.cand];
+  const s = launchState(sys, plan.departure, candidate.t0, candidate.heading, candidate.dv);
+  const path = [];
+  const run = propagate(sys, s, {
+    duration: plan.horizon,
+    dest: candidate.body,
+    capture: { radius: capRadius, speed: Infinity },
+    stopOnEvent: true,
+    sampleEvery: 6,
+    onSample: (st) => path.push([st.x, st.y, st.z, st.t]),
+  });
+  if (run.outcome !== OUTCOME.CAPTURED) return null;
+  if (s.t - candidate.t0 < MIN_FLIGHT) return null;
+
+  sys.bodyState(candidate.body, s.t, _bs);
+  const retro = Math.hypot(s.vx - _bs[3], s.vy - _bs[4], s.vz - _bs[5]);
+  if (retro > plan.capSpeedCeiling) return null;
+  const total = candidate.dv + retro;
+  if (total > plan.dvCeiling) return null;
+
+  return {
+    t0: candidate.t0,
+    heading: candidate.heading,
+    dv: candidate.dv,
+    dest: candidate.body,
+    cand: candidate.cand,
+    capRadius,
+    tEnc: s.t,
+    flight: s.t - candidate.t0,
+    retro,
+    total,
+    path,
+  };
+}
+
+/* -- Route and difficulty ------------------------------------------------- */
+
+/** Mail buoys are hung on the witness path: they *are* the intended route. */
+function placeBeacons(witness, count, radius) {
+  const path = witness.path;
+  const beacons = [];
+  if (path.length < 8 || count <= 0) return beacons;
+  const lo = 0.14, hi = 0.84;
+  for (let i = 0; i < count; i += 1) {
+    const f = count === 1 ? 0.5 : lerp(lo, hi, i / (count - 1));
+    const p = path[clamp(Math.round(f * (path.length - 1)), 0, path.length - 1)];
+    beacons.push({ x: p[0], y: p[1], z: p[2], r: radius, t: p[3], taken: false });
+  }
+  return beacons;
+}
+
+/**
+ * Difficulty, measured rather than declared: fly a fixed neighbourhood of
+ * launches around the witness and count how many still deliver the mail inside
+ * the fuel that ships with the contract. A wide basin is a gentle run. A
+ * narrow one is a needle.
+ */
+const BASIN_BOX = { t0: 0.4, heading: 0.055, dv: 0.14 };
+const BASIN_SAMPLES = 132;
+
+function* measureBasin(sys, plan, witness, beacons, fuel) {
+  const tsys = new TabulatedSystem(
+    sys, SEARCH_DT,
+    Math.ceil((witness.t0 + BASIN_BOX.t0 + plan.horizon) / SEARCH_DT) + 4,
+  );
+  const rng = makeRng(plan.seed ^ 0x5eed1e);
+  const cands = [witness.dest];
+  const capRadius = [witness.capRadius];
+  let ok = 0;
+
+  for (let i = 0; i < BASIN_SAMPLES; i += 1) {
+    const t0 = clamp(witness.t0 + rng.range(-BASIN_BOX.t0, BASIN_BOX.t0), 0, plan.t0Span);
+    const heading = witness.heading + rng.range(-BASIN_BOX.heading, BASIN_BOX.heading);
+    const dv = clamp(witness.dv + rng.range(-BASIN_BOX.dv, BASIN_BOX.dv), DV_RANGE[0], DV_RANGE[1]);
+    const probe = launchState(tsys, plan.departure, t0, heading, dv);
+    const trial = beacons.map((b) => ({ x: b.x, y: b.y, z: b.z, r: b.r }));
+    const r = searchFlight(tsys, probe, {
+      dt: SEARCH_DT, duration: plan.horizon, cands, capRadius, beacons: trial,
+    });
+    if (!r.best || r.best.d > witness.capRadius) continue;
+    if (dv + r.best.rel > fuel) continue;
+    let all = true;
+    for (let b = 0; b < r.hits.length; b += 1) if (!r.hits[b]) { all = false; break; }
+    if (all) ok += 1;
+    if (i % 22 === 21) yield (i + 1) / BASIN_SAMPLES;
+  }
+  return ok / BASIN_SAMPLES;
+}
+
+const GRADES = [
+  { min: 0.30, name: "Gentle", tone: "ok" },
+  { min: 0.20, name: "Steady", tone: "ok" },
+  { min: 0.10, name: "Exacting", tone: "warn" },
+  { min: 0.045, name: "Severe", tone: "warn" },
+  { min: -1, name: "Needle", tone: "bad" },
+];
+const gradeFor = (measure) => GRADES.find((g) => measure >= g.min);
+/* ============================================================================
+   5. CONTRACTS
+   Six campaign runs, then an endless postal route. Every one of them is built
+   by the same pipeline: cast the orrery, find a witness, hang the buoys on it,
+   then measure how forgiving the result actually is.
+   ========================================================================== */
+
+const CAPTURE_SPEED = 1.6;       // relative speed the postmaster will accept
+const BEACON_RADIUS = 0.95;
+const DV_CEILING = 12.5;
+const RETRO_CEILING = 5.5;
+
+const CAMPAIGN = [
+  {
+    key: "shortfall", numeral: "I", name: "Shortfall",
+    subtitle: "Two worlds, one lamp, no excuses",
+    seed: 22796, targetBasin: 0.36, beacons: 2, slack: 1.55, horizon: 62,
+    brief: "A clean run to learn the trade. Leave the mast, let the lamp bend you outward, and be slow enough on arrival that the postmaster will take the sack.",
+    params: { planets: 3, innerRadius: 14.5, spacing: [1.44, 1.52], gasIndex: 2, moons: 0, binary: false, flat: true, circular: true, departure: 0 },
+  },
+  {
+    key: "tithe", numeral: "II", name: "The Gravity Tithe",
+    subtitle: "Everything the worlds lend you, they charge for",
+    seed: 43312, targetBasin: 0.25, beacons: 3, slack: 1.42, horizon: 64,
+    brief: "A heavier neighbour sits across your path. Pass close and it hands you speed; pass closer and it keeps you. The tithe is always collected.",
+    params: { planets: 4, innerRadius: 13.5, spacing: [1.38, 1.5], gasIndex: 2, moons: 0, binary: false, flat: true, circular: false, departure: 1 },
+  },
+  {
+    key: "shepherd", numeral: "III", name: "Shepherd",
+    subtitle: "Delivery to a moon, and moons do not wait",
+    seed: 58424, targetBasin: 0.16, beacons: 3, slack: 1.40, horizon: 68,
+    destKinds: ["moon"],
+    brief: "The sack is bound for a shepherd moon inside a giant's well. Arriving at the giant is easy. Arriving at the moon, slowly, on the right side, is the job.",
+    params: { planets: 4, innerRadius: 14, spacing: [1.4, 1.52], gasIndex: 2, moons: 2, binary: false, flat: false, circular: false, departure: 0 },
+  },
+  {
+    key: "twinlamps", numeral: "IV", name: "Twin Lamps",
+    subtitle: "Two suns, and the space between them lies",
+    seed: 53928, targetBasin: 0.115, beacons: 3, slack: 1.38, horizon: 70,
+    brief: "A pair of lamps turn about their common centre. The field between them looks chaotic and is not — it is only unforgiving of a launch made a second early.",
+    params: { planets: 3, innerRadius: 17, spacing: [1.44, 1.56], gasIndex: 1, moons: 0, binary: true, flat: true, circular: false, departure: 0 },
+  },
+  {
+    key: "resonance", numeral: "V", name: "Resonance",
+    subtitle: "The window opens once and closes politely",
+    seed: 62657, targetBasin: 0.065, beacons: 4, slack: 1.30, horizon: 72,
+    brief: "Five worlds on eccentric tracks. The buoys are strung across a corridor that exists for a handful of seconds each revolution. Wait for it.",
+    params: { planets: 5, innerRadius: 13, spacing: [1.34, 1.46], gasIndex: 3, moons: 0, binary: false, flat: false, circular: false, departure: 1 },
+  },
+  {
+    key: "longferry", numeral: "VI", name: "The Long Ferry",
+    subtitle: "The whole orrery, and barely enough mass to burn",
+    seed: 92983, targetBasin: 0.04, beacons: 4, slack: 1.22, horizon: 76,
+    brief: "Everything at once, and a tank that will not forgive a second correction. Plot it fully before you touch the mast.",
+    params: { planets: 5, innerRadius: 13.5, spacing: [1.36, 1.5], gasIndex: 3, moons: 2, binary: false, flat: false, circular: false, departure: 0 },
+  },
+];
+
+/** Endless mode: the same pipeline, escalating what it is asked to cast. */
+function routeSpec(tier, seed) {
+  const t = Math.min(tier, 12);
+  return {
+    key: `route-${tier}`,
+    numeral: `R${tier}`,
+    name: `Postal Route ${tier}`,
+    subtitle: "Standing orders, no rehearsal",
+    seed,
+    beacons: clamp(2 + Math.floor(t / 2), 2, 5),
+    targetBasin: clamp(0.4 - t * 0.032, 0.035, 0.4),
+    slack: clamp(1.62 - t * 0.045, 1.16, 1.62),
+    horizon: 62 + Math.min(t, 6) * 2,
+    destKinds: t >= 5 && t % 3 === 2 ? ["moon"] : undefined,
+    brief: "Standing orders from the postmaster. The orrery is new to you; the rules are not.",
+    params: {
+      planets: clamp(3 + Math.floor(t / 2), 3, 5),
+      innerRadius: 13 + (seed % 5) * 0.5,
+      spacing: [1.34, 1.54],
+      gasIndex: 1 + (t % 3),
+      moons: t >= 4 ? clamp(Math.floor(t / 4), 0, 2) : 0,
+      binary: t >= 3 && t % 4 === 3,
+      flat: t < 3,
+      circular: t < 2,
+      departure: t >= 4 ? 1 : 0,
+    },
+  };
+}
+
+function planetBodyIndex(sys, planetIndex) {
+  for (let i = 0; i < sys.count; i += 1) {
+    if (sys.bodies[i].planetIndex === planetIndex) return i;
+  }
+  return -1;
+}
+
+/**
+ * The whole build, as a generator so the briefing plate can show it happening
+ * instead of the tab freezing while a few million integration steps go by.
+ */
+function* buildContract(spec, attempt = 0) {
+  const seed = (spec.seed + attempt * 7919) >>> 0;
+  yield { p: 0.02, msg: "Casting the orrery" };
+
+  const rng = makeRng(seed);
+  const params = { ...spec.params, destHint: undefined };
+  const sys = buildSystem(rng, params);
+
+  const departure = planetBodyIndex(sys, spec.params.departure) >= 0
+    ? planetBodyIndex(sys, spec.params.departure)
+    : 1;
+
+  const cands = [];
+  for (let i = 0; i < sys.count; i += 1) {
+    const b = sys.bodies[i];
+    if (i === departure || b.kind === "star") continue;
+    if (spec.destKinds && !spec.destKinds.includes(b.kind)) continue;
+    cands.push(i);
+  }
+  if (cands.length === 0) {
+    for (let i = 0; i < sys.count; i += 1) {
+      if (i !== departure && sys.bodies[i].kind !== "star") cands.push(i);
+    }
+  }
+  const capRadius = cands.map((i) => Math.max(sys.bodies[i].radius * 2.8, 2.4));
+
+  const depPeriod = sys.bodies[departure].orbit ? sys.bodies[departure].orbit.period : 24;
+  const plan = {
+    seed,
+    departure,
+    cands,
+    capRadius,
+    horizon: spec.horizon,
+    t0Span: Math.min(depPeriod, 30),
+    dvCeiling: DV_CEILING,
+    capSpeedCeiling: RETRO_CEILING,
+  };
+
+  const search = planWitness(sys, plan);
+  let step = search.next();
+  while (!step.done) {
+    yield { p: 0.04 + step.value * 0.58, msg: "Plotting launch windows" };
+    step = search.next();
+  }
+  const pool = step.value;
+  if (!pool || pool.length === 0) return { failed: true, attempt };
+
+  yield { p: 0.6, msg: "Confirming the route" };
+  const confirmed = [];
+  for (let i = 0; i < pool.length && confirmed.length < 5; i += 1) {
+    const w = confirmWitness(sys, plan, pool[i]);
+    if (w) confirmed.push(w);
+    if (i % 3 === 2) yield { p: 0.6 + (i / pool.length) * 0.08, msg: "Confirming the route" };
+  }
+  if (confirmed.length === 0) return { failed: true, attempt };
+
+  // Difficulty is chosen, not stumbled into. Every confirmed route gets its
+  // basin measured, and the contract ships the one whose margin best matches
+  // what this contract is supposed to feel like.
+  const target = spec.targetBasin ?? 0.18;
+  let best = null;
+  for (let i = 0; i < confirmed.length; i += 1) {
+    const w = confirmed[i];
+    const beacons = placeBeacons(w, spec.beacons, BEACON_RADIUS);
+    const fuel = Math.ceil(w.total * spec.slack * 20) / 20;
+    const run = measureBasin(sys, plan, w, beacons, fuel);
+    let bstep = run.next();
+    while (!bstep.done) {
+      yield {
+        p: 0.68 + ((i + bstep.value) / confirmed.length) * 0.3,
+        msg: "Measuring the margin",
+      };
+      bstep = run.next();
+    }
+    const basin = bstep.value;
+    const penalty = basin < BASIN_FLOOR ? 10 : 0;
+    const cost = Math.abs(basin - target) + penalty;
+    if (!best || cost < best.cost) best = { witness: w, beacons, fuel, basin, cost };
+  }
+
+  yield { p: 1, msg: "Route confirmed" };
+
+  const witness = best.witness;
+  return {
+    spec, seed, sys, plan, departure,
+    dest: witness.dest,
+    departName: sys.bodies[departure].name,
+    destName: sys.bodies[witness.dest].name,
+    capRadius: witness.capRadius,
+    capSpeed: CAPTURE_SPEED,
+    witness,
+    beacons: best.beacons,
+    fuel: best.fuel,
+    basin: best.basin,
+    candidates: confirmed.length,
+    grade: gradeFor(best.basin),
+    timeLimit: witness.flight * 2.4 + 15,
+  };
+}
+
+/** Synchronous drive of the same pipeline. Used by tests and by ?test=1 setup. */
+function buildContractSync(spec, maxAttempts = 4) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const it = buildContract(spec, attempt);
+    let r = it.next();
+    while (!r.done) r = it.next();
+    if (r.value && !r.value.failed) return r.value;
+  }
+  return null;
+}
+
+/* ============================================================================
+   6. WORLD
+   Authored forms on brass armatures. Nothing here is a bare sphere.
+   ========================================================================== */
+
+const COLOR = {
+  void: 0x080d1a,
+  brass: 0xc9a15a,
+  brassBright: 0xf0d5a0,
+  brassDim: 0x6f5a30,
+  ivory: 0xefe6d2,
+  patina: 0x7fd7c4,
+  patinaDeep: 0x2c7b70,
+  lamp: 0xffd9a0,
+  alarm: 0xe2603f,
+  copper: 0xb4714a,
+};
+
+/** A radial-gradient sprite, generated in code. Stands in for a bloom pass. */
+function glowTexture(inner, outer, power = 2.4) {
+  const size = 128;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  const img = g.createImageData(size, size);
+  const ir = ((inner >> 16) & 255), ig = ((inner >> 8) & 255), ib = inner & 255;
+  const or = ((outer >> 16) & 255), og = ((outer >> 8) & 255), ob = outer & 255;
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const dx = (x - size / 2) / (size / 2);
+      const dy = (y - size / 2) / (size / 2);
+      const d = clamp(1 - Math.hypot(dx, dy), 0, 1);
+      const a = Math.pow(d, power);
+      const o = (y * size + x) * 4;
+      img.data[o] = lerp(or, ir, a);
+      img.data[o + 1] = lerp(og, ig, a);
+      img.data[o + 2] = lerp(ob, ib, a);
+      img.data[o + 3] = Math.round(a * 255);
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** The ecliptic plate: engraved graduations, drawn once into a texture. */
+function eclipticTexture() {
+  const size = 1024;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  const mid = size / 2;
+  g.clearRect(0, 0, size, size);
+
+  // Two graduated circles, not one. The rim ring belongs to the whole-orrery
+  // view; the inner ring is what you actually read when zoomed to a route.
+  g.strokeStyle = "rgba(201,161,90,0.30)";
+  g.lineWidth = 1.2;
+  for (const band of [{ r: mid - 8, scale: 1 }, { r: (mid - 8) * 0.54, scale: 0.62 }]) {
+    for (let i = 0; i < 360; i += 1) {
+      const major = i % 30 === 0;
+      const medium = i % 10 === 0;
+      if (!major && !medium && i % 2 !== 0) continue;
+      const len = (major ? 34 : medium ? 18 : 7) * band.scale;
+      const a = (i / 360) * TAU;
+      g.globalAlpha = (major ? 0.85 : medium ? 0.5 : 0.22) * (band.scale === 1 ? 1 : 0.8);
+      g.beginPath();
+      g.moveTo(mid + Math.cos(a) * band.r, mid + Math.sin(a) * band.r);
+      g.lineTo(mid + Math.cos(a) * (band.r - len), mid + Math.sin(a) * (band.r - len));
+      g.stroke();
+    }
+    g.globalAlpha = 0.5;
+    g.beginPath();
+    g.arc(mid, mid, band.r, 0, TAU);
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+
+  // Concentric engraved rules; faint, so orbit lines stay dominant.
+  for (let r = 0.16; r < 0.98; r += 0.082) {
+    g.strokeStyle = `rgba(201,161,90,${r < 0.3 ? 0.16 : 0.1})`;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(mid, mid, r * (mid - 10), 0, TAU);
+    g.stroke();
+  }
+
+  g.strokeStyle = "rgba(239,230,210,0.16)";
+  g.lineWidth = 2;
+  g.beginPath();
+  g.arc(mid, mid, mid - 9, 0, TAU);
+  g.stroke();
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+/* -- Authored geometry ---------------------------------------------------- */
+
+/** A cratered rock: an icosphere pushed around by a handful of impact basins. */
+function rockGeometry(radius, seed, detail = 2) {
+  const geo = new THREE.IcosahedronGeometry(radius, detail);
+  const pos = geo.attributes.position;
+  const rng = makeRng(seed);
+  const craters = [];
+  const count = 5 + Math.floor(rng.next() * 4);
+  for (let i = 0; i < count; i += 1) {
+    const th = rng.range(0, TAU), ph = Math.acos(rng.range(-1, 1));
+    craters.push({
+      x: Math.sin(ph) * Math.cos(th), y: Math.cos(ph), z: Math.sin(ph) * Math.sin(th),
+      w: rng.range(0.22, 0.55), d: rng.range(0.05, 0.13),
+    });
+  }
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i += 1) {
+    v.fromBufferAttribute(pos, i);
+    const n = v.clone().normalize();
+    let push = (rng.next() - 0.5) * 0.035;
+    for (const cr of craters) {
+      const dot = n.x * cr.x + n.y * cr.y + n.z * cr.z;
+      const ang = Math.acos(clamp(dot, -1, 1));
+      if (ang < cr.w) {
+        const f = 1 - ang / cr.w;
+        push -= cr.d * smoothstep(f) - cr.d * 0.28 * smoothstep(clamp((ang / cr.w - 0.72) / 0.28, 0, 1));
+      }
+    }
+    v.addScaledVector(n, push * radius);
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/** A gas giant: oblate, with latitude banding baked into vertex colours. */
+function gasGeometry(radius, seed) {
+  const geo = new THREE.SphereGeometry(radius, 40, 24);
+  geo.scale(1, 0.88, 1);
+  const pos = geo.attributes.position;
+  const rng = makeRng(seed);
+  const colors = new Float32Array(pos.count * 3);
+  const bands = [];
+  for (let i = 0; i < 7; i += 1) {
+    bands.push({ c: rng.range(-1, 1), w: rng.range(0.09, 0.26), v: rng.range(-0.18, 0.2) });
+  }
+  const base = new THREE.Color();
+  for (let i = 0; i < pos.count; i += 1) {
+    const lat = pos.getY(i) / (radius * 0.88);
+    let shade = 0;
+    for (const b of bands) {
+      const d = Math.abs(lat - b.c);
+      if (d < b.w) shade += b.v * smoothstep(1 - d / b.w);
+    }
+    shade += Math.sin(lat * 22) * 0.03;
+    base.setRGB(1 + shade, 1 + shade * 0.86, 1 + shade * 0.62);
+    colors[i * 3] = base.r; colors[i * 3 + 1] = base.g; colors[i * 3 + 2] = base.b;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  return geo;
+}
+
+/** The mail probe: a brass hull, a satchel drum, vanes, and a nozzle. */
+function buildProbe() {
+  const group = new THREE.Group();
+  const hull = new THREE.MeshStandardMaterial({ color: 0xd7b477, metalness: 0.85, roughness: 0.34 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2c3346, metalness: 0.5, roughness: 0.6 });
+  const flag = new THREE.MeshStandardMaterial({
+    color: COLOR.patina, emissive: COLOR.patinaDeep, emissiveIntensity: 0.7,
+    metalness: 0.2, roughness: 0.5, side: THREE.DoubleSide,
+  });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.44, 10), hull);
+  body.rotation.z = Math.PI / 2;
+  group.add(body);
+
+  const satchel = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.2, 12), dark);
+  satchel.rotation.z = Math.PI / 2;
+  satchel.position.x = -0.06;
+  group.add(satchel);
+
+  for (let i = 0; i < 3; i += 1) {
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.175, 0.014, 6, 16), hull);
+    hoop.rotation.y = Math.PI / 2;
+    hoop.position.x = -0.14 + i * 0.08;
+    group.add(hoop);
+  }
+
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.2, 10), hull);
+  nose.rotation.z = -Math.PI / 2;
+  nose.position.x = 0.31;
+  group.add(nose);
+
+  const nozzle = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.16, 10, 1, true), dark);
+  nozzle.rotation.z = Math.PI / 2;
+  nozzle.position.x = -0.28;
+  group.add(nozzle);
+
+  for (const s of [-1, 1]) {
+    const vane = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.012, 0.1), flag);
+    vane.position.set(0.02, 0, s * 0.19);
+    vane.rotation.x = s * 0.32;
+    group.add(vane);
+    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 6), hull);
+    strut.rotation.x = Math.PI / 2;
+    strut.position.set(0.02, 0, s * 0.1);
+    group.add(strut);
+  }
+
+  return group;
+}
+
+/** A mail buoy: a lantern in a brass cage, on a stalk, with a pennant. */
+function buildBeaconMesh() {
+  const group = new THREE.Group();
+  const cage = new THREE.MeshStandardMaterial({ color: 0xc9a15a, metalness: 0.9, roughness: 0.3 });
+  const lamp = new THREE.MeshStandardMaterial({
+    color: COLOR.patina, emissive: COLOR.patina, emissiveIntensity: 1.5,
+    metalness: 0.1, roughness: 0.4,
+  });
+
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.2, 0), lamp);
+  core.name = "core";
+  group.add(core);
+
+  for (let i = 0; i < 3; i += 1) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.018, 6, 20), cage);
+    ring.rotation.x = i === 0 ? Math.PI / 2 : 0;
+    ring.rotation.y = i === 1 ? Math.PI / 2 : 0;
+    group.add(ring);
+  }
+
+  const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 6), cage);
+  stalk.position.y = -0.36;
+  group.add(stalk);
+
+  const foot = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.12, 8), cage);
+  foot.position.y = -0.62;
+  foot.rotation.x = Math.PI;
+  group.add(foot);
+
+  const pennant = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.14), new THREE.MeshStandardMaterial({
+    color: COLOR.copper, metalness: 0.2, roughness: 0.7, side: THREE.DoubleSide,
+  }));
+  pennant.position.set(0.15, 0.3, 0);
+  group.add(pennant);
+
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 5), cage);
+  stem.position.y = 0.32;
+  group.add(stem);
+
+  return group;
+}
+const AIM_UP = new THREE.Vector3(0, 1, 0);
+const RIBBON_MAX = 760;
+const PREDICT_HORIZON = 42;
+const PREDICT_SAMPLE = 4;
+
+class Orrery {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.renderer = new THREE.WebGLRenderer({
+      canvas, antialias: true, powerPreference: "high-performance",
+    });
+    this.renderer.setClearColor(COLOR.void, 1);
+    this.renderer.shadowMap.enabled = false;   // one point light already models
+    this.dprCap = 1.75;                        // every form; shadow maps across
+    this.postPasses = 0;                       // a 0.3–45 unit range would mush.
+
+    this.scene = new THREE.Scene();
+    this.scene.fog = new THREE.FogExp2(0x060a14, 0.0042);
+
+    this.camera = new THREE.PerspectiveCamera(46, 1, 0.4, 620);
+    this.azimuth = -0.62;
+    this.elevation = 0.95;
+    this.zoom = 1;
+    this.target = new THREE.Vector3();
+    this.focus = new THREE.Vector3();
+
+    this.textures = {
+      glowWarm: glowTexture(0xfff0cf, 0xff9a3c, 2.2),
+      glowPatina: glowTexture(0xdcfff6, 0x2c7b70, 2.6),
+      dot: glowTexture(0xffffff, 0x000000, 1.5),
+      plate: eclipticTexture(),
+    };
+    this.disposables = [this.textures.glowWarm, this.textures.glowPatina, this.textures.dot, this.textures.plate];
+
+    this.buildStaticScene();
+    this.contractRoot = null;
+    this.bodyNodes = [];
+    this.beaconNodes = [];
+    this.extent = 40;
+
+    this.buildProbe();
+    this.buildRibbon();
+    this.buildAim();
+
+    this.resize();
+  }
+
+  track(obj) { this.disposables.push(obj); return obj; }
+
+  buildStaticScene() {
+    const { scene } = this;
+
+    scene.add(new THREE.AmbientLight(0x2a3550, 0.65));
+    const rim = new THREE.DirectionalLight(0x8fb6d8, 0.42);
+    rim.position.set(-1, 0.55, -0.8);
+    scene.add(rim);
+    // Decay 0: an orrery is lit like an instrument on a bench. The lamp still
+    // sets the direction that models every world, but a body four orbits out
+    // must not fall to a silhouette.
+    this.starLight = new THREE.PointLight(0xffe3b4, 2.4, 0, 0);
+    scene.add(this.starLight);
+
+    // Ecliptic plate: the instrument's face.
+    const plateMat = this.track(new THREE.MeshBasicMaterial({
+      map: this.textures.plate, transparent: true, opacity: 0.7,
+      depthWrite: false, side: THREE.DoubleSide,
+    }));
+    const plateGeo = this.track(new THREE.PlaneGeometry(1, 1));
+    this.plate = new THREE.Mesh(plateGeo, plateMat);
+    this.plate.rotation.x = -Math.PI / 2;
+    this.plate.position.y = -0.02;
+    this.plate.renderOrder = -2;
+    scene.add(this.plate);
+
+    // A far, dim field. Depth cue only — the orrery is the subject.
+    const count = 620;
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+    const rng = makeRng(90210);
+    for (let i = 0; i < count; i += 1) {
+      const th = rng.range(0, TAU);
+      const ph = Math.acos(rng.range(-1, 1));
+      const r = rng.range(250, 400);
+      pos[i * 3] = Math.sin(ph) * Math.cos(th) * r;
+      pos[i * 3 + 1] = Math.cos(ph) * r * 0.75;
+      pos[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * r;
+      const w = rng.range(0.28, 0.85);
+      col[i * 3] = w; col[i * 3 + 1] = w * 0.97; col[i * 3 + 2] = w * 0.86;
+    }
+    const starGeo = this.track(new THREE.BufferGeometry());
+    starGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    starGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    const starMat = this.track(new THREE.PointsMaterial({
+      size: 1.5, sizeAttenuation: true, vertexColors: true,
+      transparent: true, opacity: 0.7, depthWrite: false, fog: false,
+    }));
+    scene.add(new THREE.Points(starGeo, starMat));
+  }
+
+  buildProbe() {
+    this.probe = buildProbe();
+    this.probe.visible = false;
+    this.scene.add(this.probe);
+
+    const flameMat = this.track(new THREE.SpriteMaterial({
+      map: this.textures.glowWarm, color: 0xffcf8a,
+      transparent: true, opacity: 0, depthWrite: false,
+      blending: THREE.AdditiveBlending, fog: false,
+    }));
+    this.flame = new THREE.Sprite(flameMat);
+    this.flame.scale.setScalar(1.5);
+    this.probe.add(this.flame);
+    this.flame.position.x = -0.4;
+
+    const markMat = this.track(new THREE.SpriteMaterial({
+      map: this.textures.glowPatina, color: 0x9ff0dc,
+      transparent: true, opacity: 0.78, depthWrite: false,
+      blending: THREE.AdditiveBlending, fog: false,
+    }));
+    this.probeHalo = new THREE.Sprite(markMat);
+    this.probeHalo.scale.setScalar(3.6);
+    this.scene.add(this.probeHalo);
+    this.probeHalo.visible = false;
+  }
+
+  /** The plotted course: a pencil line with the navigator's dots along it. */
+  buildRibbon() {
+    const geo = this.track(new THREE.BufferGeometry());
+    this.ribbonPos = new Float32Array(RIBBON_MAX * 3);
+    this.ribbonCol = new Float32Array(RIBBON_MAX * 3);
+    geo.setAttribute("position", new THREE.BufferAttribute(this.ribbonPos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute("color", new THREE.BufferAttribute(this.ribbonCol, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setDrawRange(0, 0);
+    this.ribbonGeo = geo;
+
+    const lineMat = this.track(new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false, fog: false,
+    }));
+    this.ribbonLine = new THREE.Line(geo, lineMat);
+    this.ribbonLine.frustumCulled = false;
+    this.scene.add(this.ribbonLine);
+
+    // Screen-space dots: the navigator's pencil marks stay legible whether you
+    // are looking at the whole orrery or one moon.
+    const dotMat = this.track(new THREE.PointsMaterial({
+      map: this.textures.dot, size: 5, sizeAttenuation: false, vertexColors: true,
+      transparent: true, opacity: 0.95, depthWrite: false,
+      blending: THREE.AdditiveBlending, fog: false,
+    }));
+    this.ribbonDots = new THREE.Points(geo, dotMat);
+    this.ribbonDots.frustumCulled = false;
+    this.scene.add(this.ribbonDots);
+
+    // Where the plotted course ends: impact, capture or the edge of the dark.
+    const endMat = this.track(new THREE.SpriteMaterial({
+      map: this.textures.glowPatina, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+    }));
+    this.ribbonEnd = new THREE.Sprite(endMat);
+    this.ribbonEnd.scale.setScalar(2.4);
+    this.scene.add(this.ribbonEnd);
+  }
+
+  /** The burn vector, drawn off the probe like a set square. */
+  buildAim() {
+    const geo = this.track(new THREE.BufferGeometry());
+    this.aimPos = new Float32Array(6);
+    geo.setAttribute("position", new THREE.BufferAttribute(this.aimPos, 3).setUsage(THREE.DynamicDrawUsage));
+    const mat = this.track(new THREE.LineBasicMaterial({
+      color: COLOR.brass, transparent: true, opacity: 0.95, depthWrite: false, fog: false,
+    }));
+    this.aimLine = new THREE.Line(geo, mat);
+    this.aimLine.frustumCulled = false;
+    this.aimLine.visible = false;
+    this.scene.add(this.aimLine);
+
+    const headGeo = this.track(new THREE.ConeGeometry(0.17, 0.5, 10));
+    const headMat = this.track(new THREE.MeshBasicMaterial({ color: COLOR.brassBright, fog: false }));
+    this.aimHead = new THREE.Mesh(headGeo, headMat);
+    this.aimHead.visible = false;
+    this.scene.add(this.aimHead);
+  }
+
+  /* -- Per-contract construction ---------------------------------------- */
+
+  loadContract(contract) {
+    this.unloadContract();
+    const root = new THREE.Group();
+    this.contractRoot = root;
+    this.scene.add(root);
+    this.contract = contract;
+
+    const sys = contract.sys;
+    this.bodyNodes = [];
+    let extent = 12;
+
+    for (let i = 0; i < sys.count; i += 1) {
+      const b = sys.bodies[i];
+      const node = { body: b, group: new THREE.Group(), orbitAnchor: null };
+      root.add(node.group);
+
+      if (b.kind === "star") {
+        const geo = new THREE.IcosahedronGeometry(b.radius, 3);
+        const mat = new THREE.MeshBasicMaterial({ color: b.color, fog: false });
+        node.mesh = new THREE.Mesh(geo, mat);
+        node.group.add(node.mesh);
+        node.disposables = [geo, mat];
+
+        // A filament lamp in a cage of brass meridians.
+        // The cage sits around the light source, so without a little emissive
+        // of its own every meridian reads as a black wire across the lamp.
+        const cageMat = new THREE.MeshStandardMaterial({
+          color: 0xb98c45, metalness: 0.95, roughness: 0.32,
+          emissive: 0x6b4d1c, emissiveIntensity: 0.9,
+        });
+        node.disposables.push(cageMat);
+        for (let m = 0; m < 4; m += 1) {
+          const ringGeo = new THREE.TorusGeometry(b.radius * 1.22, b.radius * 0.026, 6, 40);
+          node.disposables.push(ringGeo);
+          const ring = new THREE.Mesh(ringGeo, cageMat);
+          ring.rotation.y = (m / 4) * Math.PI;
+          ring.rotation.x = Math.PI / 2;
+          node.group.add(ring);
+        }
+        const equatorGeo = new THREE.TorusGeometry(b.radius * 1.3, b.radius * 0.034, 6, 48);
+        node.disposables.push(equatorGeo);
+        node.group.add(new THREE.Mesh(equatorGeo, cageMat));
+
+        const glowMat = new THREE.SpriteMaterial({
+          map: this.textures.glowWarm, color: 0xffe0aa, transparent: true,
+          opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+        });
+        node.disposables.push(glowMat);
+        const glow = new THREE.Sprite(glowMat);
+        glow.scale.setScalar(b.radius * 9);
+        node.group.add(glow);
+        node.glow = glow;
+      } else if (b.kind === "gas") {
+        const geo = gasGeometry(b.radius, 1000 + i * 37);
+        const mat = new THREE.MeshStandardMaterial({
+          color: b.color, vertexColors: true, metalness: 0.05, roughness: 0.82,
+        });
+        node.mesh = new THREE.Mesh(geo, mat);
+        node.group.add(node.mesh);
+        node.disposables = [geo, mat];
+
+        if (b.hasRing) {
+          const inner = b.radius * 1.5, outer = b.radius * 2.35;
+          const ringGeo = new THREE.RingGeometry(inner, outer, 72, 3);
+          // Carve a Cassini-style gap straight into the vertex colours.
+          const rpos = ringGeo.attributes.position;
+          const rcol = new Float32Array(rpos.count * 3);
+          for (let k = 0; k < rpos.count; k += 1) {
+            const rr = Math.hypot(rpos.getX(k), rpos.getY(k));
+            const f = (rr - inner) / (outer - inner);
+            const gap = Math.abs(f - 0.52) < 0.075 ? 0.12 : 1;
+            const band = 0.62 + 0.38 * Math.sin(f * 17);
+            const v = band * gap;
+            rcol[k * 3] = v; rcol[k * 3 + 1] = v * 0.93; rcol[k * 3 + 2] = v * 0.78;
+          }
+          ringGeo.setAttribute("color", new THREE.BufferAttribute(rcol, 3));
+          const ringMat = new THREE.MeshBasicMaterial({
+            color: 0xd9be8e, vertexColors: true, transparent: true, opacity: 0.55,
+            side: THREE.DoubleSide, depthWrite: false,
+          });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2 + 0.14;
+          node.group.add(ring);
+          node.disposables.push(ringGeo, ringMat);
+        }
+      } else {
+        const geo = rockGeometry(b.radius, 2000 + i * 53, b.kind === "moon" ? 1 : 2);
+        const mat = new THREE.MeshStandardMaterial({
+          color: b.color, metalness: 0.12, roughness: 0.92, flatShading: true,
+        });
+        node.mesh = new THREE.Mesh(geo, mat);
+        node.group.add(node.mesh);
+        node.disposables = [geo, mat];
+      }
+
+      // The engraved orbit: this is the armature the world rides on.
+      if (b.orbit) {
+        const anchor = new THREE.Group();
+        root.add(anchor);
+        node.orbitAnchor = anchor;
+        const segs = 220;
+        const pts = new Float32Array((segs + 1) * 3);
+        const tmp = new Float64Array(3);
+        for (let k = 0; k <= segs; k += 1) {
+          const fake = { ...b.orbit, M0: (k / segs) * TAU, n: 0 };
+          orbitPosition(fake, 0, tmp, 0);
+          pts[k * 3] = tmp[0]; pts[k * 3 + 1] = tmp[1]; pts[k * 3 + 2] = tmp[2];
+        }
+        const og = new THREE.BufferGeometry();
+        og.setAttribute("position", new THREE.BufferAttribute(pts, 3));
+        const isMoon = b.kind === "moon";
+        const om = new THREE.LineBasicMaterial({
+          color: isMoon ? 0x8f9fb0 : COLOR.ivory,
+          transparent: true, opacity: isMoon ? 0.22 : 0.3, depthWrite: false, fog: false,
+        });
+        anchor.add(new THREE.Line(og, om));
+        node.disposables.push(og, om);
+        extent = Math.max(extent, b.orbit.a * (1 + b.orbit.e) + (b.parent >= 0 ? 20 : 0));
+      }
+
+      this.bodyNodes.push(node);
+    }
+
+    // Brass arms from the primary out to each world — the orrery's linkage.
+    const armCount = sys.count;
+    const armPos = new Float32Array(armCount * 6);
+    const armGeo = new THREE.BufferGeometry();
+    armGeo.setAttribute("position", new THREE.BufferAttribute(armPos, 3).setUsage(THREE.DynamicDrawUsage));
+    const armMat = new THREE.LineBasicMaterial({
+      color: COLOR.brassDim, transparent: true, opacity: 0.34, depthWrite: false, fog: false,
+    });
+    this.arms = new THREE.LineSegments(armGeo, armMat);
+    this.arms.frustumCulled = false;
+    this.armPos = armPos;
+    root.add(this.arms);
+    this.armDisposables = [armGeo, armMat];
+
+    // Mail buoys.
+    this.beaconNodes = contract.beacons.map((b) => {
+      const mesh = buildBeaconMesh();
+      mesh.position.set(b.x, b.y, b.z);
+      root.add(mesh);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: this.textures.glowPatina, color: 0x8fe8d6, transparent: true,
+        opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+      }));
+      halo.scale.setScalar(3.1);
+      mesh.add(halo);
+      return { mesh, halo, data: b };
+    });
+
+    // The approach sphere at the destination: two engraved hoops.
+    const capGroup = new THREE.Group();
+    const capMat = new THREE.MeshBasicMaterial({
+      color: COLOR.patina, transparent: true, opacity: 0.34, depthWrite: false, fog: false,
+    });
+    for (let i = 0; i < 2; i += 1) {
+      const g = new THREE.TorusGeometry(contract.capRadius, contract.capRadius * 0.012, 5, 90);
+      const m = new THREE.Mesh(g, capMat);
+      m.rotation.x = i === 0 ? Math.PI / 2 : 0;
+      capGroup.add(m);
+      this.armDisposables.push(g);
+    }
+    this.armDisposables.push(capMat);
+    root.add(capGroup);
+    this.captureRing = capGroup;
+
+    // The mail mast at the departure world.
+    const mastMat = new THREE.MeshStandardMaterial({ color: 0xd7b477, metalness: 0.9, roughness: 0.3 });
+    const mastGeo = new THREE.CylinderGeometry(0.02, 0.05, 1, 6);
+    const mast = new THREE.Mesh(mastGeo, mastMat);
+    root.add(mast);
+    this.mast = mast;
+    this.armDisposables.push(mastGeo, mastMat);
+
+    // Frame the route, not the whole orrery. An outer world nobody is visiting
+    // should not push the destination down to a speck.
+    const depOrbit = sys.bodies[contract.departure].orbit;
+    const destBody = sys.bodies[contract.dest];
+    const destOrbit = destBody.parent >= 0 ? sys.bodies[destBody.parent].orbit : destBody.orbit;
+    const reach = (o) => (o ? o.a * (1 + o.e) : 12);
+    this.extent = Math.max(reach(depOrbit), reach(destOrbit)) * 1.3;
+    this.systemExtent = extent;
+    // Size the plate to the framed route so its graduated rim lands just past
+    // the visible edge instead of somewhere out in the dark.
+    this.plate.scale.setScalar(this.extent * 2.05);
+    this.starLight.distance = 0;
+    this.probe.visible = true;
+    this.probeHalo.visible = true;
+  }
+
+  unloadContract() {
+    if (!this.contractRoot) return;
+    for (const node of this.bodyNodes) {
+      for (const d of node.disposables || []) d.dispose();
+    }
+    for (const d of this.armDisposables || []) d.dispose();
+    for (const b of this.beaconNodes) {
+      b.mesh.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) o.material.dispose();
+      });
+    }
+    this.scene.remove(this.contractRoot);
+    this.contractRoot = null;
+    this.bodyNodes = [];
+    this.beaconNodes = [];
+    this.armDisposables = [];
+  }
+
+  /* -- Per-frame --------------------------------------------------------- */
+
+  syncBodies(t) {
+    const sys = this.contract.sys;
+    const states = sys.states(t);
+    for (let i = 0; i < this.bodyNodes.length; i += 1) {
+      const node = this.bodyNodes[i];
+      const o = i * 6;
+      node.group.position.set(states[o], states[o + 1], states[o + 2]);
+      if (node.mesh && node.body.kind !== "star") {
+        node.mesh.rotation.y = t * (0.16 + node.body.seedPhase * 0.2);
+      }
+      if (node.orbitAnchor) {
+        const p = node.body.parent;
+        if (p >= 0) node.orbitAnchor.position.set(states[p * 6], states[p * 6 + 1], states[p * 6 + 2]);
+      }
+      if (node.body.kind === "star") this.starLight.position.set(states[o], states[o + 1], states[o + 2]);
+      const a = i * 6;
+      const p = node.body.parent;
+      this.armPos[a] = p >= 0 ? states[p * 6] : 0;
+      this.armPos[a + 1] = p >= 0 ? states[p * 6 + 1] : 0;
+      this.armPos[a + 2] = p >= 0 ? states[p * 6 + 2] : 0;
+      this.armPos[a + 3] = states[o];
+      this.armPos[a + 4] = states[o + 1];
+      this.armPos[a + 5] = states[o + 2];
+    }
+    this.arms.geometry.attributes.position.needsUpdate = true;
+
+    const d = this.contract.dest * 6;
+    this.captureRing.position.set(states[d], states[d + 1], states[d + 2]);
+  }
+
+  setRibbon(points, count, outcome) {
+    const tint = outcome === OUTCOME.CAPTURED ? [0.50, 0.84, 0.77]
+      : outcome === OUTCOME.IMPACT || outcome === OUTCOME.STAR ? [0.89, 0.38, 0.25]
+        : outcome === OUTCOME.ESCAPED ? [0.62, 0.66, 0.78]
+          : outcome === OUTCOME.TIMEOUT ? [0.88, 0.50, 0.24]
+            : [0.79, 0.63, 0.35];
+    const n = Math.min(count, RIBBON_MAX);
+    for (let i = 0; i < n; i += 1) {
+      this.ribbonPos[i * 3] = points[i * 3];
+      this.ribbonPos[i * 3 + 1] = points[i * 3 + 1];
+      this.ribbonPos[i * 3 + 2] = points[i * 3 + 2];
+      const f = 1 - i / Math.max(1, n - 1);
+      const w = 0.18 + 0.82 * f * f;
+      this.ribbonCol[i * 3] = tint[0] * w;
+      this.ribbonCol[i * 3 + 1] = tint[1] * w;
+      this.ribbonCol[i * 3 + 2] = tint[2] * w;
+    }
+    this.ribbonGeo.setDrawRange(0, n);
+    this.ribbonGeo.attributes.position.needsUpdate = true;
+    this.ribbonGeo.attributes.color.needsUpdate = true;
+    this.ribbonGeo.computeBoundingSphere();
+
+    if (n > 1) {
+      this.ribbonEnd.position.set(points[(n - 1) * 3], points[(n - 1) * 3 + 1], points[(n - 1) * 3 + 2]);
+      this.ribbonEnd.material.color.setRGB(tint[0], tint[1], tint[2]);
+      this.ribbonEnd.material.opacity = outcome === OUTCOME.FLYING ? 0.25 : 0.8;
+    } else {
+      this.ribbonEnd.material.opacity = 0;
+    }
+  }
+
+  setAim(origin, dir, magnitude, visible) {
+    this.aimLine.visible = visible;
+    this.aimHead.visible = visible;
+    if (!visible) return;
+    const len = 1.2 + magnitude * 0.62;
+    this.aimPos[0] = origin.x; this.aimPos[1] = origin.y; this.aimPos[2] = origin.z;
+    this.aimPos[3] = origin.x + dir.x * len;
+    this.aimPos[4] = origin.y + dir.y * len;
+    this.aimPos[5] = origin.z + dir.z * len;
+    this.aimLine.geometry.attributes.position.needsUpdate = true;
+    this.aimHead.position.set(this.aimPos[3], this.aimPos[4], this.aimPos[5]);
+    this.aimHead.quaternion.setFromUnitVectors(AIM_UP, dir);
+  }
+
+  updateCamera(probePos, dt) {
+    const wide = this.extent * 2.15;
+    const dist = clamp(wide / this.zoom, 5, 300);
+    const blend = clamp((this.zoom - 1) / 2.6, 0, 0.82);
+    this.focus.set(0, 0, 0).lerp(probePos, blend);
+    this.target.lerp(this.focus, reducedMotion ? 1 : clamp(dt * 4.5, 0, 1));
+
+    // Worlds are drawn true to their collision radius, so the probe and the
+    // buoys — which are metres, not megametres — get a floor on screen size.
+    // Without it the thing you are actually flying is a single pixel.
+    this.readableGain = clamp(dist / 26, 2.8, 6.5);
+
+    const ce = Math.cos(this.elevation), se = Math.sin(this.elevation);
+    this.camera.position.set(
+      this.target.x + Math.cos(this.azimuth) * ce * dist,
+      this.target.y + se * dist,
+      this.target.z + Math.sin(this.azimuth) * ce * dist,
+    );
+    this.camera.lookAt(this.target);
+    this.camera.far = Math.max(620, dist * 3.5);
+    this.camera.updateProjectionMatrix();
+  }
+
+  resize() {
+    const w = this.canvas.clientWidth || window.innerWidth;
+    const h = this.canvas.clientHeight || window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, this.dprCap);
+    this.renderer.setPixelRatio(dpr);
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / Math.max(1, h);
+    this.camera.updateProjectionMatrix();
+    this.dpr = dpr;
+  }
+
+  render() { this.renderer.render(this.scene, this.camera); }
+
+  diagnostics() {
+    const info = this.renderer.info;
+    let meshes = 0, instanced = 0;
+    const materials = new Set();
+    this.scene.traverse((o) => {
+      if (o.isInstancedMesh) instanced += 1;
+      if (o.isMesh || o.isLine || o.isPoints || o.isSprite) meshes += 1;
+      if (o.material) materials.add(o.material.uuid);
+    });
+    return {
+      renderer: {
+        calls: info.render.calls,
+        triangles: info.render.triangles,
+        geometries: info.memory.geometries,
+        textures: info.memory.textures,
+      },
+      scene: { meshes, materials: materials.size, instancedMeshes: instanced },
+      settings: { dpr: this.dpr, shadows: this.renderer.shadowMap.enabled, postPasses: this.postPasses },
+    };
+  }
+}
+/* ============================================================================
+   7. SOUND
+   The orrery is tuned to itself. Every contract derives its scale from the
+   ratios of its own orbital periods, folded into one octave, so a system with
+   worlds near a 3:2 resonance literally sings a fifth. The proximity voice is
+   the probe's own acceleration, made audible.
+   ========================================================================== */
+
+class PostAudio {
+  constructor() {
+    this.ctx = null;
+    this.muted = false;
+    this.scale = [220, 275, 330, 412.5, 495];
+    this.started = false;
+  }
+
+  ensure() {
+    if (this.ctx) {
+      if (this.ctx.state === "suspended") this.ctx.resume();
+      return this.ctx;
+    }
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    const ctx = new Ctor();
+    this.ctx = ctx;
+
+    this.master = ctx.createGain();
+    this.master.gain.value = 0.85;
+    this.master.connect(ctx.destination);
+
+    this.bus = ctx.createGain();
+    this.bus.gain.value = this.muted ? 0 : 1;
+    this.bus.connect(this.master);
+
+    // Noise bed, generated once and reused for every thruster burst.
+    const len = Math.floor(ctx.sampleRate * 1.6);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i += 1) {
+      const white = Math.random() * 2 - 1;
+      last = (last + 0.028 * white) / 1.028;   // gently browned
+      data[i] = last * 3.2;
+    }
+    this.noise = buf;
+
+    this.buildDrone();
+    return ctx;
+  }
+
+  /** Fold orbital period ratios into one octave. That is the contract's key. */
+  tuneTo(contract) {
+    const periods = contract.sys.bodies
+      .filter((b) => b.orbit && b.kind !== "moon" && b.kind !== "star")
+      .map((b) => b.orbit.period)
+      .sort((a, b) => a - b);
+    if (periods.length === 0) return;
+    const base = 196;
+    const notes = [base];
+    for (let i = 1; i < periods.length; i += 1) {
+      let r = periods[i] / periods[0];
+      while (r >= 2) r /= 2;
+      while (r < 1) r *= 2;
+      notes.push(base * r);
+    }
+    notes.push(base * 2);
+    this.scale = notes.sort((a, b) => a - b);
+    this.root = base * (periods[0] > 26 ? 0.5 : 1);
+    if (this.drone) {
+      const now = this.ctx.currentTime;
+      this.droneOsc[0].frequency.setTargetAtTime(this.root * 0.5, now, 0.6);
+      this.droneOsc[1].frequency.setTargetAtTime(this.root * 0.752, now, 0.6);
+      this.droneOsc[2].frequency.setTargetAtTime(this.root * 1.005, now, 0.6);
+    }
+  }
+
+  buildDrone() {
+    const ctx = this.ctx;
+    const gain = ctx.createGain();
+    gain.gain.value = 0;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 430;
+    filter.Q.value = 3;
+    gain.connect(filter);
+    filter.connect(this.bus);
+
+    this.droneOsc = [];
+    const spec = [[98, "triangle", 0.5], [147.4, "sawtooth", 0.16], [196.9, "sine", 0.22]];
+    for (const [f, type, g] of spec) {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.value = f;
+      const og = ctx.createGain();
+      og.gain.value = g;
+      osc.connect(og);
+      og.connect(gain);
+      osc.start();
+      this.droneOsc.push(osc);
+    }
+
+    // Slow sweep on the filter: the instrument breathing.
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.035;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 190;
+    lfo.connect(lfoGain);
+    lfoGain.connect(filter.frequency);
+    lfo.start();
+
+    this.drone = gain;
+    this.droneFilter = filter;
+
+    // Proximity voice: gain and pitch ride the probe's own acceleration.
+    const prox = ctx.createOscillator();
+    prox.type = "sine";
+    prox.frequency.value = 150;
+    const proxGain = ctx.createGain();
+    proxGain.gain.value = 0;
+    prox.connect(proxGain);
+    proxGain.connect(this.bus);
+    prox.start();
+    this.prox = prox;
+    this.proxGain = proxGain;
+
+    // Warning beat: two close tones, silent until something is wrong.
+    const warnGain = ctx.createGain();
+    warnGain.gain.value = 0;
+    warnGain.connect(this.bus);
+    this.warnOsc = [];
+    for (let i = 0; i < 2; i += 1) {
+      const o = ctx.createOscillator();
+      o.type = "square";
+      o.frequency.value = 320 + i * 3;
+      const g = ctx.createGain();
+      g.gain.value = 0.045;
+      o.connect(g); g.connect(warnGain);
+      o.start();
+      this.warnOsc.push(o);
+    }
+    this.warnGain = warnGain;
+  }
+
+  setMuted(muted) {
+    this.muted = muted;
+    if (this.bus) this.bus.gain.setTargetAtTime(muted ? 0 : 1, this.ctx.currentTime, 0.04);
+  }
+
+  setAmbience(level) {
+    if (!this.ctx) return;
+    this.drone.gain.setTargetAtTime(level * 0.34, this.ctx.currentTime, 0.4);
+  }
+
+  /** |a| of the probe, sonified. Deep wells growl; open space is quiet. */
+  setProximity(accel) {
+    if (!this.ctx) return;
+    const f = clamp(Math.log10(1 + accel * 6) / 1.5, 0, 1);
+    const now = this.ctx.currentTime;
+    this.proxGain.gain.setTargetAtTime(f * f * 0.075, now, 0.09);
+    this.prox.frequency.setTargetAtTime(70 + f * 240, now, 0.12);
+  }
+
+  setWarning(level, rate) {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this.warnGain.gain.setTargetAtTime(level * 0.5, now, 0.1);
+    this.warnOsc[1].frequency.setTargetAtTime(320 + rate, now, 0.1);
+  }
+
+  burst({ freq = 180, dur = 0.4, gain = 0.4, bp = 700, q = 1.1, sweep = 0.4 }) {
+    const ctx = this.ensure();
+    if (!ctx) return;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.playbackRate.value = 0.8 + Math.random() * 0.4;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = bp;
+    filter.Q.value = q;
+    const g = ctx.createGain();
+    const now = ctx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(gain, now + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    filter.frequency.exponentialRampToValueAtTime(Math.max(60, bp * sweep), now + dur);
+    src.connect(filter); filter.connect(g); g.connect(this.bus);
+    src.start(now);
+    src.stop(now + dur + 0.05);
+
+    const thump = ctx.createOscillator();
+    thump.type = "sine";
+    thump.frequency.setValueAtTime(freq, now);
+    thump.frequency.exponentialRampToValueAtTime(freq * 0.42, now + dur * 0.8);
+    const tg = ctx.createGain();
+    tg.gain.setValueAtTime(0.0001, now);
+    tg.gain.exponentialRampToValueAtTime(gain * 0.7, now + 0.02);
+    tg.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    thump.connect(tg); tg.connect(this.bus);
+    thump.start(now); thump.stop(now + dur + 0.05);
+  }
+
+  tone(freq, { dur = 0.5, gain = 0.16, type = "triangle", delay = 0, detune = 0, decay = 0.7 } = {}) {
+    const ctx = this.ensure();
+    if (!ctx) return;
+    const now = ctx.currentTime + delay;
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.detune.value = detune;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(gain, now + 0.014);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur * decay + 0.05);
+    osc.connect(g); g.connect(this.bus);
+    osc.start(now); osc.stop(now + dur + 0.08);
+  }
+
+  /** A struck bell, tuned to the contract's own scale. */
+  bell(index, gain = 0.2) {
+    const f = this.scale[index % this.scale.length] * (index >= this.scale.length ? 2 : 1);
+    this.tone(f, { dur: 1.5, gain, type: "sine", decay: 0.85 });
+    this.tone(f * 2, { dur: 0.9, gain: gain * 0.5, type: "sine" });
+    this.tone(f * 3.01, { dur: 0.5, gain: gain * 0.24, type: "sine" });
+    this.burst({ freq: f, dur: 0.1, gain: 0.1, bp: f * 5, q: 3 });
+  }
+
+  /**
+   * The music bed. Its key is the contract's orbital ratios and its tempo is
+   * the destination's year, so every orrery loops a phrase only it could play.
+   */
+  startMusic(periodSeconds) {
+    const ctx = this.ensure();
+    if (!ctx) return;
+    this.musicOn = true;
+    this.beat = clamp(periodSeconds / 16, 0.55, 2.3);
+    this.nextBeat = ctx.currentTime + 0.25;
+    this.beatIndex = 0;
+  }
+
+  stopMusic() { this.musicOn = false; }
+
+  /** Called every frame; schedules a quarter-second ahead of the clock. */
+  playMusic() {
+    if (!this.musicOn || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const figure = [0, 2, 1, 3, 2, 4, 3, 1];
+    let guard = 0;
+    while (this.nextBeat < now + 0.3 && guard < 12) {
+      const i = this.beatIndex;
+      const step = figure[i % figure.length];
+      const octave = i % 16 >= 8 ? 2 : 1;
+      const f = this.scale[step % this.scale.length] * octave;
+      const at = this.nextBeat - now;
+      this.tone(f, { dur: this.beat * 1.5, gain: 0.052, type: "triangle", delay: at, decay: 0.62 });
+      if (i % 4 === 0) {
+        this.tone(this.scale[0] * 0.5, { dur: this.beat * 2.4, gain: 0.06, type: "sine", delay: at, decay: 0.8 });
+      }
+      if (i % 8 === 6) {
+        this.tone(this.scale[this.scale.length - 1] * 2, { dur: this.beat, gain: 0.028, type: "sine", delay: at + this.beat * 0.5 });
+      }
+      this.nextBeat += this.beat;
+      this.beatIndex += 1;
+      guard += 1;
+    }
+  }
+
+  thrust(magnitude) {
+    const m = clamp(magnitude / 5, 0.15, 1.4);
+    this.burst({ freq: 90 + m * 40, dur: 0.28 + m * 0.4, gain: 0.2 + m * 0.32, bp: 420 + m * 620, q: 0.9, sweep: 0.3 });
+  }
+
+  click(up = true) {
+    this.burst({ freq: up ? 640 : 480, dur: 0.05, gain: 0.09, bp: up ? 2400 : 1500, q: 4, sweep: 0.8 });
+  }
+
+  captured() {
+    const s = this.scale;
+    for (let i = 0; i < 5; i += 1) {
+      const f = s[i % s.length] * (i >= s.length ? 2 : 1);
+      this.tone(f, { dur: 1.4, gain: 0.17, type: "sine", delay: i * 0.13, decay: 0.9 });
+      this.tone(f * 2, { dur: 0.7, gain: 0.07, type: "sine", delay: i * 0.13 });
+    }
+    this.burst({ freq: 140, dur: 1.1, gain: 0.14, bp: 900, q: 1.4, sweep: 0.25 });
+  }
+
+  lost(kind) {
+    const root = kind === "star" ? 150 : kind === "escape" ? 96 : 120;
+    for (let i = 0; i < 4; i += 1) {
+      this.tone(root * Math.pow(0.82, i), {
+        dur: 1.5, gain: 0.15, type: "sawtooth", delay: i * 0.1, detune: i * -14, decay: 0.85,
+      });
+    }
+    this.burst({ freq: root * 0.6, dur: 1.3, gain: 0.3, bp: 500, q: 0.7, sweep: 0.12 });
+  }
+
+  dispose() {
+    if (!this.ctx) return;
+    try { this.ctx.close(); } catch { /* already gone */ }
+    this.ctx = null;
+  }
+}
+/* ============================================================================
+   8. THE GAME
+   ========================================================================== */
+
+const el = (id) => document.getElementById(id);
+const dom = {
+  canvas: el("stage"),
+  screen: el("screen"),
+  banner: el("banner"),
+  contractName: el("contractName"),
+  contractLine: el("contractLine"),
+  clockValue: el("clockValue"),
+  clockGauge: el("clockGauge"),
+  warpValue: el("warpValue"),
+  fuelValue: el("fuelValue"),
+  fuelGauge: el("fuelGauge"),
+  burnValue: el("burnValue"),
+  cargoValue: el("cargoValue"),
+  cargoBeads: el("cargoBeads"),
+  predictText: el("predictText"),
+  predictSub: el("predictSub"),
+  muteBtn: el("muteBtn"),
+  hud: ["hudTop", "hudClock", "hudFuel", "hudCargo", "hudPredict"].map(el),
+};
+
+const WARPS = [0, 0.5, 1, 2, 4];
+const _v3a = new THREE.Vector3();
+const _v3b = new THREE.Vector3();
+const _plane = new THREE.Plane();
+const _ray = new THREE.Raycaster();
+const _ndc = new THREE.Vector2();
+
+// Frame-loop scratch. Nothing here may allocate per frame.
+const _aimDir = new Float64Array(3);
+const _burnDir = new Float64Array(3);
+const _basisU = new Float64Array(3);
+const _basisW = new Float64Array(3);
+const _UP = new THREE.Vector3(0, 1, 0);
+const _AXIS_X = new THREE.Vector3(1, 0, 0);
+
+function cloneProbe(s) {
+  const c = makeProbeState(s.x, s.y, s.z, s.vx, s.vy, s.vz, s.t);
+  c.ax = s.ax; c.ay = s.ay; c.az = s.az; c.primed = s.primed;
+  return c;
+}
+
+class Game {
+  constructor() {
+    this.orrery = new Orrery(dom.canvas);
+    this.audio = new PostAudio();
+    this.state = "title";
+    this.mode = "campaign";
+    this.contractIndex = 0;
+    this.routeTier = 1;
+    this.routeSeed = (Math.random() * 0xffffff) >>> 0;
+    this.records = new Map();
+    this.contract = null;
+    this.builder = null;
+    this.buildProgress = 0;
+    this.buildMessage = "";
+    this.warpIndex = 2;
+    this.accum = 0;
+    this.aimHeading = 0;
+    this.aimDv = 0;
+    this.launched = false;
+    this.launchT = 0;
+    this.fuel = 0;
+    this.collected = 0;
+    this.predicted = null;
+    this.ribbonDirty = true;
+    this.ribbonPoints = new Float32Array(RIBBON_MAX * 3);
+    this.ribbonCount = 0;
+    this.frameIndex = 0;
+    this.flashUntil = 0;
+    this.keys = new Set();
+    this.pointer = { aiming: false, orbiting: false, x: 0, y: 0 };
+    this.result = null;
+    this.lastFrame = performance.now();
+
+    this.bindInput();
+    this.showTitle();
+    this.setHudVisible(false);
+    requestAnimationFrame(this.frame);
+  }
+
+  /* -- Input ------------------------------------------------------------- */
+
+  bindInput() {
+    const canvas = dom.canvas;
+    addEventListener("resize", () => this.orrery.resize());
+
+    addEventListener("keydown", (ev) => {
+      if (ev.repeat && !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "a", "d", "w", "s", "A", "D", "W", "S"].includes(ev.key)) return;
+      const handled = this.onKey(ev.key, ev.shiftKey, true);
+      if (handled) ev.preventDefault();
+      this.keys.add(ev.key.toLowerCase());
+      this.audio.ensure();
+    });
+    addEventListener("keyup", (ev) => this.keys.delete(ev.key.toLowerCase()));
+
+    canvas.addEventListener("pointerdown", (ev) => {
+      this.audio.ensure();
+      canvas.setPointerCapture(ev.pointerId);
+      if (ev.button === 2 || ev.altKey) {
+        this.pointer.orbiting = true;
+      } else if (this.canAim()) {
+        this.pointer.aiming = true;
+        this.aimFromPointer(ev);
+      }
+      this.pointer.x = ev.clientX; this.pointer.y = ev.clientY;
+    });
+    canvas.addEventListener("pointermove", (ev) => {
+      if (this.pointer.orbiting) {
+        this.orrery.azimuth -= (ev.clientX - this.pointer.x) * 0.006;
+        this.orrery.elevation = clamp(this.orrery.elevation + (ev.clientY - this.pointer.y) * 0.005, 0.22, 1.45);
+      } else if (this.pointer.aiming) {
+        this.aimFromPointer(ev);
+      }
+      this.pointer.x = ev.clientX; this.pointer.y = ev.clientY;
+    });
+    const release = (ev) => {
+      this.pointer.aiming = false;
+      this.pointer.orbiting = false;
+      if (ev.pointerId !== undefined && canvas.hasPointerCapture?.(ev.pointerId)) {
+        canvas.releasePointerCapture(ev.pointerId);
+      }
+    };
+    canvas.addEventListener("pointerup", release);
+    canvas.addEventListener("pointercancel", release);
+    canvas.addEventListener("contextmenu", (ev) => ev.preventDefault());
+    canvas.addEventListener("wheel", (ev) => {
+      ev.preventDefault();
+      this.orrery.zoom = clamp(this.orrery.zoom * (ev.deltaY > 0 ? 0.9 : 1.11), 0.55, 9);
+    }, { passive: false });
+
+    dom.muteBtn.addEventListener("click", () => this.toggleMute());
+  }
+
+  onKey(rawKey, shift, down) {
+    const key = rawKey.length === 1 ? rawKey.toLowerCase() : rawKey;
+    if (key === "m") { this.toggleMute(); return true; }
+
+    if (this.state === "flight" || this.state === "ready") {
+      switch (key) {
+        case " ": this.commitBurn(); return true;
+        case "h": this.setWarp(this.warpIndex === 0 ? 2 : 0); return true;
+        case "1": case "2": case "3": case "4": case "5":
+          this.setWarp(Number(key) - 1); return true;
+        case "r": this.restartContract(); return true;
+        case "p": case "Escape": this.pause(); return true;
+        case "q": this.orrery.azimuth -= 0.12; return true;
+        case "e": this.orrery.azimuth += 0.12; return true;
+        case "z": this.orrery.zoom = clamp(this.orrery.zoom * 0.88, 0.55, 9); return true;
+        case "x": this.orrery.zoom = clamp(this.orrery.zoom * 1.14, 0.55, 9); return true;
+        default: break;
+      }
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "a", "d", "w", "s"].includes(key)) return true;
+    } else if (key === "Escape" && this.state === "paused") {
+      this.resume(); return true;
+    }
+    return false;
+  }
+
+  pollHeldKeys(dt) {
+    if (!this.canAim()) return;
+    const k = this.keys;
+    const fine = k.has("shift") ? 0.28 : 1;
+    let dh = 0, dd = 0;
+    if (k.has("arrowleft") || k.has("a")) dh -= 1;
+    if (k.has("arrowright") || k.has("d")) dh += 1;
+    if (k.has("arrowup") || k.has("w")) dd += 1;
+    if (k.has("arrowdown") || k.has("s")) dd -= 1;
+    if (dh === 0 && dd === 0) return;
+    this.aimHeading = (this.aimHeading + dh * 1.5 * fine * dt + TAU) % TAU;
+    this.aimDv = clamp(this.aimDv + dd * 2.6 * fine * dt, 0, this.maxBurn());
+    this.ribbonDirty = true;
+  }
+
+  aimFromPointer(ev) {
+    const rect = dom.canvas.getBoundingClientRect();
+    _ndc.set(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
+    _ray.setFromCamera(_ndc, this.orrery.camera);
+    const origin = this.probePosition(_v3a);
+    _plane.setFromNormalAndCoplanarPoint(_UP, origin);
+    const hit = _ray.ray.intersectPlane(_plane, _v3b);
+    if (!hit) return;
+    const dx = hit.x - origin.x, dy = hit.y - origin.y, dz = hit.z - origin.z;
+    const dist = Math.hypot(dx, dy, dz);
+    if (dist < 0.05) return;
+    const basis = this.burnBasis();
+    const ux = dx / dist, uy = dy / dist, uz = dz / dist;
+    const along = ux * basis.u[0] + uy * basis.u[1] + uz * basis.u[2];
+    const side = ux * basis.w[0] + uy * basis.w[1] + uz * basis.w[2];
+    this.aimHeading = (Math.atan2(side, along) + TAU) % TAU;
+    this.aimDv = clamp((dist - 1.2) / 0.62, 0, this.maxBurn());
+    this.ribbonDirty = true;
+  }
+
+  /* -- Screens ----------------------------------------------------------- */
+
+  setScreen(html) {
+    dom.screen.innerHTML = html;
+    dom.screen.classList.toggle("on", html !== "");
+    dom.screen.querySelectorAll("[data-action]").forEach((node) => {
+      node.addEventListener("click", () => {
+        this.audio.ensure();
+        this.audio.click();
+        this.action(node.dataset.action, node.dataset.arg);
+      });
+    });
+  }
+
+  setHudVisible(on) {
+    for (const node of dom.hud) node.classList.toggle("hidden", !on);
+  }
+
+  showTitle() {
+    this.state = "title";
+    this.setHudVisible(false);
+    this.setScreen(`
+      <div class="card">
+        <p class="eyebrow">Claude Opus 5 · Brass Orrery Mail Service</p>
+        <h1 class="display">Perihelion Post<small>Mail across the orrery</small></h1>
+        <p class="lede">
+          You carry the post between worlds that will not hold still for you: buoys
+          strung along a corridor, a destination that must be <em>captured</em> rather
+          than merely reached, and exactly as much reaction mass as the route deserves.
+          The plotted course is not an estimate — it runs the same propagator as live
+          flight, against where every world <em>will be</em>. If the line says you burn
+          up, you burn up.
+        </p>
+        <div class="rule"></div>
+        <div class="keys">
+          <div><span>Aim the burn</span><b>A / D · ← →</b></div>
+          <div><span>Burn magnitude</span><b>W / S · ↑ ↓</b></div>
+          <div><span>Fine control</span><b>Shift</b></div>
+          <div><span>Fire</span><b>Space</b></div>
+          <div><span>Hold time</span><b>H</b></div>
+          <div><span>Time rate</span><b>1 – 5</b></div>
+          <div><span>Aim / orbit view</span><b>Drag / Right-drag</b></div>
+          <div><span>Zoom</span><b>Wheel · Z / X</b></div>
+          <div><span>Turn view</span><b>Q / E</b></div>
+          <div><span>Restart · Pause · Mute</span><b>R · P · M</b></div>
+        </div>
+        <div class="actions">
+          <button class="act" data-action="campaign">Take the round</button>
+          <button class="act ghost" data-action="route">Postal route</button>
+        </div>
+      </div>`);
+  }
+
+  showSelect() {
+    this.state = "select";
+    this.setHudVisible(false);
+    const rows = CAMPAIGN.map((spec, i) => {
+      const rec = this.records.get(spec.key);
+      const grade = rec ? rec.grade : "—";
+      return `<button class="contract" data-action="contract" data-arg="${i}" data-done="${rec && rec.done ? 1 : 0}">
+        <span class="num">${spec.numeral}</span>
+        <span><span class="nm display">${spec.name}</span><br><span class="sub">${spec.subtitle}</span></span>
+        <span class="grade">${grade}</span>
+      </button>`;
+    }).join("");
+    this.setScreen(`
+      <div class="card">
+        <p class="eyebrow">The round · fixed seeds · difficulty is measured, not declared</p>
+        <h2 class="display">Six contracts</h2>
+        <div class="contracts">${rows}</div>
+        <div class="actions">
+          <button class="act ghost" data-action="title">Back</button>
+          <button class="act ghost" data-action="route">Postal route</button>
+        </div>
+      </div>`);
+  }
+
+  showBriefing() {
+    const spec = this.currentSpec();
+    this.setScreen(`
+      <div class="card">
+        <p class="eyebrow">Contract ${spec.numeral}</p>
+        <h2 class="display">${spec.name}</h2>
+        <p class="lede">${spec.brief}</p>
+        <div class="plot">
+          <div class="msg" id="plotMsg">Casting the orrery</div>
+          <div class="bar"><i id="plotBar"></i></div>
+        </div>
+        <div id="briefBody"></div>
+      </div>`);
+  }
+
+  showBriefingReady() {
+    const c = this.contract;
+    const body = document.getElementById("briefBody");
+    const plot = document.querySelector(".plot");
+    if (plot) plot.remove();
+    if (!body) return;
+    body.innerHTML = `
+      <div class="specs">
+        <div class="spec"><span class="label">Destination</span><span class="value small display">${c.destName}</span></div>
+        <div class="spec"><span class="label">Reaction mass</span><span class="value small">${c.fuel.toFixed(2)} Δv</span></div>
+        <div class="spec"><span class="label">Mail buoys</span><span class="value small">${c.beacons.length}</span></div>
+        <div class="spec"><span class="label">From</span><span class="value small display">${c.departName}</span></div>
+        <div class="spec"><span class="label">Window</span><span class="value small">${c.grade.name}</span></div>
+        <div class="spec"><span class="label">Time allowed</span><span class="value small">${Math.round(c.timeLimit)}s</span></div>
+      </div>
+      <p class="lede" style="margin-top:14px">
+        Confirmed route flies in ${c.witness.flight.toFixed(1)}s for ${c.witness.total.toFixed(2)} Δv.
+        ${(c.basin * 100).toFixed(1)}% of nearby launches still deliver, which is why this one is graded
+        <b style="color:var(--patina)">${c.grade.name}</b>.
+      </p>
+      <div class="actions">
+        <button class="act" data-action="launch">Take the mast</button>
+        <button class="act ghost" data-action="back">Back</button>
+      </div>`;
+    dom.screen.querySelectorAll("[data-action]").forEach((node) => {
+      node.addEventListener("click", () => {
+        this.audio.ensure();
+        this.audio.click();
+        this.action(node.dataset.action, node.dataset.arg);
+      });
+    });
+  }
+
+  showResult(win, reason) {
+    this.state = win ? "won" : "lost";
+    this.setHudVisible(false);
+    const c = this.contract;
+    const flight = this.launched ? this.simT - this.launchT : 0;
+    const nextLabel = this.mode === "route"
+      ? "Next route"
+      : this.contractIndex < CAMPAIGN.length - 1 ? "Next contract" : "Back to the round";
+    const stats = `
+      <div class="specs">
+        <div class="spec"><span class="label">Flight</span><span class="value small">${flight.toFixed(1)}s</span></div>
+        <div class="spec"><span class="label">Mass left</span><span class="value small">${this.fuel.toFixed(2)} Δv</span></div>
+        <div class="spec"><span class="label">Buoys</span><span class="value small">${this.collected} / ${c.beacons.length}</span></div>
+      </div>`;
+    this.setScreen(`
+      <div class="card">
+        <p class="eyebrow">${win ? "Delivered" : "Contract lost"}</p>
+        <h2 class="display">${win ? `The sack reaches ${c.destName}` : reason.title}</h2>
+        <p class="lede">${win ? reason.body : reason.body}</p>
+        ${stats}
+        <div class="actions">
+          ${win ? `<button class="act" data-action="next">${nextLabel}</button>` : `<button class="act" data-action="retry">Fly it again</button>`}
+          <button class="act ghost" data-action="retry">${win ? "Fly it again" : "Retry"}</button>
+          <button class="act ghost" data-action="back">Change contract</button>
+        </div>
+      </div>`);
+  }
+
+  pause() {
+    if (this.state !== "flight" && this.state !== "ready") return;
+    this.resumeState = this.state;
+    this.state = "paused";
+    this.setScreen(`
+      <div class="card">
+        <p class="eyebrow">Held</p>
+        <h2 class="display">The clock waits</h2>
+        <p class="lede">The orrery keeps its own time, but it will wait for a postman.</p>
+        <div class="actions">
+          <button class="act" data-action="resume">Resume</button>
+          <button class="act ghost" data-action="retry">Restart contract</button>
+          <button class="act ghost" data-action="back">Abandon</button>
+        </div>
+      </div>`);
+  }
+
+  resume() {
+    this.state = this.resumeState || "flight";
+    this.setScreen("");
+    this.lastFrame = performance.now();
+  }
+
+  /** Leaving a run for any reason silences everything that belonged to it. */
+  endRun() {
+    this.audio.stopMusic();
+    this.audio.setProximity(0);
+    this.audio.setWarning(0, 0);
+    this.audio.setAmbience(0.25);
+  }
+
+  action(name, arg) {
+    switch (name) {
+      case "campaign": this.endRun(); this.mode = "campaign"; this.showSelect(); break;
+      case "route": this.endRun(); this.mode = "route"; this.routeTier = 1; this.startContract(); break;
+      case "title": this.endRun(); this.showTitle(); break;
+      case "contract": this.mode = "campaign"; this.contractIndex = Number(arg); this.startContract(); break;
+      case "launch": this.beginFlight(); break;
+      case "back": this.endRun(); this.mode === "route" ? this.showTitle() : this.showSelect(); break;
+      case "retry": this.startContract(); break;
+      case "resume": this.resume(); break;
+      case "next":
+        if (this.mode === "route") { this.routeTier += 1; this.routeSeed = (this.routeSeed * 1664525 + 1013904223) >>> 0; this.startContract(); }
+        else if (this.contractIndex < CAMPAIGN.length - 1) { this.contractIndex += 1; this.startContract(); }
+        else this.showSelect();
+        break;
+      default: break;
+    }
+  }
+
+  /* -- Contract lifecycle ------------------------------------------------ */
+
+  currentSpec() {
+    return this.mode === "route" ? routeSpec(this.routeTier, this.routeSeed) : CAMPAIGN[this.contractIndex];
+  }
+
+  startContract() {
+    this.endRun();
+    this.state = "briefing";
+    this.setHudVisible(false);
+    this.showBriefing();
+    this.buildAttempt = 0;
+    this.builder = buildContract(this.currentSpec(), 0);
+    this.buildProgress = 0;
+    this.buildMessage = "Casting the orrery";
+  }
+
+  pumpBuilder() {
+    if (!this.builder) return;
+    const budget = performance.now() + 11;
+    let step;
+    do {
+      step = this.builder.next();
+      if (step.done) {
+        this.builder = null;
+        const value = step.value;
+        if (!value || value.failed) {
+          this.buildAttempt += 1;
+          if (this.buildAttempt > 5) {
+            this.buildMessage = "No route found — reshuffling";
+            this.startContract();
+            return;
+          }
+          this.builder = buildContract(this.currentSpec(), this.buildAttempt);
+          return;
+        }
+        this.onContractReady(value);
+        return;
+      }
+      this.buildProgress = step.value.p;
+      this.buildMessage = step.value.msg;
+    } while (performance.now() < budget);
+
+    const bar = document.getElementById("plotBar");
+    const msg = document.getElementById("plotMsg");
+    if (bar) bar.style.width = `${Math.round(this.buildProgress * 100)}%`;
+    if (msg) msg.textContent = this.buildMessage;
+  }
+
+  onContractReady(contract) {
+    this.contract = contract;
+    this.orrery.loadContract(contract);
+    this.audio.tuneTo(contract);
+    const rec = this.records.get(contract.spec.key) || { done: false };
+    rec.grade = contract.grade.name;
+    rec.basin = contract.basin;
+    this.records.set(contract.spec.key, rec);
+    this.state = "ready-brief";
+    this.showBriefingReady();
+    this.resetRun();
+    this.audio.bell(0, 0.12);
+  }
+
+  resetRun() {
+    const c = this.contract;
+    this.simT = 0;
+    this.accum = 0;
+    this.launched = false;
+    this.launchT = 0;
+    this.fuel = c.fuel;
+    this.collected = 0;
+    this.warpIndex = 2;
+    this.aimHeading = 0;
+    this.aimDv = clamp(c.witness.dv * 0.75, 0, c.fuel);
+    for (const b of c.beacons) b.taken = false;
+    for (const node of this.orrery.beaconNodes) {
+      node.mesh.visible = true;
+      node.data.taken = false;
+    }
+    this.probeState = null;
+    this.ribbonDirty = true;
+    this.result = null;
+    this.orrery.zoom = 1;
+    this.orrery.azimuth = -0.62;
+    this.orrery.elevation = 0.95;
+  }
+
+  beginFlight() {
+    this.state = "ready";
+    this.setScreen("");
+    this.setHudVisible(true);
+    this.lastFrame = performance.now();
+    this.ribbonDirty = true;
+    this.audio.setAmbience(1);
+    const destOrbit = this.contract.sys.bodies[this.contract.dest].orbit;
+    this.audio.startMusic(destOrbit ? destOrbit.period : 24);
+    this.banner(this.contract.destName, "Destination");
+  }
+
+  restartContract() {
+    this.resetRun();
+    this.state = "ready";
+    this.setScreen("");
+    this.setHudVisible(true);
+    this.audio.click(false);
+  }
+
+  /* -- Flight ------------------------------------------------------------ */
+
+  canAim() {
+    return (this.state === "ready" || this.state === "flight") && this.fuel > 0.001;
+  }
+
+  maxBurn() {
+    return Math.min(this.fuel, this.state === "ready" ? DV_RANGE[1] : 6);
+  }
+
+  /** Prograde basis at the probe (or at the mast, before launch). */
+  burnBasis() {
+    const c = this.contract;
+    const u = _basisU, w = _basisW;
+    let vx, vy, vz;
+    if (this.launched && this.probeState) {
+      vx = this.probeState.vx; vy = this.probeState.vy; vz = this.probeState.vz;
+      if (Math.hypot(vx, vy, vz) < 1e-6) { vx = 1; vy = 0; vz = 0; }
+    } else {
+      c.sys.bodyState(c.departure, this.simT, _bs);
+      vx = _bs[3]; vy = _bs[4]; vz = _bs[5];
+    }
+    burnDirection(vx, vy, vz, 0, u);
+    burnDirection(vx, vy, vz, Math.PI / 2, w);
+    return { u, w };
+  }
+
+  aimDirection(out) {
+    const c = this.contract;
+    let vx, vy, vz;
+    if (this.launched && this.probeState) {
+      vx = this.probeState.vx; vy = this.probeState.vy; vz = this.probeState.vz;
+    } else {
+      c.sys.bodyState(c.departure, this.simT, _bs);
+      vx = _bs[3]; vy = _bs[4]; vz = _bs[5];
+    }
+    return burnDirection(vx, vy, vz, this.aimHeading, out);
+  }
+
+  probePosition(out) {
+    if (this.launched && this.probeState) {
+      return out.set(this.probeState.x, this.probeState.y, this.probeState.z);
+    }
+    mastPosition(this.contract.sys, this.contract.departure, this.simT, _mast);
+    return out.set(_mast[0], _mast[1], _mast[2]);
+  }
+
+  currentProbeState() {
+    if (this.launched && this.probeState) return this.probeState;
+    const c = this.contract;
+    return launchState(c.sys, c.departure, this.simT, 0, 0);
+  }
+
+  commitBurn() {
+    if (!this.canAim() || this.aimDv <= 0.02) return;
+    const c = this.contract;
+    const dv = Math.min(this.aimDv, this.fuel);
+    const dir = this.aimDirection(_burnDir);
+
+    if (!this.launched) {
+      this.probeState = launchState(c.sys, c.departure, this.simT, this.aimHeading, dv);
+      this.launched = true;
+      this.launchT = this.simT;
+      this.state = "flight";
+      this.banner("Away", `${dv.toFixed(2)} Δv spent`);
+    } else {
+      this.probeState.vx += dir[0] * dv;
+      this.probeState.vy += dir[1] * dv;
+      this.probeState.vz += dir[2] * dv;
+      primeState(c.sys, this.probeState);
+      this.banner("Correction", `${dv.toFixed(2)} Δv spent`);
+    }
+
+    this.fuel = Math.max(0, this.fuel - dv);
+    this.aimDv = clamp(this.aimDv, 0, this.maxBurn());
+    this.burnFlash = 0.32;
+    this.audio.thrust(dv);
+    this.ribbonDirty = true;
+  }
+
+  setWarp(index) {
+    this.warpIndex = clamp(index, 0, WARPS.length - 1);
+    this.audio.click(this.warpIndex > 2);
+  }
+
+  stepSimulation(dt) {
+    const c = this.contract;
+    const warp = WARPS[this.warpIndex];
+    this.accum += dt * warp;
+    let steps = Math.floor(this.accum / SIM_DT);
+    if (steps <= 0) return;
+    this.accum -= steps * SIM_DT;
+    steps = Math.min(steps, 48);
+    this.advanceBy(steps * SIM_DT);
+  }
+
+  /** Advance simulation time by an exact span, handling every outcome. */
+  advanceBy(duration) {
+    if (duration <= 0) return;
+    const c = this.contract;
+
+    if (!this.launched) {
+      this.simT += duration;
+      this.ribbonDirty = true;
+      return;
+    }
+
+    const before = this.collected;
+    const run = propagate(c.sys, this.probeState, {
+      duration,
+      dest: c.dest,
+      capture: { radius: c.capRadius, speed: c.capSpeed },
+      beacons: c.beacons,
+      collectedStart: this.collected,
+      stopOnEvent: true,
+      onBeacon: (index) => this.onBeacon(index),
+    });
+    this.collected = run.collected;
+    this.simT = this.probeState.t;
+    if (this.collected !== before) this.ribbonDirty = true;
+
+    if (run.outcome === OUTCOME.CAPTURED) {
+      if (this.collected >= c.beacons.length) this.win();
+      else this.lose({ title: "Short sack", body: `You reached ${c.destName} without the whole round. The postmaster counts before signing.` }, "short");
+      return;
+    }
+    if (run.outcome === OUTCOME.STAR) {
+      this.lose({ title: "Into the lamp", body: "The post went into the light. Nothing came out." }, "star");
+      return;
+    }
+    if (run.outcome === OUTCOME.IMPACT) {
+      const name = c.sys.bodies[run.body].name;
+      this.lose({ title: `Down on ${name}`, body: `Arrival is not the same as capture. You met ${name} at speed.` }, "impact");
+      return;
+    }
+    if (run.outcome === OUTCOME.ESCAPED) {
+      this.lose({ title: "Out past the rules", body: "The orrery ends somewhere. You are past it, and still accelerating away." }, "escape");
+      return;
+    }
+    if (this.simT - this.launchT > c.timeLimit) {
+      this.lose({ title: "The chime went", body: "The contract expired while you were still in transit. Mail has a schedule." }, "time");
+    }
+  }
+
+  onBeacon(index) {
+    const node = this.orrery.beaconNodes[index];
+    if (node) node.mesh.visible = false;
+    this.audio.bell(index + 1, 0.24);
+    this.banner("Buoy", `${this.collected + 1} of ${this.contract.beacons.length}`);
+    this.flashUntil = performance.now() + 220;
+  }
+
+  win() {
+    this.result = "won";
+    const rec = this.records.get(this.contract.spec.key) || {};
+    rec.done = true;
+    rec.grade = this.contract.grade.name;
+    rec.bestFuel = Math.max(rec.bestFuel || 0, this.fuel);
+    this.records.set(this.contract.spec.key, rec);
+    this.audio.stopMusic();
+    this.audio.captured();
+    this.audio.setAmbience(0.3);
+    this.showResult(true, {
+      body: `Captured inside the approach sphere with ${this.fuel.toFixed(2)} Δv still in the tank. The confirmed route wanted ${this.contract.witness.total.toFixed(2)}.`,
+    });
+  }
+
+  lose(reason, kind) {
+    this.result = "lost";
+    this.audio.stopMusic();
+    this.audio.lost(kind);
+    this.audio.setAmbience(0.25);
+    this.audio.setProximity(0);
+    this.audio.setWarning(0, 0);
+    this.showResult(false, reason);
+  }
+
+  banner(big, small) {
+    dom.banner.querySelector(".big").textContent = big;
+    dom.banner.querySelector(".sm").textContent = small;
+    dom.banner.classList.add("on");
+    clearTimeout(this._bannerTimer);
+    this._bannerTimer = setTimeout(() => dom.banner.classList.remove("on"), 1500);
+  }
+
+  /* -- Prediction -------------------------------------------------------- */
+
+  recomputeRibbon() {
+    const c = this.contract;
+    if (!c) return;
+    const s = cloneProbe(this.currentProbeState());
+    if (this.aimDv > 0.02 && this.canAim()) {
+      const dir = this.aimDirection(_burnDir);
+      const dv = Math.min(this.aimDv, this.fuel);
+      s.vx += dir[0] * dv; s.vy += dir[1] * dv; s.vz += dir[2] * dv;
+      s.primed = false;
+    }
+    const trial = c.beacons.filter((b) => !b.taken).map((b) => ({ x: b.x, y: b.y, z: b.z, r: b.r, taken: false }));
+    const startT = s.t;   // propagate advances `s` in place, so bank this first
+
+    // The plotted course only means anything if it stops where live flight
+    // stops. Past the contract deadline the run is over, so predicting a
+    // capture beyond it would promise something the player cannot be given.
+    let horizon = PREDICT_HORIZON;
+    let cutByDeadline = false;
+    if (this.launched) {
+      const remaining = c.timeLimit - (this.simT - this.launchT);
+      if (remaining < horizon) {
+        horizon = Math.max(0, remaining);
+        cutByDeadline = true;
+      }
+    }
+
+    let n = 0;
+    const pts = this.ribbonPoints;
+    const run = propagate(c.sys, s, {
+      duration: horizon,
+      dest: c.dest,
+      capture: { radius: c.capRadius, speed: c.capSpeed },
+      beacons: trial,
+      stopOnEvent: true,
+      sampleEvery: PREDICT_SAMPLE,
+      onSample: (st) => {
+        if (n >= RIBBON_MAX) return;
+        pts[n * 3] = st.x; pts[n * 3 + 1] = st.y; pts[n * 3 + 2] = st.z;
+        n += 1;
+      },
+    });
+    this.ribbonCount = n;
+    const outcome = run.outcome === OUTCOME.FLYING && cutByDeadline ? OUTCOME.TIMEOUT : run.outcome;
+    this.predicted = {
+      outcome,
+      body: run.body,
+      buoys: this.collected + trial.filter((b) => b.taken).length,
+      t: run.t - startT,
+      closest: run.closest,
+      closestSpeed: run.closestSpeed,
+    };
+    this.orrery.setRibbon(pts, n, outcome);
+    this.ribbonDirty = false;
+  }
+
+  /* -- HUD --------------------------------------------------------------- */
+
+  updateHud() {
+    const c = this.contract;
+    if (!c) return;
+    dom.contractName.textContent = c.spec.name;
+    dom.contractLine.textContent = `${c.departName} → ${c.destName} · ${c.grade.name}`;
+
+    const flight = this.launched ? this.simT - this.launchT : 0;
+    dom.clockValue.innerHTML = this.launched
+      ? `${flight.toFixed(1)}<span style="font-size:11px;color:var(--ivory-dim)">s</span>`
+      : `—`;
+    const left = clamp(1 - flight / c.timeLimit, 0, 1);
+    dom.clockGauge.firstElementChild.style.width = `${left * 100}%`;
+    dom.clockGauge.classList.toggle("warn", left < 0.25);
+    dom.warpValue.textContent = WARPS[this.warpIndex] === 0 ? "Held" : `×${WARPS[this.warpIndex]}`;
+
+    dom.fuelValue.textContent = this.fuel.toFixed(2);
+    const fuelFrac = clamp(this.fuel / c.fuel, 0, 1);
+    dom.fuelGauge.firstElementChild.style.width = `${fuelFrac * 100}%`;
+    dom.fuelGauge.classList.toggle("warn", fuelFrac < 0.22);
+    dom.burnValue.textContent = this.canAim()
+      ? `Aim ${(this.aimHeading * 180 / Math.PI).toFixed(0)}° · ${this.aimDv.toFixed(2)} Δv`
+      : "Aim —";
+
+    dom.cargoValue.textContent = `${this.collected} / ${c.beacons.length}`;
+    if (dom.cargoBeads.childElementCount !== c.beacons.length) {
+      dom.cargoBeads.innerHTML = c.beacons.map(() => `<span class="bead"></span>`).join("");
+    }
+    const beads = dom.cargoBeads.children;
+    for (let i = 0; i < beads.length; i += 1) beads[i].classList.toggle("on", c.beacons[i].taken);
+
+    const p = this.predicted;
+    if (!p) return;
+    let text = "Coasting", tone = "warn", sub = "";
+    if (p.outcome === OUTCOME.CAPTURED) {
+      const full = p.buoys >= c.beacons.length;
+      text = full ? `Capture · ${c.destName}` : `Capture · ${p.buoys}/${c.beacons.length} buoys`;
+      tone = full ? "ok" : "bad";
+      sub = full ? `In ${p.t.toFixed(1)}s. Sack complete.` : "Short sack — the postmaster counts.";
+    } else if (p.outcome === OUTCOME.IMPACT) {
+      text = `Impact · ${c.sys.bodies[p.body].name}`;
+      tone = "bad";
+      sub = `In ${p.t.toFixed(1)}s at speed.`;
+    } else if (p.outcome === OUTCOME.STAR) {
+      text = "Into the lamp"; tone = "bad"; sub = `In ${p.t.toFixed(1)}s.`;
+    } else if (p.outcome === OUTCOME.ESCAPED) {
+      text = "Escape"; tone = "bad"; sub = "This course leaves the orrery.";
+    } else if (p.outcome === OUTCOME.TIMEOUT) {
+      text = "Deadline";
+      tone = "bad";
+      sub = `The chime goes in ${p.t.toFixed(1)}s, still in transit.`;
+    } else {
+      text = `Coasting · ${p.buoys}/${c.beacons.length} buoys`;
+      tone = p.closest < c.capRadius * 1.6 ? "warn" : "warn";
+      sub = Number.isFinite(p.closestSpeed)
+        ? `Nearest approach to ${c.destName}: ${p.closestSpeed.toFixed(2)} Δv to stop.`
+        : `No approach to ${c.destName} inside ${PREDICT_HORIZON}s.`;
+    }
+    dom.predictText.textContent = text;
+    dom.predictText.className = tone;
+    dom.predictSub.textContent = sub;
+  }
+
+  toggleMute() {
+    this.audio.ensure();
+    this.audio.setMuted(!this.audio.muted);
+    dom.muteBtn.textContent = this.audio.muted ? "Sound off" : "Sound on";
+    dom.muteBtn.setAttribute("aria-pressed", String(this.audio.muted));
+  }
+
+  /* -- Frame ------------------------------------------------------------- */
+
+  frame = (now) => {
+    requestAnimationFrame(this.frame);
+    const dt = Math.min(0.05, (now - this.lastFrame) / 1000);
+    this.lastFrame = now;
+    this.frameIndex += 1;
+
+    if (this.builder) this.pumpBuilder();
+    this.audio.playMusic();
+
+    if (this.state === "ready" || this.state === "flight") {
+      this.pollHeldKeys(dt);
+      this.stepSimulation(dt);
+    }
+
+    if (this.contract) {
+      const live = this.state !== "briefing";
+      if (live) this.orrery.syncBodies(this.simT);
+
+      const probePos = this.probePosition(_v3a);
+      this.orrery.probe.position.copy(probePos);
+      this.orrery.probeHalo.position.copy(probePos);
+
+      // Point the hull along motion; before launch, along the pending burn.
+      const dir = this.aimDirection(_aimDir);
+      if (this.launched && this.probeState) {
+        const sp = Math.hypot(this.probeState.vx, this.probeState.vy, this.probeState.vz) || 1;
+        _v3b.set(this.probeState.vx / sp, this.probeState.vy / sp, this.probeState.vz / sp);
+      } else {
+        _v3b.set(dir[0], dir[1], dir[2]);
+      }
+      this.orrery.probe.quaternion.setFromUnitVectors(_AXIS_X, _v3b);
+
+      // The mast rides the departure world until you leave it.
+      mastPosition(this.contract.sys, this.contract.departure, this.simT, _mast);
+      this.orrery.mast.position.set(_mast[0], _mast[1], _mast[2]);
+      this.orrery.mast.visible = !this.launched;
+
+      const aiming = this.canAim() && this.aimDv > 0.02;
+      this.orrery.setAim(probePos, _v3b.set(dir[0], dir[1], dir[2]), this.aimDv, aiming);
+
+      this.burnFlash = Math.max(0, (this.burnFlash || 0) - dt * 2.6);
+      this.orrery.flame.material.opacity = this.burnFlash;
+      this.orrery.flame.scale.setScalar(1.1 + this.burnFlash * 3.4);
+
+      if (this.ribbonDirty || (this.state === "flight" && this.frameIndex % 6 === 0)) {
+        this.recomputeRibbon();
+      }
+
+      const gain = this.orrery.readableGain || 2;
+      this.orrery.probe.scale.setScalar(gain);
+      this.orrery.probeHalo.scale.setScalar(gain * 2.3);
+      for (const node of this.orrery.beaconNodes) {
+        node.mesh.scale.setScalar(gain * 0.85);
+        const core = node.mesh.getObjectByName("core");
+        if (core) core.rotation.y += dt * 0.9;
+        node.halo.material.opacity = 0.4 + Math.sin(now * 0.0025 + node.data.x) * 0.16;
+      }
+      const pulse = 0.24 + Math.sin(now * 0.0018) * 0.1;
+      for (const child of this.orrery.captureRing.children) child.material.opacity = pulse;
+
+      this.orrery.updateCamera(probePos, dt);
+
+      // Flight voices belong to a flight. Pausing, abandoning or finishing a
+      // run must not leave the probe still growling under a menu.
+      const flying = this.state === "ready" || this.state === "flight";
+      if (flying && this.launched && this.probeState) {
+        this.audio.setProximity(Math.hypot(this.probeState.ax, this.probeState.ay, this.probeState.az));
+        const left = clamp(1 - (this.simT - this.launchT) / this.contract.timeLimit, 0, 1);
+        this.audio.setWarning(left < 0.22 ? (0.22 - left) * 4 : 0, (1 - left) * 26);
+      } else {
+        this.audio.setProximity(0);
+        this.audio.setWarning(0, 0);
+      }
+
+      if (this.state === "ready" || this.state === "flight") this.updateHud();
+    }
+
+    this.orrery.render();
+  };
+}
+const game = new Game();
+
+/* ============================================================================
+   9. TEST SURFACE
+   Present only under ?test=1. Normal play exposes nothing.
+   ========================================================================== */
+
+if (isTest) {
+  const specFor = (index) => CAMPAIGN[clamp(index, 0, CAMPAIGN.length - 1)];
+
+  function loadCampaign(index) {
+    game.mode = "campaign";
+    game.contractIndex = clamp(index, 0, CAMPAIGN.length - 1);
+    const contract = buildContractSync(specFor(index));
+    if (!contract) throw new Error(`no witness for campaign contract ${index}`);
+    game.builder = null;
+    game.contract = contract;
+    game.orrery.loadContract(contract);
+    game.audio.tuneTo(contract);
+    game.resetRun();
+    game.state = "ready";
+    game.setScreen("");
+    game.setHudVisible(true);
+    game.recomputeRibbon();
+    return contract;
+  }
+
+  function loadRoute(tier, seed) {
+    game.mode = "route";
+    game.routeTier = tier;
+    game.routeSeed = seed >>> 0;
+    const contract = buildContractSync(routeSpec(tier, seed >>> 0));
+    if (!contract) throw new Error(`no witness for route tier ${tier} seed ${seed}`);
+    game.builder = null;
+    game.contract = contract;
+    game.orrery.loadContract(contract);
+    game.resetRun();
+    game.state = "ready";
+    game.setScreen("");
+    game.setHudVisible(true);
+    game.recomputeRibbon();
+    return contract;
+  }
+
+  /** Fly the generator's own witness. This is the solvability proof, executed. */
+  function replayWitness(stopFraction = 1) {
+    const c = game.contract;
+    const w = c.witness;
+    game.resetRun();
+    game.simT = w.t0;
+    game.aimHeading = w.heading;
+    game.aimDv = w.dv;
+    game.commitBurn();
+
+    const target = w.t0 + w.flight * stopFraction;
+    let guard = 0;
+    while (game.simT < target && game.state === "flight" && guard < 4000) {
+      game.advanceBy(Math.min(0.25, target - game.simT));
+      guard += 1;
+    }
+
+    if (stopFraction >= 1 && game.state === "flight") {
+      // At the approach sphere, spend the retro burn the witness budgeted.
+      const s = game.probeState;
+      c.sys.bodyState(c.dest, s.t, _bs);
+      const rvx = s.vx - _bs[3], rvy = s.vy - _bs[4], rvz = s.vz - _bs[5];
+      const rel = Math.hypot(rvx, rvy, rvz);
+      if (rel > 1e-6) {
+        const dv = Math.min(rel, game.fuel);
+        s.vx -= (rvx / rel) * dv; s.vy -= (rvy / rel) * dv; s.vz -= (rvz / rel) * dv;
+        game.fuel = Math.max(0, game.fuel - dv);
+        primeState(c.sys, s);
+      }
+      game.advanceBy(SIM_DT * 2);
+    }
+    game.ribbonDirty = true;
+    return {
+      state: game.state,
+      result: game.result,
+      collected: game.collected,
+      buoys: c.beacons.length,
+      fuelLeft: game.fuel,
+      flight: game.simT - game.launchT,
+    };
+  }
+
+  function advance(seconds) {
+    let left = seconds;
+    let guard = 0;
+    while (left > 1e-9 && guard < 20000) {
+      if (game.state !== "flight" && game.state !== "ready") break;
+      const chunk = Math.min(0.5, left);
+      game.advanceBy(chunk);
+      left -= chunk;
+      guard += 1;
+    }
+    if (game.contract) {
+      game.orrery.syncBodies(game.simT);
+      game.recomputeRibbon();
+      game.updateHud();
+    }
+    return snapshot();
+  }
+
+  /**
+   * Two independent questions about the propagator:
+   *  selfConsistency — does the ribbon match live flight? (it is the same code)
+   *  refinementError — does the propagator match itself at four times the
+   *                    resolution? This is the honest accuracy figure.
+   *  energyDrift     — specific orbital energy over a long two-body coast.
+   */
+  function integrationAudit(seconds = 24) {
+    const c = game.contract;
+    const start = cloneProbe(game.currentProbeState());
+
+    const whole = cloneProbe(start);
+    propagate(c.sys, whole, { duration: seconds, stopOnEvent: false });
+
+    const chunked = cloneProbe(start);
+    for (let i = 0; i < 12; i += 1) {
+      propagate(c.sys, chunked, { duration: seconds / 12, stopOnEvent: false });
+    }
+    const selfConsistency = Math.hypot(whole.x - chunked.x, whole.y - chunked.y, whole.z - chunked.z);
+
+    const fine = cloneProbe(start);
+    propagate(c.sys, fine, { duration: seconds, dt: SIM_DT / 4, stopOnEvent: false });
+    const refinementError = Math.hypot(whole.x - fine.x, whole.y - fine.y, whole.z - fine.z);
+    const arc = Math.hypot(whole.x - start.x, whole.y - start.y, whole.z - start.z);
+
+    // Isolated two-body coast: one fixed primary, one probe, no perturbers.
+    const solo = new System([{
+      name: "Test", kind: "star", mu: G_STAR, radius: 1.0,
+      parent: -1, orbit: null, fixed: [0, 0, 0], color: 0xffffff, seedPhase: 0,
+    }]);
+    const r0 = 18;
+    const v0 = Math.sqrt(G_STAR / r0) * 1.18;      // a healthy ellipse, not a circle
+    const p = makeProbeState(r0, 0, 0, 0, 0, v0, 0);
+    const energy = (st) => {
+      const r = Math.hypot(st.x, st.y, st.z);
+      return (st.vx * st.vx + st.vy * st.vy + st.vz * st.vz) / 2 - G_STAR / r;
+    };
+    const e0 = energy(p);
+    propagate(solo, p, { duration: 320, stopOnEvent: false });
+    const e1 = energy(p);
+
+    return {
+      seconds,
+      arcLength: arc,
+      selfConsistency,
+      refinementError,
+      refinementRelative: arc > 0 ? refinementError / arc : 0,
+      energyDrift: Math.abs((e1 - e0) / e0),
+      orbits: 320 / (TAU * Math.sqrt(Math.pow(1 / (2 / r0 - (v0 * v0) / G_STAR), 3) / G_STAR)),
+    };
+  }
+
+  function difficultyTable() {
+    return CAMPAIGN.map((spec) => {
+      const c = buildContractSync(spec);
+      if (!c) return { key: spec.key, failed: true };
+      return {
+        key: spec.key,
+        name: spec.name,
+        seed: c.seed,
+        basin: c.basin,
+        grade: c.grade.name,
+        fuel: c.fuel,
+        witnessTotal: c.witness.total,
+        flight: c.witness.flight,
+        buoys: c.beacons.length,
+        dest: c.destName,
+        destKind: c.sys.bodies[c.dest].kind,
+        bodies: c.sys.count,
+        timeLimit: c.timeLimit,
+      };
+    });
+  }
+
+  function snapshot() {
+    const c = game.contract;
+    const s = game.launched ? game.probeState : null;
+    const bodies = [];
+    if (c) {
+      const st = c.sys.states(game.simT);
+      for (let i = 0; i < c.sys.count; i += 1) {
+        const b = c.sys.bodies[i];
+        bodies.push({
+          name: b.name, kind: b.kind, radius: b.radius, mu: b.mu,
+          x: st[i * 6], y: st[i * 6 + 1], z: st[i * 6 + 2],
+          period: b.orbit ? b.orbit.period : 0,
+          eccentricity: b.orbit ? b.orbit.e : 0,
+        });
+      }
+    }
+    return {
+      screen: game.state,
+      mode: game.mode,
+      simT: game.simT,
+      launchT: game.launchT,
+      launched: game.launched,
+      warp: WARPS[game.warpIndex],
+      fuel: game.fuel,
+      collected: game.collected,
+      result: game.result,
+      aim: { heading: game.aimHeading, dv: game.aimDv },
+      contract: c ? {
+        key: c.spec.key, name: c.spec.name, seed: c.seed,
+        fuel: c.fuel, basin: c.basin, grade: c.grade.name,
+        timeLimit: c.timeLimit, capRadius: c.capRadius, capSpeed: c.capSpeed,
+        departName: c.departName, destName: c.destName,
+        destKind: c.sys.bodies[c.dest].kind,
+        buoys: c.beacons.length,
+      } : null,
+      witness: c ? {
+        t0: c.witness.t0, heading: c.witness.heading, dv: c.witness.dv,
+        retro: c.witness.retro, total: c.witness.total, flight: c.witness.flight,
+        dest: c.witness.dest,
+      } : null,
+      probe: s ? {
+        x: s.x, y: s.y, z: s.z, vx: s.vx, vy: s.vy, vz: s.vz, t: s.t,
+        speed: Math.hypot(s.vx, s.vy, s.vz),
+        accel: Math.hypot(s.ax, s.ay, s.az),
+      } : null,
+      beacons: c ? c.beacons.map((b) => ({ x: b.x, y: b.y, z: b.z, r: b.r, taken: !!b.taken })) : [],
+      bodies,
+      predicted: game.predicted ? { ...game.predicted } : null,
+      ribbonPoints: game.ribbonCount,
+      environment: {
+        artDirection: "antique brass orrery: machined armatures, engraved ivory orbit traces, filament lamp, deep indigo",
+        bodyForms: ["cratered icosphere", "banded oblate giant with carved ring gap", "shepherd moon", "caged filament lamp"],
+        plottedCourse: "same propagator, same steps as live flight",
+        hudPlacement: "edge plates only; the field is never covered",
+      },
+      audioLayers: game.audio.ctx ? 6 : 0,
+      musicOn: Boolean(game.audio.musicOn),
+      scale: game.audio.scale.slice(),
+    };
+  }
+
+  window.__PERIHELION_TEST__ = {
+    loadCampaign, loadRoute, replayWitness, advance, snapshot,
+    integrationAudit, difficultyTable,
+    campaign: () => CAMPAIGN.map((s) => ({ key: s.key, name: s.name, seed: s.seed })),
+    /** Run the whole pipeline on an arbitrary spec without loading it. */
+    buildSpec: (index, overrides = {}) => {
+      const base = specFor(index);
+      const c = buildContractSync({ ...base, ...overrides, params: { ...base.params, ...(overrides.params || {}) } });
+      if (!c) return { failed: true };
+      return {
+        seed: c.seed, basin: c.basin, grade: c.grade.name, fuel: c.fuel,
+        witnessTotal: c.witness.total, flight: c.witness.flight,
+        dest: c.destName, destKind: c.sys.bodies[c.dest].kind,
+        buoys: c.beacons.length, bodies: c.sys.count, candidates: c.candidates,
+        timeLimit: c.timeLimit,
+      };
+    },
+    witness: () => (game.contract ? { ...game.contract.witness, path: undefined } : null),
+    basin: () => (game.contract ? game.contract.basin : null),
+    aim: (heading, dv) => {
+      game.aimHeading = ((heading % TAU) + TAU) % TAU;
+      game.aimDv = clamp(dv, 0, game.maxBurn());
+      game.ribbonDirty = true;
+      game.recomputeRibbon();
+      return snapshot();
+    },
+    burn: () => { game.commitBurn(); game.recomputeRibbon(); return snapshot(); },
+    setWarp: (index) => { game.setWarp(index); return snapshot(); },
+    /** Shorten the contract deadline so the prediction clamp is reachable. */
+    setDeadline: (seconds) => {
+      game.contract.timeLimit = seconds;
+      game.ribbonDirty = true;
+      game.recomputeRibbon();
+      return snapshot();
+    },
+    setZoom: (z) => { game.orrery.zoom = clamp(z, 0.55, 9); return z; },
+    predicted: () => game.predicted,
+    diagnostics: () => game.orrery.diagnostics(),
+  };
+
+  window.__THREE_GAME_TEST_HOOKS__ = {
+    seed(seed) {
+      game.routeSeed = seed >>> 0;
+      game.routeTier = 1;
+    },
+    setState(state) {
+      switch (state) {
+        case "title":
+          game.showTitle();
+          break;
+        case "active-play":
+          loadCampaign(2);
+          replayWitness(0.42);
+          game.orrery.zoom = 1.8;
+          game.setWarp(2);
+          break;
+        case "win":
+          loadCampaign(0);
+          replayWitness(1);
+          break;
+        case "fail":
+          loadCampaign(0);
+          game.resetRun();
+          game.simT = game.contract.witness.t0;
+          game.aimHeading = game.contract.witness.heading + Math.PI;
+          game.aimDv = Math.min(game.contract.fuel, 2.6);
+          game.commitBurn();
+          advance(90);
+          if (game.state === "flight") {
+            game.lose({ title: "Adrift", body: "Test-forced failure state." }, "time");
+          }
+          break;
+        case "stress":
+          loadCampaign(5);
+          replayWitness(0.5);
+          game.orrery.zoom = 0.6;
+          game.setWarp(4);
+          break;
+        default:
+          break;
+      }
+      if (game.contract) {
+        game.orrery.syncBodies(game.simT);
+        game.recomputeRibbon();
+        game.updateHud();
+      }
+      game.orrery.render();
+      return snapshot();
+    },
+    advance(seconds) { return advance(seconds); },
+    snapshot() { return snapshot(); },
+  };
+
+  window.__THREE_GAME_DIAGNOSTICS__ = {
+    snapshot() { return game.orrery.diagnostics(); },
+  };
+}
+
+</script>
+</body>
+</html>
