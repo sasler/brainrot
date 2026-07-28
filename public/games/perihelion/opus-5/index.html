@@ -1537,6 +1537,7 @@ function buildBeaconMesh() {
 
   return group;
 }
+const AIM_UP = new THREE.Vector3(0, 1, 0);
 const RIBBON_MAX = 760;
 const PREDICT_HORIZON = 42;
 const PREDICT_SAMPLE = 4;
@@ -1967,7 +1968,8 @@ class Orrery {
     const tint = outcome === OUTCOME.CAPTURED ? [0.50, 0.84, 0.77]
       : outcome === OUTCOME.IMPACT || outcome === OUTCOME.STAR ? [0.89, 0.38, 0.25]
         : outcome === OUTCOME.ESCAPED ? [0.62, 0.66, 0.78]
-          : [0.79, 0.63, 0.35];
+          : outcome === OUTCOME.TIMEOUT ? [0.88, 0.50, 0.24]
+            : [0.79, 0.63, 0.35];
     const n = Math.min(count, RIBBON_MAX);
     for (let i = 0; i < n; i += 1) {
       this.ribbonPos[i * 3] = points[i * 3];
@@ -2004,7 +2006,7 @@ class Orrery {
     this.aimPos[5] = origin.z + dir.z * len;
     this.aimLine.geometry.attributes.position.needsUpdate = true;
     this.aimHead.position.set(this.aimPos[3], this.aimPos[4], this.aimPos[5]);
-    this.aimHead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    this.aimHead.quaternion.setFromUnitVectors(AIM_UP, dir);
   }
 
   updateCamera(probePos, dt) {
@@ -2397,6 +2399,14 @@ const _plane = new THREE.Plane();
 const _ray = new THREE.Raycaster();
 const _ndc = new THREE.Vector2();
 
+// Frame-loop scratch. Nothing here may allocate per frame.
+const _aimDir = new Float64Array(3);
+const _burnDir = new Float64Array(3);
+const _basisU = new Float64Array(3);
+const _basisW = new Float64Array(3);
+const _UP = new THREE.Vector3(0, 1, 0);
+const _AXIS_X = new THREE.Vector3(1, 0, 0);
+
 function cloneProbe(s) {
   const c = makeProbeState(s.x, s.y, s.z, s.vx, s.vy, s.vz, s.t);
   c.ax = s.ax; c.ay = s.ay; c.az = s.az; c.primed = s.primed;
@@ -2540,7 +2550,7 @@ class Game {
     _ndc.set(((ev.clientX - rect.left) / rect.width) * 2 - 1, -((ev.clientY - rect.top) / rect.height) * 2 + 1);
     _ray.setFromCamera(_ndc, this.orrery.camera);
     const origin = this.probePosition(_v3a);
-    _plane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), origin);
+    _plane.setFromNormalAndCoplanarPoint(_UP, origin);
     const hit = _ray.ray.intersectPlane(_plane, _v3b);
     if (!hit) return;
     const dx = hit.x - origin.x, dy = hit.y - origin.y, dz = hit.z - origin.z;
@@ -2731,14 +2741,22 @@ class Game {
     this.lastFrame = performance.now();
   }
 
+  /** Leaving a run for any reason silences everything that belonged to it. */
+  endRun() {
+    this.audio.stopMusic();
+    this.audio.setProximity(0);
+    this.audio.setWarning(0, 0);
+    this.audio.setAmbience(0.25);
+  }
+
   action(name, arg) {
     switch (name) {
-      case "campaign": this.mode = "campaign"; this.showSelect(); break;
-      case "route": this.mode = "route"; this.routeTier = 1; this.startContract(); break;
-      case "title": this.showTitle(); break;
+      case "campaign": this.endRun(); this.mode = "campaign"; this.showSelect(); break;
+      case "route": this.endRun(); this.mode = "route"; this.routeTier = 1; this.startContract(); break;
+      case "title": this.endRun(); this.showTitle(); break;
       case "contract": this.mode = "campaign"; this.contractIndex = Number(arg); this.startContract(); break;
       case "launch": this.beginFlight(); break;
-      case "back": this.mode === "route" ? this.showTitle() : this.showSelect(); break;
+      case "back": this.endRun(); this.mode === "route" ? this.showTitle() : this.showSelect(); break;
       case "retry": this.startContract(); break;
       case "resume": this.resume(); break;
       case "next":
@@ -2757,6 +2775,7 @@ class Game {
   }
 
   startContract() {
+    this.endRun();
     this.state = "briefing";
     this.setHudVisible(false);
     this.showBriefing();
@@ -2869,7 +2888,7 @@ class Game {
   /** Prograde basis at the probe (or at the mast, before launch). */
   burnBasis() {
     const c = this.contract;
-    const u = new Float64Array(3), w = new Float64Array(3);
+    const u = _basisU, w = _basisW;
     let vx, vy, vz;
     if (this.launched && this.probeState) {
       vx = this.probeState.vx; vy = this.probeState.vy; vz = this.probeState.vz;
@@ -2913,8 +2932,7 @@ class Game {
     if (!this.canAim() || this.aimDv <= 0.02) return;
     const c = this.contract;
     const dv = Math.min(this.aimDv, this.fuel);
-    const dir = new Float64Array(3);
-    this.aimDirection(dir);
+    const dir = this.aimDirection(_burnDir);
 
     if (!this.launched) {
       this.probeState = launchState(c.sys, c.departure, this.simT, this.aimHeading, dv);
@@ -3049,18 +3067,31 @@ class Game {
     if (!c) return;
     const s = cloneProbe(this.currentProbeState());
     if (this.aimDv > 0.02 && this.canAim()) {
-      const dir = new Float64Array(3);
-      this.aimDirection(dir);
+      const dir = this.aimDirection(_burnDir);
       const dv = Math.min(this.aimDv, this.fuel);
       s.vx += dir[0] * dv; s.vy += dir[1] * dv; s.vz += dir[2] * dv;
       s.primed = false;
     }
     const trial = c.beacons.filter((b) => !b.taken).map((b) => ({ x: b.x, y: b.y, z: b.z, r: b.r, taken: false }));
     const startT = s.t;   // propagate advances `s` in place, so bank this first
+
+    // The plotted course only means anything if it stops where live flight
+    // stops. Past the contract deadline the run is over, so predicting a
+    // capture beyond it would promise something the player cannot be given.
+    let horizon = PREDICT_HORIZON;
+    let cutByDeadline = false;
+    if (this.launched) {
+      const remaining = c.timeLimit - (this.simT - this.launchT);
+      if (remaining < horizon) {
+        horizon = Math.max(0, remaining);
+        cutByDeadline = true;
+      }
+    }
+
     let n = 0;
     const pts = this.ribbonPoints;
     const run = propagate(c.sys, s, {
-      duration: PREDICT_HORIZON,
+      duration: horizon,
       dest: c.dest,
       capture: { radius: c.capRadius, speed: c.capSpeed },
       beacons: trial,
@@ -3073,15 +3104,16 @@ class Game {
       },
     });
     this.ribbonCount = n;
+    const outcome = run.outcome === OUTCOME.FLYING && cutByDeadline ? OUTCOME.TIMEOUT : run.outcome;
     this.predicted = {
-      outcome: run.outcome,
+      outcome,
       body: run.body,
       buoys: this.collected + trial.filter((b) => b.taken).length,
       t: run.t - startT,
       closest: run.closest,
       closestSpeed: run.closestSpeed,
     };
-    this.orrery.setRibbon(pts, n, run.outcome);
+    this.orrery.setRibbon(pts, n, outcome);
     this.ribbonDirty = false;
   }
 
@@ -3133,6 +3165,10 @@ class Game {
       text = "Into the lamp"; tone = "bad"; sub = `In ${p.t.toFixed(1)}s.`;
     } else if (p.outcome === OUTCOME.ESCAPED) {
       text = "Escape"; tone = "bad"; sub = "This course leaves the orrery.";
+    } else if (p.outcome === OUTCOME.TIMEOUT) {
+      text = "Deadline";
+      tone = "bad";
+      sub = `The chime goes in ${p.t.toFixed(1)}s, still in transit.`;
     } else {
       text = `Coasting · ${p.buoys}/${c.beacons.length} buoys`;
       tone = p.closest < c.capRadius * 1.6 ? "warn" : "warn";
@@ -3177,15 +3213,14 @@ class Game {
       this.orrery.probeHalo.position.copy(probePos);
 
       // Point the hull along motion; before launch, along the pending burn.
-      const dir = new Float64Array(3);
-      this.aimDirection(dir);
+      const dir = this.aimDirection(_aimDir);
       if (this.launched && this.probeState) {
         const sp = Math.hypot(this.probeState.vx, this.probeState.vy, this.probeState.vz) || 1;
         _v3b.set(this.probeState.vx / sp, this.probeState.vy / sp, this.probeState.vz / sp);
       } else {
         _v3b.set(dir[0], dir[1], dir[2]);
       }
-      this.orrery.probe.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), _v3b);
+      this.orrery.probe.quaternion.setFromUnitVectors(_AXIS_X, _v3b);
 
       // The mast rides the departure world until you leave it.
       mastPosition(this.contract.sys, this.contract.departure, this.simT, _mast);
@@ -3217,7 +3252,10 @@ class Game {
 
       this.orrery.updateCamera(probePos, dt);
 
-      if (this.launched && this.probeState) {
+      // Flight voices belong to a flight. Pausing, abandoning or finishing a
+      // run must not leave the probe still growling under a menu.
+      const flying = this.state === "ready" || this.state === "flight";
+      if (flying && this.launched && this.probeState) {
         this.audio.setProximity(Math.hypot(this.probeState.ax, this.probeState.ay, this.probeState.az));
         const left = clamp(1 - (this.simT - this.launchT) / this.contract.timeLimit, 0, 1);
         this.audio.setWarning(left < 0.22 ? (0.22 - left) * 4 : 0, (1 - left) * 26);
@@ -3466,6 +3504,7 @@ if (isTest) {
         hudPlacement: "edge plates only; the field is never covered",
       },
       audioLayers: game.audio.ctx ? 6 : 0,
+      musicOn: Boolean(game.audio.musicOn),
       scale: game.audio.scale.slice(),
     };
   }
@@ -3498,6 +3537,13 @@ if (isTest) {
     },
     burn: () => { game.commitBurn(); game.recomputeRibbon(); return snapshot(); },
     setWarp: (index) => { game.setWarp(index); return snapshot(); },
+    /** Shorten the contract deadline so the prediction clamp is reachable. */
+    setDeadline: (seconds) => {
+      game.contract.timeLimit = seconds;
+      game.ribbonDirty = true;
+      game.recomputeRibbon();
+      return snapshot();
+    },
     setZoom: (z) => { game.orrery.zoom = clamp(z, 0.55, 9); return z; },
     predicted: () => game.predicted,
     diagnostics: () => game.orrery.diagnostics(),

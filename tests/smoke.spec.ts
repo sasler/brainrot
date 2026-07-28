@@ -42,6 +42,9 @@ test.describe("BrainRot Games — Smoke Tests", () => {
       arena.locator('a[href="/games/snake"]').getByRole("heading", { name: "Snake" }),
     ).toBeVisible();
     await expect(
+      arena.locator('a[href="/games/perihelion"]').getByRole("heading", { name: "Perihelion Post" }),
+    ).toBeVisible();
+    await expect(
       arena.locator('a[href="/games/pac-man"]').getByRole("heading", { name: "Pac-Man" }),
     ).toBeVisible();
     await expect(

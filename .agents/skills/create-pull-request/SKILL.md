@@ -22,7 +22,7 @@ Stop rather than silently retrofitting a branch after work has accumulated. Neve
 
 1. Review the staged diff once before committing.
 2. Start the commit subject with an actual Unicode Gitmoji matching the primary change.
-3. Attribute the authoring model with a `Co-Authored-By` trailer naming that model.
+3. Attribute the authoring model with a `Co-authored-by:` trailer naming that model. Git matches trailer keys case-insensitively, but prefer this spelling — it is the form GitHub documents.
 4. Push the current branch with upstream tracking. Never force-push unless the user explicitly authorizes it.
 5. Prefer the harness's connected GitHub tools to create the PR; fall back to `gh pr create` when needed.
 6. Start the PR title with an actual Unicode Gitmoji. Include a concise summary and the exact local validation commands and outcomes in the body.

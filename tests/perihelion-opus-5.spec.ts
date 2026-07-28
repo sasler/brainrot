@@ -34,6 +34,7 @@ type Snapshot = {
   predicted: { outcome: Outcome; body: number; buoys: number; t: number } | null;
   ribbonPoints: number;
   audioLayers: number;
+  musicOn: boolean;
   scale: number[];
 };
 
@@ -71,6 +72,7 @@ declare global {
       aim(heading: number, dv: number): Snapshot;
       burn(): Snapshot;
       setWarp(index: number): Snapshot;
+      setDeadline(seconds: number): Snapshot;
       setZoom(z: number): number;
       diagnostics(): {
         renderer: { calls: number; triangles: number; geometries: number; textures: number };
@@ -223,6 +225,43 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     // Specific orbital energy over a long two-body coast.
     expect(audit.orbits).toBeGreaterThan(3);
     expect(audit.energyDrift).toBeLessThan(1e-3);
+  });
+
+  test("the plotted course never promises anything past the contract deadline", async ({ page }) => {
+    test.setTimeout(90_000);
+    await openGame(page);
+
+    const probe = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      const w = api.witness()!;
+      api.aim(w.heading, w.dv);
+      api.burn();
+      api.advance(3);
+
+      const before = api.snapshot();
+      // Bring the chime forward so the clamp is in play.
+      const deadline = before.simT - before.launchT + 6;
+      const after = api.setDeadline(deadline);
+      return {
+        remaining: deadline - (after.simT - after.launchT),
+        beforeT: before.predicted!.t,
+        beforeOutcome: before.predicted!.outcome,
+        after: after.predicted!,
+        launched: after.launched,
+      };
+    });
+
+    expect(probe.launched).toBe(true);
+    expect(probe.remaining).toBeGreaterThan(0);
+    // Whatever the plotted course now says, it happens before the chime.
+    expect(probe.after.t).toBeLessThanOrEqual(probe.remaining + 0.05);
+    // And with the horizon cut short, a course that was still running must be
+    // reported as running out of time rather than as an eventual capture.
+    if (probe.beforeT > probe.remaining) {
+      expect(probe.after.t).toBeLessThan(probe.beforeT);
+      expect(probe.after.outcome).not.toBe("captured");
+    }
   });
 
   test("the same seed rebuilds the same orrery", async ({ page }) => {
@@ -396,6 +435,30 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     expect(await overflow(), "delivered screen").toBeLessThanOrEqual(0);
     await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.setState("fail"));
     expect(await overflow(), "lost screen").toBeLessThanOrEqual(0);
+  });
+
+  test("abandoning a run does not leak its audio into the menus", async ({ page }) => {
+    test.setTimeout(90_000);
+    await openGame(page);
+
+    await page.locator('[data-action="campaign"]').click();
+    await page.locator('[data-action="contract"]').first().click();
+    await page.locator('[data-action="launch"]').click();
+    await page.keyboard.press("Space");
+    await page.waitForTimeout(200);
+
+    const flying = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
+    expect(flying.launched).toBe(true);
+    expect(flying.musicOn).toBe(true);
+
+    // Pause, then abandon back to the contract board.
+    await page.keyboard.press("KeyP");
+    await page.locator('[data-action="back"]').click();
+    await page.waitForTimeout(200);
+
+    const parked = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
+    expect(parked.screen).toBe("select");
+    expect(parked.musicOn).toBe(false);
   });
 
   test("endless postal routes generate solvable contracts that get harder", async ({ page }) => {
