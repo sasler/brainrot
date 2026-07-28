@@ -878,6 +878,8 @@ const SEARCH_DT = 1 / 24;
 const DV_RANGE = [2.15, 6.35];
 const MIN_FLIGHT = 11;      // below this it is a hop, not a route
 const BASIN_FLOOR = 0.02;   // a contract nobody can repeat is not a contract
+const LAUNCH_SHARE = 0.72;  // most of the tank, never all of it, on the launch
+const DRY_DV = 0.05;        // below this there is no burn left worth aiming
 
 function* planWitness(sys, plan) {
   const { departure, cands, capRadius, horizon, t0Span } = plan;
@@ -1090,21 +1092,21 @@ const CAMPAIGN = [
   {
     key: "shortfall", numeral: "I", name: "Shortfall",
     subtitle: "Two worlds, one lamp, no excuses",
-    seed: 22796, targetBasin: 0.36, beacons: 2, slack: 1.55, horizon: 62,
+    seed: 22796, targetBasin: 0.45, beacons: 2, slack: 1.85, horizon: 62,
     brief: "A clean run to learn the trade. Leave the mast, let the lamp bend you outward, and be slow enough on arrival that the postmaster will take the sack.",
     params: { planets: 3, innerRadius: 14.5, spacing: [1.44, 1.52], gasIndex: 2, moons: 0, binary: false, flat: true, circular: true, departure: 0 },
   },
   {
     key: "tithe", numeral: "II", name: "The Gravity Tithe",
     subtitle: "Everything the worlds lend you, they charge for",
-    seed: 43312, targetBasin: 0.25, beacons: 3, slack: 1.42, horizon: 64,
+    seed: 43312, targetBasin: 0.26, beacons: 3, slack: 1.70, horizon: 64,
     brief: "A heavier neighbour sits across your path. Pass close and it hands you speed; pass closer and it keeps you. The tithe is always collected.",
     params: { planets: 4, innerRadius: 13.5, spacing: [1.38, 1.5], gasIndex: 2, moons: 0, binary: false, flat: true, circular: false, departure: 1 },
   },
   {
     key: "shepherd", numeral: "III", name: "Shepherd",
     subtitle: "Delivery to a moon, and moons do not wait",
-    seed: 58424, targetBasin: 0.16, beacons: 3, slack: 1.40, horizon: 68,
+    seed: 58424, targetBasin: 0.15, beacons: 3, slack: 1.65, horizon: 68,
     destKinds: ["moon"],
     brief: "The sack is bound for a shepherd moon inside a giant's well. Arriving at the giant is easy. Arriving at the moon, slowly, on the right side, is the job.",
     params: { planets: 4, innerRadius: 14, spacing: [1.4, 1.52], gasIndex: 2, moons: 2, binary: false, flat: false, circular: false, departure: 0 },
@@ -1112,21 +1114,21 @@ const CAMPAIGN = [
   {
     key: "twinlamps", numeral: "IV", name: "Twin Lamps",
     subtitle: "Two suns, and the space between them lies",
-    seed: 53928, targetBasin: 0.115, beacons: 3, slack: 1.38, horizon: 70,
+    seed: 53928, targetBasin: 0.11, beacons: 3, slack: 1.60, horizon: 70,
     brief: "A pair of lamps turn about their common centre. The field between them looks chaotic and is not — it is only unforgiving of a launch made a second early.",
     params: { planets: 3, innerRadius: 17, spacing: [1.44, 1.56], gasIndex: 1, moons: 0, binary: true, flat: true, circular: false, departure: 0 },
   },
   {
     key: "resonance", numeral: "V", name: "Resonance",
     subtitle: "The window opens once and closes politely",
-    seed: 62657, targetBasin: 0.065, beacons: 4, slack: 1.30, horizon: 72,
+    seed: 62657, targetBasin: 0.055, beacons: 4, slack: 1.50, horizon: 72,
     brief: "Five worlds on eccentric tracks. The buoys are strung across a corridor that exists for a handful of seconds each revolution. Wait for it.",
     params: { planets: 5, innerRadius: 13, spacing: [1.34, 1.46], gasIndex: 3, moons: 0, binary: false, flat: false, circular: false, departure: 1 },
   },
   {
     key: "longferry", numeral: "VI", name: "The Long Ferry",
     subtitle: "The whole orrery, and barely enough mass to burn",
-    seed: 92983, targetBasin: 0.04, beacons: 4, slack: 1.22, horizon: 76,
+    seed: 92983, targetBasin: 0.035, beacons: 4, slack: 1.40, horizon: 76,
     brief: "Everything at once, and a tank that will not forgive a second correction. Plot it fully before you touch the mast.",
     params: { planets: 5, innerRadius: 13.5, spacing: [1.36, 1.5], gasIndex: 3, moons: 2, binary: false, flat: false, circular: false, departure: 0 },
   },
@@ -1143,7 +1145,7 @@ function routeSpec(tier, seed) {
     seed,
     beacons: clamp(2 + Math.floor(t / 2), 2, 5),
     targetBasin: clamp(0.4 - t * 0.032, 0.035, 0.4),
-    slack: clamp(1.62 - t * 0.045, 1.16, 1.62),
+    slack: clamp(2 - t * 0.05, 1.42, 2),
     horizon: 62 + Math.min(t, 6) * 2,
     destKinds: t >= 5 && t % 3 === 2 ? ["moon"] : undefined,
     brief: "Standing orders from the postmaster. The orrery is new to you; the rules are not.",
@@ -2070,15 +2072,24 @@ class Orrery {
    7. SOUND
    The orrery is tuned to itself. Every contract derives its scale from the
    ratios of its own orbital periods, folded into one octave, so a system with
-   worlds near a 3:2 resonance literally sings a fifth. The proximity voice is
-   the probe's own acceleration, made audible.
+   worlds near a 3:2 resonance literally sings a fifth. Those ratios are snapped
+   to equal temperament on the way in, so the orrery plays its own intervals in
+   tune rather than approximately. The proximity voice is the probe's own
+   acceleration, made audible.
    ========================================================================== */
+
+/** Octave, fifth, root — the drone, relative to the contract's key. */
+const DRONE_RATIOS = [0.5, 0.75, 1];
+const BASE_HZ = 196;   // the untuned root, before a contract supplies its own
 
 class PostAudio {
   constructor() {
     this.ctx = null;
     this.muted = false;
-    this.scale = [220, 275, 330, 412.5, 495];
+    // Major pentatonic on the untuned root, until a contract supplies its own.
+    this.degrees = [0, 2, 4, 7, 9, 12];
+    this.root = BASE_HZ;
+    this.scale = this.degrees.map((d) => BASE_HZ * Math.pow(2, d / 12));
     this.started = false;
   }
 
@@ -2116,29 +2127,42 @@ class PostAudio {
     return ctx;
   }
 
-  /** Fold orbital period ratios into one octave. That is the contract's key. */
+  /**
+   * Fold orbital period ratios into one octave. That is the contract's key.
+   *
+   * The ratios themselves are irrational, so taking them literally gives a set
+   * of arbitrary microtones and the figure played over it is not a melody. Each
+   * ratio is therefore snapped to the nearest equal-tempered semitone: a system
+   * near 3:2 still sings a fifth, which was always the point, but nothing lands
+   * forty cents flat of anything. Degrees that collide are pushed outward so a
+   * system with clustered periods still gets distinct notes to play.
+   */
   tuneTo(contract) {
     const periods = contract.sys.bodies
       .filter((b) => b.orbit && b.kind !== "moon" && b.kind !== "star")
       .map((b) => b.orbit.period)
       .sort((a, b) => a - b);
     if (periods.length === 0) return;
-    const base = 196;
-    const notes = [base];
+    const base = BASE_HZ;
+    const degrees = [0];
     for (let i = 1; i < periods.length; i += 1) {
       let r = periods[i] / periods[0];
       while (r >= 2) r /= 2;
       while (r < 1) r *= 2;
-      notes.push(base * r);
+      let d = clamp(Math.round(Math.log2(r) * 12), 1, 11);
+      while (degrees.includes(d) && d < 11) d += 1;
+      while (degrees.includes(d) && d > 1) d -= 1;
+      if (!degrees.includes(d)) degrees.push(d);
     }
-    notes.push(base * 2);
-    this.scale = notes.sort((a, b) => a - b);
+    degrees.push(12);
+    this.degrees = degrees.slice().sort((a, b) => a - b);
+    this.scale = this.degrees.map((d) => base * Math.pow(2, d / 12));
     this.root = base * (periods[0] > 26 ? 0.5 : 1);
     if (this.drone) {
       const now = this.ctx.currentTime;
-      this.droneOsc[0].frequency.setTargetAtTime(this.root * 0.5, now, 0.6);
-      this.droneOsc[1].frequency.setTargetAtTime(this.root * 0.752, now, 0.6);
-      this.droneOsc[2].frequency.setTargetAtTime(this.root * 1.005, now, 0.6);
+      for (let i = 0; i < this.droneOsc.length; i += 1) {
+        this.droneOsc[i].frequency.setTargetAtTime(this.root * DRONE_RATIOS[i], now, 0.6);
+      }
     }
   }
 
@@ -2153,14 +2177,18 @@ class PostAudio {
     gain.connect(filter);
     filter.connect(this.bus);
 
+    // Octave, fifth, root of the contract's own key. Exact ratios: the previous
+    // 1.005 partial beat against the melody's root roughly once a second, which
+    // is the sound of an instrument out of tune rather than one breathing.
     this.droneOsc = [];
-    const spec = [[98, "triangle", 0.5], [147.4, "sawtooth", 0.16], [196.9, "sine", 0.22]];
-    for (const [f, type, g] of spec) {
+    const types = ["triangle", "sawtooth", "sine"];
+    const weights = [0.5, 0.09, 0.22];
+    for (let i = 0; i < DRONE_RATIOS.length; i += 1) {
       const osc = ctx.createOscillator();
-      osc.type = type;
-      osc.frequency.value = f;
+      osc.type = types[i];
+      osc.frequency.value = BASE_HZ * DRONE_RATIOS[i];
       const og = ctx.createGain();
-      og.gain.value = g;
+      og.gain.value = weights[i];
       osc.connect(og);
       og.connect(gain);
       osc.start();
@@ -2191,21 +2219,32 @@ class PostAudio {
     this.prox = prox;
     this.proxGain = proxGain;
 
-    // Warning beat: two close tones, silent until something is wrong.
+    // Warning voice: one tone, pulsed. Silent until the clock is short, and
+    // then it ticks faster. Two squares three hertz apart said the same thing
+    // by beating against each other, which read as a fault rather than a clock.
     const warnGain = ctx.createGain();
     warnGain.gain.value = 0;
     warnGain.connect(this.bus);
-    this.warnOsc = [];
-    for (let i = 0; i < 2; i += 1) {
-      const o = ctx.createOscillator();
-      o.type = "square";
-      o.frequency.value = 320 + i * 3;
-      const g = ctx.createGain();
-      g.gain.value = 0.045;
-      o.connect(g); g.connect(warnGain);
-      o.start();
-      this.warnOsc.push(o);
-    }
+    const warn = ctx.createOscillator();
+    warn.type = "triangle";
+    warn.frequency.value = 392;
+    const warnLevel = ctx.createGain();
+    warnLevel.gain.value = 0.5;
+    warn.connect(warnLevel);
+    warnLevel.connect(warnGain);
+    warn.start();
+
+    const pulse = ctx.createOscillator();
+    pulse.type = "square";
+    pulse.frequency.value = 1.4;
+    const pulseDepth = ctx.createGain();
+    pulseDepth.gain.value = 0.5;
+    pulse.connect(pulseDepth);
+    pulseDepth.connect(warnLevel.gain);
+    pulse.start();
+
+    this.warnOsc = warn;
+    this.warnPulse = pulse;
     this.warnGain = warnGain;
   }
 
@@ -2224,15 +2263,15 @@ class PostAudio {
     if (!this.ctx) return;
     const f = clamp(Math.log10(1 + accel * 6) / 1.5, 0, 1);
     const now = this.ctx.currentTime;
-    this.proxGain.gain.setTargetAtTime(f * f * 0.075, now, 0.09);
-    this.prox.frequency.setTargetAtTime(70 + f * 240, now, 0.12);
+    this.proxGain.gain.setTargetAtTime(f * f * 0.03, now, 0.09);
+    this.prox.frequency.setTargetAtTime(84 + f * 110, now, 0.12);
   }
 
   setWarning(level, rate) {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    this.warnGain.gain.setTargetAtTime(level * 0.5, now, 0.1);
-    this.warnOsc[1].frequency.setTargetAtTime(320 + rate, now, 0.1);
+    this.warnGain.gain.setTargetAtTime(level * 0.11, now, 0.1);
+    this.warnPulse.frequency.setTargetAtTime(1.2 + rate * 0.09, now, 0.2);
   }
 
   burst({ freq = 180, dur = 0.4, gain = 0.4, bp = 700, q = 1.1, sweep = 0.4 }) {
@@ -2392,7 +2431,14 @@ const dom = {
   hud: ["hudTop", "hudClock", "hudFuel", "hudCargo", "hudPredict"].map(el),
 };
 
-const WARPS = [0, 0.5, 1, 2, 4];
+const WARPS = [0, 0.5, 1, 2, 4, 8];
+
+// The basin a contract is graded on is a couple of degrees wide. Aim has to be
+// able to resolve it: coarse for getting there, fine for landing inside it.
+const AIM_RATE = 0.7;   // rad/s of heading under a held key
+const DV_RATE = 1.2;    // Δv/s of burn magnitude under a held key
+const AIM_FINE = 0.12;  // Shift multiplier — about 4.8°/s
+
 const _v3a = new THREE.Vector3();
 const _v3b = new THREE.Vector3();
 const _plane = new THREE.Plane();
@@ -2434,6 +2480,7 @@ class Game {
     this.launched = false;
     this.launchT = 0;
     this.fuel = 0;
+    this.adjudicated = false;
     this.collected = 0;
     this.predicted = null;
     this.ribbonDirty = true;
@@ -2480,7 +2527,9 @@ class Game {
     });
     canvas.addEventListener("pointermove", (ev) => {
       if (this.pointer.orbiting) {
-        this.orrery.azimuth -= (ev.clientX - this.pointer.x) * 0.006;
+        // Drag carries the orrery with the pointer, the way every other orbit
+        // control in the world behaves.
+        this.orrery.azimuth += (ev.clientX - this.pointer.x) * 0.006;
         this.orrery.elevation = clamp(this.orrery.elevation + (ev.clientY - this.pointer.y) * 0.005, 0.22, 1.45);
       } else if (this.pointer.aiming) {
         this.aimFromPointer(ev);
@@ -2513,12 +2562,12 @@ class Game {
       switch (key) {
         case " ": this.commitBurn(); return true;
         case "h": this.setWarp(this.warpIndex === 0 ? 2 : 0); return true;
-        case "1": case "2": case "3": case "4": case "5":
+        case "1": case "2": case "3": case "4": case "5": case "6":
           this.setWarp(Number(key) - 1); return true;
         case "r": this.restartContract(); return true;
         case "p": case "Escape": this.pause(); return true;
-        case "q": this.orrery.azimuth -= 0.12; return true;
-        case "e": this.orrery.azimuth += 0.12; return true;
+        case "q": this.orrery.azimuth += 0.12; return true;
+        case "e": this.orrery.azimuth -= 0.12; return true;
         case "z": this.orrery.zoom = clamp(this.orrery.zoom * 0.88, 0.55, 9); return true;
         case "x": this.orrery.zoom = clamp(this.orrery.zoom * 1.14, 0.55, 9); return true;
         default: break;
@@ -2530,18 +2579,25 @@ class Game {
     return false;
   }
 
+  /**
+   * Heading grows anticlockwise on screen — `burnDirection` rotates about +y and
+   * the camera looks down on the ecliptic — so "right" has to *decrease* it or
+   * the marker swings away from the key you pressed. The pointer never had this
+   * problem; it reads the heading back off the world, and it is the reference
+   * the keyboard now matches.
+   */
   pollHeldKeys(dt) {
     if (!this.canAim()) return;
     const k = this.keys;
-    const fine = k.has("shift") ? 0.28 : 1;
+    const fine = k.has("shift") ? AIM_FINE : 1;
     let dh = 0, dd = 0;
-    if (k.has("arrowleft") || k.has("a")) dh -= 1;
-    if (k.has("arrowright") || k.has("d")) dh += 1;
+    if (k.has("arrowleft") || k.has("a")) dh += 1;
+    if (k.has("arrowright") || k.has("d")) dh -= 1;
     if (k.has("arrowup") || k.has("w")) dd += 1;
     if (k.has("arrowdown") || k.has("s")) dd -= 1;
     if (dh === 0 && dd === 0) return;
-    this.aimHeading = (this.aimHeading + dh * 1.5 * fine * dt + TAU) % TAU;
-    this.aimDv = clamp(this.aimDv + dd * 2.6 * fine * dt, 0, this.maxBurn());
+    this.aimHeading = (this.aimHeading + dh * AIM_RATE * fine * dt + TAU) % TAU;
+    this.aimDv = clamp(this.aimDv + dd * DV_RATE * fine * dt, 0, this.maxBurn());
     this.ribbonDirty = true;
   }
 
@@ -2605,7 +2661,7 @@ class Game {
           <div><span>Fine control</span><b>Shift</b></div>
           <div><span>Fire</span><b>Space</b></div>
           <div><span>Hold time</span><b>H</b></div>
-          <div><span>Time rate</span><b>1 – 5</b></div>
+          <div><span>Time rate</span><b>1 – 6</b></div>
           <div><span>Aim / orbit view</span><b>Drag / Right-drag</b></div>
           <div><span>Zoom</span><b>Wheel · Z / X</b></div>
           <div><span>Turn view</span><b>Q / E</b></div>
@@ -2675,7 +2731,8 @@ class Game {
       <p class="lede" style="margin-top:14px">
         Confirmed route flies in ${c.witness.flight.toFixed(1)}s for ${c.witness.total.toFixed(2)} Δv.
         ${(c.basin * 100).toFixed(1)}% of nearby launches still deliver, which is why this one is graded
-        <b style="color:var(--patina)">${c.grade.name}</b>.
+        <b style="color:var(--patina)">${c.grade.name}</b>. The mast holds
+        ${(c.fuel * (1 - LAUNCH_SHARE)).toFixed(2)} Δv back for arrival.
       </p>
       <div class="actions">
         <button class="act" data-action="launch">Take the mast</button>
@@ -2840,8 +2897,9 @@ class Game {
     this.fuel = c.fuel;
     this.collected = 0;
     this.warpIndex = 2;
+    this.adjudicated = false;
     this.aimHeading = 0;
-    this.aimDv = clamp(c.witness.dv * 0.75, 0, c.fuel);
+    this.aimDv = clamp(c.witness.dv * 0.75, 0, this.maxBurn());
     for (const b of c.beacons) b.taken = false;
     for (const node of this.orrery.beaconNodes) {
       node.mesh.visible = true;
@@ -2881,8 +2939,15 @@ class Game {
     return (this.state === "ready" || this.state === "flight") && this.fuel > 0.001;
   }
 
+  /**
+   * The mast will not release a sack with nothing held back for arrival. A
+   * launch could previously spend the whole tank in one press, which strands
+   * the probe before it has learnt anything — the reserve is a fraction of what
+   * you carry, not a hint at what the route costs.
+   */
   maxBurn() {
-    return Math.min(this.fuel, this.state === "ready" ? DV_RANGE[1] : 6);
+    if (!this.launched) return Math.min(this.fuel * LAUNCH_SHARE, DV_RANGE[1]);
+    return Math.min(this.fuel, 6);
   }
 
   /** Prograde basis at the probe (or at the mast, before launch). */
@@ -3016,6 +3081,56 @@ class Game {
     }
     if (this.simT - this.launchT > c.timeLimit) {
       this.lose({ title: "The chime went", body: "The contract expired while you were still in transit. Mail has a schedule." }, "time");
+      return;
+    }
+
+    if (this.fuel <= DRY_DV && !this.adjudicated) this.adjudicate();
+  }
+
+  /**
+   * With the tank dry the run is already decided — nothing the player can do
+   * changes where the probe goes. Rather than make them watch a ballistic arc
+   * crawl out to the escape radius, settle it now: the same propagator, run to
+   * the deadline, is the same answer they would have got by waiting.
+   *
+   * A course that still delivers is left alone. Watching it land is the point.
+   */
+  adjudicate() {
+    const c = this.contract;
+    this.adjudicated = true;
+    const remaining = c.timeLimit - (this.simT - this.launchT);
+    if (remaining <= 0) return;
+
+    const s = cloneProbe(this.probeState);
+    const trial = c.beacons.filter((b) => !b.taken).map((b) => ({ x: b.x, y: b.y, z: b.z, r: b.r, taken: false }));
+    const run = propagate(c.sys, s, {
+      duration: remaining,
+      dest: c.dest,
+      capture: { radius: c.capRadius, speed: c.capSpeed },
+      beacons: trial,
+      stopOnEvent: true,
+    });
+    const buoys = this.collected + trial.filter((b) => b.taken).length;
+    if (run.outcome === OUTCOME.CAPTURED && buoys >= c.beacons.length) return;
+
+    const dry = "Nothing left to burn — ";
+    if (run.outcome === OUTCOME.CAPTURED) {
+      this.lose({
+        title: "Short sack",
+        body: `${dry}this course reaches ${c.destName} with ${buoys} of ${c.beacons.length} buoys aboard. The postmaster counts before signing.`,
+      }, "short");
+    } else if (run.outcome === OUTCOME.STAR) {
+      this.lose({ title: "Into the lamp", body: `${dry}and this course ends in the light.` }, "star");
+    } else if (run.outcome === OUTCOME.IMPACT) {
+      const name = c.sys.bodies[run.body].name;
+      this.lose({ title: `Down on ${name}`, body: `${dry}and ${name} is where this course finishes, at speed.` }, "impact");
+    } else if (run.outcome === OUTCOME.ESCAPED) {
+      this.lose({ title: "Out past the rules", body: `${dry}and this course leaves the orrery for good.` }, "escape");
+    } else {
+      this.lose({
+        title: "The chime will go",
+        body: `${dry}and this course is still in transit when the contract expires.`,
+      }, "time");
     }
   }
 
@@ -3139,7 +3254,7 @@ class Game {
     dom.fuelGauge.firstElementChild.style.width = `${fuelFrac * 100}%`;
     dom.fuelGauge.classList.toggle("warn", fuelFrac < 0.22);
     dom.burnValue.textContent = this.canAim()
-      ? `Aim ${(this.aimHeading * 180 / Math.PI).toFixed(0)}° · ${this.aimDv.toFixed(2)} Δv`
+      ? `Aim ${(this.aimHeading * 180 / Math.PI).toFixed(1)}° · ${this.aimDv.toFixed(2)} Δv`
       : "Aim —";
 
     dom.cargoValue.textContent = `${this.collected} / ${c.beacons.length}`;
@@ -3170,10 +3285,14 @@ class Game {
       tone = "bad";
       sub = `The chime goes in ${p.t.toFixed(1)}s, still in transit.`;
     } else {
+      // The one number that decides whether this course is still a delivery:
+      // what it costs to stop, against what is left to stop with. Amber while
+      // that is still affordable, red once the course cannot be paid for.
       text = `Coasting · ${p.buoys}/${c.beacons.length} buoys`;
-      tone = p.closest < c.capRadius * 1.6 ? "warn" : "warn";
-      sub = Number.isFinite(p.closestSpeed)
-        ? `Nearest approach to ${c.destName}: ${p.closestSpeed.toFixed(2)} Δv to stop.`
+      const approach = Number.isFinite(p.closestSpeed);
+      tone = approach && p.closestSpeed <= this.fuel ? "warn" : "bad";
+      sub = approach
+        ? `Nearest approach to ${c.destName}: ${p.closestSpeed.toFixed(2)} Δv to stop, ${this.fuel.toFixed(2)} left.`
         : `No approach to ${c.destName} inside ${PREDICT_HORIZON}s.`;
     }
     dom.predictText.textContent = text;
@@ -3448,6 +3567,27 @@ if (isTest) {
     });
   }
 
+  /**
+   * Where the burn marker points *on screen*, in degrees anticlockwise from
+   * screen-right. This is the thing the player actually sees, so it is the
+   * thing the control-sense test has to assert against.
+   */
+  function aimScreenAngle() {
+    if (!game.contract) return null;
+    // Place the camera the way the next frame would. Loading a contract and
+    // reading back in the same turn otherwise samples an unplaced camera, and
+    // every heading projects onto a screen axis that does not exist yet.
+    const probe = game.probePosition(new THREE.Vector3());
+    game.orrery.updateCamera(probe, 0);
+    const cam = game.orrery.camera;
+    cam.updateMatrixWorld(true);
+    const dir = game.aimDirection(new Float64Array(3));
+    const v = new THREE.Vector3(dir[0], dir[1], dir[2]);
+    const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0);
+    const up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1);
+    return Math.atan2(v.dot(up), v.dot(right)) * 180 / Math.PI;
+  }
+
   function snapshot() {
     const c = game.contract;
     const s = game.launched ? game.probeState : null;
@@ -3472,9 +3612,11 @@ if (isTest) {
       launched: game.launched,
       warp: WARPS[game.warpIndex],
       fuel: game.fuel,
+      maxBurn: c ? game.maxBurn() : 0,
+      adjudicated: game.adjudicated,
       collected: game.collected,
       result: game.result,
-      aim: { heading: game.aimHeading, dv: game.aimDv },
+      aim: { heading: game.aimHeading, dv: game.aimDv, screenAngle: aimScreenAngle() },
       contract: c ? {
         key: c.spec.key, name: c.spec.name, seed: c.seed,
         fuel: c.fuel, basin: c.basin, grade: c.grade.name,
@@ -3506,6 +3648,7 @@ if (isTest) {
       audioLayers: game.audio.ctx ? 6 : 0,
       musicOn: Boolean(game.audio.musicOn),
       scale: game.audio.scale.slice(),
+      scaleDegrees: game.audio.degrees.slice(),
     };
   }
 

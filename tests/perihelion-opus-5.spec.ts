@@ -10,9 +10,11 @@ type Snapshot = {
   launched: boolean;
   warp: number;
   fuel: number;
+  maxBurn: number;
+  adjudicated: boolean;
   collected: number;
   result: string | null;
-  aim: { heading: number; dv: number };
+  aim: { heading: number; dv: number; screenAngle: number | null };
   contract: {
     key: string; name: string; seed: number; fuel: number; basin: number;
     grade: string; timeLimit: number; capRadius: number; capSpeed: number;
@@ -36,6 +38,7 @@ type Snapshot = {
   audioLayers: number;
   musicOn: boolean;
   scale: number[];
+  scaleDegrees: number[];
 };
 
 type Replay = {
@@ -552,5 +555,132 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     }
     // Different orreries, different tuning.
     expect(scales.a).not.toEqual(scales.b);
+  });
+
+  test("the scale it derives is in tune", async ({ page }) => {
+    test.setTimeout(90_000);
+    await openGame(page);
+
+    // Orbital period ratios are irrational. Taken literally they give arbitrary
+    // microtones and the figure played over them is not a melody, so every
+    // degree has to land on equal temperament on the way in.
+    for (const index of [0, 2, 5]) {
+      const snap = await page.evaluate((i) => {
+        window.__PERIHELION_TEST__.loadCampaign(i);
+        return window.__PERIHELION_TEST__.snapshot();
+      }, index);
+
+      expect(snap.scaleDegrees.length).toBeGreaterThanOrEqual(3);
+      for (const f of snap.scale) {
+        const semitones = Math.log2(f / snap.scale[0]) * 12;
+        const cents = Math.abs(semitones - Math.round(semitones)) * 100;
+        expect(cents, `contract ${index + 1}: ${f.toFixed(2)}Hz is ${cents.toFixed(1)} cents off`)
+          .toBeLessThan(1);
+      }
+      // Distinct degrees, so clustered periods still give notes to play with.
+      expect(new Set(snap.scaleDegrees).size).toBe(snap.scaleDegrees.length);
+    }
+  });
+
+  test("aim follows the key you pressed, on screen", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => {
+      window.__PERIHELION_TEST__.loadCampaign(0);
+      // Hold the clock. Heading is measured against the departure world's
+      // prograde, so a turning orrery would swing the marker on its own and
+      // muddy what the key did.
+      window.__PERIHELION_TEST__.setWarp(0);
+    });
+
+    // What has to be right is the thing the player sees: the marker swings the
+    // way the key points, whichever side the camera is watching from.
+    const angleAfter = async (key: string) => {
+      await page.evaluate(() => window.__PERIHELION_TEST__.aim(0.6, 1));
+      const before = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
+      await page.keyboard.down(key);
+      await page.waitForTimeout(500);
+      await page.keyboard.up(key);
+      const after = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
+      const a = before.aim.screenAngle!;
+      const b = after.aim.screenAngle!;
+      expect(Number.isFinite(a) && Number.isFinite(b)).toBe(true);
+      return ((b - a + 540) % 360) - 180;   // shortest arc, anticlockwise positive
+    };
+
+    // Screen angles are anticlockwise-positive, so "right" must reduce them.
+    // Half a second of AIM_RATE is about 20°; anything under 10 is not the key.
+    const right = await angleAfter("KeyD");
+    expect(right, "D must swing the marker clockwise").toBeLessThan(-10);
+
+    const left = await angleAfter("KeyA");
+    expect(left, "A must swing the marker anticlockwise").toBeGreaterThan(10);
+  });
+
+  test("the mast keeps a reserve back for arrival", async ({ page }) => {
+    await openGame(page);
+    const snap = await page.evaluate(() => {
+      window.__PERIHELION_TEST__.loadCampaign(0);
+      return window.__PERIHELION_TEST__.snapshot();
+    });
+
+    // One uninformed launch used to be able to empty the tank, which strands
+    // the probe before it has learnt anything.
+    expect(snap.maxBurn).toBeLessThan(snap.fuel);
+    expect(snap.maxBurn).toBeGreaterThan(0);
+
+    const fired = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.aim(0.4, 99);           // ask for everything; the mast decides
+      return api.burn();
+    });
+    expect(fired.launched).toBe(true);
+    expect(fired.fuel).toBeGreaterThan(snap.fuel - snap.maxBurn - 1e-6);
+    expect(fired.fuel).toBeGreaterThan(0.5);
+  });
+
+  test("a run with nothing left to burn ends when it is decided", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    // The same launch and the same wasteful corrections, drained to two
+    // different floors. Only the run that goes genuinely dry can be adjudicated,
+    // so the pair measures what the fix is worth rather than merely asserting
+    // that a doomed run eventually stops.
+    const fly = (floor: number) => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      const w = api.witness()!;
+      const limit = api.snapshot().contract!.timeLimit;
+      api.aim(w.heading, w.dv);
+      api.burn();
+      api.advance(10);
+      for (let i = 0; i < 30 && api.snapshot().fuel > floor; i += 1) {
+        const spend = Math.min(0.5, api.snapshot().fuel - floor + 0.01);
+        api.aim(w.heading, spend);
+        api.burn();
+      }
+      const end = api.advance(limit * 3);
+      return {
+        limit,
+        fuel: end.fuel,
+        result: end.result,
+        adjudicated: end.adjudicated,
+        flight: end.simT - end.launchT,
+      };
+    };
+
+    const wet = await page.evaluate(fly, 0.3);
+    const dry = await page.evaluate(fly, 0.02);
+
+    // Dry: settled on the step the tank ran out, naming the real outcome.
+    expect(dry.fuel).toBeLessThanOrEqual(0.05);
+    expect(dry.adjudicated).toBe(true);
+    expect(dry.result).toBe("lost");
+    expect(dry.flight).toBeLessThan(11);
+
+    // Wet: a burn still exists, so the course is not settled for the player and
+    // the run keeps flying — which is exactly how long the dry one used to take.
+    expect(wet.adjudicated).toBe(false);
+    expect(wet.flight).toBeGreaterThan(dry.flight * 2);
   });
 });
