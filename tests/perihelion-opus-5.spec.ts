@@ -395,6 +395,12 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     await expect(page.locator('[data-action="launch"]')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator("#briefBody")).toContainText("Confirmed route flies in");
 
+    // The reserve the briefing quotes has to be the reserve the mast enforces,
+    // including when the Δv ceiling rather than the share is what binds.
+    const quoted = await page.locator("#briefBody").innerText();
+    const reserve = Number(/holds\s+([\d.]+)\s*Δv back/.exec(quoted)?.[1]);
+    expect(Number.isFinite(reserve)).toBe(true);
+
     await page.locator('[data-action="launch"]').click();
     await expect(page.locator("#hudFuel")).toBeVisible();
     await expect(page.locator("#hudPredict")).toBeVisible();
@@ -403,6 +409,7 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     expect(snap.screen).toBe("ready");
     expect(snap.contract!.key).toBe("shortfall");
     expect(snap.fuel).toBe(snap.contract!.fuel);
+    expect(reserve).toBeCloseTo(snap.fuel - snap.maxBurn, 2);
 
     // Every screen must fit the iframe the play page gives it.
     const overflow = await page.evaluate(() => {
@@ -673,7 +680,7 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     const dry = await page.evaluate(fly, 0.02);
 
     // Dry: settled on the step the tank ran out, naming the real outcome.
-    expect(dry.fuel).toBeLessThanOrEqual(0.05);
+    expect(dry.fuel).toBeLessThanOrEqual(0.02);
     expect(dry.adjudicated).toBe(true);
     expect(dry.result).toBe("lost");
     expect(dry.flight).toBeLessThan(11);
@@ -682,5 +689,37 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     // the run keeps flying — which is exactly how long the dry one used to take.
     expect(wet.adjudicated).toBe(false);
     expect(wet.flight).toBeGreaterThan(dry.flight * 2);
+  });
+
+  test("a last legal correction is never settled out from under the player", async ({ page }) => {
+    await openGame(page);
+
+    // The tank can hold too little to be worth much and still hold enough to
+    // burn. Adjudicating there would show a loss the player could have flown
+    // out of, so the threshold has to be "no legal burn", not "nearly empty".
+    const state = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      const w = api.witness()!;
+      api.aim(w.heading, w.dv);
+      api.burn();
+      api.advance(4);
+      for (let i = 0; i < 40 && api.snapshot().fuel > 0.04; i += 1) {
+        const spend = Math.min(0.5, api.snapshot().fuel - 0.04 + 0.005);
+        api.aim(w.heading, spend);
+        api.burn();
+      }
+      const held = api.advance(2);
+      const spent = api.burn();          // the correction must still be accepted
+      return { held, spent };
+    });
+
+    expect(state.held.fuel).toBeGreaterThan(0.02);
+    expect(state.held.fuel).toBeLessThan(0.05);
+    expect(state.held.adjudicated).toBe(false);
+    expect(state.held.result).toBeNull();
+    expect(state.held.maxBurn).toBeGreaterThan(0.02);
+    // And spending it actually moves fuel, rather than being silently refused.
+    expect(state.spent.fuel).toBeLessThan(state.held.fuel);
   });
 });

@@ -6417,7 +6417,7 @@
           "model": "Claude Opus 5",
           "modelId": "opus-5",
           "date": "2026-07-28",
-          "linesOfCode": 3756,
+          "linesOfCode": 3763,
           "path": "/games/perihelion/opus-5/index.html",
           "features": [
             "sound",

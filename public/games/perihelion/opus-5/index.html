@@ -879,7 +879,10 @@ const DV_RANGE = [2.15, 6.35];
 const MIN_FLIGHT = 11;      // below this it is a hop, not a route
 const BASIN_FLOOR = 0.02;   // a contract nobody can repeat is not a contract
 const LAUNCH_SHARE = 0.72;  // most of the tank, never all of it, on the launch
-const DRY_DV = 0.05;        // below this there is no burn left worth aiming
+const MIN_BURN = 0.02;      // the smallest burn the mast will commit
+
+/** What the mast will let a launch spend, holding the rest back for arrival. */
+const launchCap = (fuel) => Math.min(fuel * LAUNCH_SHARE, DV_RANGE[1]);
 
 function* planWitness(sys, plan) {
   const { departure, cands, capRadius, horizon, t0Span } = plan;
@@ -2732,7 +2735,7 @@ class Game {
         Confirmed route flies in ${c.witness.flight.toFixed(1)}s for ${c.witness.total.toFixed(2)} Δv.
         ${(c.basin * 100).toFixed(1)}% of nearby launches still deliver, which is why this one is graded
         <b style="color:var(--patina)">${c.grade.name}</b>. The mast holds
-        ${(c.fuel * (1 - LAUNCH_SHARE)).toFixed(2)} Δv back for arrival.
+        ${(c.fuel - launchCap(c.fuel)).toFixed(2)} Δv back for arrival.
       </p>
       <div class="actions">
         <button class="act" data-action="launch">Take the mast</button>
@@ -2935,8 +2938,9 @@ class Game {
 
   /* -- Flight ------------------------------------------------------------ */
 
+  /** Aiming is only honest while a burn is still committable. */
   canAim() {
-    return (this.state === "ready" || this.state === "flight") && this.fuel > 0.001;
+    return (this.state === "ready" || this.state === "flight") && this.fuel > MIN_BURN;
   }
 
   /**
@@ -2946,7 +2950,7 @@ class Game {
    * you carry, not a hint at what the route costs.
    */
   maxBurn() {
-    if (!this.launched) return Math.min(this.fuel * LAUNCH_SHARE, DV_RANGE[1]);
+    if (!this.launched) return launchCap(this.fuel);
     return Math.min(this.fuel, 6);
   }
 
@@ -2994,7 +2998,7 @@ class Game {
   }
 
   commitBurn() {
-    if (!this.canAim() || this.aimDv <= 0.02) return;
+    if (!this.canAim() || this.aimDv <= MIN_BURN) return;
     const c = this.contract;
     const dv = Math.min(this.aimDv, this.fuel);
     const dir = this.aimDirection(_burnDir);
@@ -3084,7 +3088,10 @@ class Game {
       return;
     }
 
-    if (this.fuel <= DRY_DV && !this.adjudicated) this.adjudicate();
+    // `aimDv` is clamped to at most the fuel, and `commitBurn` rejects anything
+    // at or under MIN_BURN, so this is exactly the point where no legal burn
+    // remains — not merely the point where one stops being worth much.
+    if (this.fuel <= MIN_BURN && !this.adjudicated) this.adjudicate();
   }
 
   /**
@@ -3181,7 +3188,7 @@ class Game {
     const c = this.contract;
     if (!c) return;
     const s = cloneProbe(this.currentProbeState());
-    if (this.aimDv > 0.02 && this.canAim()) {
+    if (this.aimDv > MIN_BURN && this.canAim()) {
       const dir = this.aimDirection(_burnDir);
       const dv = Math.min(this.aimDv, this.fuel);
       s.vx += dir[0] * dv; s.vy += dir[1] * dv; s.vz += dir[2] * dv;
@@ -3346,7 +3353,7 @@ class Game {
       this.orrery.mast.position.set(_mast[0], _mast[1], _mast[2]);
       this.orrery.mast.visible = !this.launched;
 
-      const aiming = this.canAim() && this.aimDv > 0.02;
+      const aiming = this.canAim() && this.aimDv > MIN_BURN;
       this.orrery.setAim(probePos, _v3b.set(dir[0], dir[1], dir[2]), this.aimDv, aiming);
 
       this.burnFlash = Math.max(0, (this.burnFlash || 0) - dt * 2.6);
