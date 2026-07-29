@@ -486,11 +486,26 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
         snap = api.advance(0.5);
         guard += 1;
       }
-      return { mast, early, laden: snap.hud.objective, collected: snap.collected, buoys: snap.contract!.buoys };
+      // Twin Lamps is given its launch window and no drawn route at all.
+      api.loadCampaign(4);
+      const windowSnap = api.snapshot();
+
+      return {
+        mast,
+        early,
+        laden: snap.hud.objective,
+        collected: snap.collected,
+        buoys: snap.contract!.buoys,
+        windowOnly: { assist: windowSnap.contract!.assist, objective: windowSnap.hud.objective },
+      };
     });
 
     expect(said.mast).toMatch(/plot/i);
     expect(said.early).toMatch(/buoy 1 of/i);
+    // A contract that draws no plot must not be told to match one.
+    expect(said.windowOnly.assist).toBe("window");
+    expect(said.windowOnly.objective).not.toMatch(/plot/i);
+    expect(said.windowOnly.objective).toMatch(/window/i);
     expect(said.collected).toBe(said.buoys);
     // With the sack aboard the job is the arrival, and the line has to say so.
     expect(said.laden).toMatch(/brake into|hold this course/i);
@@ -500,16 +515,16 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     test.setTimeout(120_000);
     await openGame(page);
 
-    const plots = await page.evaluate(() => {
+    const plots = await page.evaluate((contracts) => {
       const api = window.__PERIHELION_TEST__;
       const out: Array<{ i: number; assist: string; points: number }> = [];
-      for (let i = 0; i < 7; i += 1) {
+      for (let i = 0; i < contracts; i += 1) {
         api.loadCampaign(i);
         const snap = api.snapshot();
         out.push({ i, assist: snap.contract!.assist, points: snap.plotPoints });
       }
       return out;
-    });
+    }, CONTRACTS);
 
     for (const plot of plots) {
       if (plot.assist === "full") {
@@ -573,11 +588,16 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     expect(fired.probe!.speed).toBeGreaterThan(0);
 
     // G is bound through the same handler, and only means anything at the mast.
-    await page.evaluate(() => window.__PERIHELION_TEST__.loadCampaign(0));
+    const t0 = await page.evaluate(() => {
+      window.__PERIHELION_TEST__.loadCampaign(0);
+      return window.__PERIHELION_TEST__.snapshot().witness!.t0;
+    });
     await page.keyboard.press("KeyG");
-    await page.waitForTimeout(120);
-    const window_ = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
-    expect(window_.simT).toBeCloseTo(window_.witness!.t0, 3);
+    // Poll the state the key is supposed to reach rather than guessing at how
+    // long a slow runner takes to deliver the event.
+    await expect
+      .poll(() => page.evaluate(() => window.__PERIHELION_TEST__.snapshot().simT))
+      .toBeCloseTo(t0, 3);
   });
 
   test("clicks through title, contract board, briefing and out to the mast", async ({ page }) => {

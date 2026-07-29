@@ -1177,13 +1177,19 @@ const RETRO_CEILING = 5.5;
  *   window — the launch window only
  *   none   — find it yourself
  */
+const ASSIST_LEVELS = ["none", "window", "full"];
+
 function easeOf(spec) {
+  // Guidance is read in several places that each ask a different question, so
+  // an unrecognised level would show one contract's window cue over another
+  // contract's absent plot. Anything not on the list is no guidance at all.
+  const assist = String(spec.assist ?? "none").toLowerCase();
   return {
     capSpeed: spec.capSpeed ?? CAPTURE_SPEED,
     capMul: spec.capMul ?? CAP_MUL,
     minCap: spec.minCap ?? MIN_CAP,
     beaconRadius: spec.beaconRadius ?? BEACON_RADIUS,
-    assist: spec.assist ?? "none",
+    assist: ASSIST_LEVELS.includes(assist) ? assist : "none",
   };
 }
 
@@ -3669,9 +3675,12 @@ class Game {
     const c = this.contract;
     const left = c.beacons.length - this.collected;
     if (!this.launched) {
-      return c.assist === "none"
-        ? "Objective — plot a launch, then fire"
-        : "Objective — match the brass plot, then fire";
+      // Only a full-assist contract has a brass plot on screen to match. A
+      // window contract is given its launch time and nothing else, and telling
+      // it to match a line that was never drawn is worse than saying nothing.
+      if (c.assist === "full") return "Objective — match the brass plot, then fire";
+      if (c.assist === "window") return "Objective — find a launch, then fire in the window";
+      return "Objective — plot a launch, then fire";
     }
     if (left > 0) {
       return `Objective — reach buoy ${this.collected + 1} of ${c.beacons.length}`;
