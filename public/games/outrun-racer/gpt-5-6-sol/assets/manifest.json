@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "ownerModelId": "gpt-5-6-sol",
+  "assets": [
+    {
+      "path": "horizon-fleet.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.2.0 LTS via Blender Assets MCP",
+      "prompt": "Author three original low-poly eclipse-ocean racing hydrofoils: a wide pearlescent manta hero craft with swept foil wings and twin cyan propulsion rings, a narrow silver needle rival with split magenta tail, and a heavy twin-hull hammer rival with violet engines. Build every silhouette from beveled custom wedges, reshaped meshes, nacelles, foil struts, canopies, fins, emissive rings, and reusable PBR materials; preserve named asset roots PlayerManta, RivalNeedle, and RivalHammer; export selected roots only as GLB.",
+      "purpose": "Player and rival hydrofoil silhouettes for the six-craft race grid",
+      "usageRights": "Procedurally authored for this repository with rights to use and redistribute",
+      "load": "initial"
+    },
+    {
+      "path": "horizon-course-kit.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.2.0 LTS via Blender Assets MCP",
+      "prompt": "Author a modular eclipse-ocean race kit with a full prismatic checkpoint portal, solar finish crown, asymmetric navigation buoy, three twisted obsidian reef monoliths, and a floating solar turbine. Use layered ceramic, obsidian, metallic, cyan, magenta, violet, and solar-gold materials; purposeful beveled construction; named roots GateAssembly, CourseBuoy, FinishCrown, Monolith_A, Monolith_B, Monolith_C, and SolarTurbine; export selected roots only as GLB.",
+      "purpose": "Checkpoint architecture, course boundaries, hazards, and distant navigation landmarks",
+      "usageRights": "Procedurally authored for this repository with rights to use and redistribute",
+      "load": "initial"
+    }
+  ]
+}
