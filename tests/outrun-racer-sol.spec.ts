@@ -28,7 +28,7 @@ declare global {
       snapshot(): {
         renderer: { calls: number; triangles: number; geometries: number; textures: number };
         scene: { meshes: number; materials: number; instancedMeshes: number };
-        settings: { dpr: number; shadows: boolean; postPasses: number };
+        settings: { dpr: number; shadows: boolean; postPasses: number; audioPaused: boolean };
       };
     };
     __NEON_HORIZON_TEST__: {
@@ -138,6 +138,31 @@ test.describe("GPT 5.6 Sol Neon Horizon Racer", () => {
     expect(next.player.nextGate).toBe(3);
   });
 
+  test("shows the correct gate number and resets the replay countdown", async ({ page }) => {
+    await openGame(page);
+    await page.locator("#startButton").click();
+    await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.8));
+    await expect(page.locator("#countdown")).toHaveText("3");
+    await expect(page.locator("#gateValue")).toHaveText("1 / 12");
+    await page.evaluate(() => window.__NEON_HORIZON_TEST__.setPlayer({ gate: 0 }));
+    await expect(page.locator("#gateValue")).toHaveText("12 / 12");
+    await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.setState("win"));
+    await page.locator("#restartButton").click();
+    await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.advance(.01));
+    await expect(page.locator("#countdown")).toHaveText("3");
+  });
+
+  test("silences and restores game audio with the pause state", async ({ page }) => {
+    await openGame(page);
+    await page.locator("#startButton").click();
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#pauseBadge")).toHaveClass(/show/);
+    expect(await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__.snapshot().settings.audioPaused)).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#pauseBadge")).not.toHaveClass(/show/);
+    expect(await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__.snapshot().settings.audioPaused)).toBe(false);
+  });
+
   test("makes reef and rival contact recoverable instead of ending the race", async ({ page }) => {
     await openGame(page);
     await page.evaluate(() => { window.__NEON_HORIZON_TEST__.start(); window.__NEON_HORIZON_TEST__.setPlayer({ speed: 28 }); });
@@ -193,7 +218,7 @@ test.describe("GPT 5.6 Sol Neon Horizon Racer", () => {
     await page.evaluate(() => window.__THREE_GAME_TEST_HOOKS__.setState("active-play"));
     const diagnostics = await page.evaluate(() => window.__THREE_GAME_DIAGNOSTICS__.snapshot());
     expect(diagnostics.settings.shadows).toBe(true);
-    expect(diagnostics.settings.postPasses).toBe(1);
+    expect(diagnostics.settings.postPasses).toBe(0);
     expect(diagnostics.settings.dpr).toBeLessThanOrEqual(1.5);
     expect(diagnostics.scene.meshes).toBeGreaterThan(100);
     expect(diagnostics.renderer.triangles).toBeGreaterThan(1_000);
