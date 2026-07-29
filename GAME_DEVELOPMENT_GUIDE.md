@@ -336,7 +336,10 @@ Add this to the `versions` array of the appropriate game.
 - Contracts are generated backwards from a witness — a launch the generator has flown itself to a successful capture — and no contract ships without one
 - Difficulty is measured, not declared: the fraction of a fixed neighbourhood of launches around the witness that still deliver, graded from Gentle to Needle
 - Mail buoys hung on the witness path, a hard delta-v budget spent across launch and mid-course corrections, and a destination that must be captured below a relative-speed threshold rather than merely reached
-- Six fixed-seed campaign contracts with a monotonic measured difficulty curve, plus an endless seeded postal route
+- Seven fixed-seed campaign contracts, opening with a coached tutorial, with a monotonic measured difficulty curve, plus an endless seeded postal route
+- Every tolerance that sets felt difficulty — capture speed, approach-sphere size, buoy radius and reaction-mass margin — is per-contract, loosened at the start of the round and tightened monotonically to the strictest values by the end
+- A guidance ramp that withdraws: the early contracts draw the witness route into the field, count down its launch window and ghost its heading and burn size onto the gauges; the late contracts draw nothing
+- The clock is held at the mast so the launch is a decision rather than a race, and the HUD states the current objective and what the pending burn will spend
 - Responsive keyboard aiming and firing with mouse aiming on the plotted course, time-rate control including hold, camera orbit and zoom
 - Title, briefing with live route plotting, capture and failure screens, and procedural Web Audio whose scale is derived from the system's own orbital period ratios
 - Pinned local Three.js runtime, deterministic `?test=1` hooks and diagnostics, no creative assets, no remote requests

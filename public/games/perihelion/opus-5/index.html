@@ -87,6 +87,36 @@
   .gauge.warn > i { background: linear-gradient(90deg, #8a4527, var(--alarm)); }
   .gauge .tick { position: absolute; top: -3px; bottom: -3px; width: 1px; background: rgba(201,161,90,.45); }
 
+  /* The charge: how much of the tank Space is about to spend. Brass, because
+     it is a pending intention, not a reserve you already hold. */
+  .gauge.burn { margin: 4px 0 3px; }
+  .gauge.burn > i { background: linear-gradient(90deg, var(--brass-dim), var(--brass-bright)); }
+  #burnValue { font-size: 11px; color: var(--brass-bright); letter-spacing: .06em; }
+  #burnValue.idle { color: var(--ivory-dim); }
+
+  /* Heading, as a dial rather than a number: −180 at the left, prograde in the
+     middle, +180 at the right, with a ghost mark where the plot says to point. */
+  .gauge.aim { margin: 7px 0 3px; background: rgba(4,6,14,.55); }
+  .gauge.aim::after {
+    content: ""; position: absolute; left: 50%; top: 0; bottom: 0;
+    width: 1px; background: rgba(201,161,90,.28);
+  }
+  #aimNeedle {
+    position: absolute; top: -2px; bottom: -2px; left: 50%; width: 2px;
+    margin-left: -1px; background: var(--brass-bright); transition: left .1s linear;
+  }
+  /* The plot's own mark: verdigris, so "where you point" never reads as
+     "where you were told to point". */
+  .gauge .tick.plot { background: var(--patina); box-shadow: 0 0 5px rgba(127,215,196,.75); }
+
+  .cue { font-size: 10px; letter-spacing: .1em; color: var(--ivory-dim); margin-top: 3px; min-height: 13px; }
+  .cue.open { color: var(--patina); }
+
+  #objective {
+    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--patina); margin-bottom: 4px;
+  }
+
   #predictText { letter-spacing: .1em; text-transform: uppercase; font-size: 12px; }
   #predictText.ok    { color: var(--patina); }
   #predictText.warn  { color: var(--brass-bright); }
@@ -153,16 +183,18 @@
   button.act:active { transform: translateY(1px); }
   button.act:disabled { filter: saturate(.15) brightness(.7); cursor: default; transform: none; }
 
-  .contracts { display: grid; gap: 4px; margin-top: 10px; }
+  /* Seven rows now, and the play page only gives the iframe about 544px. */
+  .contracts { display: grid; gap: 2px; margin-top: 5px; }
+  .contracts + .actions { margin-top: 10px; }
   .contract {
     display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 12px;
-    padding: 5px 10px; border: 1px solid var(--rule); background: rgba(8,12,22,.55);
+    padding: 3px 10px; border: 1px solid var(--rule); background: rgba(8,12,22,.55);
     cursor: pointer; text-align: left; color: var(--ivory); font: inherit;
   }
   .contract:hover, .contract:focus-visible { border-color: var(--brass); background: rgba(28,36,56,.7); outline: none; }
   .contract .num { color: var(--brass); font-size: 12px; letter-spacing: .1em; }
-  .contract .nm { font-size: 13px; line-height: 1.15; }
-  .contract .sub { font-size: 9.5px; line-height: 1.25; color: var(--ivory-dim); letter-spacing: .04em; }
+  .contract .nm { font-size: 12.5px; line-height: 1.1; }
+  .contract .sub { font-size: 9.5px; line-height: 1.15; color: var(--ivory-dim); letter-spacing: .04em; }
   .contract .grade { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--patina); }
   .contract[data-done="1"] .num::after { content: " ✦"; color: var(--patina); }
 
@@ -231,13 +263,18 @@
     <div class="value" id="clockValue">0<span style="font-size:11px;color:var(--ivory-dim)">s</span></div>
     <div class="gauge" id="clockGauge"><i style="width:100%"></i></div>
     <div class="label" id="warpValue" style="letter-spacing:.14em">×1</div>
+    <div class="cue" id="windowValue"></div>
   </div>
 
   <div class="plate" id="hudFuel">
     <span class="label">Reaction mass · Δv</span>
     <div class="value" id="fuelValue">0.00</div>
     <div class="gauge" id="fuelGauge"><i style="width:100%"></i></div>
-    <div class="label" id="burnValue" style="letter-spacing:.1em">Aim —</div>
+    <span class="label">Charge · Space fires this</span>
+    <div class="gauge burn" id="burnGauge"><i style="width:0%"></i><span class="tick plot hidden" id="burnTick"></span></div>
+    <div id="burnValue">Hold W to charge</div>
+    <div class="gauge aim" id="aimGauge"><i id="aimNeedle"></i><span class="tick plot hidden" id="aimTick"></span></div>
+    <div class="label" id="aimValue" style="letter-spacing:.1em">Aim —</div>
   </div>
 
   <div class="plate" id="hudCargo">
@@ -247,6 +284,7 @@
   </div>
 
   <div class="plate" id="hudPredict">
+    <div id="objective">—</div>
     <div id="predictText" class="warn">Plotting</div>
     <div id="predictSub">—</div>
   </div>
@@ -1118,60 +1156,104 @@ const gradeFor = (measure) => GRADES.find((g) => measure >= g.min);
    then measure how forgiving the result actually is.
    ========================================================================== */
 
+// The strictest settings in the game. Every one of them is a floor that the
+// late contracts sit on and the early ones are lifted off: a first contract
+// that arrives at the same tolerances as the last one is not a first contract.
 const CAPTURE_SPEED = 1.6;       // relative speed the postmaster will accept
 const BEACON_RADIUS = 0.95;
+const CAP_MUL = 2.8;             // approach sphere, in destination radii
+const MIN_CAP = 2.4;             // ...and never smaller than this
 const DV_CEILING = 12.5;
 const RETRO_CEILING = 5.5;
 
+/**
+ * How much slack a contract is flown with, and how much of the generator's own
+ * route it is willing to show. Everything defaults to the strict end, so a spec
+ * that says nothing is a spec flown at full difficulty.
+ *
+ * `assist` is guidance, not autopilot:
+ *   full   — the proven route drawn in the field, its launch window counted
+ *            down, its heading and burn size ghosted onto the gauges
+ *   window — the launch window only
+ *   none   — find it yourself
+ */
+function easeOf(spec) {
+  return {
+    capSpeed: spec.capSpeed ?? CAPTURE_SPEED,
+    capMul: spec.capMul ?? CAP_MUL,
+    minCap: spec.minCap ?? MIN_CAP,
+    beaconRadius: spec.beaconRadius ?? BEACON_RADIUS,
+    assist: spec.assist ?? "none",
+  };
+}
+
 const CAMPAIGN = [
+  {
+    key: "firstround", numeral: "0", name: "The First Round",
+    subtitle: "One buoy, and the clock held while you learn",
+    seed: 11251, targetBasin: 0.9, beacons: 1, slack: 2.4, horizon: 58,
+    capSpeed: 4.0, capMul: 6.0, minCap: 4.5, beaconRadius: 2.6, assist: "full",
+    brief: "Nothing here is trying to catch you out. Burns are instant: W and S set how much reaction mass you spend, Space spends all of it at once. The clock stays held until you fire, and the brass line in the field is a launch the postmaster has already flown. Match it, wait for the window, and go.",
+    params: { planets: 3, innerRadius: 15, spacing: [1.5, 1.6], gasIndex: 2, moons: 0, binary: false, flat: true, circular: true, departure: 0 },
+  },
   {
     key: "shortfall", numeral: "I", name: "Shortfall",
     subtitle: "Two worlds, one lamp, no excuses",
-    seed: 22796, targetBasin: 0.45, beacons: 2, slack: 1.85, horizon: 62,
-    brief: "A clean run to learn the trade. Leave the mast, let the lamp bend you outward, and be slow enough on arrival that the postmaster will take the sack.",
+    seed: 22796, targetBasin: 0.75, beacons: 2, slack: 2.2, horizon: 62,
+    capSpeed: 3.2, capMul: 5.0, minCap: 3.8, beaconRadius: 2.0, assist: "full",
+    brief: "A clean run to learn the trade. Leave the mast, let the lamp bend you outward, and be slow enough on arrival that the postmaster will take the sack. The brass line is still yours to follow.",
     params: { planets: 3, innerRadius: 14.5, spacing: [1.44, 1.52], gasIndex: 2, moons: 0, binary: false, flat: true, circular: true, departure: 0 },
   },
   {
     key: "tithe", numeral: "II", name: "The Gravity Tithe",
     subtitle: "Everything the worlds lend you, they charge for",
-    seed: 43312, targetBasin: 0.26, beacons: 3, slack: 1.70, horizon: 64,
+    seed: 43312, targetBasin: 0.55, beacons: 3, slack: 2.0, horizon: 64,
+    capSpeed: 2.6, capMul: 4.2, minCap: 3.2, beaconRadius: 1.6, assist: "full",
     brief: "A heavier neighbour sits across your path. Pass close and it hands you speed; pass closer and it keeps you. The tithe is always collected.",
     params: { planets: 4, innerRadius: 13.5, spacing: [1.38, 1.5], gasIndex: 2, moons: 0, binary: false, flat: true, circular: false, departure: 1 },
   },
   {
     key: "shepherd", numeral: "III", name: "Shepherd",
     subtitle: "Delivery to a moon, and moons do not wait",
-    seed: 58424, targetBasin: 0.15, beacons: 3, slack: 1.65, horizon: 68,
+    seed: 58424, targetBasin: 0.35, beacons: 3, slack: 1.85, horizon: 68,
+    capSpeed: 2.1, capMul: 3.8, minCap: 3.3, beaconRadius: 1.3, assist: "full",
     destKinds: ["moon"],
-    brief: "The sack is bound for a shepherd moon inside a giant's well. Arriving at the giant is easy. Arriving at the moon, slowly, on the right side, is the job.",
+    brief: "The sack is bound for a shepherd moon inside a giant's well. Arriving at the giant is easy. Arriving at the moon, slowly, on the right side, is the job. This is the last route drawn for you.",
     params: { planets: 4, innerRadius: 14, spacing: [1.4, 1.52], gasIndex: 2, moons: 2, binary: false, flat: false, circular: false, departure: 0 },
   },
   {
     key: "twinlamps", numeral: "IV", name: "Twin Lamps",
     subtitle: "Two suns, and the space between them lies",
-    seed: 53928, targetBasin: 0.11, beacons: 3, slack: 1.60, horizon: 70,
-    brief: "A pair of lamps turn about their common centre. The field between them looks chaotic and is not — it is only unforgiving of a launch made a second early.",
+    seed: 53928, targetBasin: 0.16, beacons: 3, slack: 1.75, horizon: 70,
+    capSpeed: 1.9, capMul: 3.0, minCap: 2.6, beaconRadius: 1.1, assist: "window",
+    brief: "A pair of lamps turn about their common centre. The field between them looks chaotic and is not — it is only unforgiving of a launch made a second early. You get the window and nothing else.",
     params: { planets: 3, innerRadius: 17, spacing: [1.44, 1.56], gasIndex: 1, moons: 0, binary: true, flat: true, circular: false, departure: 0 },
   },
   {
     key: "resonance", numeral: "V", name: "Resonance",
     subtitle: "The window opens once and closes politely",
-    seed: 62657, targetBasin: 0.055, beacons: 4, slack: 1.50, horizon: 72,
+    seed: 62657, targetBasin: 0.075, beacons: 4, slack: 1.65, horizon: 72,
+    capSpeed: 1.7, capMul: 2.9, minCap: 2.5,
     brief: "Five worlds on eccentric tracks. The buoys are strung across a corridor that exists for a handful of seconds each revolution. Wait for it.",
     params: { planets: 5, innerRadius: 13, spacing: [1.34, 1.46], gasIndex: 3, moons: 0, binary: false, flat: false, circular: false, departure: 1 },
   },
   {
     key: "longferry", numeral: "VI", name: "The Long Ferry",
     subtitle: "The whole orrery, and barely enough mass to burn",
-    seed: 92983, targetBasin: 0.035, beacons: 4, slack: 1.40, horizon: 76,
+    seed: 92983, targetBasin: 0.035, beacons: 4, slack: 1.45, horizon: 76,
     brief: "Everything at once, and a tank that will not forgive a second correction. Plot it fully before you touch the mast.",
     params: { planets: 5, innerRadius: 13.5, spacing: [1.36, 1.5], gasIndex: 3, moons: 2, binary: false, flat: false, circular: false, departure: 0 },
   },
 ];
 
-/** Endless mode: the same pipeline, escalating what it is asked to cast. */
+/**
+ * Endless mode: the same pipeline, escalating what it is asked to cast. The
+ * tolerances walk the same road the campaign does, so a first standing order is
+ * flown at roughly contract I's forgiveness rather than at the last contract's.
+ */
 function routeSpec(tier, seed) {
   const t = Math.min(tier, 12);
+  const strict = clamp((t - 1) / 5, 0, 1);   // 0 at tier 1, fully strict by tier 6
   return {
     key: `route-${tier}`,
     numeral: `R${tier}`,
@@ -1179,9 +1261,14 @@ function routeSpec(tier, seed) {
     subtitle: "Standing orders, no rehearsal",
     seed,
     beacons: clamp(2 + Math.floor(t / 2), 2, 5),
-    targetBasin: clamp(0.4 - t * 0.032, 0.035, 0.4),
-    slack: clamp(2 - t * 0.05, 1.42, 2),
+    targetBasin: clamp(0.72 - t * 0.06, 0.035, 0.72),
+    slack: clamp(2.5 - t * 0.15, 1.45, 2.5),
     horizon: 62 + Math.min(t, 6) * 2,
+    capSpeed: lerp(3.2, CAPTURE_SPEED, strict),
+    capMul: lerp(5.0, CAP_MUL, strict),
+    minCap: lerp(3.8, MIN_CAP, strict),
+    beaconRadius: lerp(2.0, BEACON_RADIUS, strict),
+    assist: t <= 2 ? "full" : t <= 4 ? "window" : "none",
     destKinds: t >= 5 && t % 3 === 2 ? ["moon"] : undefined,
     brief: "Standing orders from the postmaster. The orrery is new to you; the rules are not.",
     params: {
@@ -1214,6 +1301,7 @@ function* buildContract(spec, attempt = 0) {
   yield { p: 0.02, msg: "Casting the orrery" };
 
   const rng = makeRng(seed);
+  const ease = easeOf(spec);
   const params = { ...spec.params, destHint: undefined };
   const sys = buildSystem(rng, params);
 
@@ -1233,7 +1321,10 @@ function* buildContract(spec, attempt = 0) {
       if (i !== departure && sys.bodies[i].kind !== "star") cands.push(i);
     }
   }
-  const capRadius = cands.map((i) => Math.max(sys.bodies[i].radius * 2.8, 2.4));
+  // The approach sphere is the single biggest lever on how forgiving a contract
+  // feels: it sets the reach of the witness search, what counts as "arrived" in
+  // the basin measurement, the hoops drawn in the field, and live capture.
+  const capRadius = cands.map((i) => Math.max(sys.bodies[i].radius * ease.capMul, ease.minCap));
 
   const depPeriod = sys.bodies[departure].orbit ? sys.bodies[departure].orbit.period : 24;
   const plan = {
@@ -1272,7 +1363,7 @@ function* buildContract(spec, attempt = 0) {
   let best = null;
   for (let i = 0; i < confirmed.length; i += 1) {
     const w = confirmed[i];
-    const beacons = placeBeacons(w, spec.beacons, BEACON_RADIUS);
+    const beacons = placeBeacons(w, spec.beacons, ease.beaconRadius);
     const fuel = Math.ceil(w.total * spec.slack * 20) / 20;
     const run = measureBasin(sys, plan, w, beacons, fuel);
     let bstep = run.next();
@@ -1298,7 +1389,8 @@ function* buildContract(spec, attempt = 0) {
     departName: sys.bodies[departure].name,
     destName: sys.bodies[witness.dest].name,
     capRadius: witness.capRadius,
-    capSpeed: CAPTURE_SPEED,
+    capSpeed: ease.capSpeed,
+    assist: ease.assist,
     witness,
     beacons: best.beacons,
     fuel: best.fuel,
@@ -1576,6 +1668,7 @@ function buildBeaconMesh() {
 }
 const AIM_UP = new THREE.Vector3(0, 1, 0);
 const RIBBON_MAX = 760;
+const PLOT_MAX = 900;
 const PREDICT_HORIZON = 42;
 const PREDICT_SAMPLE = 4;
 
@@ -1616,6 +1709,7 @@ class Orrery {
 
     this.buildProbe();
     this.buildRibbon();
+    this.buildPlot();
     this.buildAim();
 
     this.resize();
@@ -1735,6 +1829,50 @@ class Orrery {
     this.ribbonEnd = new THREE.Sprite(endMat);
     this.ribbonEnd.scale.setScalar(2.4);
     this.scene.add(this.ribbonEnd);
+  }
+
+  /**
+   * The postmaster's plot: the launch the generator flew itself before the
+   * contract shipped. Drawn dashed and dim so it never competes with the live
+   * course — it is a route on paper, not a promise about where you are going.
+   */
+  buildPlot() {
+    const geo = this.track(new THREE.BufferGeometry());
+    this.plotPos = new Float32Array(PLOT_MAX * 3);
+    geo.setAttribute("position", new THREE.BufferAttribute(this.plotPos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setDrawRange(0, 0);
+    this.plotGeo = geo;
+
+    const mat = this.track(new THREE.LineDashedMaterial({
+      color: COLOR.brass, transparent: true, opacity: 0.42,
+      depthWrite: false, fog: false, dashSize: 0.7, gapSize: 0.5,
+    }));
+    this.plotLine = new THREE.Line(geo, mat);
+    this.plotLine.frustumCulled = false;
+    this.plotLine.visible = false;
+    this.scene.add(this.plotLine);
+  }
+
+  /** `path` is the witness sample list: [x, y, z, t] per entry. */
+  setPlot(path, visible) {
+    const on = Boolean(visible) && Array.isArray(path) && path.length > 1;
+    this.plotLine.visible = on;
+    if (!on) {
+      this.plotGeo.setDrawRange(0, 0);
+      return 0;
+    }
+    const n = Math.min(path.length, PLOT_MAX);
+    for (let i = 0; i < n; i += 1) {
+      const p = path[i];
+      this.plotPos[i * 3] = p[0];
+      this.plotPos[i * 3 + 1] = p[1];
+      this.plotPos[i * 3 + 2] = p[2];
+    }
+    this.plotGeo.setDrawRange(0, n);
+    this.plotGeo.attributes.position.needsUpdate = true;
+    this.plotGeo.computeBoundingSphere();
+    this.plotLine.computeLineDistances();
+    return n;
   }
 
   /** The burn vector, drawn off the probe like a set square. */
@@ -1948,9 +2086,13 @@ class Orrery {
     this.starLight.distance = 0;
     this.probe.visible = true;
     this.probeHalo.visible = true;
+
+    // How much of its own working the contract is willing to show.
+    this.setPlot(contract.witness.path, contract.assist === "full");
   }
 
   unloadContract() {
+    this.setPlot(null, false);
     if (!this.contractRoot) return;
     for (const node of this.bodyNodes) {
       for (const d of node.disposables || []) d.dispose();
@@ -2539,11 +2681,19 @@ const dom = {
   clockValue: el("clockValue"),
   clockGauge: el("clockGauge"),
   warpValue: el("warpValue"),
+  windowValue: el("windowValue"),
   fuelValue: el("fuelValue"),
   fuelGauge: el("fuelGauge"),
+  burnGauge: el("burnGauge"),
+  burnTick: el("burnTick"),
   burnValue: el("burnValue"),
+  aimGauge: el("aimGauge"),
+  aimNeedle: el("aimNeedle"),
+  aimTick: el("aimTick"),
+  aimValue: el("aimValue"),
   cargoValue: el("cargoValue"),
   cargoBeads: el("cargoBeads"),
+  objective: el("objective"),
   predictText: el("predictText"),
   predictSub: el("predictSub"),
   muteBtn: el("muteBtn"),
@@ -2559,8 +2709,28 @@ const WARPS = [0, 0.5, 1, 2, 4, 8];
 // The basin a contract is graded on is a couple of degrees wide. Aim has to be
 // able to resolve it: coarse for getting there, fine for landing inside it.
 const AIM_RATE = 0.7;   // rad/s of heading under a held key
-const DV_RATE = 1.2;    // Δv/s of burn magnitude under a held key
+// Measured: the set of launches that deliver is tens of degrees wide in heading
+// but only about a quarter of a Δv wide in magnitude. At 1.2/s that was a fifth
+// of a second of keypress for the whole window, which is not a control.
+const DV_RATE = 0.6;    // Δv/s of burn magnitude under a held key
 const AIM_FINE = 0.12;  // Shift multiplier — about 4.8°/s
+
+/** Heading as the dial reads it: prograde at 0, the brake at either end. */
+function signedDeg(heading) {
+  return ((((heading * 180) / Math.PI + 180) % 360) + 360) % 360 - 180;
+}
+
+/**
+ * Two of the 360 degrees actually matter, and nothing in the game said so:
+ * heading 0 is the accelerator and 180 is the brake. Everything else is a
+ * cross-track nudge.
+ */
+function headingWord(deg) {
+  const a = Math.abs(deg);
+  if (a <= 25) return "prograde — adds speed";
+  if (a >= 155) return "retrograde — the brake";
+  return "across the track";
+}
 
 const _v3a = new THREE.Vector3();
 const _v3b = new THREE.Vector3();
@@ -2688,6 +2858,7 @@ class Game {
       switch (key) {
         case " ": this.commitBurn(); return true;
         case "h": this.setWarp(this.warpIndex === 0 ? 2 : 0); return true;
+        case "g": this.jumpToWindow(); return true;
         case "1": case "2": case "3": case "4": case "5": case "6":
           this.setWarp(Number(key) - 1); return true;
         case "r": this.restartContract(); return true;
@@ -2776,22 +2947,21 @@ class Game {
         <p class="lede">
           You carry the post between worlds that will not hold still for you: buoys
           strung along a corridor, a destination that must be <em>captured</em> rather
-          than merely reached, and exactly as much reaction mass as the route deserves.
+          than merely reached. <b>Burns are instant.</b> W and S set how much reaction
+          mass you spend; Space spends all of it at once; holding Space does nothing.
           The plotted course is not an estimate — it runs the same propagator as live
-          flight, against where every world <em>will be</em>. If the line says you burn
-          up, you burn up.
+          flight. If the line says you burn up, you burn up.
         </p>
         <div class="rule"></div>
         <div class="keys">
           <div><span>Aim the burn</span><b>A / D · ← →</b></div>
-          <div><span>Burn magnitude</span><b>W / S · ↑ ↓</b></div>
+          <div><span>Set burn size</span><b>W / S · ↑ ↓</b></div>
           <div><span>Fine control</span><b>Shift</b></div>
-          <div><span>Fire</span><b>Space</b></div>
-          <div><span>Hold time</span><b>H</b></div>
-          <div><span>Time rate</span><b>1 – 6</b></div>
+          <div><span>Fire the burn</span><b>Space</b></div>
+          <div><span>Hold time · rate</span><b>H · 1 – 6</b></div>
+          <div><span>Take the plotted launch</span><b>G</b></div>
           <div><span>Aim / orbit view</span><b>Drag / Right-drag</b></div>
-          <div><span>Zoom</span><b>Wheel · Z / X</b></div>
-          <div><span>Turn view</span><b>Q / E</b></div>
+          <div><span>Zoom · turn view</span><b>Wheel · Z X · Q E</b></div>
           <div><span>Restart · Pause · Mute</span><b>R · P · M</b></div>
         </div>
         <div class="actions">
@@ -2816,7 +2986,7 @@ class Game {
     this.setScreen(`
       <div class="card">
         <p class="eyebrow">The round · fixed seeds · difficulty is measured, not declared</p>
-        <h2 class="display">Six contracts</h2>
+        <h2 class="display">${CAMPAIGN.length} contracts, easiest first</h2>
         <div class="contracts">${rows}</div>
         <div class="actions">
           <button class="act ghost" data-action="title">Back</button>
@@ -2855,15 +3025,21 @@ class Game {
         <div class="spec"><span class="label">Window</span><span class="value small">${c.grade.name}</span></div>
         <div class="spec"><span class="label">Time allowed</span><span class="value small">${Math.round(c.timeLimit)}s</span></div>
       </div>
-      <p class="lede" style="margin-top:14px">
+      <p class="lede" style="margin-top:11px">
         Confirmed route flies in ${c.witness.flight.toFixed(1)}s for ${c.witness.total.toFixed(2)} Δv.
         ${(c.basin * 100).toFixed(1)}% of nearby launches still deliver, which is why this one is graded
         <b style="color:var(--patina)">${c.grade.name}</b>. The mast holds
-        ${(c.fuel - launchCap(c.fuel)).toFixed(2)} Δv back for arrival — you will need it, because
-        ${c.destName} only signs for the sack inside its approach sphere at under
-        <b style="color:var(--patina)">${c.capSpeed.toFixed(2)} Δv</b> of relative speed. Collecting
-        the buoys is half the contract; braking to match is the other half.
+        ${(c.fuel - launchCap(c.fuel)).toFixed(2)} Δv back for arrival, because ${c.destName} only signs
+        inside its approach sphere at under
+        <b style="color:var(--patina)">${c.capSpeed.toFixed(2)} Δv</b> of relative speed.
       </p>
+      <p class="lede" style="margin-top:7px;font-size:11px">${
+        c.assist === "full"
+          ? "The confirmed route is drawn in the field, and its heading and burn size are ghosted onto the gauges. The clock is held at the mast; <b>G</b> loads the plotted launch. Firing it is still yours."
+          : c.assist === "window"
+            ? "The route is yours to find. The clock is held at the mast, and <b>G</b> puts it on the launch window."
+            : "No line is drawn for this one. The clock is held at the mast until you fire."
+      }</p>
       <div class="actions">
         <button class="act" data-action="launch">Take the mast</button>
         <button class="act ghost" data-action="back">Back</button>
@@ -3026,8 +3202,12 @@ class Game {
     this.launchT = 0;
     this.fuel = c.fuel;
     this.collected = 0;
-    this.warpIndex = 2;
+    // The clock is held at the mast. The departure world used to orbit away
+    // while a new player was still working out what W and S did, which made the
+    // first burn a panic instead of a decision.
+    this.warpIndex = 0;
     this.adjudicated = false;
+    this.coached = 0;
     this.aimHeading = 0;
     this.aimDv = clamp(c.witness.dv * 0.75, 0, this.maxBurn());
     for (const b of c.beacons) b.taken = false;
@@ -3052,7 +3232,11 @@ class Game {
     this.audio.setAmbience(1);
     const destOrbit = this.contract.sys.bodies[this.contract.dest].orbit;
     this.audio.startMusic(destOrbit ? destOrbit.period : 24);
-    this.banner(this.contract.destName, `Capture under ${this.contract.capSpeed.toFixed(2)} Δv`);
+    if (this.contract.assist === "full") {
+      this.coach(1, "The clock is held", "W and S set the burn, Space spends it. Or press G to load the plot.");
+    } else {
+      this.banner(this.contract.destName, `Capture under ${this.contract.capSpeed.toFixed(2)} Δv`);
+    }
   }
 
   restartContract() {
@@ -3079,6 +3263,34 @@ class Game {
   maxBurn() {
     if (!this.launched) return launchCap(this.fuel);
     return Math.min(this.fuel, 6);
+  }
+
+  /**
+   * Put the clock on the plotted launch window. Before launch the simulation
+   * time is only a parameter — every body is solved analytically from it — so
+   * this is scrubbing a dial, not fast-forwarding a simulation. Without it a
+   * missed window would mean rebuilding the whole contract to try again.
+   */
+  jumpToWindow() {
+    const c = this.contract;
+    if (!c || this.launched || c.assist === "none") return false;
+    this.simT = c.witness.t0;
+    this.accum = 0;
+    this.warpIndex = 0;
+    // With the whole route drawn for you, withholding the two numbers that
+    // drew it is not difficulty, it is a guessing game. Load the plotted burn
+    // and let the gauges show what it looks like; Space is still yours.
+    if (c.assist === "full") {
+      this.aimHeading = (c.witness.heading + TAU) % TAU;
+      this.aimDv = clamp(c.witness.dv, 0, this.maxBurn());
+    }
+    this.ribbonDirty = true;
+    this.audio.click(true);
+    this.banner(
+      c.assist === "full" ? "Plot loaded" : "Window",
+      c.assist === "full" ? "Aim and burn set. Space fires it." : "The clock is on the plotted launch",
+    );
+    return true;
   }
 
   /** Prograde basis at the probe (or at the mast, before launch). */
@@ -3135,7 +3347,10 @@ class Game {
       this.launched = true;
       this.launchT = this.simT;
       this.state = "flight";
+      // The mast holds the clock; leaving it starts it again.
+      if (WARPS[this.warpIndex] === 0) this.warpIndex = 2;
       this.banner("Away", `${dv.toFixed(2)} Δv spent`);
+      this.coach(2, "That was the whole burn", "Instant. The teal line is where you now go.");
     } else {
       this.probeState.vx += dir[0] * dv;
       this.probeState.vy += dir[1] * dv;
@@ -3145,7 +3360,10 @@ class Game {
     }
 
     this.fuel = Math.max(0, this.fuel - dv);
-    this.aimDv = clamp(this.aimDv, 0, this.maxBurn());
+    // Spending the charge empties it. Carrying it over left the plotted course
+    // showing a correction the player had not asked for and could not see they
+    // were still holding — the line stopped being where they were going.
+    this.aimDv = 0;
     this.burnFlash = 0.32;
     this.audio.thrust(dv);
     this.ribbonDirty = true;
@@ -3274,6 +3492,23 @@ class Game {
     this.audio.bell(index + 1, 0.24);
     this.banner("Buoy", `${this.collected + 1} of ${this.contract.beacons.length}`);
     this.flashUntil = performance.now() + 220;
+    if (this.collected + 1 >= this.contract.beacons.length) {
+      this.coach(4, "Sack complete", `Get inside the hoops under ${this.contract.capSpeed.toFixed(2)} Δv. Aim 180° to slow down.`);
+    } else {
+      this.coach(3, "Buoy aboard", "Small corrections only — every burn is mass you cannot brake with.");
+    }
+  }
+
+  /**
+   * Coaching, once each and only where the contract admits to being a lesson.
+   * `step` is monotonic so a banner never replays after a mid-course burn or a
+   * second buoy, and never fires at all once the plot is withdrawn.
+   */
+  coach(step, big, small) {
+    if (!this.contract || this.contract.assist !== "full") return;
+    if (this.coached >= step) return;
+    this.coached = step;
+    this.banner(big, small);
   }
 
   win() {
@@ -3346,9 +3581,13 @@ class Game {
     dom.destTag.style.left = `${x}px`;
     dom.destTag.style.top = `${y}px`;
     dom.destName.textContent = c.destName;
-    // Inside the sphere the only number that matters is the speed limit.
-    dom.destRange.textContent = dest.range <= c.capRadius && this.launched
-      ? `${dest.rel.toFixed(2)} / ${c.capSpeed.toFixed(2)} Δv`
+    // The speed limit is the thing that loses runs, so it is quoted the whole
+    // way in rather than first appearing once you are already inside the
+    // sphere and out of room to do anything about it.
+    dom.destRange.textContent = this.launched
+      ? dest.range <= c.capRadius
+        ? `${dest.rel.toFixed(2)} / ${c.capSpeed.toFixed(2)} Δv`
+        : `${dest.range.toFixed(1)} out · sign under ${c.capSpeed.toFixed(2)}`
       : `${dest.range.toFixed(1)} out`;
     dom.destTag.classList.toggle("near", dest.range <= c.capRadius);
     dom.destTag.classList.add("on");
@@ -3421,6 +3660,95 @@ class Game {
 
   /* -- HUD --------------------------------------------------------------- */
 
+  /**
+   * What the player is supposed to be doing, in one line, at every moment of a
+   * run. The prediction plate says what *will* happen; without this it never
+   * says what to *do*, which is the question a first contract raises hardest.
+   */
+  objectiveLine(dest) {
+    const c = this.contract;
+    const left = c.beacons.length - this.collected;
+    if (!this.launched) {
+      return c.assist === "none"
+        ? "Objective — plot a launch, then fire"
+        : "Objective — match the brass plot, then fire";
+    }
+    if (left > 0) {
+      return `Objective — reach buoy ${this.collected + 1} of ${c.beacons.length}`;
+    }
+    if (dest && dest.range <= c.capRadius) {
+      return `Objective — slow to ${c.capSpeed.toFixed(2)}, you are at ${dest.rel.toFixed(2)}`;
+    }
+    // A course that already arrives slowly enough needs leaving alone, and
+    // saying "brake" at a player who is on a winning line is worse than
+    // saying nothing.
+    if (this.predicted && this.predicted.outcome === OUTCOME.CAPTURED) {
+      return `Objective — hold this course into ${c.destName}`;
+    }
+    return `Objective — brake into ${c.destName} under ${c.capSpeed.toFixed(2)} Δv`;
+  }
+
+  /**
+   * The launch window. The basin a contract is graded on is measured within
+   * BASIN_BOX.t0 of the plotted launch time, so that is exactly the span worth
+   * counting down to — and `G` puts the clock there rather than making a missed
+   * window mean rebuilding the contract.
+   */
+  updateWindowCue() {
+    const c = this.contract;
+    if (!c || c.assist === "none" || this.launched) {
+      dom.windowValue.textContent = "";
+      dom.windowValue.classList.remove("open");
+      return;
+    }
+    const delta = c.witness.t0 - this.simT;
+    const open = Math.abs(delta) <= BASIN_BOX.t0;
+    dom.windowValue.textContent = open
+      ? "Window open — fire"
+      : delta > 0
+        ? c.assist === "full"
+          ? `Window in ${delta.toFixed(1)}s · G takes the plot`
+          : `Window in ${delta.toFixed(1)}s · G jumps to it`
+        : c.assist === "full"
+          ? "Window passed · G takes the plot"
+          : "Window passed · G returns to it";
+    dom.windowValue.classList.toggle("open", open);
+  }
+
+  /**
+   * The charge plate. The burn is one instant impulse whose size W and S set
+   * and Space spends — press duration does nothing — so the plate has to read
+   * as a trigger being loaded, not as telemetry about a throttle.
+   */
+  updateBurnPlate() {
+    const c = this.contract;
+    const canAim = this.canAim();
+    const cap = Math.max(this.maxBurn(), 1e-6);
+    const charged = canAim && this.aimDv > MIN_BURN;
+
+    dom.burnGauge.firstElementChild.style.width = `${clamp(this.aimDv / cap, 0, 1) * 100}%`;
+    dom.burnValue.textContent = !canAim
+      ? "Nothing left to burn"
+      : charged
+        ? `Space fires ${this.aimDv.toFixed(2)} Δv`
+        : "Hold W to charge";
+    dom.burnValue.classList.toggle("idle", !charged);
+
+    const deg = signedDeg(this.aimHeading);
+    dom.aimNeedle.style.left = `${(deg + 180) / 360 * 100}%`;
+    dom.aimValue.textContent = canAim ? `Aim ${deg.toFixed(0)}° · ${headingWord(deg)}` : "Aim —";
+
+    // The plot's own launch, ghosted onto both gauges: A/D and W/S now have
+    // somewhere to aim at instead of a blind two-dimensional search.
+    const ghost = c.assist === "full" && !this.launched && canAim;
+    dom.burnTick.classList.toggle("hidden", !ghost);
+    dom.aimTick.classList.toggle("hidden", !ghost);
+    if (ghost) {
+      dom.burnTick.style.left = `${clamp(c.witness.dv / cap, 0, 1) * 100}%`;
+      dom.aimTick.style.left = `${(signedDeg(c.witness.heading) + 180) / 360 * 100}%`;
+    }
+  }
+
   updateHud(dest) {
     const c = this.contract;
     if (!c) return;
@@ -3435,14 +3763,13 @@ class Game {
     dom.clockGauge.firstElementChild.style.width = `${left * 100}%`;
     dom.clockGauge.classList.toggle("warn", left < 0.25);
     dom.warpValue.textContent = WARPS[this.warpIndex] === 0 ? "Held" : `×${WARPS[this.warpIndex]}`;
+    this.updateWindowCue();
 
     dom.fuelValue.textContent = this.fuel.toFixed(2);
     const fuelFrac = clamp(this.fuel / c.fuel, 0, 1);
     dom.fuelGauge.firstElementChild.style.width = `${fuelFrac * 100}%`;
     dom.fuelGauge.classList.toggle("warn", fuelFrac < 0.22);
-    dom.burnValue.textContent = this.canAim()
-      ? `Aim ${(this.aimHeading * 180 / Math.PI).toFixed(1)}° · ${this.aimDv.toFixed(2)} Δv`
-      : "Aim —";
+    this.updateBurnPlate();
 
     dom.cargoValue.textContent = `${this.collected} / ${c.beacons.length}`;
     if (dom.cargoBeads.childElementCount !== c.beacons.length) {
@@ -3450,6 +3777,8 @@ class Game {
     }
     const beads = dom.cargoBeads.children;
     for (let i = 0; i < beads.length; i += 1) beads[i].classList.toggle("on", c.beacons[i].taken);
+
+    dom.objective.textContent = this.objectiveLine(dest);
 
     const p = this.predicted;
     if (!p) return;
@@ -3561,11 +3890,19 @@ class Game {
       const gain = this.orrery.readableGain || 2;
       this.orrery.probe.scale.setScalar(gain);
       this.orrery.probeHalo.scale.setScalar(gain * 2.3);
-      for (const node of this.orrery.beaconNodes) {
-        node.mesh.scale.setScalar(gain * 0.85);
+      // The buoy you are actually flying to is bigger and beats faster than the
+      // ones behind it, so "what next" has an answer in the field and not only
+      // in the prediction plate.
+      const nextBuoy = this.contract.beacons.findIndex((b) => !b.taken);
+      for (let i = 0; i < this.orrery.beaconNodes.length; i += 1) {
+        const node = this.orrery.beaconNodes[i];
+        const next = i === nextBuoy;
+        node.mesh.scale.setScalar(gain * (next ? 1.25 : 0.85));
         const core = node.mesh.getObjectByName("core");
-        if (core) core.rotation.y += dt * 0.9;
-        node.halo.material.opacity = 0.4 + Math.sin(now * 0.0025 + node.data.x) * 0.16;
+        if (core) core.rotation.y += dt * (next ? 2.1 : 0.9);
+        node.halo.material.opacity = next
+          ? 0.62 + Math.sin(now * 0.006 + node.data.x) * 0.24
+          : 0.28 + Math.sin(now * 0.0025 + node.data.x) * 0.1;
       }
       // The approach sphere is the target, so it pulses like one — brighter,
       // and brighter still once the probe is inside it.
@@ -3621,6 +3958,7 @@ if (isTest) {
     game.setScreen("");
     game.setHudVisible(true);
     game.recomputeRibbon();
+    game.updateHud();
     return contract;
   }
 
@@ -3638,13 +3976,40 @@ if (isTest) {
     game.setScreen("");
     game.setHudVisible(true);
     game.recomputeRibbon();
+    game.updateHud();
     return contract;
+  }
+
+  /** Null relative motion against the destination, charged to the tank. */
+  function brakeOntoDestination() {
+    const c = game.contract;
+    const s = game.probeState;
+    if (!s) return 0;
+    c.sys.bodyState(c.dest, s.t, _bs);
+    const rvx = s.vx - _bs[3], rvy = s.vy - _bs[4], rvz = s.vz - _bs[5];
+    const rel = Math.hypot(rvx, rvy, rvz);
+    if (rel <= 1e-6) return 0;
+    const dv = Math.min(rel, game.fuel);
+    s.vx -= (rvx / rel) * dv; s.vy -= (rvy / rel) * dv; s.vz -= (rvz / rel) * dv;
+    game.fuel = Math.max(0, game.fuel - dv);
+    primeState(c.sys, s);
+    return dv;
+  }
+
+  function runReport() {
+    return {
+      state: game.state,
+      result: game.result,
+      collected: game.collected,
+      buoys: game.contract.beacons.length,
+      fuelLeft: game.fuel,
+      flight: game.simT - game.launchT,
+    };
   }
 
   /** Fly the generator's own witness. This is the solvability proof, executed. */
   function replayWitness(stopFraction = 1) {
-    const c = game.contract;
-    const w = c.witness;
+    const w = game.contract.witness;
     game.resetRun();
     game.simT = w.t0;
     game.aimHeading = w.heading;
@@ -3659,28 +4024,46 @@ if (isTest) {
     }
 
     if (stopFraction >= 1 && game.state === "flight") {
-      // At the approach sphere, spend the retro burn the witness budgeted.
-      const s = game.probeState;
-      c.sys.bodyState(c.dest, s.t, _bs);
-      const rvx = s.vx - _bs[3], rvy = s.vy - _bs[4], rvz = s.vz - _bs[5];
-      const rel = Math.hypot(rvx, rvy, rvz);
-      if (rel > 1e-6) {
-        const dv = Math.min(rel, game.fuel);
-        s.vx -= (rvx / rel) * dv; s.vy -= (rvy / rel) * dv; s.vz -= (rvz / rel) * dv;
-        game.fuel = Math.max(0, game.fuel - dv);
-        primeState(c.sys, s);
-      }
+      brakeOntoDestination();
       game.advanceBy(SIM_DT * 2);
     }
     game.ribbonDirty = true;
-    return {
-      state: game.state,
-      result: game.result,
-      collected: game.collected,
-      buoys: c.beacons.length,
-      fuelLeft: game.fuel,
-      flight: game.simT - game.launchT,
-    };
+    return runReport();
+  }
+
+  /**
+   * A guided but imprecise player: launch off the plot by the given heading,
+   * magnitude and clock errors, fly the route, and brake the moment the
+   * approach sphere is entered. This is the question the graded basin does not
+   * answer — the basin box is ±3° wide, and a person reading a dial off a HUD
+   * is not that accurate. What survives here is what the contract really costs.
+   */
+  function flySloppy(dHeadingDeg = 0, dDv = 0, dT = 0) {
+    const c = game.contract;
+    const w = c.witness;
+    game.resetRun();
+    // A previous run may have settled into won/lost, and `canAim` refuses to
+    // commit a burn from there. Put the probe back on the mast properly.
+    game.state = "ready";
+    game.setScreen("");
+    game.simT = Math.max(0, w.t0 + dT);
+    game.aimHeading = (w.heading + (dHeadingDeg * Math.PI) / 180 + TAU) % TAU;
+    game.aimDv = clamp(w.dv + dDv, 0, game.maxBurn());
+    game.commitBurn();
+
+    let guard = 0;
+    let braked = false;
+    while (game.state === "flight" && guard < 8000) {
+      game.advanceBy(SIM_DT * 4);
+      guard += 1;
+      if (braked) continue;
+      const d = game.destState(_destState);
+      if (d.range <= c.capRadius) {
+        brakeOntoDestination();
+        braked = true;
+      }
+    }
+    return { ...runReport(), braked, dHeadingDeg, dDv, dT };
   }
 
   function advance(seconds) {
@@ -3771,6 +4154,10 @@ if (isTest) {
         destKind: c.sys.bodies[c.dest].kind,
         bodies: c.sys.count,
         timeLimit: c.timeLimit,
+        capSpeed: c.capSpeed,
+        capRadius: c.capRadius,
+        beaconRadius: c.beacons.length ? c.beacons[0].r : 0,
+        assist: c.assist,
       };
     });
   }
@@ -3829,6 +4216,7 @@ if (isTest) {
         key: c.spec.key, name: c.spec.name, seed: c.seed,
         fuel: c.fuel, basin: c.basin, grade: c.grade.name,
         timeLimit: c.timeLimit, capRadius: c.capRadius, capSpeed: c.capSpeed,
+        assist: c.assist,
         departName: c.departName, destName: c.destName,
         destKind: c.sys.bodies[c.dest].kind,
         buoys: c.beacons.length,
@@ -3847,6 +4235,13 @@ if (isTest) {
       bodies,
       predicted: game.predicted ? { ...game.predicted } : null,
       ribbonPoints: game.ribbonCount,
+      plotPoints: game.orrery.plotLine.visible ? game.orrery.plotGeo.drawRange.count : 0,
+      hud: {
+        objective: dom.objective.textContent,
+        burn: dom.burnValue.textContent,
+        aim: dom.aimValue.textContent,
+        window: dom.windowValue.textContent,
+      },
       environment: {
         artDirection: "antique brass orrery: machined armatures, engraved ivory orbit traces, filament lamp, deep indigo",
         bodyForms: ["cratered icosphere", "banded oblate giant with carved ring gap", "shepherd moon", "caged filament lamp"],
@@ -3861,7 +4256,7 @@ if (isTest) {
   }
 
   window.__PERIHELION_TEST__ = {
-    loadCampaign, loadRoute, replayWitness, advance, snapshot,
+    loadCampaign, loadRoute, replayWitness, flySloppy, advance, snapshot,
     integrationAudit, difficultyTable,
     campaign: () => CAMPAIGN.map((s) => ({ key: s.key, name: s.name, seed: s.seed })),
     /** Run the whole pipeline on an arbitrary spec without loading it. */
@@ -3884,9 +4279,11 @@ if (isTest) {
       game.aimDv = clamp(dv, 0, game.maxBurn());
       game.ribbonDirty = true;
       game.recomputeRibbon();
+      game.updateHud();
       return snapshot();
     },
-    burn: () => { game.commitBurn(); game.recomputeRibbon(); return snapshot(); },
+    burn: () => { game.commitBurn(); game.recomputeRibbon(); game.updateHud(); return snapshot(); },
+    jumpToWindow: () => { game.jumpToWindow(); game.recomputeRibbon(); game.updateHud(); return snapshot(); },
     setWarp: (index) => { game.setWarp(index); return snapshot(); },
     /** Shorten the contract deadline so the prediction clamp is reachable. */
     setDeadline: (seconds) => {

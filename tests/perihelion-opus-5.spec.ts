@@ -18,6 +18,7 @@ type Snapshot = {
   contract: {
     key: string; name: string; seed: number; fuel: number; basin: number;
     grade: string; timeLimit: number; capRadius: number; capSpeed: number;
+    assist: string;
     departName: string; destName: string; destKind: string; buoys: number;
   } | null;
   witness: {
@@ -35,6 +36,8 @@ type Snapshot = {
   }>;
   predicted: { outcome: Outcome; body: number; buoys: number; t: number } | null;
   ribbonPoints: number;
+  plotPoints: number;
+  hud: { objective: string; burn: string; aim: string; window: string };
   audioLayers: number;
   musicOn: boolean;
   scale: number[];
@@ -44,6 +47,10 @@ type Snapshot = {
 type Replay = {
   state: string; result: string | null; collected: number;
   buoys: number; fuelLeft: number; flight: number;
+};
+
+type Sloppy = Replay & {
+  braked: boolean; dHeadingDeg: number; dDv: number; dT: number;
 };
 
 type Audit = {
@@ -56,6 +63,7 @@ type TableRow = {
   key: string; name: string; seed: number; basin: number; grade: string;
   fuel: number; witnessTotal: number; flight: number; buoys: number;
   dest: string; destKind: string; bodies: number; timeLimit: number;
+  capSpeed: number; capRadius: number; beaconRadius: number; assist: string;
 };
 
 declare global {
@@ -64,6 +72,7 @@ declare global {
       loadCampaign(index: number): unknown;
       loadRoute(tier: number, seed: number): unknown;
       replayWitness(stopFraction?: number): Replay;
+      flySloppy(dHeadingDeg?: number, dDv?: number, dT?: number): Sloppy;
       advance(seconds: number): Snapshot;
       snapshot(): Snapshot;
       integrationAudit(seconds?: number): Audit;
@@ -74,6 +83,7 @@ declare global {
       basin(): number | null;
       aim(heading: number, dv: number): Snapshot;
       burn(): Snapshot;
+      jumpToWindow(): Snapshot;
       setWarp(index: number): Snapshot;
       setDeadline(seconds: number): Snapshot;
       setZoom(z: number): number;
@@ -100,6 +110,8 @@ declare global {
 }
 
 const GAME = "/games/perihelion/opus-5/index.html";
+// The round: a tutorial contract and then six that withdraw the help.
+const CONTRACTS = 7;
 const LOCAL_HOSTS = ["localhost", "127.0.0.1", "::1", "[::1]"];
 
 async function openGame(page: Page, viewport = { width: 1280, height: 720 }) {
@@ -152,10 +164,10 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     test.setTimeout(120_000);
     await openGame(page);
 
-    const replays = await page.evaluate(() => {
+    const replays = await page.evaluate((contracts) => {
       const api = window.__PERIHELION_TEST__;
       const out: Array<Replay & { key: string; fuel: number; witnessTotal: number }> = [];
-      for (let i = 0; i < 6; i += 1) {
+      for (let i = 0; i < contracts; i += 1) {
         api.loadCampaign(i);
         const before = api.snapshot();
         const replay = api.replayWitness(1);
@@ -167,9 +179,9 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
         });
       }
       return out;
-    });
+    }, CONTRACTS);
 
-    expect(replays).toHaveLength(6);
+    expect(replays).toHaveLength(CONTRACTS);
     for (const run of replays) {
       expect(run.result, `${run.key} witness must capture`).toBe("won");
       expect(run.collected, `${run.key} witness must collect every buoy`).toBe(run.buoys);
@@ -185,12 +197,12 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     await openGame(page);
     const table = await page.evaluate(() => window.__PERIHELION_TEST__.difficultyTable());
 
-    expect(table).toHaveLength(6);
+    expect(table).toHaveLength(CONTRACTS);
     for (const row of table) {
       // A contract nobody can repeat is not a contract.
       expect(row.basin, `${row.key} must be repeatable`).toBeGreaterThan(0.015);
       expect(row.basin).toBeLessThanOrEqual(1);
-      expect(row.buoys).toBeGreaterThanOrEqual(2);
+      expect(row.buoys).toBeGreaterThanOrEqual(1);
       expect(row.timeLimit).toBeGreaterThan(row.flight);
       expect(row.fuel).toBeGreaterThan(row.witnessTotal);
     }
@@ -200,9 +212,76 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
       expect(basins[i], `contract ${i + 1} must not be easier than ${i}`).toBeLessThan(basins[i - 1]);
     }
     expect(table[0].grade).toBe("Gentle");
-    expect(table[5].grade).toBe("Needle");
+    expect(table[CONTRACTS - 1].grade).toBe("Needle");
     // Shepherd delivers to a moon inside a giant's well.
-    expect(table[2].destKind).toBe("moon");
+    expect(table[3].destKind).toBe("moon");
+  });
+
+  /* ---------------------------------------------------------------------
+     The round has to open somewhere a person can actually start. Every
+     tolerance the game grades on is a per-contract number now, and the
+     ramp between them is a contract in its own right rather than a
+     coincidence of six seeds.
+     ------------------------------------------------------------------- */
+  test("the round opens forgiving and tightens every tolerance on the way down", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+    const table = await page.evaluate(() => window.__PERIHELION_TEST__.difficultyTable());
+
+    const nonIncreasing = (values: number[], what: string) => {
+      for (let i = 1; i < values.length; i += 1) {
+        expect(values[i], `${what} must not loosen at contract ${i}`).toBeLessThanOrEqual(values[i - 1]);
+      }
+    };
+    nonIncreasing(table.map((r) => r.capSpeed), "the capture speed");
+    nonIncreasing(table.map((r) => r.beaconRadius), "the buoy radius");
+    nonIncreasing(table.map((r) => r.fuel / r.witnessTotal), "the reaction-mass margin");
+
+    // Guidance is withdrawn, never restored.
+    const rank = { full: 2, window: 1, none: 0 } as Record<string, number>;
+    nonIncreasing(table.map((r) => rank[r.assist]), "the assist level");
+    expect(table[0].assist).toBe("full");
+    expect(table[CONTRACTS - 1].assist).toBe("none");
+
+    // The first contract has to be genuinely gentler, not merely graded so.
+    expect(table[0].capSpeed).toBeGreaterThan(table[CONTRACTS - 1].capSpeed * 2);
+    expect(table[0].fuel / table[0].witnessTotal).toBeGreaterThan(1.9);
+  });
+
+  test("an imprecise launch still delivers on the opening contracts", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    // The graded basin is measured inside ±3° of the plotted heading, which is
+    // finer than anyone reads a dial. This is the coarser question: launch off
+    // the plot, fly it, brake on entry — and see what survives.
+    const corridor = await page.evaluate((contracts) => {
+      const api = window.__PERIHELION_TEST__;
+      const measure = (index: number) => {
+        api.loadCampaign(index);
+        let wins = 0;
+        let leanest = Infinity;
+        for (let dh = -8; dh <= 8; dh += 4) {
+          for (const dd of [-0.3, 0, 0.3]) {
+            const run = api.flySloppy(dh, dd, 0);
+            if (run.result !== "won") continue;
+            wins += 1;
+            leanest = Math.min(leanest, run.fuelLeft);
+          }
+        }
+        return { index, wins, leanest };
+      };
+      return [measure(0), measure(1), measure(contracts - 1)];
+    }, CONTRACTS);
+
+    const [first, second, last] = corridor;
+    // A tutorial you can only pass by being exact is not a tutorial.
+    expect(first.wins, "contract 0 must forgive a misread dial").toBeGreaterThanOrEqual(5);
+    expect(second.wins, "contract I must forgive a misread dial").toBeGreaterThanOrEqual(3);
+    // And the ones that survive must not arrive broke — that was the whole bug.
+    expect(first.leanest, "a delivered run keeps mass in hand").toBeGreaterThan(1);
+    // The last contract is still a needle.
+    expect(last.wins).toBeLessThan(first.wins);
   });
 
   /* ---------------------------------------------------------------------
@@ -214,7 +293,7 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     await openGame(page);
     const audit = await page.evaluate(() => {
       const api = window.__PERIHELION_TEST__;
-      api.loadCampaign(2);
+      api.loadCampaign(3);
       api.replayWitness(0.4);
       return api.integrationAudit(24);
     });
@@ -313,7 +392,10 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
 
     const overSpeed = await page.evaluate(() => {
       const api = window.__PERIHELION_TEST__;
-      api.loadCampaign(0);
+      // Twin Lamps: the plotted arrival is well over its own speed limit, so
+      // skipping the retro burn is unambiguously a refusal to sign rather than
+      // a route that happened to coast in slowly.
+      api.loadCampaign(4);
       const w = api.witness()!;
       // Fly the witness launch but never spend the retro burn. Arriving fast
       // is not arriving.
@@ -353,6 +435,118 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     expect(ribbon).toBeGreaterThan(20);
   });
 
+  /* ---------------------------------------------------------------------
+     Telling the player what the controls do, and what to do next. The burn
+     is one instant impulse whose size W and S set and Space spends; nothing
+     used to say so, and press duration looked like it might be the throttle.
+     ------------------------------------------------------------------- */
+  test("the charge plate names the trigger and the number it will spend", async ({ page }) => {
+    test.setTimeout(60_000);
+    await openGame(page);
+    await page.evaluate(() => window.__PERIHELION_TEST__.loadCampaign(0));
+
+    // Nothing charged: the plate asks for the key rather than reporting a zero.
+    const idle = await page.evaluate(() => window.__PERIHELION_TEST__.aim(0.6, 0));
+    expect(idle.hud.burn).toMatch(/hold w/i);
+    await expect(page.locator("#burnValue")).toHaveClass(/idle/);
+
+    const charged = await page.evaluate(() => window.__PERIHELION_TEST__.aim(0.6, 3.1));
+    expect(charged.hud.burn).toContain("Space");
+    expect(charged.hud.burn).toContain("3.10");
+
+    // The bar has to move with the number, or the number is the only signal.
+    const width = await page.evaluate(
+      () => (document.querySelector("#burnGauge > i") as HTMLElement).style.width,
+    );
+    expect(Number.parseFloat(width)).toBeGreaterThan(10);
+
+    // Heading is named, not merely numbered: 0 accelerates, 180 is the brake.
+    const prograde = await page.evaluate(() => window.__PERIHELION_TEST__.aim(0, 3.1));
+    const retrograde = await page.evaluate(() => window.__PERIHELION_TEST__.aim(Math.PI, 3.1));
+    expect(prograde.hud.aim).toMatch(/prograde/);
+    expect(retrograde.hud.aim).toMatch(/retrograde/);
+  });
+
+  test("the objective line says what to do next, not only what will happen", async ({ page }) => {
+    test.setTimeout(90_000);
+    await openGame(page);
+
+    const said = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(1);
+      const mast = api.snapshot().hud.objective;
+
+      api.jumpToWindow();
+      api.burn();
+      const early = api.advance(1).hud.objective;
+
+      let snap = api.snapshot();
+      let guard = 0;
+      while (snap.collected < snap.contract!.buoys && guard < 400) {
+        snap = api.advance(0.5);
+        guard += 1;
+      }
+      return { mast, early, laden: snap.hud.objective, collected: snap.collected, buoys: snap.contract!.buoys };
+    });
+
+    expect(said.mast).toMatch(/plot/i);
+    expect(said.early).toMatch(/buoy 1 of/i);
+    expect(said.collected).toBe(said.buoys);
+    // With the sack aboard the job is the arrival, and the line has to say so.
+    expect(said.laden).toMatch(/brake into|hold this course/i);
+  });
+
+  test("the plotted route is drawn for the early contracts and withdrawn for the late ones", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    const plots = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      const out: Array<{ i: number; assist: string; points: number }> = [];
+      for (let i = 0; i < 7; i += 1) {
+        api.loadCampaign(i);
+        const snap = api.snapshot();
+        out.push({ i, assist: snap.contract!.assist, points: snap.plotPoints });
+      }
+      return out;
+    });
+
+    for (const plot of plots) {
+      if (plot.assist === "full") {
+        expect(plot.points, `contract ${plot.i} draws its plot`).toBeGreaterThan(10);
+      } else {
+        expect(plot.points, `contract ${plot.i} draws nothing`).toBe(0);
+      }
+    }
+    expect(plots.filter((p) => p.assist === "full").length).toBeGreaterThanOrEqual(3);
+    expect(plots.some((p) => p.assist === "none")).toBe(true);
+  });
+
+  test("the clock is held at the mast, and the window key loads a winning launch", async ({ page }) => {
+    test.setTimeout(60_000);
+    await openGame(page);
+
+    const held = await page.evaluate(() => {
+      window.__PERIHELION_TEST__.loadCampaign(0);
+      return window.__PERIHELION_TEST__.snapshot();
+    });
+    // The departure world used to orbit away while a new player read the keys.
+    expect(held.warp).toBe(0);
+    expect(held.launched).toBe(false);
+
+    const jumped = await page.evaluate(() => window.__PERIHELION_TEST__.jumpToWindow());
+    expect(jumped.simT).toBeCloseTo(jumped.witness!.t0, 5);
+    expect(jumped.aim.dv).toBeCloseTo(jumped.witness!.dv, 5);
+    expect(jumped.hud.window).toMatch(/window open/i);
+    // A guided launch that does not deliver is not guidance.
+    expect(jumped.predicted!.outcome).toBe("captured");
+
+    // And leaving the mast starts the clock again.
+    const away = await page.evaluate(() => window.__PERIHELION_TEST__.burn());
+    expect(away.launched).toBe(true);
+    expect(away.warp).toBeGreaterThan(0);
+  });
+
   test("keyboard aiming and firing drive the burn", async ({ page }) => {
     await openGame(page);
     await page.evaluate(() => {
@@ -377,6 +571,13 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     expect(fired.fuel).toBeLessThan(before.contract!.fuel);
     expect(fired.probe).not.toBeNull();
     expect(fired.probe!.speed).toBeGreaterThan(0);
+
+    // G is bound through the same handler, and only means anything at the mast.
+    await page.evaluate(() => window.__PERIHELION_TEST__.loadCampaign(0));
+    await page.keyboard.press("KeyG");
+    await page.waitForTimeout(120);
+    const window_ = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
+    expect(window_.simT).toBeCloseTo(window_.witness!.t0, 3);
   });
 
   test("clicks through title, contract board, briefing and out to the mast", async ({ page }) => {
@@ -387,7 +588,7 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     await page.locator('[data-action="campaign"]').click();
 
     const contracts = page.locator('[data-action="contract"]');
-    await expect(contracts).toHaveCount(6);
+    await expect(contracts).toHaveCount(CONTRACTS);
     await contracts.first().click();
 
     // The briefing plots the route live, then offers the mast.
@@ -407,7 +608,7 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
 
     const snap = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
     expect(snap.screen).toBe("ready");
-    expect(snap.contract!.key).toBe("shortfall");
+    expect(snap.contract!.key).toBe("firstround");
     expect(snap.fuel).toBe(snap.contract!.fuel);
     expect(reserve).toBeCloseTo(snap.fuel - snap.maxBurn, 2);
 
@@ -655,9 +856,12 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     // that a doomed run eventually stops.
     const fly = (floor: number) => {
       const api = window.__PERIHELION_TEST__;
-      api.loadCampaign(0);
+      api.loadCampaign(2);
       const w = api.witness()!;
       const limit = api.snapshot().contract!.timeLimit;
+      // Launch on the plotted window, so what follows is a good route ruined by
+      // wasteful corrections rather than a launch that was never going anywhere.
+      api.jumpToWindow();
       api.aim(w.heading, w.dv);
       api.burn();
       api.advance(10);
@@ -710,6 +914,9 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
         api.burn();
       }
       const held = api.advance(2);
+      // Firing empties the charge, so a fresh one has to be loaded — which is
+      // exactly what the player does before pressing Space.
+      api.aim(w.heading, Math.min(held.fuel, held.maxBurn));
       const spent = api.burn();          // the correction must still be accepted
       return { held, spent };
     });
@@ -736,6 +943,10 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
       api.loadCampaign(0);
       api.replayWitness(0.86);
       api.setWarp(0);
+      // Close the deadline in front of the probe so the plotted course is cut
+      // short of its arrival: sack aboard, nothing resolved, clock running out.
+      const flown = api.snapshot();
+      api.setDeadline(flown.simT - flown.launchT + 1.5);
       const snap = api.advance(0.05);
       return {
         outcome: snap.predicted?.outcome,
