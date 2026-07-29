@@ -5503,6 +5503,26 @@
       "accentColor": "#ff4fd8",
       "versions": [
         {
+          "model": "OpenAI GPT 5.6 Sol",
+          "modelId": "gpt-5-6-sol",
+          "date": "2026-07-29",
+          "linesOfCode": 278,
+          "path": "/games/outrun-racer/gpt-5-6-sol/index.html",
+          "features": [
+            "sound",
+            "music",
+            "3d",
+            "particles"
+          ],
+          "assets": {
+            "files": 2,
+            "bytes": 1870016,
+            "kinds": [
+              "model"
+            ]
+          }
+        },
+        {
           "model": "Claude Sonnet 4.6",
           "modelId": "sonnet-4-6",
           "date": "2026-05-22",
