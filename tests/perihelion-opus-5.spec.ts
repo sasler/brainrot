@@ -10,9 +10,11 @@ type Snapshot = {
   launched: boolean;
   warp: number;
   fuel: number;
+  maxBurn: number;
+  adjudicated: boolean;
   collected: number;
   result: string | null;
-  aim: { heading: number; dv: number };
+  aim: { heading: number; dv: number; screenAngle: number | null };
   contract: {
     key: string; name: string; seed: number; fuel: number; basin: number;
     grade: string; timeLimit: number; capRadius: number; capSpeed: number;
@@ -36,6 +38,7 @@ type Snapshot = {
   audioLayers: number;
   musicOn: boolean;
   scale: number[];
+  scaleDegrees: number[];
 };
 
 type Replay = {
@@ -392,6 +395,12 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     await expect(page.locator('[data-action="launch"]')).toBeVisible({ timeout: 30_000 });
     await expect(page.locator("#briefBody")).toContainText("Confirmed route flies in");
 
+    // The reserve the briefing quotes has to be the reserve the mast enforces,
+    // including when the Δv ceiling rather than the share is what binds.
+    const quoted = await page.locator("#briefBody").innerText();
+    const reserve = Number(/holds\s+([\d.]+)\s*Δv back/.exec(quoted)?.[1]);
+    expect(Number.isFinite(reserve)).toBe(true);
+
     await page.locator('[data-action="launch"]').click();
     await expect(page.locator("#hudFuel")).toBeVisible();
     await expect(page.locator("#hudPredict")).toBeVisible();
@@ -400,6 +409,7 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     expect(snap.screen).toBe("ready");
     expect(snap.contract!.key).toBe("shortfall");
     expect(snap.fuel).toBe(snap.contract!.fuel);
+    expect(reserve).toBeCloseTo(snap.fuel - snap.maxBurn, 2);
 
     // Every screen must fit the iframe the play page gives it.
     const overflow = await page.evaluate(() => {
@@ -552,5 +562,280 @@ test.describe("Claude Opus 5 Perihelion Post", () => {
     }
     // Different orreries, different tuning.
     expect(scales.a).not.toEqual(scales.b);
+  });
+
+  test("the scale it derives is in tune", async ({ page }) => {
+    test.setTimeout(90_000);
+    await openGame(page);
+
+    // Orbital period ratios are irrational. Taken literally they give arbitrary
+    // microtones and the figure played over them is not a melody, so every
+    // degree has to land on equal temperament on the way in.
+    for (const index of [0, 2, 5]) {
+      const snap = await page.evaluate((i) => {
+        window.__PERIHELION_TEST__.loadCampaign(i);
+        return window.__PERIHELION_TEST__.snapshot();
+      }, index);
+
+      expect(snap.scaleDegrees.length).toBeGreaterThanOrEqual(3);
+      for (const f of snap.scale) {
+        const semitones = Math.log2(f / snap.scale[0]) * 12;
+        const cents = Math.abs(semitones - Math.round(semitones)) * 100;
+        expect(cents, `contract ${index + 1}: ${f.toFixed(2)}Hz is ${cents.toFixed(1)} cents off`)
+          .toBeLessThan(1);
+      }
+      // Distinct degrees, so clustered periods still give notes to play with.
+      expect(new Set(snap.scaleDegrees).size).toBe(snap.scaleDegrees.length);
+    }
+  });
+
+  test("aim follows the key you pressed, on screen", async ({ page }) => {
+    await openGame(page);
+    await page.evaluate(() => {
+      window.__PERIHELION_TEST__.loadCampaign(0);
+      // Hold the clock. Heading is measured against the departure world's
+      // prograde, so a turning orrery would swing the marker on its own and
+      // muddy what the key did.
+      window.__PERIHELION_TEST__.setWarp(0);
+    });
+
+    // What has to be right is the thing the player sees: the marker swings the
+    // way the key points, whichever side the camera is watching from.
+    const angleAfter = async (key: string) => {
+      await page.evaluate(() => window.__PERIHELION_TEST__.aim(0.6, 1));
+      const before = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
+      await page.keyboard.down(key);
+      await page.waitForTimeout(500);
+      await page.keyboard.up(key);
+      const after = await page.evaluate(() => window.__PERIHELION_TEST__.snapshot());
+      const a = before.aim.screenAngle!;
+      const b = after.aim.screenAngle!;
+      expect(Number.isFinite(a) && Number.isFinite(b)).toBe(true);
+      return ((b - a + 540) % 360) - 180;   // shortest arc, anticlockwise positive
+    };
+
+    // Screen angles are anticlockwise-positive, so "right" must reduce them.
+    // Half a second of AIM_RATE is about 20°; anything under 10 is not the key.
+    const right = await angleAfter("KeyD");
+    expect(right, "D must swing the marker clockwise").toBeLessThan(-10);
+
+    const left = await angleAfter("KeyA");
+    expect(left, "A must swing the marker anticlockwise").toBeGreaterThan(10);
+  });
+
+  test("the mast keeps a reserve back for arrival", async ({ page }) => {
+    await openGame(page);
+    const snap = await page.evaluate(() => {
+      window.__PERIHELION_TEST__.loadCampaign(0);
+      return window.__PERIHELION_TEST__.snapshot();
+    });
+
+    // One uninformed launch used to be able to empty the tank, which strands
+    // the probe before it has learnt anything.
+    expect(snap.maxBurn).toBeLessThan(snap.fuel);
+    expect(snap.maxBurn).toBeGreaterThan(0);
+
+    const fired = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.aim(0.4, 99);           // ask for everything; the mast decides
+      return api.burn();
+    });
+    expect(fired.launched).toBe(true);
+    expect(fired.fuel).toBeGreaterThan(snap.fuel - snap.maxBurn - 1e-6);
+    expect(fired.fuel).toBeGreaterThan(0.5);
+  });
+
+  test("a run with nothing left to burn ends when it is decided", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    // The same launch and the same wasteful corrections, drained to two
+    // different floors. Only the run that goes genuinely dry can be adjudicated,
+    // so the pair measures what the fix is worth rather than merely asserting
+    // that a doomed run eventually stops.
+    const fly = (floor: number) => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      const w = api.witness()!;
+      const limit = api.snapshot().contract!.timeLimit;
+      api.aim(w.heading, w.dv);
+      api.burn();
+      api.advance(10);
+      for (let i = 0; i < 30 && api.snapshot().fuel > floor; i += 1) {
+        const spend = Math.min(0.5, api.snapshot().fuel - floor + 0.01);
+        api.aim(w.heading, spend);
+        api.burn();
+      }
+      const end = api.advance(limit * 3);
+      return {
+        limit,
+        fuel: end.fuel,
+        result: end.result,
+        adjudicated: end.adjudicated,
+        flight: end.simT - end.launchT,
+      };
+    };
+
+    const wet = await page.evaluate(fly, 0.3);
+    const dry = await page.evaluate(fly, 0.02);
+
+    // Dry: settled on the step the tank ran out, naming the real outcome.
+    expect(dry.fuel).toBeLessThanOrEqual(0.02);
+    expect(dry.adjudicated).toBe(true);
+    expect(dry.result).toBe("lost");
+    expect(dry.flight).toBeLessThan(11);
+
+    // Wet: a burn still exists, so the course is not settled for the player and
+    // the run keeps flying — which is exactly how long the dry one used to take.
+    expect(wet.adjudicated).toBe(false);
+    expect(wet.flight).toBeGreaterThan(dry.flight * 2);
+  });
+
+  test("a last legal correction is never settled out from under the player", async ({ page }) => {
+    await openGame(page);
+
+    // The tank can hold too little to be worth much and still hold enough to
+    // burn. Adjudicating there would show a loss the player could have flown
+    // out of, so the threshold has to be "no legal burn", not "nearly empty".
+    const state = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      const w = api.witness()!;
+      api.aim(w.heading, w.dv);
+      api.burn();
+      api.advance(4);
+      for (let i = 0; i < 40 && api.snapshot().fuel > 0.04; i += 1) {
+        const spend = Math.min(0.5, api.snapshot().fuel - 0.04 + 0.005);
+        api.aim(w.heading, spend);
+        api.burn();
+      }
+      const held = api.advance(2);
+      const spent = api.burn();          // the correction must still be accepted
+      return { held, spent };
+    });
+
+    expect(state.held.fuel).toBeGreaterThan(0.02);
+    expect(state.held.fuel).toBeLessThan(0.05);
+    expect(state.held.adjudicated).toBe(false);
+    expect(state.held.result).toBeNull();
+    expect(state.held.maxBurn).toBeGreaterThan(0.02);
+    // And spending it actually moves fuel, rather than being silently refused.
+    expect(state.spent.fuel).toBeLessThan(state.held.fuel);
+  });
+
+  test("the readout says what the approach costs in every unresolved state", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    // On approach with the whole sack the course has not resolved, so the
+    // prediction times out. That used to print "Deadline … still in transit"
+    // and drop the approach cost entirely — the one number that says what to
+    // do, withheld exactly where the player is most stuck.
+    const onApproach = await page.evaluate(() => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      api.replayWitness(0.86);
+      api.setWarp(0);
+      const snap = api.advance(0.05);
+      return {
+        outcome: snap.predicted?.outcome,
+        collected: snap.collected,
+        buoys: snap.contract!.buoys,
+        text: document.getElementById("predictText")!.textContent ?? "",
+        sub: document.getElementById("predictSub")!.textContent ?? "",
+      };
+    });
+
+    expect(onApproach.collected).toBe(onApproach.buoys);
+    expect(onApproach.outcome).toBe("timeout");
+    // Names the job, not just the clock.
+    expect(onApproach.text.toLowerCase()).toContain("brake");
+    // Quotes the cost to match, and what is left to pay it with.
+    expect(onApproach.sub).toMatch(/[\d.]+ Δv to match/);
+    expect(onApproach.sub).toMatch(/left/);
+    expect(onApproach.sub).toMatch(/Chime in/);
+  });
+
+  test("the destination is named in the field and tracks it", async ({ page }) => {
+    test.setTimeout(120_000);
+    await openGame(page);
+
+    const tag = await page.evaluate(async () => {
+      const api = window.__PERIHELION_TEST__;
+      const contract = api.loadCampaign(0) as { destName: string };
+      api.replayWitness(0.5);
+      api.setWarp(0);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const el = document.getElementById("destTag")!;
+      const first = { left: el.style.left, top: el.style.top };
+      api.advance(6);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return {
+        destName: contract.destName,
+        shown: document.getElementById("destName")!.textContent,
+        range: document.getElementById("destRange")!.textContent ?? "",
+        on: el.classList.contains("on"),
+        first,
+        second: { left: el.style.left, top: el.style.top },
+      };
+    });
+
+    // The sack has an address, and it is on screen.
+    expect(tag.on).toBe(true);
+    expect(tag.shown).toBe(tag.destName);
+    expect(tag.range).toMatch(/[\d.]+/);
+    // Worlds do not hold still, so neither does the tag.
+    expect(`${tag.second.left},${tag.second.top}`).not.toBe(`${tag.first.left},${tag.first.top}`);
+  });
+
+  test("the sound is struck and released, never a held tone", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.addInitScript(() => {
+      // Record every oscillator the game builds, and whether anything schedules
+      // a frequency change on it after it starts. A voice that slides in pitch
+      // under a continuous gain is what made the old bed sound like a fault.
+      const w = window as never as Record<string, unknown>;
+      const log: Array<{ freq: number; automated: boolean; stopped: boolean }> = [];
+      w.__OSC__ = log;
+      const make = AudioContext.prototype.createOscillator;
+      AudioContext.prototype.createOscillator = function () {
+        const osc = make.call(this);
+        const entry = { freq: 0, automated: false, stopped: false };
+        log.push(entry);
+        const origStop = osc.stop.bind(osc);
+        osc.stop = (...a: [number?]) => { entry.stopped = true; return origStop(...a); };
+        const origStart = osc.start.bind(osc);
+        osc.start = (...a: [number?]) => { entry.freq = osc.frequency.value; return origStart(...a); };
+        for (const m of ["setTargetAtTime", "linearRampToValueAtTime", "exponentialRampToValueAtTime"] as const) {
+          const orig = osc.frequency[m].bind(osc.frequency);
+          // @ts-expect-error test shim
+          osc.frequency[m] = (...a: number[]) => { entry.automated = true; return orig(...a); };
+        }
+        return osc;
+      };
+    });
+    await openGame(page);
+
+    const osc = await page.evaluate(async () => {
+      const api = window.__PERIHELION_TEST__;
+      api.loadCampaign(0);
+      document.getElementById("muteBtn")!.click();
+      document.getElementById("muteBtn")!.click();
+      api.replayWitness(0.5);
+      await new Promise((r) => setTimeout(r, 1200));
+      type OscEntry = { automated: boolean; stopped: boolean };
+      const log = (window as never as Record<string, OscEntry[]>).__OSC__;
+      return {
+        total: log.length,
+        held: log.filter((o) => !o.stopped).length,
+        sliding: log.filter((o) => o.automated && !o.stopped).length,
+      };
+    });
+
+    // Every pitched voice is scheduled to stop. Nothing runs forever, and
+    // nothing that runs has its pitch driven while it runs.
+    expect(osc.total).toBeGreaterThan(0);
+    expect(osc.sliding, "no oscillator may slide in pitch while sustaining").toBe(0);
+    expect(osc.held, "every oscillator must be released").toBe(0);
   });
 });
