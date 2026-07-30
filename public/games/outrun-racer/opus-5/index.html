@@ -150,6 +150,32 @@
   #branchPrompt .t { font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--amber); }
   #branchPrompt .n { font-size: 17px; font-weight: 700; margin-top: 2px; }
 
+  /* Crossing the line has to land before the board appears, so it gets a
+     chequer-topped banner of its own and a one-off screen flash. */
+  #finishBanner {
+    position: absolute; left: 50%; top: 7%; transform: translateX(-50%);
+    border: 1px solid rgba(255, 236, 200, 0.5); border-radius: 13px;
+    background: rgba(24, 16, 6, 0.82); padding: 13px 30px 11px; text-align: center;
+    opacity: 0; transition: opacity 220ms ease; overflow: hidden;
+  }
+  #finishBanner.show { opacity: 1; }
+  #finishBanner::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 7px;
+    background:
+      repeating-linear-gradient(90deg, #f2f6ff 0 12px, #10131c 12px 24px) 0 0 / 24px 3.5px repeat-x,
+      repeating-linear-gradient(90deg, #10131c 0 12px, #f2f6ff 12px 24px) 0 3.5px / 24px 3.5px repeat-x;
+  }
+  #finishBanner .p { font-size: 30px; font-weight: 900; letter-spacing: -0.02em; line-height: 1; margin-top: 4px; }
+  #finishBanner .p small { font-size: 14px; margin-left: 2px; }
+  #finishBanner .t { font-size: 10px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--amber); margin-top: 5px; }
+  #finishBanner .s { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+  #flash {
+    position: fixed; inset: 0; z-index: 18; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle at 50% 56%,
+      rgba(255, 240, 210, 0.95), rgba(255, 186, 96, 0.34) 54%, rgba(255, 150, 60, 0) 78%);
+  }
+
   #message {
     position: absolute; left: 50%; top: 34%; transform: translateX(-50%);
     font-size: 25px; font-weight: 800; letter-spacing: 0.02em; text-align: center;
@@ -221,7 +247,7 @@
   <!-- ── HUD ───────────────────────────────────────────────────────────── -->
   <div id="hud">
     <div class="cluster" id="topLeft">
-      <div class="chip"><div class="lbl">Lap</div><div class="val"><span id="lapVal">1</span><small>/3</small></div></div>
+      <div class="chip" id="lapChip"><div class="lbl">Lap</div><div class="val"><span id="lapVal">1</span><small id="lapSuffix">/3</small></div></div>
       <div class="chip accent"><div class="lbl">Position</div><div class="val"><span id="posVal">4</span><small>/4</small></div></div>
       <div class="chip"><div class="lbl">Time</div><div class="val" id="timeVal">0:00.0</div></div>
     </div>
@@ -239,10 +265,16 @@
       <div id="chargeLbl">Charge</div>
       <div id="chargeSrc"></div>
     </div>
-    <div id="branchPrompt"><div class="t">Fork ahead &mdash; steer left to commit</div><div class="n" id="branchName">Undercut</div></div>
+    <div id="branchPrompt"><div class="t" id="branchHint">Fork ahead</div><div class="n" id="branchName">Undercut</div></div>
+    <div id="finishBanner">
+      <div class="p" id="finishPlace">1<small>st</small></div>
+      <div class="t">Finish</div>
+      <div class="s" id="finishWait">Holding for the rest of the grid</div>
+    </div>
     <div id="message"></div>
   </div>
 
+  <div id="flash"></div>
   <div id="countdown"></div>
   <div id="pauseBadge"><div><div class="t">PAUSED</div><div class="s">Esc to resume</div></div></div>
 
@@ -257,7 +289,7 @@
         ride the rail edge for charge, and spend it where it hurts them most.
       </p>
       <div class="grid">
-        <div class="keyrow"><div class="keys"><kbd>A</kbd><kbd>D</kbd></div><span><b>Steer</b>Lean across the ribbon</span></div>
+        <div class="keyrow"><div class="keys"><kbd>A</kbd><kbd>D</kbd></div><span><b>Steer</b>Lean across the ribbon &mdash; and toward the chevrons to take a fork</span></div>
         <div class="keyrow"><div class="keys"><kbd>W</kbd><kbd>S</kbd></div><span><b>Throttle / Brake</b>Lift for tight banking</span></div>
         <div class="keyrow"><div class="keys"><kbd>Shift</kbd></div><span><b>Tuck</b>Faster, far less steering</span></div>
         <div class="keyrow"><div class="keys"><kbd>Space</kbd></div><span><b>Boost</b>Burns charge</span></div>
@@ -369,7 +401,7 @@ const LIVERY = [
 
 const ASSET_ROOT_NAMES = [
   "PlayerSkiff", "RivalLance", "RivalDelta", "RivalHauler",
-  "GateArch", "BranchPylon", "RibbonAnchor", "CanopyTruss", "HazardBollard",
+  "GateArch", "StartGantry", "BranchPylon", "RibbonAnchor", "CanopyTruss", "HazardBollard",
   "TowerBlock_A", "TowerBlock_B", "TowerBlock_C",
 ];
 
@@ -597,7 +629,19 @@ function buildCircuit() {
     line.mainExit = nearestDistance(mainLine, rejoinPos);
     line.racedLength = line.exitS - line.enterS;
     line.mainSpan = line.mainExit - line.mainEnter;
+    // Resolve the split direction from the geometry itself, then weld the two
+    // decks into one plane at both seams.
+    line.forkSide = sideOfMain(line, line.enterS + GORE_RUN * 0.6);
+    line.mergeSide = sideOfMain(line, line.exitS - GORE_RUN * 0.6);
+    weldJunction(line);
     lines.push(line);
+  }
+
+  railOpenings.length = 0;
+  for (let li = 1; li < lines.length; li++) {
+    const line = lines[li];
+    railOpenings.push({ side: line.forkSide, from: line.mainEnter - MERGE_LEAD, to: line.mainEnter + GORE_RUN });
+    railOpenings.push({ side: line.mergeSide, from: line.mainExit - GORE_RUN, to: line.mainExit + MERGE_LEAD });
   }
 }
 
@@ -608,6 +652,88 @@ function nearestDistance(line, position) {
     if (d < bestD) { bestD = d; best = s.distance; }
   }
   return best;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Junctions
+   A fork only reads as authored if the two decks meet in the same plane and
+   nothing walls off the split. Everything downstream — the ribbon mesh, the
+   rail openings, the fork prompt, the signposts and the commit test — reads
+   the side and the spans resolved here, so no two systems can disagree about
+   which way a branch leaves the road.
+   ══════════════════════════════════════════════════════════════════════════ */
+const GORE_RUN = 74;          // metres either side of a junction to clip over
+const RAIL_RAMP = 46;         // over how much of that the shared rail grows back
+const MERGE_LEAD = 20;        // main-line rail ramp either side of an opening
+const JUNCTION_TUCK = 0.09;   // hair of drop so abutting decks cannot seam-fight
+
+const junctionProbe = new THREE.Vector3();
+/** Nearest main-line sample to a world point. Build time only. */
+function nearestMainSample(point) {
+  let best = Infinity, found = mainLine.samples[0];
+  for (const m of mainLine.samples) {
+    const d = m.p.distanceToSquared(point);
+    if (d < best) { best = d; found = m; }
+  }
+  return found;
+}
+
+/** Which side of the main line a branch runs on, as a sign along `main.side`.
+ *  Sampled well clear of the junction: right at the shared node the two
+ *  centrelines are centimetres apart and the sign would flicker. */
+function sideOfMain(line, distance) {
+  const s = sampleAt(line, distance);
+  const m = nearestMainSample(s.p);
+  return Math.sign(junctionProbe.copy(s.p).sub(m.p).dot(m.side)) || 1;
+}
+
+/** Metres into a junction gore, measured from whichever end is nearer, or a
+ *  negative value out on the guide spans that are never raced. */
+function goreDepth(line, distance) {
+  return Math.min(distance - line.enterS, line.exitS - distance);
+}
+
+/** Blend a branch's derived bank and width into the main line's across each
+ *  gore. The auto bank comes from each line's own curvature, so without this
+ *  the branch leaves the road already rolled a few degrees off it and the
+ *  abutting decks tear instead of splitting. */
+function weldJunction(line) {
+  for (const s of line.samples) {
+    const d = goreDepth(line, s.distance);
+    if (d > GORE_RUN) continue;
+    const m = nearestMainSample(s.p);
+    // Unwrap into this sample's own turn count: the corkscrews carry bank
+    // past a full turn and snapping by 2pi would invert the deck.
+    const target = m.bank + Math.round((s.bank - m.bank) / TWO_PI) * TWO_PI;
+    const w = 1 - smoothStep(0, GORE_RUN, Math.max(0, d));
+    s.bank = lerp(s.bank, target, w);
+    s.width = lerp(s.width, m.width, w);
+    s.side = s.side0.clone().applyAxisAngle(s.tangent, s.bank);
+    s.up = s.up0.clone().applyAxisAngle(s.tangent, s.bank);
+  }
+}
+
+/** Main-line spans where a branch abuts the road, and therefore where the
+ *  main rail on that side has to open up. */
+const railOpenings = [];
+
+function wrapMain(d) {
+  const L = mainLine.length;
+  let x = d % L;
+  if (x > L * 0.5) x -= L;
+  if (x < -L * 0.5) x += L;
+  return x;
+}
+
+/** Metres into a main-line rail opening on `side`, or <= 0 outside every one. */
+function openingDepth(distance, side) {
+  let deepest = 0;
+  for (const o of railOpenings) {
+    if (o.side !== side) continue;
+    const inside = Math.min(wrapMain(distance - o.from), wrapMain(o.to - distance));
+    if (inside > deepest) deepest = inside;
+  }
+  return deepest;
 }
 
 /** Single progress axis so ranking works across all three lines. */
@@ -737,8 +863,8 @@ const ribbonUniforms = {
 };
 
 const RIBBON_VERT = `
-  attribute vec3 aTrack;   // x: distance along, y: -1..1 across, z: sector
-  varying vec3 vTrack;
+  attribute vec4 aTrack;   // x: distance along, y: -1..1 across, z: sector, w: gore
+  varying vec4 vTrack;
   varying vec3 vNormalW;
   varying float vDepth;
   void main() {
@@ -761,7 +887,7 @@ const deckMaterial = new THREE.ShaderMaterial({
   uniforms: ribbonUniforms, side: THREE.DoubleSide, fog: false,
   vertexShader: RIBBON_VERT,
   fragmentShader: `
-    varying vec3 vTrack; varying vec3 vNormalW; varying float vDepth;
+    varying vec4 vTrack; varying vec3 vNormalW; varying float vDepth;
     uniform float uTime; uniform vec3 uFogColor; uniform float uFogDensity; uniform float uPulse;
     ${SECTOR_GLSL}
     void main() {
@@ -797,6 +923,12 @@ const deckMaterial = new THREE.ShaderMaterial({
       float pulse = exp(-pow(fract(u * 0.0022 - uTime * 0.055) * 46.0, 2.0));
       col += tint * pulse * (0.16 + 0.30 * uPulse) * (1.0 - av * 0.45);
 
+      // Hazard chevrons across a gore, so a split or a merge reads as an
+      // authored divergence rather than as two decks tearing through each other.
+      float gore = vTrack.w;
+      float goreBand = step(0.52, fract(u * 0.075 + av * 1.15 - uTime * 0.16));
+      col = mix(col, vec3(0.98, 0.62, 0.24) * (0.10 + 0.44 * goreBand), gore * 0.62);
+
       float f = clamp(exp(-uFogDensity * vDepth), 0.0, 1.0);
       gl_FragColor = vec4(mix(uFogColor, col, f), 1.0);
     }`,
@@ -809,7 +941,7 @@ function makeRailMaterial(halo) {
     blending: halo ? THREE.AdditiveBlending : THREE.NormalBlending,
     vertexShader: RIBBON_VERT,
     fragmentShader: `
-      varying vec3 vTrack; varying vec3 vNormalW; varying float vDepth;
+      varying vec4 vTrack; varying vec3 vNormalW; varying float vDepth;
       uniform float uTime; uniform vec3 uFogColor; uniform float uFogDensity; uniform float uPulse;
       ${SECTOR_GLSL}
       void main() {
@@ -831,79 +963,128 @@ const underMaterial = new THREE.MeshStandardMaterial({
   color: 0x0a1020, roughness: 0.92, metalness: 0.05, side: THREE.DoubleSide,
 });
 
+/* The start and finish line itself. The gantry overhead says *where*; this
+ * chequer band on the road says *exactly here*, and flashes on every crossing
+ * so a lap boundary is an event rather than a HUD counter ticking over. */
+const startBandUniforms = {
+  uPulse: { value: 0 },
+  uFogColor: { value: FOG_COLOR.clone() },
+  uFogDensity: { value: 0.00082 },
+};
+const startBandMaterial = new THREE.ShaderMaterial({
+  // Lifted off the deck in geometry rather than with a polygon offset: the
+  // offset reads differently on software GL, and 4 cm of clearance is enough.
+  uniforms: startBandUniforms, side: THREE.DoubleSide, fog: false,
+  vertexShader: `
+    attribute vec2 aBand;   // x: metres along the band, y: -1..1 across
+    varying vec2 vBand; varying float vDepth;
+    void main() {
+      vBand = aBand;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      vDepth = -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    varying vec2 vBand; varying float vDepth;
+    uniform float uPulse; uniform vec3 uFogColor; uniform float uFogDensity;
+    void main() {
+      float cx = floor(vBand.x / 2.05);
+      float cy = floor((vBand.y * 0.5 + 0.5) * 6.0);
+      float dark = mod(cx + cy, 2.0);
+      vec3 col = mix(vec3(0.94, 0.97, 1.00), vec3(0.045, 0.055, 0.085), dark);
+      col *= 0.82 + 0.55 * uPulse;
+      // Amber lips top and tail, so the line has a leading edge at 90 m/s.
+      float lip = smoothstep(0.9, 0.0, vBand.x) + smoothstep(11.1, 12.0, vBand.x);
+      col = mix(col, vec3(1.0, 0.66, 0.24), clamp(lip, 0.0, 1.0) * 0.95);
+      col += vec3(1.0, 0.66, 0.24) * uPulse * 0.55;
+      float f = clamp(exp(-uFogDensity * vDepth), 0.0, 1.0);
+      gl_FragColor = vec4(mix(uFogColor, col, f), 1.0);
+    }`,
+});
+
 /* How a branch deck meets the main deck at a split or a merge.
  *
- * Two problems, both visible as flat wedges tearing through the deck:
+ * C1 continuity through the shared node means the two lines leave each other
+ * quadratically: measured separation only exceeds the combined half-widths at
+ * 42-56 m, so no amount of node tweaking pulls them apart faster. Four things
+ * together turn that overlap into a split that reads as authored:
  *
- * 1. A branch shares its lead-in and lead-out guide nodes with the main line,
- *    so those stretches are geometrically *identical* to the main deck. They
- *    are simply never drawn — only the raced span is.
- * 2. Even then, C1 continuity through the shared node means the two lines
- *    leave each other quadratically: measured separation only exceeds the
- *    combined half-widths at 42-56 m, so no amount of node tweaking pulls
- *    them apart faster. Instead the branch cross-section is *clipped* to
- *    begin at the main deck's edge, which turns the overlap into a proper
- *    gore: one continuous surface that widens away from the main road.
- *    The clip self-resolves — once the lines are clear, the main edge falls
- *    outside the branch's own width and the clamp becomes a no-op.
+ * 1. `weldJunction` has already blended the branch's bank and width into the
+ *    main line's, so across a gore the two decks lie in one plane.
+ * 2. The branch cross-section is *clipped* to begin just inside the main
+ *    deck's edge, which makes the overlap one continuous surface that widens
+ *    away from the road. The clip self-resolves — once the lines are clear the
+ *    main edge falls outside the branch's own width and the clamp is a no-op.
+ * 3. Rails ramp instead of switching: the main line's rail opens up across the
+ *    junction so there is no wall to cross, and the branch's shared rail grows
+ *    back out of the gore as the roads separate.
+ * 4. The gore itself is painted with hazard chevrons through `aTrack.w`.
  */
-const GORE_RUN = 74;          // metres either side of a junction to clip over
-const JUNCTION_TUCK = 0.09;   // hair of drop so abutting decks cannot seam-fight
 
 /** Extrude the ribbon cross-section along a line's samples. */
 function buildRibbonMesh(line, group) {
   const step = 2;                                    // one ring every 4 m
   const from = line.closed ? 0 : line.enterS;
   const to = line.closed ? line.length : line.exitS;
+  const samples = line.samples;
   const rings = [];
-  for (let i = 0; i < line.samples.length; i += step) {
-    const s = line.samples[i];
-    if (s.distance < from - 1e-3 || s.distance > to + 1e-3) continue;
-    rings.push(s);
+  if (line.closed) {
+    for (let i = 0; i < samples.length; i += step) rings.push(samples[i]);
+    if (rings[rings.length - 1] !== samples[0]) rings.push(samples[0]);
+  } else {
+    // Start and end exactly on the junction samples. Striding from index 0
+    // would leave up to a ring of raced deck undrawn at each end, which is a
+    // gap right where the branch is supposed to meet the road.
+    const i0 = clamp(Math.round(from / line.spacing), 0, samples.length - 1);
+    const i1 = clamp(Math.round(to / line.spacing), i0 + 1, samples.length - 1);
+    for (let i = i0; i < i1; i += step) rings.push(samples[i]);
+    if (rings[rings.length - 1] !== samples[i1]) rings.push(samples[i1]);
   }
-  if (line.closed && rings[rings.length - 1] !== line.samples[0]) rings.push(line.samples[0]);
 
   const probeA = new THREE.Vector3();
   const probeB = new THREE.Vector3();
 
-  const nearestMain = (point) => {
-    let best = Infinity, found = mainLine.samples[0];
-    for (const m of mainLine.samples) {
-      const d = m.p.distanceToSquared(point);
-      if (d < best) { best = d; found = m; }
-    }
-    return found;
-  };
-  /** Which side of the main line this branch runs on. Sampled once, well clear
-   *  of the junction, because right at the shared node the two centrelines are
-   *  centimetres apart and the sign would flicker between rings. */
-  const sideOfMain = (distance) => {
-    const s = sampleAt(line, distance);
-    const m = nearestMain(s.p);
-    return Math.sign(probeA.copy(s.p).sub(m.p).dot(m.side)) || 1;
-  };
-  const gore = line.closed ? null : {
-    enter: sideOfMain(from + GORE_RUN * 0.6),
-    exit: sideOfMain(to - GORE_RUN * 0.6),
-  };
-
-  /** Lateral span of this ring, clipped to the main deck's edge inside a gore. */
+  /** Lateral span of this ring, clipped just inside the main deck's edge
+   *  through a gore so the two surfaces cannot open a hairline seam. */
   const spanOf = (s, hw) => {
-    if (!gore) return { lo: -hw, hi: hw };
-    const dIn = s.distance - from;
-    const dOut = to - s.distance;
-    const d = Math.min(dIn, dOut);
+    if (line.closed) return { lo: -hw, hi: hw };
+    const d = goreDepth(line, s.distance);
     if (d > GORE_RUN) return { lo: -hw, hi: hw };
-    const sign = dIn <= dOut ? gore.enter : gore.exit;
-    const m = nearestMain(s.p);
+    const sign = s.distance - from <= to - s.distance ? line.forkSide : line.mergeSide;
+    const m = nearestMainSample(s.p);
     probeB.copy(m.p).addScaledVector(m.side, sign * m.width);
     const proj = probeA.copy(probeB).sub(s.p).dot(s.side);
     return sign > 0
-      ? { lo: Math.min(hw - 1.6, Math.max(-hw, proj)), hi: hw }
-      : { lo: -hw, hi: Math.max(-hw + 1.6, Math.min(hw, proj)) };
+      ? { lo: Math.min(hw - 1.6, Math.max(-hw, proj - 0.35)), hi: hw }
+      : { lo: -hw, hi: Math.max(-hw + 1.6, Math.min(hw, proj + 0.35)) };
   };
-  const goreDepth = (s) =>
-    gore ? -(1 - smoothStep(0, GORE_RUN, Math.min(s.distance - from, to - s.distance))) * JUNCTION_TUCK : 0;
+  const tuckOf = (s) => (line.closed
+    ? 0
+    : -(1 - smoothStep(0, GORE_RUN, goreDepth(line, s.distance))) * JUNCTION_TUCK);
+
+  /** Height multiplier for one rail edge: 0 where a rail would wall off a
+   *  split, ramping back to 1 as the two roads separate. */
+  const railHeightOf = (s, railSign, clipped) => {
+    if (line.closed) return 1 - smoothStep(0, MERGE_LEAD, openingDepth(s.distance, railSign));
+    if (!clipped) return 1;
+    return smoothStep(0, RAIL_RAMP, Math.max(0, goreDepth(line, s.distance)));
+  };
+
+  /** How strongly this vertex sits in a gore, for the deck's hazard chevrons.
+   *  Weighted outboard so the striping marks the wedge without painting over
+   *  the racing line down the middle of the road. */
+  const goreBlendOf = (s, lat) => {
+    const facing = Math.sign(lat) || 1;
+    const outboard = smoothStep(0.20, 0.66, Math.abs(lat) / Math.max(1e-3, s.width));
+    if (line.closed) {
+      return smoothStep(0, MERGE_LEAD * 1.6, openingDepth(s.distance, facing)) * outboard;
+    }
+    const d = goreDepth(line, s.distance);
+    if (d > GORE_RUN) return 0;
+    const shared = -(s.distance - from <= to - s.distance ? line.forkSide : line.mergeSide);
+    if (facing !== shared) return 0;
+    return (1 - smoothStep(0, GORE_RUN, Math.max(0, d))) * outboard;
+  };
 
   const deck = { pos: [], nrm: [], trk: [], idx: [] };
   const rail = { pos: [], nrm: [], trk: [], idx: [] };
@@ -917,7 +1098,7 @@ function buildRibbonMesh(line, group) {
     const s = rings[r];
     const hw = s.width;
     const { lo, hi } = spanOf(s, hw);
-    const drop = goreDepth(s);
+    const drop = tuckOf(s);
     for (let k = 0; k < LAT.length; k++) {
       const lat = lo + (hi - lo) * (LAT[k] + 1) * 0.5;
       tmp.copy(s.p).addScaledVector(s.side, lat).addScaledVector(s.up, drop);
@@ -925,7 +1106,7 @@ function buildRibbonMesh(line, group) {
       deck.nrm.push(s.up.x, s.up.y, s.up.z);
       // The shader's lateral coordinate stays true to the real position, so
       // edge chevrons and the centre line land where the deck actually is.
-      deck.trk.push(s.distance, lat / hw, s.sector);
+      deck.trk.push(s.distance, lat / hw, s.sector, goreBlendOf(s, lat));
       // underside slab, dropped and inset
       tmp.copy(s.p).addScaledVector(s.side, lat * 0.94).addScaledVector(s.up, drop - 0.95);
       under.pos.push(tmp.x, tmp.y, tmp.z);
@@ -933,16 +1114,15 @@ function buildRibbonMesh(line, group) {
     }
     for (const sign of [-1, 1]) {
       const railLat = sign < 0 ? lo : hi;
-      // A rail on a clipped edge sits inside the main deck, so it lies flat.
-      // At full height it would spear up through the road beside it.
-      const height = (sign < 0 ? lo <= -hw + 1e-3 : hi >= hw - 1e-3) ? 1 : 0;
+      const clipped = sign < 0 ? lo > -hw + 1e-3 : hi < hw - 1e-3;
+      const height = railHeightOf(s, sign, clipped);
       for (const [outward, up] of RAIL_PROFILE) {
         tmp.copy(s.p)
           .addScaledVector(s.side, railLat + sign * outward * 0.5)
           .addScaledVector(s.up, up * 0.62 * height + drop);
         rail.pos.push(tmp.x, tmp.y, tmp.z);
         rail.nrm.push(s.side.x * sign, s.side.y * sign, s.side.z * sign);
-        rail.trk.push(s.distance, sign, s.sector);
+        rail.trk.push(s.distance, sign, s.sector, 0);
       }
     }
   }
@@ -973,7 +1153,7 @@ function buildRibbonMesh(line, group) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(data.pos, 3));
     g.setAttribute("normal", new THREE.Float32BufferAttribute(data.nrm, 3));
-    if (withTrack) g.setAttribute("aTrack", new THREE.Float32BufferAttribute(data.trk, 3));
+    if (withTrack) g.setAttribute("aTrack", new THREE.Float32BufferAttribute(data.trk, 4));
     g.setIndex(data.idx);
     g.computeBoundingSphere();
     ownedGeometries.push(g);
@@ -1082,6 +1262,8 @@ worldGroup.add(trackGroup, propGroup, skylineGroup, racerGroup);
 
 const gates = [];       // { line, s, lateral, radius, sector }
 const bollards = [];    // { line, s, lateral }
+const startLine = { line: 0, s: 0, pulse: 0 };   // the lap boundary itself
+const anchorSlots = []; // { line, s } for the instanced suspension anchors
 const propBuckets = []; // per line: bucket -> { gates:[], bollards:[] }
 const BUCKET = 48;
 
@@ -1106,6 +1288,31 @@ function frameMatrix(sample, lateral, height, out, scale = 1, yaw = 0) {
   return out;
 }
 
+/** Seat a deck-mounted prop by scaling its authored deck-edge reference onto
+ *  the local half-width. Every such prop is modelled against a 9.8 m reference
+ *  deck, so this is what keeps footings on the road instead of over the void. */
+const PROP_DECK_REF = {
+  GateArch: 12.4,       // inner edge of the footing pads
+  StartGantry: 9.825,   // inner face of the legs
+  CanopyTruss: 9.825,   // inner face of the legs
+};
+function seatScale(name, halfWidth) {
+  // Props without a reference are authored to a fixed size and are placed
+  // relative to the deck edge instead of being scaled onto it.
+  const ref = PROP_DECK_REF[name];
+  return ref ? clamp(halfWidth / ref, 0.42, 1.3) : 1;
+}
+
+/** True while a main-line distance lies inside a junction, where a branch deck
+ *  runs alongside the road. Structures placed here read as floating beside a
+ *  second deck, because from the branch that is exactly what they are. */
+function insideJunction(mainS, lead = MERGE_LEAD) {
+  for (const o of railOpenings) {
+    if (Math.min(wrapMain(mainS - o.from + lead), wrapMain(o.to + lead - mainS)) > 0) return true;
+  }
+  return false;
+}
+
 /** Geometry this file authored, as opposed to geometry owned by the GLBs.
  *  Only these may be disposed when the world is rebuilt for a new seed. */
 const ownedGeometries = [];
@@ -1114,23 +1321,67 @@ function releaseOwned() {
   ownedGeometries.length = 0;
 }
 
+/** The chequer strip painted across the deck on the lap boundary. Built from
+ *  the samples either side of index 0 so it follows the deck's own bank. */
+function buildStartBand() {
+  const n = mainLine.samples.length - 1;      // the last sample aliases the first
+  const ROWS = 3;                             // +/- three samples, about +/- 6 m
+  const LAT = [-1.0, -0.5, 0.0, 0.5, 1.0];
+  const pos = [], nrm = [], band = [], idx = [];
+  const tmp = new THREE.Vector3();
+  for (let r = -ROWS; r <= ROWS; r++) {
+    const s = mainLine.samples[((r % n) + n) % n];
+    for (let k = 0; k < LAT.length; k++) {
+      const lat = LAT[k] * s.width;
+      tmp.copy(s.p).addScaledVector(s.side, lat).addScaledVector(s.up, 0.04);
+      pos.push(tmp.x, tmp.y, tmp.z);
+      nrm.push(s.up.x, s.up.y, s.up.z);
+      band.push((r + ROWS) * mainLine.spacing, LAT[k]);
+    }
+  }
+  for (let r = 0; r < ROWS * 2; r++) {
+    for (let k = 0; k < LAT.length - 1; k++) {
+      const a = r * LAT.length + k, b = a + 1, c = a + LAT.length, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+  g.setAttribute("aBand", new THREE.Float32BufferAttribute(band, 2));
+  g.setIndex(idx);
+  g.computeBoundingSphere();
+  ownedGeometries.push(g);
+  const mesh = new THREE.Mesh(g, startBandMaterial);
+  mesh.renderOrder = 1;
+  propGroup.add(mesh);
+  return mesh;
+}
+
 function buildWorld() {
   // ── Track surfaces ────────────────────────────────────────────────────
   releaseOwned();
   trackGroup.clear();
   for (const line of lines) buildRibbonMesh(line, trackGroup);
 
-  // ── Gates: checkpoints and the primary architecture of the route ──────
+  // ── Gates: checkpoints, staged around the start line at s = 0 ─────────
   gates.length = 0;
+  startLine.s = 0;
+  startLine.pulse = 0;
   const GATE_COUNT = 9;
   for (let i = 0; i < GATE_COUNT; i++) {
-    const s = (i / GATE_COUNT) * mainLine.length + 40;
+    // Half a slot in, so no checkpoint crowds the start and finish portal.
+    const s = ((i + 0.5) / GATE_COUNT) * mainLine.length;
     gates.push({ line: 0, s, lateral: 0, radius: 9.2, id: gates.length });
   }
   for (let li = 1; li < lines.length; li++) {
     const line = lines[li];
-    for (const f of [0.32, 0.72]) {
-      gates.push({ line: li, s: line.enterS + f * line.racedLength, lateral: 0, radius: 7.0, id: gates.length });
+    // Branch checkpoints stay clear of both gores: a portal inside one would
+    // stand on deck that has been clipped away to a sliver.
+    const lo = line.enterS + GORE_RUN + 14;
+    const span = Math.max(0, line.exitS - GORE_RUN - 14 - lo);
+    for (const f of span > 70 ? [0.24, 0.76] : [0.5]) {
+      gates.push({ line: li, s: lo + f * span, lateral: 0, radius: 7.0, id: gates.length });
     }
   }
 
@@ -1138,16 +1389,20 @@ function buildWorld() {
   bollards.length = 0;
   for (const line of lines) {
     const spacing = line.id === 0 ? 132 : 96;
-    const usableStart = line.id === 0 ? 0 : line.enterS + 30;
-    const usableEnd = line.id === 0 ? line.length : line.exitS - 30;
+    const usableStart = line.id === 0 ? 0 : line.enterS + GORE_RUN;
+    const usableEnd = line.id === 0 ? line.length : line.exitS - GORE_RUN;
     for (let s = usableStart + 60; s < usableEnd; s += spacing) {
-      const near = gates.some((g) => g.line === line.id && Math.abs(g.s - s) < 46);
-      if (near) continue;
       const smp = sampleAt(line, s);
       const cluster = 1 + Math.floor(random() * 2);
       for (let k = 0; k < cluster; k++) {
+        const at = s + k * 9;
+        // Every cluster member checks for itself. The offset used to be able to
+        // walk a bollard straight into a gate mouth.
+        if (at >= usableEnd) continue;
+        if (gates.some((g) => g.line === line.id && Math.abs(g.s - at) < 46)) continue;
+        if (line.id === 0 && (Math.abs(wrapMain(at - startLine.s)) < 58 || insideJunction(at, 6))) continue;
         const lateral = (random() * 1.5 - 0.75) * smp.width * 0.82;
-        bollards.push({ line: line.id, s: s + k * 9, lateral, id: bollards.length });
+        bollards.push({ line: line.id, s: at, lateral, id: bollards.length });
       }
     }
   }
@@ -1171,45 +1426,76 @@ function buildWorld() {
 
   // ── Placed architecture ───────────────────────────────────────────────
   propGroup.clear();
-  for (const g of gates) {
-    const arch = instantiate("GateArch");
-    frameMatrix(sampleAt(lines[g.line], g.s), 0, 0, scratchM, g.line === 0 ? 0.86 : 0.68);
-    arch.applyMatrix4(scratchM);
-    arch.matrixAutoUpdate = false;
-    arch.updateMatrix();
-    propGroup.add(arch);
-  }
-  for (const branch of BRANCHES) {
-    const line = lines.find((l) => l.desc === branch);
-    if (!line) continue;
-    for (const [lateral, yaw] of [[-1, 0.22], [1, -0.22]]) {
-      const pylon = instantiate("BranchPylon");
-      const smp = sampleAt(mainLine, line.mainEnter - 24);
-      frameMatrix(smp, lateral * (smp.width + 3.4), -0.4, scratchM, 0.9, yaw + (lateral < 0 ? 0 : Math.PI));
-      pylon.applyMatrix4(scratchM);
-      pylon.matrixAutoUpdate = false; pylon.updateMatrix();
-      propGroup.add(pylon);
+  const seat = (name, sample, lateral, height, yaw = 0) => {
+    const scale = seatScale(name, sample.width);
+    const prop = instantiate(name);
+    frameMatrix(sample, lateral, height, scratchM, scale, yaw);
+    prop.applyMatrix4(scratchM);
+    prop.matrixAutoUpdate = false;
+    prop.updateMatrix();
+    // Recorded so `propReport` can prove nothing is standing over the void.
+    prop.userData.kind = name;
+    prop.userData.s = sample.distance;
+    prop.userData.scale = scale;
+    prop.userData.overhang = PROP_DECK_REF[name] === undefined
+      ? 0
+      : Math.abs(lateral) + PROP_DECK_REF[name] * scale - sample.width;
+    propGroup.add(prop);
+    return prop;
+  };
+
+  // The start and finish portal sits on the lap boundary itself, and is half
+  // again the size of a checkpoint so the two can never be confused.
+  seat("StartGantry", sampleAt(mainLine, startLine.s), 0, 0);
+  buildStartBand();
+
+  for (const g of gates) seat("GateArch", sampleAt(lines[g.line], g.s), 0, 0);
+
+  // Fork signposts: advance warning then the mouth, both on the side the
+  // branch actually leaves on. `BranchPylon` reaches the road toward local -X
+  // and points its chevrons toward local +X on both faces, so a yaw of pi is
+  // all it takes to signpost the other hand.
+  for (let li = 1; li < lines.length; li++) {
+    const line = lines[li];
+    for (const advance of [46, 16]) {
+      const smp = sampleAt(mainLine, line.mainEnter - advance);
+      seat("BranchPylon", smp, line.forkSide * (smp.width + 0.9), 0, line.forkSide > 0 ? 0 : Math.PI);
     }
   }
-  // Overhead trusses frame the route without ever crossing the racing line.
+
+  // Overhead trusses frame the route. Each one is nudged clear of the junctions
+  // and the portals: a truss inside a junction span is a 23 m gantry hanging
+  // beside whichever deck you are not on.
   const TRUSS_AT = [0.06, 0.19, 0.31, 0.44, 0.57, 0.69, 0.82, 0.94];
+  const trussClear = (s) => !insideJunction(s, MERGE_LEAD + 24)
+    && Math.abs(wrapMain(s - startLine.s)) > 66
+    && !gates.some((g) => g.line === 0 && Math.abs(wrapMain(g.s - s)) < 44);
   for (const f of TRUSS_AT) {
-    const truss = instantiate("CanopyTruss");
-    frameMatrix(sampleAt(mainLine, f * mainLine.length), 0, 0, scratchM, 0.92);
-    truss.applyMatrix4(scratchM);
-    truss.matrixAutoUpdate = false; truss.updateMatrix();
-    propGroup.add(truss);
+    let s = f * mainLine.length;
+    if (!trussClear(s)) {
+      let moved = false;
+      for (let step = 12; step <= 180 && !moved; step += 12) {
+        for (const dir of [1, -1]) {
+          if (trussClear(s + dir * step)) { s += dir * step; moved = true; break; }
+        }
+      }
+      if (!moved) continue;
+    }
+    seat("CanopyTruss", sampleAt(mainLine, s), 0, 0);
   }
 
   // ── Instanced kit: anchors beneath the deck, hazards on it ────────────
-  const anchorSlots = [];
+  anchorSlots.length = 0;
   for (const line of lines) {
     const spacing = line.id === 0 ? 84 : 74;
-    // Branch anchors start clear of the junction so they never sit inside the
-    // main line's own suspension structure.
+    // Anchors start clear of the junctions on every line, main included: one
+    // inside a junction ends up threaded through the other deck's suspension.
     const start = line.id === 0 ? 0 : line.enterS + GORE_RUN;
     const end = line.id === 0 ? line.length : line.exitS - GORE_RUN;
-    for (let s = start; s < end; s += spacing) anchorSlots.push({ line: line.id, s });
+    for (let s = start; s < end; s += spacing) {
+      if (line.id === 0 && insideJunction(s, 10)) continue;
+      anchorSlots.push({ line: line.id, s });
+    }
   }
   anchorKit = new InstancedKit("RibbonAnchor", anchorSlots.length, propGroup);
   for (const slot of anchorSlots) {
@@ -1580,7 +1866,14 @@ class AudioSystem {
         break;
       }
       case "finish": {
-        [523, 659, 784, 1046, 1318].forEach((f, i) => this.blip(f, t + i * 0.10, 0.36, 0.10, "sine"));
+        // Longer and fuller than a lap chime: the run is over, and it should
+        // sound like it rather than like one more checkpoint.
+        [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => {
+          this.blip(f, t + i * 0.10, 0.38, 0.10, "sine");
+          this.blip(f * 0.5, t + i * 0.10, 0.38, 0.055, "triangle");
+        });
+        this.noiseHit(t, 0.5, 0.08);
+        [784, 1046, 1568].forEach((f) => this.blip(f, t + 0.74, 1.05, 0.07, "triangle"));
         break;
       }
       case "near": this.blip(1180 + intensity * 400, t, 0.06, 0.045, "sine"); break;
@@ -1601,6 +1894,11 @@ let assetsReady = false;
 let pulseLevel = 0;
 let shake = 0;
 let flashUntil = 0;
+let flashLevel = 0;
+// Seconds the run keeps going after the player crosses, so the rivals still
+// out there can come in before the board replaces the race.
+const OUTRO_HOLD = 5.0;
+let outroFrom = -1;
 
 const economy = { edge: 0, gate: 0, prop: 0, draft: 0, spent: 0 };
 let stats = { topSpeed: 0, gatesThreaded: 0, bestLap: 0, longestEdge: 0, chargeEarned: 0 };
@@ -1665,6 +1963,10 @@ function seedRacerTraits() {
 
 function resetGrid() {
   raceTime = 0;
+  outroFrom = -1;
+  flashLevel = 0;
+  startLine.pulse = 0;
+  ui.finishBanner.classList.remove("show");
   economy.edge = economy.gate = economy.prop = economy.draft = economy.spent = 0;
   stats = { topSpeed: 0, gatesThreaded: 0, bestLap: 0, longestEdge: 0, chargeEarned: 0 };
   for (let i = 0; i < racers.length; i++) {
@@ -1825,7 +2127,9 @@ function stepRacer(r, cmd, dt) {
 
   /* ── Lateral: steering, centrifugal load, and the bank paying it back ── */
   const steerAuth = STEER_AUTH * (r.tucking ? 0.45 : 1) * speedFactor(r.speed) * (r.airborne ? 0.35 : 1);
-  let aLat = cmd.steer * steerAuth;
+  // A finished craft coasts. Leaving steering live let the player keep driving
+  // a run that was already over, which reads as the game having missed it.
+  let aLat = (r.finished ? 0 : cmd.steer) * steerAuth;
   aLat -= GRAVITY * here.side.y;
   aLat -= r.speed * r.speed * here.curve.dot(here.side);
   r.lateralVel += aLat * dt;
@@ -1952,7 +2256,9 @@ function stepRacer(r, cmd, dt) {
     for (let li = 1; li < lines.length; li++) {
       const branch = lines[li];
       if (before < branch.mainEnter && r.s >= branch.mainEnter && r.branchCooldown <= 0) {
-        const wants = r.ai ? (r.branchBias > 0.5) : (r.lateral < -1.6);
+        // Commit by leaning toward the side the branch actually leaves on,
+        // which is resolved from the geometry rather than assumed.
+        const wants = r.ai ? (r.branchBias > 0.5) : (r.lateral * branch.forkSide > 1.6);
         if (wants) {
           const f = (r.s - branch.mainEnter) / Math.max(1e-3, r.speed * dt);
           r.line = li;
@@ -1995,8 +2301,12 @@ function stepRacer(r, cmd, dt) {
       r.lapStart = raceTime;
       r.lap++;
       r.gatePassed.clear();
+      if (!r.ai) startLine.pulse = 1;
       if (r.lap > TOTAL_LAPS) finishRacer(r);
-      else if (!r.ai) { audio.event("lap"); showMessage(`Lap ${r.lap} of ${TOTAL_LAPS}`, 1.4); }
+      else if (!r.ai) {
+        audio.event("lap");
+        showMessage(r.lap === TOTAL_LAPS ? "Final lap" : `Lap ${r.lap} of ${TOTAL_LAPS}`, 1.5);
+      }
     }
   }
   r.lastMain = md;
@@ -2012,9 +2322,32 @@ function finishRacer(r) {
   // `progress` by a whole lap length and make the standings gap go negative;
   // the HUD clamps the displayed value instead.
   if (!r.ai) {
+    // The crossing has to read as an event in its own right. The board can
+    // wait; this cannot, or three laps end with the craft quietly coasting.
+    updateRanks();
+    outroFrom = r.finishTime;
     audio.event("finish");
-    burst(r.object.position, r.color, 60, 26, 1.4, 1.0);
+    pulseLevel = 1;
+    startLine.pulse = 1;
+    flashLevel = 1;
+    ui.flash.style.opacity = "1";     // immediate, rather than next presentation tick
+    shake = Math.max(shake, 1.1);
+    for (let wave = 0; wave < 3; wave++) {
+      burst(r.object.position, wave === 1 ? SECTORS[2].color : r.color, 44, 20 + wave * 9, 1.2 + wave * 0.3, 0.9);
+    }
+    showFinishBanner(r.rank);
+    showMessage(r.rank === 1 ? "Weave taken" : "Chequer", 1.6);
   }
+}
+
+const PLACE_SUFFIX = ["st", "nd", "rd", "th"];
+function placeLabel(rank) {
+  return `${rank}<small>${PLACE_SUFFIX[Math.min(rank - 1, 3)]}</small>`;
+}
+
+function showFinishBanner(rank) {
+  ui.finishPlace.innerHTML = placeLabel(rank);
+  ui.finishBanner.classList.add("show");
 }
 
 function separateRacers() {
@@ -2056,7 +2389,10 @@ function fixedUpdate(dt) {
   for (const r of racers) stepRacer(r, r.ai ? rivalPolicy(r) : readInput(), dt);
   separateRacers();
   updateRanks();
+  // The board waits for the field only for as long as the outro lasts. Sitting
+  // through a slow rival's third lap after winning is not a result screen.
   if (racers.every((r) => r.finished)) endRace();
+  else if (outroFrom >= 0 && raceTime - outroFrom > OUTRO_HOLD) endRace();
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2119,6 +2455,8 @@ const camState = { back: 15.5, up: 5.4, lateral: 0, fov: 66 };
 const camPos = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
 const camUp = new THREE.Vector3();
+const heroPos = new THREE.Vector3();
+const heroTarget = new THREE.Vector3();
 
 function updateCamera(dt, snap = false) {
   const player = racers[0];
@@ -2150,6 +2488,24 @@ function updateCamera(dt, snap = false) {
     .addScaledVector(ahead.up, 2.4)
     .addScaledVector(ahead.side, player.lateral * 0.28);
   camUp.copy(here.up).lerp(ahead.up, 0.35).normalize();
+
+  // Once the player has crossed, the camera stops driving and starts watching:
+  // a slow hero orbit around the coasting craft while the rivals come in.
+  if (player.finished) {
+    const since = raceTime - player.finishTime;
+    const t = clamp(since / 2.2, 0, 1);
+    const a = since * 0.42;
+    heroTarget.copy(here.p).addScaledVector(here.side, player.lateral).addScaledVector(here.up, RIDE_HEIGHT + player.hop);
+    heroPos.copy(heroTarget)
+      .addScaledVector(here.tangent, -9.5 + Math.cos(a) * 10.5)
+      .addScaledVector(here.side, Math.sin(a) * 13.0)
+      .addScaledVector(here.up, 5.6 + Math.sin(a * 0.7) * 1.8);
+    // The aim point catches up faster than the position, so the craft never
+    // slides out of frame while the camera is still swinging around.
+    camPos.lerp(heroPos, t);
+    camTarget.lerp(heroTarget, clamp(t * 2.4, 0, 1));
+    camUp.lerp(here.up, t).normalize();
+  }
 
   if (shake > 0.001) {
     const amp = shake * 0.9;
@@ -2193,6 +2549,12 @@ function updateStreaks(dt) {
 const ui = {
   hud: document.getElementById("hud"),
   lap: document.getElementById("lapVal"),
+  lapChip: document.getElementById("lapChip"),
+  lapSuffix: document.getElementById("lapSuffix"),
+  finishBanner: document.getElementById("finishBanner"),
+  finishPlace: document.getElementById("finishPlace"),
+  finishWait: document.getElementById("finishWait"),
+  flash: document.getElementById("flash"),
   pos: document.getElementById("posVal"),
   time: document.getElementById("timeVal"),
   sector: document.getElementById("sectorVal"),
@@ -2204,6 +2566,7 @@ const ui = {
   chargeSrc: document.getElementById("chargeSrc"),
   standings: document.getElementById("standings"),
   branch: document.getElementById("branchPrompt"),
+  branchHint: document.getElementById("branchHint"),
   branchName: document.getElementById("branchName"),
   message: document.getElementById("message"),
   countdown: document.getElementById("countdown"),
@@ -2246,7 +2609,10 @@ function updateHUD() {
   const player = racers[0];
   if (!player) return;
   const here = sampleAt(lines[player.line], player.s);
-  ui.lap.textContent = String(Math.min(player.lap, TOTAL_LAPS));
+  const shownLap = Math.min(player.lap, TOTAL_LAPS);
+  ui.lap.textContent = String(shownLap);
+  ui.lapSuffix.textContent = shownLap === TOTAL_LAPS ? " final" : `/${TOTAL_LAPS}`;
+  ui.lapChip.classList.toggle("accent", shownLap === TOTAL_LAPS);
   ui.pos.textContent = String(player.rank);
   ui.time.textContent = formatTime(raceTime);
   ui.sector.textContent = SECTORS[here.sector].roman;
@@ -2289,8 +2655,21 @@ function updateHUD() {
       if (d > 0 && d < Math.max(90, player.speed * 2.1)) { prompt = b; break; }
     }
   }
-  if (prompt) { ui.branchName.textContent = prompt.name; ui.branch.classList.add("show"); }
-  else ui.branch.classList.remove("show");
+  if (prompt) {
+    ui.branchName.textContent = prompt.name;
+    // The wording follows the geometry: +side is screen right, because the
+    // chase camera's right vector is tangent x up, which is exactly `side`.
+    ui.branchHint.textContent = `Fork ahead — steer ${prompt.forkSide > 0 ? "right" : "left"} to commit`;
+    ui.branch.classList.add("show");
+  } else ui.branch.classList.remove("show");
+
+  if (player.finished) {
+    ui.finishPlace.innerHTML = placeLabel(player.rank);
+    const out = racers.filter((r) => !r.finished);
+    ui.finishWait.textContent = out.length === 0
+      ? "Every craft is in"
+      : out.length === 1 ? `Waiting on ${out[0].name}` : `Waiting on ${out.length} rivals`;
+  }
 
   const speedT = clamp((player.speed - 56) / 44, 0, 1);
   ui.tint.style.opacity = String(speedT * 0.5 + (player.boosting ? 0.2 : 0));
@@ -2303,6 +2682,7 @@ function showTitle() {
   mode = "title";
   ui.title.hidden = false;
   ui.finish.hidden = true;
+  ui.finishBanner.classList.remove("show");
   ui.hud.classList.remove("visible");
   ui.countdown.classList.remove("show");
   ui.pauseBadge.classList.remove("show");
@@ -2329,8 +2709,7 @@ function endRace() {
   audio.setActive(false);
   const order = updateRanks();
   const player = racers[0];
-  const suffix = ["st", "nd", "rd", "th"][Math.min(player.rank - 1, 3)];
-  document.getElementById("placeBig").innerHTML = `${player.rank}<small>${suffix}</small>`;
+  document.getElementById("placeBig").innerHTML = placeLabel(player.rank);
   document.getElementById("finishEyebrow").textContent =
     player.rank === 1 ? "The weave is yours" : "Race complete";
   document.getElementById("finishBlurb").textContent =
@@ -2343,12 +2722,18 @@ function endRace() {
   document.getElementById("statGates").textContent = String(stats.gatesThreaded);
   document.getElementById("statCharge").textContent = stats.chargeEarned.toFixed(1);
   document.getElementById("statEdge").textContent = `${stats.longestEdge.toFixed(1)}s`;
+  // The board can now appear while rivals are still running, so an unfinished
+  // craft is quoted by how far back it was rather than written off as a DNF.
+  const leader = order[0];
   document.getElementById("finishOrder").innerHTML = order.map((r, i) => (
     `<div class="r${r.ai ? "" : " you"}"><span class="p">${i + 1}</span>` +
     `<span class="d" style="background:${r.css}"></span>` +
     `<span class="n">${r.name}</span>` +
-    `<span class="t">${r.finished ? formatTime(r.finishTime) : "DNF"}</span></div>`
+    `<span class="t">${r.finished
+      ? formatTime(r.finishTime)
+      : `still out, -${Math.max(0, Math.round(leader.progress - r.progress))}m`}</span></div>`
   )).join("");
+  ui.finishBanner.classList.remove("show");
   ui.finish.hidden = false;
   ui.hud.classList.remove("visible");
 }
@@ -2414,6 +2799,12 @@ function updatePresentation(dt) {
   ribbonUniforms.uPulse.value = pulseLevel;
   if (lanterns) lanterns.material.uniforms.uTime.value = elapsedVisual;
   shake = Math.max(0, shake - dt * 3.2);
+  startLine.pulse = Math.max(0, startLine.pulse - dt * 1.1);
+  startBandUniforms.uPulse.value = startLine.pulse;
+  if (flashLevel > 0) {
+    flashLevel = Math.max(0, flashLevel - dt * 2.2);
+    ui.flash.style.opacity = flashLevel.toFixed(3);
+  }
 
   for (const r of racers) updateRacerVisual(r, dt);
   updateParticles(dt);
@@ -2504,6 +2895,7 @@ function snapshot() {
       branches: BRANCHES.length,
       bollards: bollards.length,
       length: Math.round(mainLine ? mainLine.length : 0),
+      startLineS: startLine.s,
       style: "suspended-ribbon-circuit",
     },
     player: player ? {
@@ -2803,7 +3195,7 @@ function installTestHooks() {
       p.line = 0;
       p.s = branch.mainEnter - 4;
       p.lastMain = p.s;
-      p.lateral = -5.2;
+      p.lateral = 5.2 * branch.forkSide;
       p.lateralVel = 0;
       p.speed = 60;
       p.branchCooldown = 0;
@@ -2845,11 +3237,82 @@ function installTestHooks() {
         maxBank: Math.max(...banks),
         minBank: Math.min(...banks),
         invertedSamples: mainLine.samples.filter((s) => s.up.y < 0).length,
+        startLineS: startLine.s,
         branchLengths: lines.slice(1).map((l) => ({ name: l.name, raced: l.racedLength, mainSpan: l.mainSpan })),
         junctions: lines.slice(1).map((l) => ({
-          line: l.id, name: l.name,
+          line: l.id, name: l.name, forkSide: l.forkSide, mergeSide: l.mergeSide,
           mainEnter: l.mainEnter, mainExit: l.mainExit, enterS: l.enterS, exitS: l.exitS,
         })),
+      };
+    },
+    /** How cleanly each branch meets the road: the residual roll between the
+     *  abutting decks at the seam, how much raced deck goes undrawn, and which
+     *  way the branch actually appears to a driver approaching the fork. */
+    junctionReport() {
+      const screenSideOf = (line) => {
+        // Park the camera on the approach and project a point well inside the
+        // branch, so the prompt's wording can be checked against what is seen.
+        const player = racers[0];
+        const keep = { line: player.line, s: player.s, lateral: player.lateral };
+        player.line = 0;
+        player.s = line.mainEnter - 55;
+        player.lateral = 0;
+        updateCamera(FIXED_DT, true);
+        camera.updateMatrixWorld();
+        const target = sampleAt(line, line.enterS + GORE_RUN * 1.4).p.clone().project(camera);
+        Object.assign(player, keep);
+        updateCamera(FIXED_DT, true);
+        return Math.sign(target.x) || 1;
+      };
+      return lines.slice(1).map((line) => {
+        const seam = (distance) => {
+          const s = sampleAt(line, distance);
+          const m = nearestMainSample(s.p);
+          const unwrapped = m.bank + Math.round((s.bank - m.bank) / TWO_PI) * TWO_PI;
+          return {
+            bankGap: Math.abs(s.bank - unwrapped),
+            upGap: Math.acos(clamp(s.up.dot(m.up), -1, 1)),
+            widthGap: Math.abs(s.width - m.width),
+          };
+        };
+        // How much raced deck the ring walk leaves undrawn at either end.
+        const ringAt = (d) => Math.abs(d - Math.round(d / line.spacing) * line.spacing);
+        return {
+          name: line.name,
+          forkSide: line.forkSide,
+          mergeSide: line.mergeSide,
+          screenSide: screenSideOf(line),
+          enter: seam(line.enterS),
+          exit: seam(line.exitS),
+          undrawn: Math.max(ringAt(line.enterS), ringAt(line.exitS)),
+        };
+      });
+    },
+    /** Worst case, per prop family, of how far a footing sits outside the deck
+     *  edge it is supposed to stand on. Guards against props floating again. */
+    propReport() {
+      const worst = {};
+      const placed = {};
+      let junctionTrusses = 0;
+      let degenerate = 0;
+      for (const prop of propGroup.children) {
+        const kind = prop.userData.kind;
+        if (!kind) continue;
+        worst[kind] = Math.max(worst[kind] ?? -Infinity, prop.userData.overhang);
+        placed[kind] = (placed[kind] ?? 0) + 1;
+        // A prop with a non-finite scale silently vanishes from the world.
+        if (!Number.isFinite(prop.userData.scale) || prop.userData.scale <= 0) degenerate++;
+        if (kind === "CanopyTruss" && insideJunction(prop.userData.s, MERGE_LEAD)) junctionTrusses++;
+      }
+      return {
+        worst,
+        placed,
+        degenerate,
+        junctionTrusses,
+        anchorsInJunction: anchorSlots.filter((a) => a.line === 0 && insideJunction(a.s, 0)).length,
+        bollardsInGore: bollards.filter((z) => z.line === 0 && insideJunction(z.s, 0)).length,
+        branchGatesInGore: gates.filter(
+          (g) => g.line !== 0 && goreDepth(lines[g.line], g.s) < GORE_RUN).length,
       };
     },
   };

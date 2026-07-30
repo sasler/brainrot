@@ -5506,7 +5506,7 @@
           "model": "Claude Opus 5",
           "modelId": "opus-5",
           "date": "2026-07-29",
-          "linesOfCode": 2920,
+          "linesOfCode": 3383,
           "path": "/games/outrun-racer/opus-5/index.html",
           "features": [
             "sound",
@@ -5516,7 +5516,7 @@
           ],
           "assets": {
             "files": 2,
-            "bytes": 1058216,
+            "bytes": 1795048,
             "kinds": [
               "model"
             ]
