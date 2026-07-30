@@ -6,6 +6,7 @@ const {
   AREA_RATINGS,
   AREA_SITE,
   AREA_THREEJS,
+  SPEC_GAMES_LOAD,
   changedMetadataVersions,
   parseNameStatus,
   selectPlaywrightImpact,
@@ -51,12 +52,12 @@ test("combines multiple changed game implementations", () => {
   ]);
 });
 
-test("maps shared application changes to site and ratings tests", () => {
+test("maps shared application changes to site, ratings, and game-load tests", () => {
   const result = selectPlaywrightImpact({
     changes: change("src/components/Navbar.tsx"),
     rootDir,
   });
-  assert.deepEqual(result.tags, [AREA_RATINGS, AREA_SITE]);
+  assert.deepEqual(result.tags, [AREA_RATINGS, AREA_SITE, SPEC_GAMES_LOAD]);
 });
 
 test("maps Three.js tooling to pipeline tests", () => {
@@ -116,6 +117,30 @@ test("metadata version additions and removals select exact game tags", () => {
     AREA_SITE,
     "@game:tetris/new-model",
     "@game:tetris/old-model",
+  ]);
+});
+
+test("metadata path changes select the affected game version", () => {
+  const before = metadata(["snake/opus-4-6"]);
+  const after = metadata(["snake/opus-4-6"]);
+  before.games[0].versions[0].path = "/games/snake/opus-4-6/index.html";
+  after.games[0].versions[0].path = "/games/snake/opus-4-6/moved.html";
+
+  assert.deepEqual(
+    [...changedMetadataVersions(before, after)],
+    ["snake/opus-4-6"],
+  );
+
+  const result = selectPlaywrightImpact({
+    changes: change("games-metadata.json"),
+    baseMetadata: before,
+    headMetadata: after,
+    rootDir,
+  });
+  assert.deepEqual(result.tags, [
+    AREA_RATINGS,
+    AREA_SITE,
+    "@game:snake/opus-4-6",
   ]);
 });
 

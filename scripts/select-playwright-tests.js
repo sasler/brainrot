@@ -5,6 +5,7 @@ const path = require("node:path");
 const AREA_SITE = "@area:site";
 const AREA_RATINGS = "@area:ratings";
 const AREA_THREEJS = "@area:threejs";
+const SPEC_GAMES_LOAD = "@spec:games-load";
 
 const FULL_SUITE_PATTERNS = [
   /^\.github\/workflows\//,
@@ -52,23 +53,30 @@ function specTag(filePath) {
 }
 
 function metadataVersionKeys(metadata) {
-  const keys = new Set();
+  return new Set(metadataVersionsByKey(metadata).keys());
+}
+
+function metadataVersionsByKey(metadata) {
+  const versions = new Map();
   for (const game of metadata?.games ?? []) {
     if (typeof game?.id !== "string") continue;
     for (const version of game.versions ?? []) {
       if (typeof version?.modelId === "string") {
-        keys.add(`${game.id}/${version.modelId}`);
+        versions.set(`${game.id}/${version.modelId}`, version);
       }
     }
   }
-  return keys;
+  return versions;
 }
 
 function changedMetadataVersions(baseMetadata, headMetadata) {
-  const before = metadataVersionKeys(baseMetadata);
-  const after = metadataVersionKeys(headMetadata);
+  const before = metadataVersionsByKey(baseMetadata);
+  const after = metadataVersionsByKey(headMetadata);
   return new Set(
-    [...before, ...after].filter((key) => before.has(key) !== after.has(key)),
+    [...new Set([...before.keys(), ...after.keys()])].filter((key) => {
+      if (!before.has(key) || !after.has(key)) return true;
+      return before.get(key)?.path !== after.get(key)?.path;
+    }),
   );
 }
 
@@ -175,6 +183,7 @@ function selectPlaywrightImpact({
       if (filePath.startsWith("src/")) {
         tags.add(AREA_SITE);
         tags.add(AREA_RATINGS);
+        tags.add(SPEC_GAMES_LOAD);
         reasons.add("shared application source");
         continue;
       }
@@ -324,6 +333,7 @@ module.exports = {
   AREA_RATINGS,
   AREA_SITE,
   AREA_THREEJS,
+  SPEC_GAMES_LOAD,
   changedMetadataVersions,
   findThreeRuntimeConsumers,
   gameTag,
