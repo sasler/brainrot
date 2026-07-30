@@ -23,7 +23,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 💎 Tile Matching | Swap, match, and chain your way to the top. Line up three or more gems to trigger cascading combos and dazzling special tiles. | 7 |
 | 👾 Space Invaders | Defend Earth from waves of descending alien invaders. Blast through formations, grab power-ups, and survive the onslaught. | 5 |
 | 🔢 Sudoku | Solve a glowing logic grid under pressure with notes, streaks, and satisfying neon feedback for every sharp deduction. | 2 |
-| 🏎️ Neon Horizon Racer | Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon. | 5 |
+| 🏎️ Neon Horizon Racer | Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon. | 6 |
 | 🏎️ Coastal Rush '86 | Race a red convertible through a branching, sun-soaked 1980s arcade road trip before the clock runs out. | 7 |
 | 🕰️ Clockwork Caper | Stage perfect heists across a clockwork museum by recording echoes of your past actions, outsmarting guards, and escaping before the final chime. | 3 |
 | 🏁 Sunbeam Kart Rally | Charge through a three-lap golden-hour festival circuit, drift past orchards, a windmill, forest, and vineyards, and battle up to five rivals with sun-powered items. | 2 |
@@ -36,7 +36,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | Claude Fable 5 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2,108 lines | N/A | N/A | N/A |
 | Claude Opus 4.6 | 852 lines | 1,009 lines | 1,166 lines | 1,467 lines | 1,133 lines | 984 lines | 1,092 lines | 1,101 lines | 1,162 lines | 1,347 lines | 1,820 lines | 1,547 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Claude Opus 4.8 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,417 lines | N/A | N/A | N/A |
-| Claude Opus 5 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 4,648 lines | N/A | N/A | N/A | N/A | N/A | N/A | 3,321 lines | 3,570 lines |
+| Claude Opus 5 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 4,648 lines | N/A | N/A | N/A | 2,920 lines | N/A | N/A | 3,321 lines | 3,570 lines |
 | Claude Sonnet 4.6 | 828 lines | 809 lines | 973 lines | 1,167 lines | 900 lines | 727 lines | 1,108 lines | 1,384 lines | 1,313 lines | 1,362 lines | 1,239 lines | 1,203 lines | 937 lines | 814 lines | 1,450 lines | N/A | N/A | N/A | N/A |
 | OpenAI GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,401 lines | 2,852 lines | 3,116 lines | 2,135 lines | 3,371 lines | N/A | 3,093 lines | N/A | N/A | N/A |
 | OpenAI GPT 5.5 | N/A | N/A | N/A | N/A | N/A | 2,031 lines | 2,369 lines | N/A | N/A | N/A | 2,413 lines | 1,643 lines | 2,058 lines | N/A | 1,398 lines | 2,155 lines | N/A | N/A | N/A |

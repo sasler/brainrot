@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "ownerModelId": "opus-5",
+  "assets": [
+    {
+      "path": "skyweave-fleet.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.2.0 LTS via Blender Assets MCP",
+      "prompt": "Author four original hovercraft with silhouettes that stay distinguishable at racing distance, each built by lofting authored cross-sections rather than assembling primitives. PlayerSkiff: a broad canard racer whose hull is lofted from nine hard-chined sections, with a ribbed glass canopy seated in a deck recess, a raised vented engine deck, shoulder intake scoops, swept canards rooted inside the hull and carrying emissive leading edges and mid-span nacelles, underslung ride plates with underglow, a dorsal stabiliser, and twin ducted thrusters built as surfaces of revolution with lipped shells, inner burner rings and centre hubs. RivalLance: a long narrow needle with forward-swept wings, ventral skids, a tall single fin and one oversized duct. RivalDelta: a broad flat delta planform with emissive leading-edge root extensions, outboard fins and three small ducts in a row. RivalHauler: a heavy catamaran of two parallel hulls joined by a bridge deck and nose beam, with four ducts and twin fins. Every craft shares one eight-material palette named SKY_HullPlate, SKY_HullTrim, SKY_Canopy, SKY_Graphite, SKY_LiveryBase, SKY_RailCyan, SKY_RailMagenta and SKY_RailAmber, so the runtime can retint livery surfaces per rival by material name. Noses point toward Blender +Y so they export to Three.js -Z forward; origins sit at the centre of mass on the ride plane. Bevel modifiers are baked on export. Named roots PlayerSkiff, RivalLance, RivalDelta and RivalHauler are exported as selected roots only to GLB with no UVs, no vertex colours, no textures, no animations and no compression.",
+      "purpose": "Player and rival hovercraft silhouettes for the four-craft Skyweave race grid",
+      "usageRights": "Procedurally authored for this repository with rights to use and redistribute",
+      "load": "initial"
+    },
+    {
+      "path": "skyweave-structures.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.2.0 LTS via Blender Assets MCP",
+      "prompt": "Author the suspended-ribbon circuit kit and the drowned-city skyline that frames it, all from swept box sections, lofted profiles and surfaces of revolution. GateArch: a 29 metre checkpoint portal with a tapered outer arch, an emissive inner ring, radial bracing between the two arches, a lit tie beam, chunky footings and angled banner blades; its origin sits on the ribbon deck centre so it drops straight onto a track sample. BranchPylon: a leaning mast on a plinth carrying four cyan chevrons on one side and four magenta chevrons on the other, marking which way each fork leads. RibbonAnchor: the suspension spine that hangs beneath the deck, with outrigger arms, diagonal stays, tip pods and a ballast bulb, so the ribbon reads as carried rather than floating. CanopyTruss: a fifty metre overhead gantry with arched upper and lower chords, a zig-zag web, outboard legs and hanging route lamps that the ribbon passes beneath. HazardBollard: a small deck hazard with a flared skirt, an emissive warning band and three base fins. TowerBlock_A, TowerBlock_B and TowerBlock_C: three distinct megastructures for instanced skyline placement, respectively a 172 metre tapered slab spire with setbacks, banded window strips, a lit crown and a mast beacon; an 80 metre stepped ziggurat with amber bands, a roof deck, flanking buttresses and a severed skybridge reaching out over the flood; and a 119 metre cluster of three flooded silos of differing heights tied by service decks, ringed with light bands and capped with lit heads. Towers carry their origin at the base. All parts share the SKY_ material palette. Named roots GateArch, BranchPylon, RibbonAnchor, CanopyTruss, HazardBollard, TowerBlock_A, TowerBlock_B and TowerBlock_C are exported as selected roots only to GLB with no UVs, no vertex colours, no textures, no animations and no compression.",
+      "purpose": "Checkpoint portals, fork markers, ribbon suspension structure, route framing, deck hazards and instanced skyline landmarks",
+      "usageRights": "Procedurally authored for this repository with rights to use and redistribute",
+      "load": "initial"
+    }
+  ]
+}

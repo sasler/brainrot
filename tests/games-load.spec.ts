@@ -15,7 +15,7 @@ const ALL_GAMES = [
   { id: "space-invaders", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-5"] },
   { id: "pac-man", models: ["sonnet-4-6", "gpt-5-4", "gpt-5-5"] },
   { id: "sudoku", models: ["sonnet-4-6", "gpt-5-4"] },
-  { id: "outrun-racer", models: ["gemma-4-12b", "gpt-5-6-sol"] },
+  { id: "outrun-racer", models: ["gemma-4-12b", "gpt-5-6-sol", "opus-5"] },
   { id: "coastal-rush-86", models: ["gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-6-sol", "fable-5"] },
   { id: "clockwork-caper", models: ["gpt-5-6-sol", "gpt-5-6-terra", "gpt-5-6-luna"] },
   { id: "kart-racing", models: ["opus-5", "gpt-5-6-sol"] },
