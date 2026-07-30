@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Model explorer", () => {
+test.describe("Model explorer", {
+  tag: ["@spec:models", "@area:site"],
+}, () => {
   test("groups models by company with frontier labs first", async ({ page }) => {
     await page.goto("/models");
     await expect(page.getByRole("heading", { name: "Meet the minds behind the games." })).toBeVisible();

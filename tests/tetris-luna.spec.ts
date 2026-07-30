@@ -28,7 +28,9 @@ async function expectInViewport(page: Page, selector: string) {
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
 }
 
-test.describe("GPT 5.6 Luna Tetris", () => {
+test.describe("GPT 5.6 Luna Tetris", {
+  tag: ["@spec:tetris-luna", "@game:tetris/gpt-5-6-luna"],
+}, () => {
   test("loads standalone without page errors and exposes the lunar start state", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));

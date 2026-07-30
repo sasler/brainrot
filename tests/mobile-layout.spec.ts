@@ -61,9 +61,13 @@ async function expectFullyInViewport(page: Page, locator: Locator) {
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1);
 }
 
-test.describe("Gameplay-first layout regressions", () => {
+test.describe("Gameplay-first layout regressions", {
+  tag: "@spec:mobile-layout",
+}, () => {
   for (const model of ["gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-6-sol", "opus-4-8", "fable-5"]) {
-    test(`Coastal Rush '86 ${model} keeps the road and touch controls reachable`, async ({
+    test(`Coastal Rush '86 ${model} keeps the road and touch controls reachable`, {
+      tag: `@game:coastal-rush-86/${model}`,
+    }, async ({
       page,
     }) => {
       await openStandaloneGame(page, `/games/coastal-rush-86/${model}/index.html`);
@@ -94,7 +98,9 @@ test.describe("Gameplay-first layout regressions", () => {
   }
 
   for (const model of ["gpt-5-4", "gpt-5-5"]) {
-    test(`Pac-Man ${model} keeps swipe-first controls and the maze in view`, async ({ page }) => {
+    test(`Pac-Man ${model} keeps swipe-first controls and the maze in view`, {
+      tag: `@game:pac-man/${model}`,
+    }, async ({ page }) => {
       await instrumentAudioStarts(page);
       await openStandaloneGame(page, `/games/pac-man/${model}/index.html`);
 
@@ -119,7 +125,9 @@ test.describe("Gameplay-first layout regressions", () => {
     });
   }
 
-  test("GPT 5.5 Pac-Man and ghosts move after the ready countdown", async ({ page }) => {
+  test("GPT 5.5 Pac-Man and ghosts move after the ready countdown", {
+    tag: "@game:pac-man/gpt-5-5",
+  }, async ({ page }) => {
     await openStandaloneGame(page, "/games/pac-man/gpt-5-5/index.html");
     await page.locator("#primaryButton").click();
     await page.waitForTimeout(1900);
@@ -141,7 +149,9 @@ test.describe("Gameplay-first layout regressions", () => {
     expect(Math.hypot(after.ghost.x - before.ghost.x, after.ghost.y - before.ghost.y)).toBeGreaterThan(10);
   });
 
-  test("GPT 5.5 Pac-Man accepts another direction after stopping at a wall", async ({ page }) => {
+  test("GPT 5.5 Pac-Man accepts another direction after stopping at a wall", {
+    tag: "@game:pac-man/gpt-5-5",
+  }, async ({ page }) => {
     await openStandaloneGame(page, "/games/pac-man/gpt-5-5/index.html");
     await page.locator("#primaryButton").click();
     await page.waitForTimeout(1900);
@@ -164,7 +174,9 @@ test.describe("Gameplay-first layout regressions", () => {
     expect(Math.hypot(turned.x - stopped.x, turned.y - stopped.y)).toBeGreaterThan(10);
   });
 
-  test("Sudoku keeps the board and number pad playable together without scrolling", async ({
+  test("Sudoku keeps the board and number pad playable together without scrolling", {
+    tag: "@game:sudoku/gpt-5-4",
+  }, async ({
     page,
   }) => {
     await instrumentAudioStarts(page);

@@ -6,7 +6,9 @@ import {
   isKnownModelId,
 } from "../src/lib/modelCatalog";
 
-test.describe("Model identity system", () => {
+test.describe("Model identity system", {
+  tag: ["@spec:model-identity", "@area:site"],
+}, () => {
   test("catalog covers every model and uses unique public names", () => {
     const entries = Object.values(MODEL_CATALOG);
     expect(new Set(entries.map((entry) => entry.displayName)).size).toBe(entries.length);

@@ -116,7 +116,9 @@ async function primed(page: Page, seed = 7) {
   }, seed);
 }
 
-test.describe("Claude Opus 5 Neon Horizon Racer: Skyweave", () => {
+test.describe("Claude Opus 5 Neon Horizon Racer: Skyweave", {
+  tag: ["@spec:outrun-racer-opus-5", "@game:outrun-racer/opus-5"],
+}, () => {
   test("loads the pinned runtime and Blender-authored assets without external requests", async ({ page }) => {
     const external: string[] = [];
     const errors: string[] = [];

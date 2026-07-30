@@ -68,7 +68,9 @@ async function startGame(page: Page, seed = 56_056) {
   await expect(page.locator("#hud")).toHaveClass(/visible/);
 }
 
-test.describe("GPT 5.6 Sol HELIOVAULT maze", () => {
+test.describe("GPT 5.6 Sol HELIOVAULT maze", {
+  tag: ["@spec:maze-3d-sol", "@game:maze-3d/gpt-5-6-sol"],
+}, () => {
   test("loads as a self-contained Three.js experience without external requests", async ({ page }) => {
     const externalRequests: string[] = [];
     const errors: string[] = [];

@@ -6,7 +6,9 @@ import { expect, test } from "@playwright/test";
 
 const execFileAsync = promisify(execFile);
 
-test("pinned Three.js and GLTFLoader import in an opaque sandbox iframe", async ({
+test("pinned Three.js and GLTFLoader import in an opaque sandbox iframe", {
+  tag: ["@spec:threejs-pipeline", "@area:threejs"],
+}, async ({
   page,
 }) => {
   const browserErrors: string[] = [];
@@ -78,7 +80,9 @@ test("pinned Three.js and GLTFLoader import in an opaque sandbox iframe", async 
   }
 });
 
-test("play page forwards test mode without weakening the iframe sandbox", async ({
+test("play page forwards test mode without weakening the iframe sandbox", {
+  tag: ["@spec:threejs-pipeline", "@area:site", "@game:maze-3d/gpt-5-6-sol"],
+}, async ({
   page,
 }) => {
   await page.goto("/games/maze-3d/gpt-5-6-sol?test=1");
@@ -94,7 +98,9 @@ test("play page forwards test mode without weakening the iframe sandbox", async 
   await expect(page.locator("[data-asset-summary]")).toHaveCount(0);
 });
 
-test("Three.js inspector creates a report and iframe screenshot", async ({
+test("Three.js inspector creates a report and iframe screenshot", {
+  tag: ["@spec:threejs-pipeline", "@area:threejs", "@game:maze-3d/gpt-5-6-sol"],
+}, async ({
   baseURL,
 }, testInfo) => {
   const outputDir = testInfo.outputPath("threejs-inspection");

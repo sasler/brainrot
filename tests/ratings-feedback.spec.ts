@@ -16,7 +16,9 @@ function feedback(voteCount: number, failCount: number) {
   });
 }
 
-test.describe("community failure verdict logic", () => {
+test.describe("community failure verdict logic", {
+  tag: ["@spec:ratings-feedback", "@area:ratings"],
+}, () => {
   test("uses the literal half-or-more threshold without a quorum", () => {
     expect(buildVersionFeedback({})).toBeNull();
     expect(feedback(0, 1)?.failed).toBe(true);

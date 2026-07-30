@@ -23,9 +23,13 @@ const IMPLEMENTATIONS: Array<{
   },
 ];
 
-test.describe("Clockwork Caper", () => {
+test.describe("Clockwork Caper", {
+  tag: "@spec:clockwork-caper",
+}, () => {
   for (const implementation of IMPLEMENTATIONS) {
-    test(`${implementation.model} exposes the playable loop contract`, async ({ page }) => {
+    test(`${implementation.model} exposes the playable loop contract`, {
+      tag: `@game:clockwork-caper/${implementation.model}`,
+    }, async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 720 });
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));

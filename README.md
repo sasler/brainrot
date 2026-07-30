@@ -74,13 +74,16 @@ npm test
 
 # Run one affected spec while developing
 npm test -- tests/smoke.spec.ts
+
+# Validate the CI impact selector and Playwright tags
+npm run test:ci-selection
 ```
 
 ## ✅ Pull Request Checks
 
-Every pull request runs the complete validation gate in GitHub Actions: lint, the production build, and every Playwright test. The browser suite is split across two Chromium shards, then combined into one HTML report that is retained with the workflow run for 14 days.
+Every pull request runs the complete lint, production build, and asset-tooling gate in GitHub Actions. Playwright is change-scoped: game files select that exact game/model's load and regression coverage, shared application files select the site and ratings suites, and Three.js runtime files select their actual consumers. The selected browser tests remain split across two Chromium shards and are combined into one HTML report retained with the workflow run for 14 days. Documentation-only changes skip the browser jobs.
 
-Local development should stay focused. Run the smallest Playwright spec or filtered load probe that covers the change, run lint for JavaScript, TypeScript, test, or configuration changes, and run the production build for application, routing, dependency, Next.js, or shared-runtime changes. The full `npm test` suite is reserved for test or CI infrastructure changes, changes whose impact cannot be bounded, and explicit requests; otherwise the required `Required PR checks` status is the authoritative full gate before merge.
+Local development should stay focused. Run the smallest Playwright spec or filtered load probe that covers the change, run lint for JavaScript, TypeScript, test, or configuration changes, and run the production build for application, routing, dependency, Next.js, or shared-runtime changes. CI and test-infrastructure changes, unclassified executable paths, and manual `workflow_dispatch` runs use the complete Playwright suite as a fail-safe. The required `Required PR checks` status remains authoritative before merge.
 
 ## ⭐ Ratings Setup
 
@@ -107,7 +110,7 @@ If you only provide `KV_REST_API_READ_ONLY_TOKEN`, the site can show rating summ
 
 ```
 .github/
-└── workflows/pr-checks.yml      # Required lint, build, and sharded Playwright PR gate
+└── workflows/pr-checks.yml      # Required quality and change-scoped Playwright PR gate
 .agents/
 └── skills/                     # Portable workflows for all agent harnesses
 AGENTS.md                       # Cross-harness instructions and skill catalog

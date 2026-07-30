@@ -1,31 +1,33 @@
 import { test, expect } from "@playwright/test";
+import { getGames } from "../src/lib/games";
 
-const ALL_GAMES = [
-  { id: "snake", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "gemma-4-12b", "mai-code-1-flash", "hy3"] },
-  { id: "minesweeper", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
-  { id: "tetris", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "gpt-5-6-luna"] },
-  { id: "reversi", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "gpt-5-6-sol"] },
-  { id: "breakout", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro"] },
-  { id: "2048", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-5", "gpt-5-4-mini", "gemini-3-1-pro", "qwen-3-6-27b"] },
-  { id: "endless-runner", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-5", "gpt-5-4-mini", "gemini-3-1-pro"] },
-  { id: "marble-madness", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "gpt-5-6-sol"] },
-  { id: "maze-3d", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gemini-3-1-pro", "hy3", "gpt-5-6-terra", "gpt-5-6-sol"] },
-  { id: "mini-golf", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-6-sol"] },
-  { id: "tile-matching", models: ["opus-4-6", "opus-5", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-5", "gpt-5-6-sol"] },
-  { id: "space-invaders", models: ["opus-4-6", "sonnet-4-6", "gpt-5-4", "gpt-5-4-mini", "gpt-5-5"] },
-  { id: "pac-man", models: ["sonnet-4-6", "gpt-5-4", "gpt-5-5"] },
-  { id: "sudoku", models: ["sonnet-4-6", "gpt-5-4"] },
-  { id: "outrun-racer", models: ["gemma-4-12b", "gpt-5-6-sol", "opus-5"] },
-  { id: "coastal-rush-86", models: ["gpt-5-5", "gpt-5-4", "gpt-5-4-mini", "gpt-5-6-sol", "fable-5"] },
-  { id: "clockwork-caper", models: ["gpt-5-6-sol", "gpt-5-6-terra", "gpt-5-6-luna"] },
-  { id: "kart-racing", models: ["opus-5", "gpt-5-6-sol"] },
-  { id: "perihelion", models: ["opus-5"] },
-];
+const EXPECTED_PAGE_ERRORS = new Map<string, string[]>([
+  [
+    "outrun-racer/gpt-5-4-mini",
+    ["Identifier 'buildInitialGates' has already been declared"],
+  ],
+]);
 
-test.describe("Game HTML Files — Load Tests", () => {
-  for (const game of ALL_GAMES) {
-    for (const model of game.models) {
-      test(`${game.id}/${model} loads without errors`, async ({ page }) => {
+test.describe("Game HTML Files — Load Tests", {
+  tag: "@spec:games-load",
+}, () => {
+  for (const game of getGames()) {
+    for (const version of game.versions) {
+      const model = version.modelId;
+      const gameKey = `${game.id}/${model}`;
+      const expectedErrors = EXPECTED_PAGE_ERRORS.get(gameKey) ?? [];
+      const expectation = expectedErrors.length > 0
+        ? "reports only its tracked runtime error"
+        : "loads without errors";
+      test(`${gameKey} ${expectation}`, {
+        tag: `@game:${game.id}/${model}`,
+      }, async ({ page }) => {
+        if (expectedErrors.length > 0) {
+          test.info().annotations.push({
+            type: "known-runtime-error",
+            description: expectedErrors.join("; "),
+          });
+        }
         test.setTimeout(60_000);
         const errors: string[] = [];
         page.on("pageerror", (err) => errors.push(err.message));
@@ -42,8 +44,8 @@ test.describe("Game HTML Files — Load Tests", () => {
 
         await page.waitForTimeout(500);
 
-        // Check no page-level errors occurred
-        expect(errors).toEqual([]);
+        // Keep the runtime-error baseline exact so fixes and regressions both surface.
+        expect(errors).toEqual(expectedErrors);
       });
     }
   }

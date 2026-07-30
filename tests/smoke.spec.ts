@@ -21,7 +21,9 @@ const games = [
   "kart-racing",
 ];
 
-test.describe("BrainRot Games — Smoke Tests", () => {
+test.describe("BrainRot Games — Smoke Tests", {
+  tag: ["@spec:smoke", "@area:site"],
+}, () => {
   test("landing page loads with hero and game cards", async ({ page }) => {
     await page.goto("/");
 

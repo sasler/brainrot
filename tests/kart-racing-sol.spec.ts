@@ -77,7 +77,9 @@ async function openGame(page: Page, viewport = { width: 1280, height: 720 }) {
   await expect.poll(() => page.evaluate(() => Boolean(window.__SUNBEAM_TEST__))).toBe(true);
 }
 
-test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", () => {
+test.describe("GPT 5.6 Sol Sunbeam Kart Rally rebuild", {
+  tag: ["@spec:kart-racing-sol", "@game:kart-racing/gpt-5-6-sol"],
+}, () => {
   test("uses the pinned local Three.js runtime without external requests or errors", async ({ page }) => {
     const external: string[] = [], runtime: string[] = [], errors: string[] = [];
     page.on("request", request => {

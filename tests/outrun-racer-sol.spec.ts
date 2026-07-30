@@ -50,7 +50,9 @@ async function openGame(page: Page) {
   await expect.poll(() => page.evaluate(() => Boolean(window.__THREE_GAME_TEST_HOOKS__))).toBe(true);
 }
 
-test.describe("GPT 5.6 Sol Neon Horizon Racer", () => {
+test.describe("GPT 5.6 Sol Neon Horizon Racer", {
+  tag: ["@spec:outrun-racer-sol", "@game:outrun-racer/gpt-5-6-sol"],
+}, () => {
   test("loads the pinned runtime and Blender-authored assets without external requests", async ({ page }) => {
     const external: string[] = [], errors: string[] = [], assets: string[] = [];
     page.on("request", request => {

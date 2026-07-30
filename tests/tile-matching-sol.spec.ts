@@ -98,7 +98,9 @@ async function snapshot(page: Page) {
   return page.evaluate(() => window.__solFlareTest.snapshot());
 }
 
-test.describe("GPT 5.6 Sol Tile Matching", () => {
+test.describe("GPT 5.6 Sol Tile Matching", {
+  tag: ["@spec:tile-matching-sol", "@game:tile-matching/gpt-5-6-sol"],
+}, () => {
   test("starts with 36 moves, clear rewards, audio, and a deterministic legal board", async ({ page }) => {
     await page.addInitScript(() => {
       window.__solAudioStarts = 0;
