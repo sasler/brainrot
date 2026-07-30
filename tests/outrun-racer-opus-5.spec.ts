@@ -78,8 +78,10 @@ type SkyweaveWindow = Window & {
       exit: { bankGap: number; upGap: number; widthGap: number };
       undrawn: number;
     }>;
+    crossLineLast(): Snapshot;
     propReport(): {
       worst: Record<string, number>;
+      grip: Record<string, number>;
       placed: Record<string, number>;
       degenerate: number;
       junctionTrusses: number;
@@ -546,8 +548,15 @@ test.describe("Claude Opus 5 Neon Horizon Racer: Skyweave", () => {
       return w.__SKYWEAVE_TEST__.propReport();
     });
 
+    // Portals must not overhang the deck edge they span...
+    expect(Object.keys(report.worst).sort()).toEqual(["CanopyTruss", "GateArch", "StartGantry"]);
     for (const [kind, overhang] of Object.entries(report.worst)) {
       expect(`${kind}:${overhang < 0.75}`).toBe(`${kind}:true`);
+    }
+    // ...and edge clamps must actually grip it, rather than bolt to thin air.
+    expect(Object.keys(report.grip)).toEqual(["BranchPylon"]);
+    for (const [kind, grip] of Object.entries(report.grip)) {
+      expect(`${kind}:${grip > 1.5}`).toBe(`${kind}:true`);
     }
     // A prop scaled to a non-finite value is still "placed" but never drawn,
     // which is exactly how the fork signposts went missing once already.
@@ -626,6 +635,36 @@ test.describe("Claude Opus 5 Neon Horizon Racer: Skyweave", () => {
     await expect(page.locator("#finishScreen")).toBeVisible();
     await expect(page.locator("#finishBanner")).not.toHaveClass(/show/);
     await expect(page.locator("#finishOrder .r")).toHaveCount(4);
+  });
+
+  test("finishing last still gets the crossing before the board", async ({ page }) => {
+    await openGame(page);
+    const crossing = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      w.__THREE_GAME_TEST_HOOKS__.seed(7);
+      w.__THREE_GAME_TEST_HOOKS__.setState("active-play");
+      w.__SKYWEAVE_TEST__.release();
+      const snap = w.__SKYWEAVE_TEST__.crossLineLast();
+      return {
+        finished: snap.player.finished,
+        rank: snap.player.rank,
+        mode: snap.mode,
+        banner: document.getElementById("finishBanner")?.classList.contains("show") ?? false,
+      };
+    });
+
+    // Everyone else is already in, so the all-finished shortcut fires on the
+    // very step that raises the banner unless the outro is honoured first.
+    expect(crossing.finished).toBe(true);
+    expect(crossing.rank).toBe(4);
+    expect(crossing.mode).toBe("race");
+    expect(crossing.banner).toBe(true);
+    await expect(page.locator("#finishScreen")).toBeHidden();
+
+    const settled = await page.evaluate(() =>
+      (window as unknown as SkyweaveWindow).__THREE_GAME_TEST_HOOKS__.advance(4));
+    expect(settled.mode).toBe("finished");
+    await expect(page.locator("#finishScreen")).toBeVisible();
   });
 
   test("finishing shows the placement board and restarting re-arms the countdown", async ({ page }) => {

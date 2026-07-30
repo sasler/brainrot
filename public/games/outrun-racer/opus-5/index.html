@@ -1288,17 +1288,28 @@ function frameMatrix(sample, lateral, height, out, scale = 1, yaw = 0) {
   return out;
 }
 
-/** Seat a deck-mounted prop by scaling its authored deck-edge reference onto
- *  the local half-width. Every such prop is modelled against a 9.8 m reference
- *  deck, so this is what keeps footings on the road instead of over the void. */
+/* Deck-mounted props come in two families, and they stay on the road for
+ * different reasons.
+ *
+ * Portals span the deck: they are authored against a 9.8 m half-width
+ * reference and scaled so their footings land on the local deck edge. What can
+ * go wrong is a footing hanging *past* the edge, so they are measured by
+ * overhang.
+ *
+ * Edge clamps sit beside the deck at a fixed size and bolt on with a plate
+ * that reaches back inboard over the road. Scaling one to the deck width would
+ * resize a signboard for no reason. What can go wrong is the plate missing the
+ * deck entirely, so they are measured by how far that plate grips it. */
 const PROP_DECK_REF = {
   GateArch: 12.4,       // inner edge of the footing pads
   StartGantry: 9.825,   // inner face of the legs
   CanopyTruss: 9.825,   // inner face of the legs
 };
+/** Authored inboard reach of an edge clamp's deck plate, from its origin. */
+const PROP_EDGE_GRIP = {
+  BranchPylon: 3.6,     // inboard lip of the bolted deck plate
+};
 function seatScale(name, halfWidth) {
-  // Props without a reference are authored to a fixed size and are placed
-  // relative to the deck edge instead of being scaled onto it.
   const ref = PROP_DECK_REF[name];
   return ref ? clamp(halfWidth / ref, 0.42, 1.3) : 1;
 }
@@ -1433,13 +1444,18 @@ function buildWorld() {
     prop.applyMatrix4(scratchM);
     prop.matrixAutoUpdate = false;
     prop.updateMatrix();
-    // Recorded so `propReport` can prove nothing is standing over the void.
+    // Recorded so `propReport` can prove nothing is standing over the void:
+    // how far a portal's footing reaches past the deck edge, and how far an
+    // edge clamp's plate reaches back onto the deck.
     prop.userData.kind = name;
     prop.userData.s = sample.distance;
     prop.userData.scale = scale;
     prop.userData.overhang = PROP_DECK_REF[name] === undefined
-      ? 0
+      ? null
       : Math.abs(lateral) + PROP_DECK_REF[name] * scale - sample.width;
+    prop.userData.grip = PROP_EDGE_GRIP[name] === undefined
+      ? null
+      : sample.width - (Math.abs(lateral) - PROP_EDGE_GRIP[name] * scale);
     propGroup.add(prop);
     return prop;
   };
@@ -1896,8 +1912,11 @@ let shake = 0;
 let flashUntil = 0;
 let flashLevel = 0;
 // Seconds the run keeps going after the player crosses, so the rivals still
-// out there can come in before the board replaces the race.
+// out there can come in before the board replaces the race. Even with the
+// whole field already in, the crossing gets `OUTRO_MIN` to itself: the flash,
+// the banner and the camera swinging round all need a beat to land.
 const OUTRO_HOLD = 5.0;
+const OUTRO_MIN = 2.8;
 let outroFrom = -1;
 
 const economy = { edge: 0, gate: 0, prop: 0, draft: 0, spent: 0 };
@@ -2389,10 +2408,14 @@ function fixedUpdate(dt) {
   for (const r of racers) stepRacer(r, r.ai ? rivalPolicy(r) : readInput(), dt);
   separateRacers();
   updateRanks();
-  // The board waits for the field only for as long as the outro lasts. Sitting
-  // through a slow rival's third lap after winning is not a result screen.
-  if (racers.every((r) => r.finished)) endRace();
-  else if (outroFrom >= 0 && raceTime - outroFrom > OUTRO_HOLD) endRace();
+  // The board never replaces the crossing. `outroFrom` is only ever set once
+  // the player is in, so this covers every way a race can end — including the
+  // player finishing last, which used to trip the all-finished shortcut in the
+  // same step and hide the banner it had just raised.
+  if (outroFrom >= 0) {
+    const settled = racers.every((r) => r.finished);
+    if (raceTime - outroFrom > (settled ? OUTRO_MIN : OUTRO_HOLD)) endRace();
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -3213,6 +3236,24 @@ function installTestHooks() {
       return { entered, exited: p.line, s: p.s, snapshot: settle() };
     },
     finishRace(rank = 1) { return setTestState(rank === 1 ? "win" : "fail"); },
+    /** Bring the whole field home, then drive the player over the line last.
+     *  This is the case where the all-finished shortcut used to end the race
+     *  in the same step that raised the finish banner. */
+    crossLineLast() {
+      const p = racers[0];
+      for (const r of racers) if (r.ai) finishRacer(r);
+      p.line = 0;
+      p.lap = TOTAL_LAPS;
+      p.lapStart = raceTime - 40;
+      p.s = mainLine.length - 8;
+      p.lastMain = mainDistance(p);
+      p.lateral = 0;
+      p.lateralVel = 0;
+      p.speed = 60;
+      p.finished = false;
+      for (let i = 0; i < 240 && !p.finished; i++) fixedUpdate(FIXED_DT);
+      return settle();
+    },
     /** Centre-to-centre separation between a branch sample and the nearest
      *  point on the main line, with the two half-widths that must clear it. */
     probeSeparation(lineIndex, branchS, mainS) {
@@ -3288,17 +3329,24 @@ function installTestHooks() {
         };
       });
     },
-    /** Worst case, per prop family, of how far a footing sits outside the deck
-     *  edge it is supposed to stand on. Guards against props floating again. */
+    /** Per prop family, the worst case of whatever keeps it on the road:
+     *  overhang past the deck edge for portals, plate grip on the deck for
+     *  edge clamps. Guards against structures floating again. */
     propReport() {
       const worst = {};
+      const grip = {};
       const placed = {};
       let junctionTrusses = 0;
       let degenerate = 0;
       for (const prop of propGroup.children) {
         const kind = prop.userData.kind;
         if (!kind) continue;
-        worst[kind] = Math.max(worst[kind] ?? -Infinity, prop.userData.overhang);
+        if (prop.userData.overhang !== null) {
+          worst[kind] = Math.max(worst[kind] ?? -Infinity, prop.userData.overhang);
+        }
+        if (prop.userData.grip !== null) {
+          grip[kind] = Math.min(grip[kind] ?? Infinity, prop.userData.grip);
+        }
         placed[kind] = (placed[kind] ?? 0) + 1;
         // A prop with a non-finite scale silently vanishes from the world.
         if (!Number.isFinite(prop.userData.scale) || prop.userData.scale <= 0) degenerate++;
@@ -3306,6 +3354,7 @@ function installTestHooks() {
       }
       return {
         worst,
+        grip,
         placed,
         degenerate,
         junctionTrusses,
