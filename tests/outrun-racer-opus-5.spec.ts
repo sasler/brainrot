@@ -9,7 +9,7 @@ type Snapshot = {
   assetsReady: boolean;
   track: {
     lines: number; nodes: number; laps: number; gates: number;
-    branches: number; bollards: number; length: number; style: string;
+    branches: number; bollards: number; length: number; startLineS: number; style: string;
   };
   player: {
     line: number; s: number; lateral: number; halfWidth: number; speed: number;
@@ -65,8 +65,29 @@ type SkyweaveWindow = Window & {
     finishRace(rank?: number): Snapshot;
     trackReport(): {
       length: number; samples: number; maxBank: number; minBank: number;
-      invertedSamples: number;
+      invertedSamples: number; startLineS: number;
       branchLengths: Array<{ name: string; raced: number; mainSpan: number }>;
+      junctions: Array<{
+        line: number; name: string; forkSide: number; mergeSide: number;
+        mainEnter: number; mainExit: number; enterS: number; exitS: number;
+      }>;
+    };
+    junctionReport(): Array<{
+      name: string; forkSide: number; mergeSide: number; screenSide: number;
+      enter: { bankGap: number; upGap: number; widthGap: number };
+      exit: { bankGap: number; upGap: number; widthGap: number };
+      undrawn: number;
+    }>;
+    crossLineLast(): Snapshot;
+    propReport(): {
+      worst: Record<string, number>;
+      grip: Record<string, number>;
+      placed: Record<string, number>;
+      degenerate: number;
+      junctionTrusses: number;
+      anchorsInJunction: number;
+      bollardsInGore: number;
+      branchGatesInGore: number;
     };
   };
 };
@@ -220,8 +241,10 @@ test.describe("Claude Opus 5 Neon Horizon Racer: Skyweave", () => {
         w.__THREE_GAME_TEST_HOOKS__.seed(seed);
         w.__THREE_GAME_TEST_HOOKS__.setState("active-play");
         w.__SKYWEAVE_TEST__.release();
+        // Throttle only. Holding a steer key pins the craft against a rail,
+        // where the run saturates and stops sampling the seeded hazard
+        // scatter it is supposed to be probing.
         w.__SKYWEAVE_TEST__.press("KeyW");
-        w.__SKYWEAVE_TEST__.press("KeyD");
         const snap = w.__THREE_GAME_TEST_HOOKS__.advance(6);
         w.__SKYWEAVE_TEST__.release();
         return snap;
@@ -428,6 +451,220 @@ test.describe("Claude Opus 5 Neon Horizon Racer: Skyweave", () => {
     expect(result.two.entered).toBe(2);
     expect(result.two.exited).toBe(0);
     expect(result.one.branch).toBeNull();
+  });
+
+  test("the fork prompt names the side the branch actually leaves on", async ({ page }) => {
+    await openGame(page);
+    const result = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      const H = w.__THREE_GAME_TEST_HOOKS__;
+      const T = w.__SKYWEAVE_TEST__;
+      H.seed(7);
+      H.setState("active-play");
+      T.release();
+      const junctions = T.trackReport().junctions;
+      const prompts = junctions.map((j) => {
+        // Sit far enough back that the prompt is up, then read what it says.
+        T.placeAt(0, j.mainEnter - 60, 0);
+        T.setSpeed(58);
+        return {
+          name: j.name,
+          forkSide: j.forkSide,
+          hint: document.getElementById("branchHint")?.textContent ?? "",
+          shown: document.getElementById("branchPrompt")?.classList.contains("show") ?? false,
+          named: document.getElementById("branchName")?.textContent ?? "",
+        };
+      });
+      return { prompts, geometry: T.junctionReport() };
+    });
+
+    for (const prompt of result.prompts) {
+      expect(prompt.shown).toBe(true);
+      expect(prompt.named).toBe(prompt.name);
+      expect(prompt.hint).toContain(prompt.forkSide > 0 ? "right" : "left");
+      expect(prompt.hint).not.toContain(prompt.forkSide > 0 ? "left" : "right");
+    }
+    // And the wording matches where the branch is actually drawn on screen.
+    for (const junction of result.geometry) {
+      expect(junction.screenSide).toBe(junction.forkSide);
+    }
+  });
+
+  test("committing to a fork needs the signposted side, not the other one", async ({ page }) => {
+    await openGame(page);
+    const result = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      const H = w.__THREE_GAME_TEST_HOOKS__;
+      const T = w.__SKYWEAVE_TEST__;
+      const attempt = (which: number, sign: number) => {
+        H.seed(7);
+        H.setState("active-play");
+        T.release();
+        const junction = T.trackReport().junctions[which - 1];
+        T.placeAt(0, junction.mainEnter - 30, sign * junction.forkSide * 6.2);
+        T.setSpeed(60);
+        T.press("KeyW");
+        const snap = H.advance(1.2);
+        T.release();
+        return snap.player.line;
+      };
+      return {
+        toward: [attempt(1, 1), attempt(2, 1)],
+        away: [attempt(1, -1), attempt(2, -1)],
+      };
+    });
+    // Leaning toward the chevrons takes the branch; leaning away stays on the
+    // main road. Before the fix this was inverted against the geometry.
+    expect(result.toward).toEqual([1, 2]);
+    expect(result.away).toEqual([0, 0]);
+  });
+
+  test("branch decks meet the road in one plane with nothing left undrawn", async ({ page }) => {
+    await openGame(page);
+    const report = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      w.__THREE_GAME_TEST_HOOKS__.setState("active-play");
+      return w.__SKYWEAVE_TEST__.junctionReport();
+    });
+
+    expect(report).toHaveLength(2);
+    for (const junction of report) {
+      for (const seam of [junction.enter, junction.exit]) {
+        // Roll is welded exactly; the residual is the honest yaw of a fork.
+        expect(seam.bankGap).toBeLessThan(1e-6);
+        expect(seam.widthGap).toBeLessThan(1e-6);
+        expect(seam.upGap).toBeLessThan(0.2);
+      }
+      expect(junction.undrawn).toBeLessThan(0.01);
+    }
+  });
+
+  test("every deck-mounted structure stands on the deck it belongs to", async ({ page }) => {
+    await openGame(page);
+    const report = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      w.__THREE_GAME_TEST_HOOKS__.seed(7);
+      w.__THREE_GAME_TEST_HOOKS__.setState("active-play");
+      return w.__SKYWEAVE_TEST__.propReport();
+    });
+
+    // Portals must not overhang the deck edge they span...
+    expect(Object.keys(report.worst).sort()).toEqual(["CanopyTruss", "GateArch", "StartGantry"]);
+    for (const [kind, overhang] of Object.entries(report.worst)) {
+      expect(`${kind}:${overhang < 0.75}`).toBe(`${kind}:true`);
+    }
+    // ...and edge clamps must actually grip it, rather than bolt to thin air.
+    expect(Object.keys(report.grip)).toEqual(["BranchPylon"]);
+    for (const [kind, grip] of Object.entries(report.grip)) {
+      expect(`${kind}:${grip > 1.5}`).toBe(`${kind}:true`);
+    }
+    // A prop scaled to a non-finite value is still "placed" but never drawn,
+    // which is exactly how the fork signposts went missing once already.
+    expect(report.degenerate).toBe(0);
+    expect(report.placed.StartGantry).toBe(1);
+    expect(report.placed.BranchPylon).toBe(4);
+    expect(report.placed.CanopyTruss).toBeGreaterThan(4);
+    expect(report.placed.GateArch).toBeGreaterThanOrEqual(9);
+    expect(report.junctionTrusses).toBe(0);
+    expect(report.anchorsInJunction).toBe(0);
+    expect(report.bollardsInGore).toBe(0);
+    expect(report.branchGatesInGore).toBe(0);
+  });
+
+  test("the start and finish line sits on the lap boundary and is its own structure", async ({ page }) => {
+    await openGame(page);
+    const result = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      const snapshot = w.__THREE_GAME_TEST_HOOKS__.setState("active-play");
+      const report = w.__SKYWEAVE_TEST__.trackReport();
+      return {
+        roots: snapshot.objects.assetRoots,
+        startLineS: snapshot.track.startLineS,
+        length: report.length,
+      };
+    });
+    expect(result.roots).toContain("StartGantry");
+    expect(result.startLineS).toBe(0);
+
+    // The opening grid still lines up past the line, and no checkpoint crowds it.
+    const spacing = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      w.__THREE_GAME_TEST_HOOKS__.setState("title");
+      (document.getElementById("startButton") as HTMLButtonElement).click();
+      return w.__THREE_GAME_TEST_HOOKS__.snapshot().player.s;
+    });
+    expect(spacing).toBeGreaterThan(0);
+    expect(spacing).toBeLessThan(result.length * 0.5);
+  });
+
+  test("crossing the line raises the finish banner before the board replaces it", async ({ page }) => {
+    await openGame(page);
+    const crossing = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      const H = w.__THREE_GAME_TEST_HOOKS__;
+      const T = w.__SKYWEAVE_TEST__;
+      H.seed(5);
+      H.setState("title");
+      (document.getElementById("startButton") as HTMLButtonElement).click();
+      let snap = H.snapshot();
+      let guard = 0;
+      while (!snap.player.finished && guard++ < 220) snap = T.holdCentre(2);
+      return {
+        finished: snap.player.finished,
+        mode: snap.mode,
+        banner: document.getElementById("finishBanner")?.classList.contains("show") ?? false,
+        place: document.getElementById("finishPlace")?.textContent ?? "",
+        wait: document.getElementById("finishWait")?.textContent ?? "",
+        lapSuffix: document.getElementById("lapSuffix")?.textContent ?? "",
+      };
+    });
+
+    expect(crossing.finished).toBe(true);
+    // The banner is up while the run is still going: the board must not be the
+    // first sign that three laps are over.
+    expect(crossing.mode).toBe("race");
+    expect(crossing.banner).toBe(true);
+    expect(crossing.place).toMatch(/^[1-4](st|nd|rd|th)$/);
+    expect(crossing.lapSuffix).toContain("final");
+    await expect(page.locator("#finishScreen")).toBeHidden();
+
+    // And the board arrives on its own within the outro hold.
+    const settled = await page.evaluate(() =>
+      (window as unknown as SkyweaveWindow).__THREE_GAME_TEST_HOOKS__.advance(6));
+    expect(settled.mode).toBe("finished");
+    await expect(page.locator("#finishScreen")).toBeVisible();
+    await expect(page.locator("#finishBanner")).not.toHaveClass(/show/);
+    await expect(page.locator("#finishOrder .r")).toHaveCount(4);
+  });
+
+  test("finishing last still gets the crossing before the board", async ({ page }) => {
+    await openGame(page);
+    const crossing = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      w.__THREE_GAME_TEST_HOOKS__.seed(7);
+      w.__THREE_GAME_TEST_HOOKS__.setState("active-play");
+      w.__SKYWEAVE_TEST__.release();
+      const snap = w.__SKYWEAVE_TEST__.crossLineLast();
+      return {
+        finished: snap.player.finished,
+        rank: snap.player.rank,
+        mode: snap.mode,
+        banner: document.getElementById("finishBanner")?.classList.contains("show") ?? false,
+      };
+    });
+
+    // Everyone else is already in, so the all-finished shortcut fires on the
+    // very step that raises the banner unless the outro is honoured first.
+    expect(crossing.finished).toBe(true);
+    expect(crossing.rank).toBe(4);
+    expect(crossing.mode).toBe("race");
+    expect(crossing.banner).toBe(true);
+    await expect(page.locator("#finishScreen")).toBeHidden();
+
+    const settled = await page.evaluate(() =>
+      (window as unknown as SkyweaveWindow).__THREE_GAME_TEST_HOOKS__.advance(4));
+    expect(settled.mode).toBe("finished");
+    await expect(page.locator("#finishScreen")).toBeVisible();
   });
 
   test("finishing shows the placement board and restarting re-arms the countdown", async ({ page }) => {
