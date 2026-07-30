@@ -89,11 +89,18 @@ test("selects a changed spec by its unique spec tag", () => {
 });
 
 test("metadata review changes stay scoped to shared application tests", () => {
-  const versions = metadata(["snake/opus-4-6"]);
+  const before = metadata(["snake/opus-4-6"]);
+  const after = metadata(["snake/opus-4-6"]);
+  before.games[0].versions[0].path = "/games/snake/opus-4-6/index.html";
+  after.games[0].versions[0].path = "/games/snake/opus-4-6/index.html";
+  after.games[0].versions[0].aiReviews = [{
+    from: "reviewer",
+    comments: ["presentation-only feedback"],
+  }];
   const result = selectPlaywrightImpact({
     changes: change("games-metadata.json"),
-    baseMetadata: versions,
-    headMetadata: versions,
+    baseMetadata: before,
+    headMetadata: after,
     rootDir,
   });
   assert.deepEqual(result.tags, [AREA_RATINGS, AREA_SITE]);
