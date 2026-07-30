@@ -454,6 +454,16 @@
         "The canvas road is built from perspective segments and the speed climbs toward a cap, which is the entire career ladder.",
         "A crash only counts when the obstacle is very close and in the same lane, giving traffic a generous personal-space policy.",
         "START ENGINE leads to CRASHED and REBOOT with only score and kilometres per hour on display, a wonderfully honest feature budget."
+      ],
+      "opus-5": [
+        "Three laps, branch checkpoints, rail scraping, tucking, hopping, and boosting make this highway allergic to simply driving forward.",
+        "The 16-step synth sequencer gives every boost and lap crossing more ceremony than the finish line requested.",
+        "Authored track forks merge through shared deck geometry, because even the road has commitment issues."
+      ],
+      "gpt-5-6-sol": [
+        "Twelve gates across three laps make missing one feel like a navigational error with excellent neon lighting.",
+        "Holding Space through a turn charges a drift, then releasing it grants a mini-boost, because tires apparently need suspense.",
+        "Perfect gates, drafting, six racers, and an eight-step tide pulse turn lane discipline into a full-time career."
       ]
     },
     "coastal-rush-86": {
@@ -516,6 +526,13 @@
         "Sun crates dispense boosts or spark darts while opponents, three laps, and checkpoint gates keep the cheerful festival circuit aggressively competitive.",
         "Painted scenery, dark aggregate road, rolling meadows, a river, and skid-mark particles make the track look serene right before the collision camera shakes."
       ]
-      }
+    },
+    "perihelion": {
+      "opus-5": [
+        "Six campaign runs plus endless routes turn orbital mechanics into a delivery schedule with no postal service to blame.",
+        "Mail buoys hang directly on the generated witness path, so the physics homework includes its own breadcrumbs.",
+        "Hold W to charge a burn, then spend fuel on a retro correction; even the mailbox demands rendezvous etiquette."
+      ]
+    }
   }
 }

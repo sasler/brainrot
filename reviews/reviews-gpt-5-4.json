@@ -190,6 +190,16 @@
         "Gemma 4 12B made an outrun racer so minimalist it nearly reviewed itself before the car moved.",
         "Neon Horizon Racer used to crash instantly, which was at least an honest estimate of its confidence.",
         "Calling this a racer is generous; it is more of a neon suggestion of forward motion."
+      ],
+      "opus-5": [
+        "The branch-commit callouts and chequered lap portal finally make route splits readable, which is generous because most future racers treat clarity like contraband.",
+        "Edge-riding to farm charge for boost is a properly greasy risk-reward loop, though tuck, hop, and boost together feel like the craft shipped with three steering wheels.",
+        "The detuned saw engine, sequenced music, and speed-streak camera shove sell velocity hard, and the \"Bollard!\" scrape gag makes every mistake feel personally curated."
+      ],
+      "gpt-5-6-sol": [
+        "Perfect gates feeding overdrive and drift-release mini-boosts make clean lines feel valuable, so yes, the game is bribing you to stop driving like a shopping cart.",
+        "Drafting rival foils over the black-glass ocean feels slick, but the forced \"Foil recovered\" reset after 2.5 seconds off course is the lifeguard dragging you back to competence.",
+        "The sawtooth engine plus eight-step tide pulse do real work, and the reef-strike and hull-contact callouts make every error sound like expensive carbon-fiber therapy."
       ]
     },
     "pac-man": {
@@ -363,6 +373,13 @@
         "Opus turned kart racing into a Mediterranean travel poster and then remembered to add spark darts to the itinerary.",
         "The solar meter, drift tiers, and tow bonus give this track more layered speed nonsense than most games that actually sell themselves as racers.",
         "Windmill Ridge, Aqueduct Crossing, a live minimap, and a five-rival grid all show up in one file, which is annoyingly thorough."
+      ]
+    },
+    "perihelion": {
+      "opus-5": [
+        "The brass-and-ivory orrery art direction is absurdly committed, and the analytically solved Kepler orbits mean the planets move like clocks instead of drunk loading screens.",
+        "Budgeting burns with a literal delta-v fuel gauge and contract witness route is deliciously nerdy, though 'arrival is not the same as capture' is the game politely calling you a ballistic idiot.",
+        "Drag-to-aim, right-drag to orbit, and the natural-minor ambient bed make postal work feel weirdly majestic, which is rude when the deadline chime then kills you for sightseeing."
       ]
     }
   },

@@ -351,6 +351,16 @@
         "Neon Horizon Racer: proof that sometimes the horizon is just where the crash used to be.",
         "It arrived with a broken CSS disguise and a confidence level far above its math.",
         "This racer is so modest it feels like it was built with one lane, one speed, and one honest warning."
+      ],
+      "opus-5": [
+        "A mag-locked skiff racing a ribbon that literally rolls through itself is a nice way to make the road feel judgmental.",
+        "Charge coming from rail edges, gate centres, close passes, and slipstream means the game rewards bad manners with actual numbers, which is rare honesty.",
+        "The branch prompt, finish banner, standings panel, and three-lap HUD are doing more race control work than most full dashboards and still somehow look neat."
+      ],
+      "gpt-5-6-sol": [
+        "A black-glass ocean, prismatic gates, and six foils is a very elegant way to say 'please do not blink.'",
+        "Perfect gates feeding the overdrive bar gives clean risk/reward math, which is great because the arrow in the middle is already yelling at you.",
+        "The eight-step tide-pulse music plus the drift/overdrive input set makes this feel like a racing game that hired a synth instead of a radio."
       ]
     },
     "coastal-rush-86": {
@@ -368,6 +378,13 @@
         "Opus 4.8 turned route selection into a boutique menu with difficulty tags, because picking a road should clearly involve curation.",
         "The red convertible comes with two passengers and a scarf physics system, which is more cast than my entire title screen.",
         "Its collisions are soft pass-throughs with a grace period, so Opus invented the gentlest fender bender in motorsport history."
+      ]
+    },
+    "perihelion": {
+      "opus-5": [
+        "This one is basically an orbital-mechanics lecture that brought a brass camera crew and somehow made that sound cool.",
+        "The prediction ribbon reuses the same propagator as live flight, so the game is at least honest about where your bad burn is going.",
+        "Fuel, Δv, buoys, aim, and the contract plates all live on the edges like civilized tools, while the actual launch window sits there pretending to be optional."
       ]
     }
   },
