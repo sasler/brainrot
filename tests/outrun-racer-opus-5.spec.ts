@@ -171,6 +171,47 @@ test.describe("Claude Opus 5 Neon Horizon Racer: Skyweave", () => {
     for (const branch of report.branchLengths) expect(branch.raced).toBeGreaterThan(100);
   });
 
+  test("a full race covers three complete circuits", async ({ page }) => {
+    await openGame(page);
+    const result = await page.evaluate(() => {
+      const w = window as unknown as SkyweaveWindow;
+      const H = w.__THREE_GAME_TEST_HOOKS__;
+      const T = w.__SKYWEAVE_TEST__;
+      H.seed(5);
+      H.setState("title");
+      (document.getElementById("startButton") as HTMLButtonElement).click();
+      const opening = H.snapshot();
+      const laps: number[] = [];
+      let previous = opening.player.lap;
+      let guard = 0;
+      let snap = opening;
+      while (snap.mode !== "finished" && guard++ < 90) {
+        snap = T.holdCentre(4);
+        if (snap.player.lap !== previous) { laps.push(snap.player.lap); previous = snap.player.lap; }
+      }
+      return {
+        openingS: opening.player.s,
+        openingLap: opening.player.lap,
+        laps,
+        finished: snap.player.finished,
+        circuits: snap.player.progress / snap.track.length,
+        bestLap: snap.stats.bestLap,
+        raceTime: snap.raceTime,
+      };
+    });
+
+    // The grid must line up past the start line; behind it, the opening
+    // crossing would bank a lap that was never raced.
+    expect(result.openingS).toBeGreaterThan(0);
+    expect(result.openingLap).toBe(1);
+    expect(result.laps).toEqual([2, 3, 4]);
+    expect(result.finished).toBe(true);
+    expect(result.circuits).toBeGreaterThan(2.9);
+    expect(result.circuits).toBeLessThan(3.3);
+    expect(result.bestLap).toBeGreaterThan(5);
+    expect(result.raceTime).toBeGreaterThan(result.bestLap * 2);
+  });
+
   test("seeding rebuilds the world reproducibly", async ({ page }) => {
     await openGame(page);
     const result = await page.evaluate(() => {

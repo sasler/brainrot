@@ -831,12 +831,79 @@ const underMaterial = new THREE.MeshStandardMaterial({
   color: 0x0a1020, roughness: 0.92, metalness: 0.05, side: THREE.DoubleSide,
 });
 
+/* How a branch deck meets the main deck at a split or a merge.
+ *
+ * Two problems, both visible as flat wedges tearing through the deck:
+ *
+ * 1. A branch shares its lead-in and lead-out guide nodes with the main line,
+ *    so those stretches are geometrically *identical* to the main deck. They
+ *    are simply never drawn — only the raced span is.
+ * 2. Even then, C1 continuity through the shared node means the two lines
+ *    leave each other quadratically: measured separation only exceeds the
+ *    combined half-widths at 42-56 m, so no amount of node tweaking pulls
+ *    them apart faster. Instead the branch cross-section is *clipped* to
+ *    begin at the main deck's edge, which turns the overlap into a proper
+ *    gore: one continuous surface that widens away from the main road.
+ *    The clip self-resolves — once the lines are clear, the main edge falls
+ *    outside the branch's own width and the clamp becomes a no-op.
+ */
+const GORE_RUN = 74;          // metres either side of a junction to clip over
+const JUNCTION_TUCK = 0.09;   // hair of drop so abutting decks cannot seam-fight
+
 /** Extrude the ribbon cross-section along a line's samples. */
 function buildRibbonMesh(line, group) {
   const step = 2;                                    // one ring every 4 m
+  const from = line.closed ? 0 : line.enterS;
+  const to = line.closed ? line.length : line.exitS;
   const rings = [];
-  for (let i = 0; i < line.samples.length; i += step) rings.push(line.samples[i]);
+  for (let i = 0; i < line.samples.length; i += step) {
+    const s = line.samples[i];
+    if (s.distance < from - 1e-3 || s.distance > to + 1e-3) continue;
+    rings.push(s);
+  }
   if (line.closed && rings[rings.length - 1] !== line.samples[0]) rings.push(line.samples[0]);
+
+  const probeA = new THREE.Vector3();
+  const probeB = new THREE.Vector3();
+
+  const nearestMain = (point) => {
+    let best = Infinity, found = mainLine.samples[0];
+    for (const m of mainLine.samples) {
+      const d = m.p.distanceToSquared(point);
+      if (d < best) { best = d; found = m; }
+    }
+    return found;
+  };
+  /** Which side of the main line this branch runs on. Sampled once, well clear
+   *  of the junction, because right at the shared node the two centrelines are
+   *  centimetres apart and the sign would flicker between rings. */
+  const sideOfMain = (distance) => {
+    const s = sampleAt(line, distance);
+    const m = nearestMain(s.p);
+    return Math.sign(probeA.copy(s.p).sub(m.p).dot(m.side)) || 1;
+  };
+  const gore = line.closed ? null : {
+    enter: sideOfMain(from + GORE_RUN * 0.6),
+    exit: sideOfMain(to - GORE_RUN * 0.6),
+  };
+
+  /** Lateral span of this ring, clipped to the main deck's edge inside a gore. */
+  const spanOf = (s, hw) => {
+    if (!gore) return { lo: -hw, hi: hw };
+    const dIn = s.distance - from;
+    const dOut = to - s.distance;
+    const d = Math.min(dIn, dOut);
+    if (d > GORE_RUN) return { lo: -hw, hi: hw };
+    const sign = dIn <= dOut ? gore.enter : gore.exit;
+    const m = nearestMain(s.p);
+    probeB.copy(m.p).addScaledVector(m.side, sign * m.width);
+    const proj = probeA.copy(probeB).sub(s.p).dot(s.side);
+    return sign > 0
+      ? { lo: Math.min(hw - 1.6, Math.max(-hw, proj)), hi: hw }
+      : { lo: -hw, hi: Math.max(-hw + 1.6, Math.min(hw, proj)) };
+  };
+  const goreDepth = (s) =>
+    gore ? -(1 - smoothStep(0, GORE_RUN, Math.min(s.distance - from, to - s.distance))) * JUNCTION_TUCK : 0;
 
   const deck = { pos: [], nrm: [], trk: [], idx: [] };
   const rail = { pos: [], nrm: [], trk: [], idx: [] };
@@ -849,22 +916,30 @@ function buildRibbonMesh(line, group) {
   for (let r = 0; r < rings.length; r++) {
     const s = rings[r];
     const hw = s.width;
+    const { lo, hi } = spanOf(s, hw);
+    const drop = goreDepth(s);
     for (let k = 0; k < LAT.length; k++) {
-      const v = LAT[k];
-      tmp.copy(s.p).addScaledVector(s.side, v * hw);
+      const lat = lo + (hi - lo) * (LAT[k] + 1) * 0.5;
+      tmp.copy(s.p).addScaledVector(s.side, lat).addScaledVector(s.up, drop);
       deck.pos.push(tmp.x, tmp.y, tmp.z);
       deck.nrm.push(s.up.x, s.up.y, s.up.z);
-      deck.trk.push(s.distance, v, s.sector);
+      // The shader's lateral coordinate stays true to the real position, so
+      // edge chevrons and the centre line land where the deck actually is.
+      deck.trk.push(s.distance, lat / hw, s.sector);
       // underside slab, dropped and inset
-      tmp.copy(s.p).addScaledVector(s.side, v * hw * 0.94).addScaledVector(s.up, -0.95);
+      tmp.copy(s.p).addScaledVector(s.side, lat * 0.94).addScaledVector(s.up, drop - 0.95);
       under.pos.push(tmp.x, tmp.y, tmp.z);
       under.nrm.push(-s.up.x, -s.up.y, -s.up.z);
     }
     for (const sign of [-1, 1]) {
+      const railLat = sign < 0 ? lo : hi;
+      // A rail on a clipped edge sits inside the main deck, so it lies flat.
+      // At full height it would spear up through the road beside it.
+      const height = (sign < 0 ? lo <= -hw + 1e-3 : hi >= hw - 1e-3) ? 1 : 0;
       for (const [outward, up] of RAIL_PROFILE) {
         tmp.copy(s.p)
-          .addScaledVector(s.side, sign * (hw + outward * 0.5))
-          .addScaledVector(s.up, up * 0.62);
+          .addScaledVector(s.side, railLat + sign * outward * 0.5)
+          .addScaledVector(s.up, up * 0.62 * height + drop);
         rail.pos.push(tmp.x, tmp.y, tmp.z);
         rail.nrm.push(s.side.x * sign, s.side.y * sign, s.side.z * sign);
         rail.trk.push(s.distance, sign, s.sector);
@@ -1085,14 +1160,14 @@ function buildWorld() {
     for (let i = 0; i < n; i++) b[i] = { gates: [], bollards: [] };
     propBuckets.push(b);
   }
-  const put = (list, key, item) => {
+  const put = (key, item) => {
     const b = propBuckets[item.line];
     const i = clamp(Math.floor(item.s / BUCKET), 0, b.length - 1);
     b[i][key].push(item);
     if (i + 1 < b.length) b[i + 1][key].push(item);
   };
-  for (const g of gates) put(propBuckets, "gates", g);
-  for (const z of bollards) put(propBuckets, "bollards", z);
+  for (const g of gates) put("gates", g);
+  for (const z of bollards) put("bollards", z);
 
   // ── Placed architecture ───────────────────────────────────────────────
   propGroup.clear();
@@ -1130,8 +1205,10 @@ function buildWorld() {
   const anchorSlots = [];
   for (const line of lines) {
     const spacing = line.id === 0 ? 84 : 74;
-    const start = line.id === 0 ? 0 : line.enterS;
-    const end = line.id === 0 ? line.length : line.exitS;
+    // Branch anchors start clear of the junction so they never sit inside the
+    // main line's own suspension structure.
+    const start = line.id === 0 ? 0 : line.enterS + GORE_RUN;
+    const end = line.id === 0 ? line.length : line.exitS - GORE_RUN;
     for (let s = start; s < end; s += spacing) anchorSlots.push({ line: line.id, s });
   }
   anchorKit = new InstancedKit("RibbonAnchor", anchorSlots.length, propGroup);
@@ -1594,7 +1671,10 @@ function resetGrid() {
     const r = racers[i];
     const row = Math.floor(i / 2), col = i % 2;
     r.line = 0;
-    r.s = mainLine.length - 30 - row * 13;
+    // The grid sits just *past* the start line. Lining up behind it would make
+    // the opening crossing register as a completed lap, and a three-lap race
+    // would only ever run two circuits.
+    r.s = 30 - row * 14;
     r.lateral = (col === 0 ? -1 : 1) * 4.2;
     r.lateralVel = 0; r.speed = 0; r.hop = 0; r.hopVel = 0; r.airborne = false;
     r.lap = 1; r.rank = i + 1; r.progress = 0; r.lastMain = r.s; r.finished = false; r.finishTime = 0;
@@ -1906,9 +1986,12 @@ function stepRacer(r, cmd, dt) {
   if (r.lastMain - md > mainLine.length * 0.5) {
     // wrapped past the start line
     if (!r.finished) {
+      // The opening lap starts at raceTime 0, so a zero lapStart is legitimate;
+      // the floor rejects a spurious double-trigger rather than a real lap.
       const lapTime = raceTime - r.lapStart;
-      if (r.lapStart > 0 && (!r.bestLap || lapTime < r.bestLap)) r.bestLap = lapTime;
-      if (!r.ai && r.lapStart > 0 && (!stats.bestLap || lapTime < stats.bestLap)) stats.bestLap = lapTime;
+      const credible = lapTime > 5;
+      if (credible && (!r.bestLap || lapTime < r.bestLap)) r.bestLap = lapTime;
+      if (!r.ai && credible && (!stats.bestLap || lapTime < stats.bestLap)) stats.bestLap = lapTime;
       r.lapStart = raceTime;
       r.lap++;
       r.gatePassed.clear();
@@ -1925,7 +2008,9 @@ function finishRacer(r) {
   if (r.finished) return;
   r.finished = true;
   r.finishTime = raceTime;
-  r.lap = TOTAL_LAPS;
+  // `lap` deliberately stays at TOTAL_LAPS + 1. Capping it here would shrink
+  // `progress` by a whole lap length and make the standings gap go negative;
+  // the HUD clamps the displayed value instead.
   if (!r.ai) {
     audio.event("finish");
     burst(r.object.position, r.color, 60, 26, 1.4, 1.0);
@@ -2183,7 +2268,11 @@ function updateHUD() {
     standingsSignature = signature;
     const leader = order[0];
     ui.standings.innerHTML = order.map((r) => {
-      const gap = r === leader ? "—" : `-${Math.round((leader.progress - r.progress))}m`;
+      // A racer who has crossed the line is ranked by time, not distance, so
+      // quoting a metre gap against them would be meaningless.
+      const gap = r === leader ? "—"
+        : r.finished ? formatTime(r.finishTime)
+        : `-${Math.max(0, Math.round(leader.progress - r.progress))}m`;
       return `<div class="row${r.ai ? "" : " you"}"><span class="pos">${r.rank}</span>` +
         `<span class="dot" style="background:${r.css}"></span>` +
         `<span class="nm">${r.name}</span><span class="gap">${gap}</span></div>`;
@@ -2624,15 +2713,19 @@ function installTestHooks() {
       p.lateral = 0; p.lateralVel = 0; p.speed = 62;
       return settle();
     },
-    /** Terminal speed of the longitudinal model alone. Holding the craft on
-     *  the centre line removes the lateral drift that would otherwise put it
-     *  into a rail and confound the measurement. */
+    /** Drive the real fixed step with the player pinned to the centre line.
+     *  Pinning removes the lateral drift that would otherwise put the craft
+     *  into a rail and confound a terminal-speed or lap-distance measurement,
+     *  while lap accounting, ranking and race completion still run normally. */
     holdCentre(seconds, opts = {}) {
       const p = racers[0];
-      const cmd = {
-        steer: 0, throttle: opts.throttle === 0 ? 0 : 1, brake: opts.brake || 0,
-        tuck: Boolean(opts.tuck), boost: Boolean(opts.boost), hop: false,
-      };
+      const held = { ...keys };
+      clearInput();
+      if (opts.throttle !== 0) keys.KeyW = true;
+      if (opts.brake) keys.KeyS = true;
+      if (opts.tuck) keys.ShiftLeft = true;
+      if (opts.boost) keys.Space = true;
+      if (mode === "countdown") { countdown = 0; mode = "race"; }
       const steps = Math.ceil(clamp(seconds, 0, 120) / FIXED_DT);
       for (let i = 0; i < steps; i++) {
         p.lateral = 0;
@@ -2641,8 +2734,10 @@ function installTestHooks() {
         // rather than the base ceiling the craft settles back to once the
         // two and a half seconds of charge have burned off.
         if (opts.boost) p.charge = CHARGE_MAX;
-        stepRacer(p, cmd, FIXED_DT);
+        fixedUpdate(FIXED_DT);
       }
+      clearInput();
+      Object.assign(keys, held);
       return settle();
     },
     setSpeed(v) { racers[0].speed = clamp(v, 0, SPEED_BOOST * 1.08); return settle(); },
@@ -2726,6 +2821,22 @@ function installTestHooks() {
       return { entered, exited: p.line, s: p.s, snapshot: settle() };
     },
     finishRace(rank = 1) { return setTestState(rank === 1 ? "win" : "fail"); },
+    /** Centre-to-centre separation between a branch sample and the nearest
+     *  point on the main line, with the two half-widths that must clear it. */
+    probeSeparation(lineIndex, branchS, mainS) {
+      const bs = sampleAt(lines[lineIndex], branchS);
+      let best = Infinity;
+      for (const m of mainLine.samples) {
+        const d = m.p.distanceToSquared(bs.p);
+        if (d < best) best = d;
+      }
+      const ms = sampleAt(mainLine, mainS);
+      return {
+        gap: +Math.sqrt(best).toFixed(2),
+        needed: +(bs.width + ms.width).toFixed(2),
+        clear: Math.sqrt(best) > bs.width + ms.width,
+      };
+    },
     trackReport() {
       const banks = mainLine.samples.map((s) => s.bank);
       return {
@@ -2735,6 +2846,10 @@ function installTestHooks() {
         minBank: Math.min(...banks),
         invertedSamples: mainLine.samples.filter((s) => s.up.y < 0).length,
         branchLengths: lines.slice(1).map((l) => ({ name: l.name, raced: l.racedLength, mainSpan: l.mainSpan })),
+        junctions: lines.slice(1).map((l) => ({
+          line: l.id, name: l.name,
+          mainEnter: l.mainEnter, mainExit: l.mainExit, enterS: l.enterS, exitS: l.exitS,
+        })),
       };
     },
   };
