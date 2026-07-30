@@ -128,7 +128,9 @@ async function driveLap(page: Page, rivals: number) {
   }, rivals);
 }
 
-test.describe("Claude Opus 5 Sunbeam Kart Rally", () => {
+test.describe("Claude Opus 5 Sunbeam Kart Rally", {
+  tag: ["@spec:kart-racing-opus-5", "@game:kart-racing/opus-5"],
+}, () => {
   test("uses the pinned local Three.js runtime with no external requests or errors", async ({ page }) => {
     const external: string[] = [];
     const runtime: string[] = [];

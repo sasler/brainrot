@@ -16,6 +16,58 @@ env:
   NODE_VERSION: "22"
 
 jobs:
+  scope:
+    name: Select Playwright tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.pull_request.outputs.mode || steps.merge_group.outputs.mode || steps.manual.outputs.mode }}
+      grep: ${{ steps.pull_request.outputs.grep || steps.merge_group.outputs.grep || steps.manual.outputs.grep }}
+      summary: ${{ steps.pull_request.outputs.summary || steps.merge_group.outputs.summary || steps.manual.outputs.summary }}
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Select pull request tests
+        if: ${{ github.event_name == 'pull_request' }}
+        id: pull_request
+        run: >-
+          node scripts/select-playwright-tests.js
+          --base "${{ github.event.pull_request.base.sha }}"
+          --head "${{ github.event.pull_request.head.sha }}"
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Select merge group tests
+        if: ${{ github.event_name == 'merge_group' }}
+        id: merge_group
+        run: >-
+          node scripts/select-playwright-tests.js
+          --base "${{ github.event.merge_group.base_sha }}"
+          --head "${{ github.event.merge_group.head_sha }}"
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Select the full manual suite
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        id: manual
+        run: >-
+          node scripts/select-playwright-tests.js
+          --force-full
+          --github-output "$GITHUB_OUTPUT"
+
+      - name: Publish selection summary
+        env:
+          SUMMARY: ${{ steps.pull_request.outputs.summary || steps.merge_group.outputs.summary || steps.manual.outputs.summary }}
+        run: |
+          echo "### Playwright selection" >> "$GITHUB_STEP_SUMMARY"
+          echo "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+
   quality:
     name: Quality
     runs-on: ubuntu-latest
@@ -42,6 +94,9 @@ jobs:
       - name: Test game asset tooling
         run: npm run test:game-assets
 
+      - name: Test CI selection
+        run: npm run test:ci-selection
+
       - name: Lint
         run: npm run lint
 
@@ -50,6 +105,8 @@ jobs:
 
   playwright:
     name: Playwright ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+    needs: scope
+    if: ${{ needs.scope.outputs.mode != 'none' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -73,8 +130,15 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright shard
-        run: npm test -- --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      - name: Run full Playwright shard
+        if: ${{ needs.scope.outputs.mode == 'full' }}
+        run: npm test -- --pass-with-no-tests --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+
+      - name: Run scoped Playwright shard
+        if: ${{ needs.scope.outputs.mode == 'scoped' }}
+        env:
+          PLAYWRIGHT_GREP: ${{ needs.scope.outputs.grep }}
+        run: npm test -- --grep "$PLAYWRIGHT_GREP" --pass-with-no-tests --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - name: Upload shard report
         if: ${{ !cancelled() }}
@@ -87,8 +151,8 @@ jobs:
 
   merge-reports:
     name: Playwright report
-    if: ${{ !cancelled() }}
-    needs: playwright
+    if: ${{ !cancelled() && needs.scope.outputs.mode != 'none' }}
+    needs: [scope, playwright]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -125,17 +189,33 @@ jobs:
   required:
     name: Required PR checks
     if: ${{ always() }}
-    needs: [quality, playwright, merge-reports]
+    needs: [scope, quality, playwright, merge-reports]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Confirm required jobs passed
         env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          PLAYWRIGHT_MODE: ${{ needs.scope.outputs.mode }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
           REPORT_RESULT: ${{ needs.merge-reports.result }}
         run: |
-          if [ "$QUALITY_RESULT" != "success" ] || [ "$PLAYWRIGHT_RESULT" != "success" ] || [ "$REPORT_RESULT" != "success" ]; then
-            echo "Required jobs did not all pass: quality=$QUALITY_RESULT playwright=$PLAYWRIGHT_RESULT report=$REPORT_RESULT"
+          if [ "$SCOPE_RESULT" != "success" ] || [ "$QUALITY_RESULT" != "success" ]; then
+            echo "Required setup failed: scope=$SCOPE_RESULT quality=$QUALITY_RESULT"
+            exit 1
+          fi
+          if [ "$PLAYWRIGHT_MODE" = "none" ]; then
+            if [ "$PLAYWRIGHT_RESULT" != "skipped" ] || [ "$REPORT_RESULT" != "skipped" ]; then
+              echo "Expected skipped browser jobs: playwright=$PLAYWRIGHT_RESULT report=$REPORT_RESULT"
+              exit 1
+            fi
+          elif [ "$PLAYWRIGHT_MODE" = "scoped" ] || [ "$PLAYWRIGHT_MODE" = "full" ]; then
+            if [ "$PLAYWRIGHT_RESULT" != "success" ] || [ "$REPORT_RESULT" != "success" ]; then
+              echo "Required browser jobs failed: mode=$PLAYWRIGHT_MODE playwright=$PLAYWRIGHT_RESULT report=$REPORT_RESULT"
+              exit 1
+            fi
+          else
+            echo "Invalid Playwright selection mode: $PLAYWRIGHT_MODE"
             exit 1
           fi

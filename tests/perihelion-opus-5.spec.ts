@@ -122,7 +122,9 @@ async function openGame(page: Page, viewport = { width: 1280, height: 720 }) {
     .toBe(true);
 }
 
-test.describe("Claude Opus 5 Perihelion Post", () => {
+test.describe("Claude Opus 5 Perihelion Post", {
+  tag: ["@spec:perihelion-opus-5", "@game:perihelion/opus-5"],
+}, () => {
   test("runs standalone on the pinned runtime with no external requests or errors", async ({ page }) => {
     const external: string[] = [];
     const runtime: string[] = [];

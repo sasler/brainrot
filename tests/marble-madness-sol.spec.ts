@@ -76,7 +76,9 @@ async function openGame(page: Page, testMode = true) {
   }
 }
 
-test.describe("GPT 5.6 Sol Marble Madness", () => {
+test.describe("GPT 5.6 Sol Marble Madness", {
+  tag: ["@spec:marble-madness-sol", "@game:marble-madness/gpt-5-6-sol"],
+}, () => {
   test("uses the pinned local Three.js runtime without external requests or errors", async ({ page }) => {
     const external: string[] = [], runtime: string[] = [], errors: string[] = [];
     page.on("request", request => {

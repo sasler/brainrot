@@ -217,7 +217,9 @@ const totalCleared = (state: Snapshot) => state.objective.collected.reduce((sum,
 const boardIsFull = (state: Snapshot) =>
   state.board.every((row, r) => row.every((tile, c) => (state.mask[r][c] === 1 ? Boolean(tile) : tile === null)));
 
-test.describe("Claude Opus 5 Tile Matching — Northlight", () => {
+test.describe("Claude Opus 5 Tile Matching — Northlight", {
+  tag: ["@spec:tile-matching-opus-5", "@game:tile-matching/opus-5"],
+}, () => {
   test("boots night one deterministically with audio and a legal board", async ({ page }) => {
     await page.addInitScript(() => {
       window.__northlightAudioStarts = 0;

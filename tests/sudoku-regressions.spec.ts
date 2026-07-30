@@ -56,8 +56,12 @@ function isValidSolvedCell(grid: number[], row: number, col: number) {
   return true;
 }
 
-test.describe("Sudoku regression guards", () => {
-  test("GPT Sudoku does not reject correct digits just because candidates are poisoned", () => {
+test.describe("Sudoku regression guards", {
+  tag: "@spec:sudoku-regressions",
+}, () => {
+  test("GPT Sudoku does not reject correct digits just because candidates are poisoned", {
+    tag: "@game:sudoku/gpt-5-4",
+  }, () => {
     const source = readGameSource("public", "games", "sudoku", "gpt-5-4", "index.html");
 
     expect(source).toMatch(
@@ -72,7 +76,9 @@ test.describe("Sudoku regression guards", () => {
     );
   });
 
-  test("GPT Sudoku puzzle bank only ships solvable boards with matching solutions", () => {
+  test("GPT Sudoku puzzle bank only ships solvable boards with matching solutions", {
+    tag: "@game:sudoku/gpt-5-4",
+  }, () => {
     const source = readGameSource("public", "games", "sudoku", "gpt-5-4", "index.html");
     const entries = parsePuzzleBank(source);
 
@@ -103,7 +109,9 @@ test.describe("Sudoku regression guards", () => {
     });
   });
 
-  test("Sonnet Sudoku numpad maps digits 1-9 without an off-by-one shift", () => {
+  test("Sonnet Sudoku numpad maps digits 1-9 without an off-by-one shift", {
+    tag: "@game:sudoku/sonnet-4-6",
+  }, () => {
     const source = readGameSource("public", "games", "sudoku", "sonnet-4-6", "index.html");
 
     expect(source).toMatch(/if\(col>=0&&col<=8\)return col\+1;\s*\/\/ digits 1-9/);

@@ -1,6 +1,6 @@
 ---
 name: verify-changes
-description: Validate BrainRot repository changes with process-safe, change-scoped local checks while leaving the complete lint, build, and Playwright gate to required pull request CI. Use after implementation, before committing or opening a PR, or when diagnosing test and build failures.
+description: Validate BrainRot repository changes with process-safe, change-scoped local checks while leaving complete quality checks and impact-selected Playwright coverage to required pull request CI. Use after implementation, before committing or opening a PR, or when diagnosing test and build failures.
 ---
 
 # Verify Changes
@@ -35,6 +35,6 @@ Verification-only commands may run without creating a branch. Before applying an
 
 ## Rely on the pull request gate
 
-1. GitHub Actions runs lint, the production build, and the complete Playwright suite for every pull request.
-2. Agents may publish a PR after the selected local path passes. Do not add a second verifier pass or duplicate the full CI gate locally unless one of the exceptions above applies.
+1. GitHub Actions runs complete lint, production build, asset, and selector checks plus impact-selected Playwright tests for every pull request. CI/test infrastructure and unclassified executable changes fall back to the full browser suite.
+2. Agents may publish a PR after the selected local path passes. Do not add a second verifier pass or duplicate the CI-selected browser coverage locally unless one of the exceptions above applies.
 3. The required aggregate CI check is authoritative before merge. Use its merged HTML report and retained traces when diagnosing failures.

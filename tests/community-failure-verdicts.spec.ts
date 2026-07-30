@@ -48,7 +48,9 @@ async function mockFeedbackApi(
   });
 }
 
-test.describe("community failed version surfaces", () => {
+test.describe("community failed version surfaces", {
+  tag: ["@spec:community-failure-verdicts", "@area:site", "@area:ratings"],
+}, () => {
   const game = getGames().find((candidate) => candidate.versions.length >= 2);
 
   test("has a game fixture with two implementations", () => {

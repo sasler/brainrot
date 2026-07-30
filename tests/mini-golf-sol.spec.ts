@@ -43,7 +43,9 @@ async function startGame(page: Page) {
   await expect(page.locator("#hud")).toBeVisible();
 }
 
-test.describe("GPT 5.6 Sol TOTALITY mini golf", () => {
+test.describe("GPT 5.6 Sol TOTALITY mini golf", {
+  tag: ["@spec:mini-golf-sol", "@game:mini-golf/gpt-5-6-sol"],
+}, () => {
   test("loads as a self-contained Three.js game with no external requests", async ({ page }) => {
     const externalRequests: string[] = [];
     page.on("request", (request) => {

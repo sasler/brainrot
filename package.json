@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "playwright test",
+    "test:ci-selection": "node --test tests-node/select-playwright-tests.test.js",
     "update-metadata": "node scripts/update-metadata.js",
     "sync:three-runtime": "node scripts/sync-three-runtime.js",
     "validate:game-assets": "node scripts/validate-game-assets.js",

@@ -48,5 +48,5 @@ BrainRot instructions should give capable models the outcome, repository constra
 - This file applies repository-wide. Explicit user instructions take precedence; a more deeply nested `AGENTS.md` takes precedence for its subtree.
 - `games-metadata.json` is the source of truth for games, versions, model ownership, reviews, and detected features.
 - A game file may only be created or changed by the exact AI model that owns that version. Resolve ownership from `games-metadata.json`; if the exact model is unavailable, stop instead of substituting another model.
-- Keep local verification scoped to the change and avoid rerunning unchanged evidence. GitHub Actions runs the complete lint, build, and Playwright gate for every pull request, and its required aggregate check is authoritative before merge.
+- Keep local verification scoped to the change and avoid rerunning unchanged evidence. GitHub Actions runs complete lint, build, and asset checks plus impact-selected Playwright coverage for every pull request; CI/test infrastructure and unclassified executable changes fall back to the full browser suite. The required aggregate check is authoritative before merge.
 - Follow `GAME_DEVELOPMENT_GUIDE.md` for game work. Keep detailed workflows in the skills above, not in this file.
