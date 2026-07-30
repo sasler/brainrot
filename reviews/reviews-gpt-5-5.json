@@ -429,6 +429,16 @@
         "Speed simply ramps toward a maximum while score rises with velocity, a beautifully direct pipeline from acceleration to consequences.",
         "Mouse and touch divide the screen into left and right steering halves, because lanes are apparently a binary argument.",
         "Same-lane collision with glowing traffic ends the run immediately, so the minimalist highway has no patience for nuance."
+      ],
+      "opus-5": [
+        "Skyweave builds charge from rail-edge risk, gate centers, close passes, and slipstream, because apparently racing needed a loyalty program for bad decisions.",
+        "The ribbon banks, forks, corkscrews, and throws bollards at a hopping mag-skiff, which is a lot of architecture just to say please steer.",
+        "Three rivals, standings, sector chips, finish banners, and GLB fleet assets make this feel less like a race and more like a neon transit board with grudges."
+      ],
+      "gpt-5-6-sol": [
+        "Eclipse Run puts six hydrofoils on a black-glass ocean with drafting, reef strikes, and recoveries, so even falling off course gets customer support.",
+        "Perfect gates feed boost while Space charges drifts and Shift burns overdrive, because one acceleration button would have been emotionally affordable.",
+        "The PlayerManta, rival foils, solar turbines, monolith hazards, synth engine, and rotating gate arrow make checkpoint racing look like a nightclub learned maritime law."
       ]
     },
     "coastal-rush-86": {
@@ -490,6 +500,13 @@
         "Three laps run through orchard esses, a windmill climb, forest descent, and vineyard run, because one track needed a travel brochure.",
         "Holding Space while steering charges a drift, then releasing it grants mini-turbo, a tiny reward for controlled irresponsibility.",
         "Rivals share checkpoints, contact, and item rules while sun crates feed the item slot, so the opponents are actual problems, not scenery."
+      ]
+    },
+    "perihelion": {
+      "opus-5": [
+        "Perihelion Post solves Kepler orbits analytically and then asks you to deliver mail, which is a heroic abuse of orbital mechanics for paperwork.",
+        "The prediction ribbon uses the same propagator as live flight, so when the brass HUD says you are doomed, it has receipts.",
+        "Holding W to charge reaction mass and Space to spend delta-v turns a mail route into NASA karaoke with better typography."
       ]
     }
   }

@@ -5520,7 +5520,57 @@
             "kinds": [
               "model"
             ]
-          }
+          },
+          "aiReviews": [
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "A mag-locked skiff racing a ribbon that literally rolls through itself is a nice way to make the road feel judgmental.",
+                "Charge coming from rail edges, gate centres, close passes, and slipstream means the game rewards bad manners with actual numbers, which is rare honesty.",
+                "The branch prompt, finish banner, standings panel, and three-lap HUD are doing more race control work than most full dashboards and still somehow look neat."
+              ]
+            },
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "The branch-commit callouts and chequered lap portal finally make route splits readable, which is generous because most future racers treat clarity like contraband.",
+                "Edge-riding to farm charge for boost is a properly greasy risk-reward loop, though tuck, hop, and boost together feel like the craft shipped with three steering wheels.",
+                "The detuned saw engine, sequenced music, and speed-streak camera shove sell velocity hard, and the \"Bollard!\" scrape gag makes every mistake feel personally curated."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Skyweave builds charge from rail-edge risk, gate centers, close passes, and slipstream, because apparently racing needed a loyalty program for bad decisions.",
+                "The ribbon banks, forks, corkscrews, and throws bollards at a hopping mag-skiff, which is a lot of architecture just to say please steer.",
+                "Three rivals, standings, sector chips, finish banners, and GLB fleet assets make this feel less like a race and more like a neon transit board with grudges."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Luna",
+              "comments": [
+                "Three laps, branch checkpoints, rail scraping, tucking, hopping, and boosting make this highway allergic to simply driving forward.",
+                "The 16-step synth sequencer gives every boost and lap crossing more ceremony than the finish line requested.",
+                "Authored track forks merge through shared deck geometry, because even the road has commitment issues."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Sol",
+              "comments": [
+                "The ribbon banks past vertical and forks mid-race, because ordinary roads apparently failed the drama audit.",
+                "Tuck adds speed while gutting steering, turning Shift into a future apology.",
+                "Charge rewards rail edges, centered gates, close passes, and slipstreams, so the boost meter is a bad-decisions loyalty card."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Terra",
+              "comments": [
+                "Skyweave makes you farm rail edges, gate centres, close passes, and slipstreams for boost charge, because apparently racing needed a risk-reward tax accountant.",
+                "Shift tuck trades steering for speed while C hops bollards and forks, which is a polite way to say the skiff has commitment issues.",
+                "The procedural engine runs through detuned saws and a sector-transposed 16-step sequencer, so even the audio refuses to take a straight line."
+              ]
+            }
+          ]
         },
         {
           "model": "OpenAI GPT 5.6 Sol",
@@ -5540,7 +5590,49 @@
             "kinds": [
               "model"
             ]
-          }
+          },
+          "aiReviews": [
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "A black-glass ocean, prismatic gates, and six foils is a very elegant way to say 'please do not blink.'",
+                "Perfect gates feeding the overdrive bar gives clean risk/reward math, which is great because the arrow in the middle is already yelling at you.",
+                "The eight-step tide-pulse music plus the drift/overdrive input set makes this feel like a racing game that hired a synth instead of a radio."
+              ]
+            },
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "Perfect gates feeding overdrive and drift-release mini-boosts make clean lines feel valuable, so yes, the game is bribing you to stop driving like a shopping cart.",
+                "Drafting rival foils over the black-glass ocean feels slick, but the forced \"Foil recovered\" reset after 2.5 seconds off course is the lifeguard dragging you back to competence.",
+                "The sawtooth engine plus eight-step tide pulse do real work, and the reef-strike and hull-contact callouts make every error sound like expensive carbon-fiber therapy."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Eclipse Run puts six hydrofoils on a black-glass ocean with drafting, reef strikes, and recoveries, so even falling off course gets customer support.",
+                "Perfect gates feed boost while Space charges drifts and Shift burns overdrive, because one acceleration button would have been emotionally affordable.",
+                "The PlayerManta, rival foils, solar turbines, monolith hazards, synth engine, and rotating gate arrow make checkpoint racing look like a nightclub learned maritime law."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Luna",
+              "comments": [
+                "Twelve gates across three laps make missing one feel like a navigational error with excellent neon lighting.",
+                "Holding Space through a turn charges a drift, then releasing it grants a mini-boost, because tires apparently need suspense.",
+                "Perfect gates, drafting, six racers, and an eight-step tide pulse turn lane discipline into a full-time career."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Terra",
+              "comments": [
+                "Centering prismatic gates pays up to 16% overdrive, turning basic checkpoint etiquette into a tiny neon performance review.",
+                "Space-drifting builds a release boost while drafting rivals refills overdrive, so tailgating has finally found its socially acceptable sport.",
+                "A reef strike cuts speed to 38% and announces itself with a square-wave thud, which is refreshingly honest customer service."
+              ]
+            }
+          ]
         },
         {
           "model": "Claude Sonnet 4.6",
@@ -6463,6 +6555,56 @@
             "sound",
             "music",
             "3d"
+          ],
+          "aiReviews": [
+            {
+              "from": "GPT 5.4 Mini",
+              "comments": [
+                "This one is basically an orbital-mechanics lecture that brought a brass camera crew and somehow made that sound cool.",
+                "The prediction ribbon reuses the same propagator as live flight, so the game is at least honest about where your bad burn is going.",
+                "Fuel, Δv, buoys, aim, and the contract plates all live on the edges like civilized tools, while the actual launch window sits there pretending to be optional."
+              ]
+            },
+            {
+              "from": "GPT 5.4",
+              "comments": [
+                "The brass-and-ivory orrery art direction is absurdly committed, and the analytically solved Kepler orbits mean the planets move like clocks instead of drunk loading screens.",
+                "Budgeting burns with a literal delta-v fuel gauge and contract witness route is deliciously nerdy, though 'arrival is not the same as capture' is the game politely calling you a ballistic idiot.",
+                "Drag-to-aim, right-drag to orbit, and the natural-minor ambient bed make postal work feel weirdly majestic, which is rude when the deadline chime then kills you for sightseeing."
+              ]
+            },
+            {
+              "from": "GPT 5.5",
+              "comments": [
+                "Perihelion Post solves Kepler orbits analytically and then asks you to deliver mail, which is a heroic abuse of orbital mechanics for paperwork.",
+                "The prediction ribbon uses the same propagator as live flight, so when the brass HUD says you are doomed, it has receipts.",
+                "Holding W to charge reaction mass and Space to spend delta-v turns a mail route into NASA karaoke with better typography."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Luna",
+              "comments": [
+                "Six campaign runs plus endless routes turn orbital mechanics into a delivery schedule with no postal service to blame.",
+                "Mail buoys hang directly on the generated witness path, so the physics homework includes its own breadcrumbs.",
+                "Hold W to charge a burn, then spend fuel on a retro correction; even the mailbox demands rendezvous etiquette."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Sol",
+              "comments": [
+                "The plotted teal course uses the live propagator, so even your fiery demise arrives with mathematical receipts.",
+                "Space spends the entire charged burn instantly, turning one keypress into a beautifully upholstered orbital mistake.",
+                "Arrival requires every mail buoy and a low-speed capture, because even interplanetary bureaucracy checks the sack before signing."
+              ]
+            },
+            {
+              "from": "GPT 5.6 Terra",
+              "comments": [
+                "The postmaster only accepts arrivals below the relative-speed limit, because even orbital mail gets rejected for throwing parcels too hard.",
+                "Every contract is generated from a witnessed successful launch and hangs buoys on that path, so the tutorial has receipts.",
+                "W and S set burn magnitude, Space commits it, and late contracts punish a second-early launch like gravity has a grievance desk."
+              ]
+            }
           ]
         }
       ]
