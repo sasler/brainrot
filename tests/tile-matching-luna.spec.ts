@@ -56,7 +56,7 @@ type LunaApi = {
   shuffle(manual?: boolean): boolean;
   hint(force?: boolean): { a: Cell; b: Cell; score: number; reason: string } | null;
   bestMove(): { a: Cell; b: Cell; score: number; reason: string } | null;
-  pulse(direction: string): boolean;
+  pulse(direction: string): Promise<boolean>;
   finishTurn(): Promise<void>;
   advance(ms: number): Snapshot;
   audioEvents(): string[];
@@ -148,6 +148,7 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     expect(state.board.flat().filter(Boolean)).toHaveLength(64);
     await expect.poll(() => page.evaluate(() => window.__lunaAudioStarts ?? 0)).toBeGreaterThan(2);
     await expect(page.locator("#missionName")).toHaveText("Perilune");
+    await expect(page.locator("#hud")).not.toHaveAttribute("aria-live");
   });
 
   test("charges only valid swaps and cascades into a full board", async ({ page }) => {
@@ -219,6 +220,14 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     }
   });
 
+  test("keeps Eclipse Gate's blocker target attainable", async ({ page }) => {
+    await openGame(page);
+    await startMission(page, 6);
+    const state = await snapshot(page);
+    expect(state.objective.target).toBe(4);
+    expect(state.blockers.flat().filter((layers) => layers > 0)).toHaveLength(4);
+  });
+
   test("uses Lunar Pulse to chip edge blockers and redirect the next refill", async ({ page }) => {
     await openGame(page);
     await startMission(page, 4);
@@ -242,6 +251,20 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     expect((await snapshot(page)).gravity).toBe("down");
   });
 
+  test("completes a mission when the final condition is supplied by Pulse", async ({ page }) => {
+    await openGame(page);
+    await startMission(page, 4);
+    await page.evaluate((board) => {
+      window.__lunarArrayTest.setBoard(board);
+      window.__lunarArrayTest.setBlockers([{ r: 0, c: 0, layers: 1 }]);
+      window.__lunarArrayTest.setPulse(100);
+      window.__lunarArrayTest.setObjective({ kind: "blockers", target: 1, pulseTarget: 1 });
+    }, stableBoard);
+    expect(await page.evaluate(() => window.__lunarArrayTest.pulse("up"))).toBe(true);
+    await expect.poll(async () => (await snapshot(page)).screen).toBe("complete");
+    expect((await snapshot(page)).active).toBe(false);
+  });
+
   test("keeps hints free, charges manual shuffles, and recovers dead boards", async ({ page }) => {
     await openGame(page);
     await startMission(page);
@@ -257,6 +280,21 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     expect(state.moves).toBe(11);
     expect(state.matchCount).toBe(0);
     expect(state.hasMove).toBe(true);
+  });
+
+  test("ends a campaign when the final move is spent on a shuffle", async ({ page }) => {
+    await openGame(page);
+    await startMission(page);
+    await page.evaluate((board) => {
+      window.__lunarArrayTest.setBoard(board);
+      window.__lunarArrayTest.setMoves(1);
+      window.__lunarArrayTest.setObjective({ kind: "score", target: 999999 });
+    }, fourMatchBoard());
+    expect(await page.evaluate(() => window.__lunarArrayTest.shuffle(true))).toBe(true);
+    await expect.poll(async () => (await snapshot(page)).screen).toBe("failed");
+    const state = await snapshot(page);
+    expect(state.moves).toBe(0);
+    expect(state.active).toBe(false);
   });
 
   test("pauses Orbit Run time and ends at 120 seconds", async ({ page }) => {
@@ -337,7 +375,7 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     await page.evaluate(([start, end]) => {
       const canvas = document.querySelector<HTMLCanvasElement>("#board");
       if (!canvas) throw new Error("board canvas missing");
-      const emit = (type: string, point: { x: number; y: number }) => canvas.dispatchEvent(new PointerEvent(type, {
+      const emit = (type: string, point: { x: number; y: number; w: number; h: number }) => canvas.dispatchEvent(new PointerEvent(type, {
         bubbles: true,
         clientX: point.x + point.w / 2,
         clientY: point.y + point.h / 2,
