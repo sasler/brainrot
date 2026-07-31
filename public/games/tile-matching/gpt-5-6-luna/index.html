@@ -146,7 +146,7 @@
 <main id="app">
   <canvas id="board" tabindex="0" aria-label="Lunar Array tile matching board"></canvas>
 
-  <div id="hud" class="hidden" aria-live="polite">
+  <div id="hud" class="hidden">
     <aside id="leftRail" class="rail">
       <div class="brand">Lunar Array</div>
       <div class="micro" id="modeValue">Campaign // Mission 01</div>
@@ -278,7 +278,7 @@
     { name: "Umbra Cut", copy: "The dark side has interrupted the array. Score through the missing sectors.", moves: 28, objective: { kind: "score", target: 6500 }, mask: ["...##...","...##...","........","........","........","........","...##...","...##..."], stars: [6500, 9000] },
     { name: "Tidal Lock", copy: "Pulse the outer edge and make gravity do the refill work for you.", moves: 30, objective: { kind: "blockers", target: 24, pulseTarget: 1 }, mask: ["iiiiiiii","........","..dd.dd..","........","........","..dd.dd..","........","iiiiiiii"], stars: [0, 0] },
     { name: "Crescent Relay", copy: "The array is narrowing. Feed violet and coral into the crescent relay.", moves: 30, objective: { kind: "collect", colors: [3, 4], perColor: 20 }, mask: ["...##...","........","........","........","........","........","........","...##..."], stars: [0, 0] },
-    { name: "Eclipse Gate", copy: "Break the gate and keep the score climbing while the board loses room.", moves: 34, objective: { kind: "dual", target: 22, scoreTarget: 9000 }, mask: [".d....d.","........","..####..","........","........","..####..","........",".d....d."], stars: [9000, 12500] },
+    { name: "Eclipse Gate", copy: "Break the gate and keep the score climbing while the board loses room.", moves: 34, objective: { kind: "dual", target: 4, scoreTarget: 9000 }, mask: [".d....d.","........","..####..","........","........","..####..","........",".d....d."], stars: [9000, 12500] },
     { name: "Full Moon", copy: "The final array wants a complete crossing: score, chain, and two Pulses.", moves: 38, objective: { kind: "mastery", target: 16000, pulseTarget: 2 }, mask: ["........",".d....d.","........","...ii...","...ii...","........",".d....d.","........"], stars: [16000, 22000] },
   ];
 
@@ -498,7 +498,7 @@
       const [r, c] = parseKey(key); const tile = state.board[r]?.[c];
       if (!tile || tile.special === NONE) continue;
       for (const blast of blastCells(tile, forcedType)) if (!cells.has(blast)) { cells.add(blast); queue.push(blast); }
-      const [br, bc] = parseKey(key); addRing(cellCenter(br, bc), state.layout.cell * (tile.special === CORE ? 3.3 : 1.8), GEMS[tile.type].color);
+      const [br, bc] = parseKey(key); const center = cellCenter(br, bc); addRing(center.x, center.y, state.layout.cell * (tile.special === CORE ? 3.3 : 1.8), GEMS[tile.type].color);
       sfx(tile.special === CORE ? "special:core" : tile.special === BURST ? "special:burst" : "special:beam", tile.type);
     }
     return cells;
@@ -506,7 +506,7 @@
   function chipBlocker(r, c, touched) {
     if (!inside(r, c) || state.blockers[r][c] <= 0 || touched.has(keyOf(r, c))) return;
     touched.add(keyOf(r, c)); state.blockers[r][c] = Math.max(0, state.blockers[r][c] - 1); state.blockerCleared += 1;
-    addRing(cellCenter(r, c), state.layout.cell * .75, "#e7f3ff"); sfx("blocker", state.blockers[r][c]);
+    const center = cellCenter(r, c); addRing(center.x, center.y, state.layout.cell * .75, "#e7f3ff"); sfx("blocker", state.blockers[r][c]);
   }
   function clearCells(cells, chain, bonus = 0) {
     const touched = new Set(); let cleared = 0; let gained = bonus;
@@ -567,8 +567,8 @@
       clearCells(expanded, chain, forge.reduce((sum, item) => sum + (item.special === CORE ? 360 : item.special === BURST ? 190 : 120), 0));
       for (const item of forge) {
         const [r, c] = parseKey(item.key);
-        if (isFree(r, c) && state.board[r][c]) { state.board[r][c].special = item.special; addRing(cellCenter(r, c), state.layout.cell * 1.1, GEMS[item.type].light); sfx("forge", item.special); }
-        else if (isFree(r, c) && !state.board[r][c]) { state.board[r][c] = createTile(item.type, r, c, item.special); addRing(cellCenter(r, c), state.layout.cell * 1.1, GEMS[item.type].light); sfx("forge", item.special); }
+        if (isFree(r, c) && state.board[r][c]) { state.board[r][c].special = item.special; const center = cellCenter(r, c); addRing(center.x, center.y, state.layout.cell * 1.1, GEMS[item.type].light); sfx("forge", item.special); }
+        else if (isFree(r, c) && !state.board[r][c]) { state.board[r][c] = createTile(item.type, r, c, item.special); const center = cellCenter(r, c); addRing(center.x, center.y, state.layout.cell * 1.1, GEMS[item.type].light); sfx("forge", item.special); }
       }
       await wait(REDUCED_MOTION ? 20 : 130); collapse(); await wait(REDUCED_MOTION ? 8 : 120);
       preferred = null;
@@ -624,11 +624,11 @@
     if (direction === "right") for (let r = 0; r < GRID; r += 1) cells.push([r, GRID - 1]);
     return cells;
   }
-  function usePulse(direction = state.pulseDirection) {
+  async function usePulse(direction = state.pulseDirection) {
     if (!canInteract() || state.pulse < PULSE_MAX || !["up", "down", "left", "right"].includes(direction)) return false;
     state.pulse = 0; state.pulseUses += 1; state.pulseDirection = direction; state.pendingGravity = direction; state.gravity = direction; state.pulseArmed = false; sfx("pulse", ["up","right","down","left"].indexOf(direction)); state.shake = .45;
-    let chipped = 0; for (const [r, c] of edgeCells(direction)) if (state.blockers[r][c] > 0) { state.blockers[r][c] -= 1; state.blockerCleared += 1; chipped += 1; addRing(cellCenter(r, c), state.layout.cell * .9, "#e7f3ff"); }
-    addFloater(`PULSE // ${direction.toUpperCase()}`, state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY - 10, "#58e7ff"); toast(chipped ? `Pulse cracked ${chipped} edge layer${chipped === 1 ? "" : "s"}` : `Pulse // ${direction}`); updateHud(); return true;
+    let chipped = 0; for (const [r, c] of edgeCells(direction)) if (state.blockers[r][c] > 0) { state.blockers[r][c] -= 1; state.blockerCleared += 1; chipped += 1; const center = cellCenter(r, c); addRing(center.x, center.y, state.layout.cell * .9, "#e7f3ff"); }
+    addFloater(`PULSE // ${direction.toUpperCase()}`, state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY - 10, "#58e7ff"); toast(chipped ? `Pulse cracked ${chipped} edge layer${chipped === 1 ? "" : "s"}` : `Pulse // ${direction}`); updateHud(); if (state.active && objectiveComplete()) await completeMission(); return true;
   }
   function armPulse() { if (canInteract() && state.pulse >= PULSE_MAX) { state.pulseArmed = !state.pulseArmed; sfx(state.pulseArmed ? "pulse:arm" : "select"); toast(state.pulseArmed ? "Choose a gravity edge" : "Pulse cancelled"); return true; } return false; }
 
@@ -639,8 +639,9 @@
     for (let attempt = 0; attempt < 80; attempt += 1) {
       const types = loose.map((tile) => tile.type); for (let i = types.length - 1; i > 0; i -= 1) { const j = Math.floor(random() * (i + 1)); [types[i], types[j]] = [types[j], types[i]]; }
       loose.forEach((tile, i) => { tile.type = types[i]; tile.special = NONE; });
-      if (!findMatches().length && findAnyMove()) { sfx("shuffle"); toast(manual ? "Array shuffled // -1 move" : "Array found a new orbit"); updateHud(); return true; }
+      if (!findMatches().length && findAnyMove()) { sfx("shuffle"); toast(manual ? "Array shuffled // -1 move" : "Array found a new orbit"); updateHud(); if (manual && state.mode === "campaign") void finishTurn(); return true; }
     }
+    if (manual && state.mode === "campaign") void finishTurn();
     return false;
   }
   function requestHint(force = false) { if (!state.active || state.locked || state.paused) return state.hint; if (!force && state.hint) return state.hint; const move = findBestMove(); if (!move) return null; state.hint = { a: move.a, b: move.b, score: move.score, reason: move.reason, t: 0 }; if (force) { sfx("hint"); toast("A clean line is highlighted"); } return state.hint; }
@@ -732,7 +733,9 @@
     if (!audio.ctx || state.muted || !state.active || state.paused) return;
     ensureAmbience(); if (!audio.nextMusic) audio.nextMusic = now;
     const tempo = state.mode === "endless" ? 300 - Math.min(90, state.elapsed * .62) : 380 - Math.min(80, state.chain * 18); const scale = [0, 3, 7, 10, 12, 15, 19, 22];
-    while (now >= audio.nextMusic) { const step = audio.step++; const root = state.mode === "endless" ? 98 + Math.min(24, state.elapsed * .12) : 92; const note = root * Math.pow(2, scale[step % scale.length] / 12); tone(note, .3, step % 4 ? "sine" : "triangle", .025, 0, note * 1.015); if (step % 2 === 0) tone(note / 2, .42, "sine", .018, .02, note / 2 * .995); if (step % 4 === 3) tone(note * 2, .22, "sine", .018, .06); audio.nextMusic += tempo; }
+    const maxCatchUp = 4; let catchUp = 0;
+    while (now >= audio.nextMusic && catchUp < maxCatchUp) { const when = Math.max(0, (audio.nextMusic - now) / 1000) + catchUp * .025; const step = audio.step++; const root = state.mode === "endless" ? 98 + Math.min(24, state.elapsed * .12) : 92; const note = root * Math.pow(2, scale[step % scale.length] / 12); tone(note, .3, step % 4 ? "sine" : "triangle", .025, when, note * 1.015); if (step % 2 === 0) tone(note / 2, .42, "sine", .018, when + .02, note / 2 * .995); if (step % 4 === 3) tone(note * 2, .22, "sine", .018, when + .06); audio.nextMusic += tempo; catchUp += 1; }
+    if (now >= audio.nextMusic) audio.nextMusic = now + tempo;
   }
 
   function addRing(x, y, radius, color) { if (REDUCED_MOTION) return; state.rings.push({ x, y, radius, color, life: 0, span: 520, phase: random() * Math.PI * 2 }); if (state.rings.length > 50) state.rings.shift(); }
@@ -882,7 +885,7 @@
   $("againEndlessButton").addEventListener("click", () => startEndless());
   $("endlessQuitButton").addEventListener("click", () => { state.active = false; showScreen("title"); updateHud(); });
 
-  buildMissionMap(); resize(); parseTerrain(MISSIONS[0].mask); state.info = MISSIONS[0]; state.mask = parseTerrain(MISSIONS[0].mask).mask; state.blockers = parseTerrain(MISSIONS[0].mask).blockers; generateBoard(); installTestApi(); showScreen("title"); updateHud(); requestAnimationFrame(tick);
+  buildMissionMap(); resize(); const startingTerrain = parseTerrain(MISSIONS[0].mask); state.info = MISSIONS[0]; state.mask = startingTerrain.mask; state.blockers = startingTerrain.blockers; generateBoard(); installTestApi(); showScreen("title"); updateHud(); requestAnimationFrame(tick);
 })();
 </script>
 </body>
