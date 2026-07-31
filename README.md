@@ -20,7 +20,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 🔮 Marble Madness | Roll a glowing marble across neon platforms suspended in space. Master physics, dodge hazards, and race the clock. | 6 |
 | 🧭 3D Maze | Navigate a procedurally generated labyrinth in first-person 3D. Find the glowing exit before time runs out. | 8 |
 | ⛳ Mini Golf 3D | Aim, pull back, and sink impossible banks across neon-drenched 3D mini golf courses, including a nine-hole solar eclipse odyssey. | 5 |
-| 💎 Tile Matching | Swap, match, and chain your way to the top. Line up three or more gems to trigger cascading combos and dazzling special tiles. | 7 |
+| 💎 Tile Matching | Swap, match, and chain your way to the top. Line up three or more gems to trigger cascading combos and dazzling special tiles. | 8 |
 | 👾 Space Invaders | Defend Earth from waves of descending alien invaders. Blast through formations, grab power-ups, and survive the onslaught. | 5 |
 | 🔢 Sudoku | Solve a glowing logic grid under pressure with notes, streaks, and satisfying neon feedback for every sharp deduction. | 2 |
 | 🏎️ Neon Horizon Racer | Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon. | 6 |
@@ -41,7 +41,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | OpenAI GPT 5.4 | 1,763 lines | 1,875 lines | 2,278 lines | 1,482 lines | 1,419 lines | 779 lines | 1,960 lines | 2,279 lines | 1,837 lines | 2,401 lines | 2,852 lines | 3,116 lines | 2,135 lines | 3,371 lines | N/A | 3,093 lines | N/A | N/A | N/A |
 | OpenAI GPT 5.5 | N/A | N/A | N/A | N/A | N/A | 2,031 lines | 2,369 lines | N/A | N/A | N/A | 2,413 lines | 1,643 lines | 2,058 lines | N/A | 1,398 lines | 2,155 lines | N/A | N/A | N/A |
 | OpenAI GPT 5.6 Terra | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 930 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 147 lines | N/A | N/A |
-| OpenAI GPT 5.6 Luna | N/A | N/A | 1,444 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 289 lines | N/A | N/A |
+| OpenAI GPT 5.6 Luna | N/A | N/A | 1,444 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 841 lines | N/A | N/A | N/A | N/A | N/A | 289 lines | N/A | N/A |
 | OpenAI GPT 5.6 Sol | N/A | N/A | N/A | 1,736 lines | N/A | N/A | N/A | 304 lines | 2,421 lines | 2,134 lines | 3,263 lines | N/A | N/A | N/A | 278 lines | 1,542 lines | 2,447 lines | 715 lines | N/A |
 | OpenAI GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 1,035 lines | N/A | N/A | 2,734 lines | 3,965 lines | N/A | N/A | N/A |
 | Google Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |

@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>LUNAR ARRAY // GPT 5.6 Luna</title>
+<style>
+  :root {
+    --void: #050813;
+    --ink: #0a1020;
+    --panel: rgba(10, 17, 34, .78);
+    --panel-hi: rgba(18, 30, 55, .9);
+    --line: rgba(173, 203, 255, .19);
+    --line-hi: rgba(183, 224, 255, .46);
+    --text: #eef6ff;
+    --muted: #8fa7c8;
+    --cyan: #58e7ff;
+    --mint: #70f0c0;
+    --amber: #ffd36a;
+    --violet: #b18cff;
+    --coral: #ff7caa;
+    --pearl: #d7e2ff;
+    --warn: #ff758f;
+    --font-ui: "Segoe UI", system-ui, sans-serif;
+    --font-display: "Palatino Linotype", Georgia, serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: var(--font-ui);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; }
+  #app { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  #board { position: absolute; inset: 0; width: 100%; height: 100%; outline: none; touch-action: none; }
+
+  #hud { position: absolute; inset: 0; pointer-events: none; transition: opacity .2s ease; }
+  #hud.hidden { opacity: 0; }
+  .rail { position: absolute; top: 50%; transform: translateY(-50%); width: 205px; pointer-events: auto; }
+  #leftRail { left: 32px; }
+  #rightRail { right: 32px; text-align: right; }
+  .micro { color: var(--muted); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
+  .brand { font-size: 13px; font-weight: 700; letter-spacing: .28em; text-transform: uppercase; color: var(--cyan); }
+  .mission-name { margin-top: 12px; font-family: var(--font-display); font-size: 25px; line-height: 1.05; }
+  .mission-copy { margin: 10px 0 23px; color: var(--muted); font-size: 12px; line-height: 1.55; max-width: 185px; }
+  .readout { border-top: 1px solid var(--line); padding: 13px 0 0; margin-top: 14px; }
+  .readout-label { color: var(--muted); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
+  .readout-value { margin-top: 5px; font-variant-numeric: tabular-nums; font-size: 28px; letter-spacing: .04em; }
+  .readout-value.small { font-size: 18px; }
+  .readout-note { margin-top: 5px; min-height: 16px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+  .meter { position: relative; height: 7px; margin-top: 9px; overflow: hidden; border: 1px solid var(--line); border-radius: 99px; background: rgba(0,0,0,.26); }
+  .meter > i { display: block; width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3aa4ff, var(--cyan), var(--violet)); transition: width .2s ease; }
+  .meter.ready > i { background: linear-gradient(90deg, var(--cyan), var(--pearl), var(--amber)); box-shadow: 0 0 16px rgba(88,231,255,.75); }
+  .controls { display: flex; justify-content: flex-end; gap: 7px; margin-top: 22px; }
+  .icon-button { width: 31px; height: 31px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: rgba(8,14,28,.65); color: var(--muted); cursor: pointer; }
+  .icon-button:hover, .icon-button:focus-visible { border-color: var(--cyan); color: var(--text); outline: none; }
+  .icon-button:disabled { opacity: .35; cursor: default; }
+  .pulse-button { width: 100%; margin-top: 13px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 3px; background: rgba(88,231,255,.06); color: var(--muted); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
+  .pulse-button.ready { border-color: var(--cyan); color: var(--text); background: rgba(88,231,255,.17); box-shadow: 0 0 20px rgba(88,231,255,.14); }
+  .pulse-button:hover, .pulse-button:focus-visible { border-color: var(--cyan); outline: none; }
+  #toast { position: absolute; left: 50%; bottom: 8.5%; transform: translate(-50%, 12px); min-width: 190px; padding: 9px 14px; border: 1px solid var(--line-hi); border-radius: 3px; background: rgba(6, 12, 26, .9); color: var(--text); text-align: center; font-size: 11px; letter-spacing: .08em; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .screen { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 28px; background: radial-gradient(ellipse at 50% 45%, rgba(17, 37, 73, .72), rgba(5,8,19,.94) 67%); text-align: center; }
+  .screen.active { display: flex; }
+  .screen-card { width: min(760px, 100%); }
+  .eyebrow { color: var(--cyan); font-size: 10px; letter-spacing: .32em; text-transform: uppercase; }
+  h1, h2, p { margin: 0; }
+  h1 { margin-top: 12px; font-family: var(--font-display); font-size: clamp(40px, 8vw, 82px); font-weight: 400; letter-spacing: .04em; line-height: .95; text-shadow: 0 0 34px rgba(88,231,255,.23); }
+  h1 span { display: block; margin-top: 13px; color: var(--muted); font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: .42em; text-transform: uppercase; }
+  h2 { margin-top: 12px; font-family: var(--font-display); font-size: clamp(27px, 5vw, 46px); font-weight: 400; }
+  .lede { max-width: 510px; margin: 22px auto 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+  .mode-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+  .primary, .ghost { min-width: 170px; padding: 12px 18px; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+  .primary { border: 1px solid var(--cyan); background: linear-gradient(180deg, rgba(88,231,255,.22), rgba(88,231,255,.06)); color: var(--text); }
+  .ghost { border: 1px solid var(--line); background: rgba(8,14,28,.45); color: var(--muted); }
+  .primary:hover, .primary:focus-visible, .ghost:hover, .ghost:focus-visible { border-color: var(--text); outline: none; transform: translateY(-1px); }
+  .mission-strip { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 24px auto 0; max-width: 620px; }
+  .mission-chip { min-width: 49px; padding: 8px 7px; border: 1px solid var(--line); border-radius: 3px; background: rgba(12,22,42,.66); color: var(--muted); cursor: pointer; }
+  .mission-chip span { display: block; color: var(--text); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .mission-chip em { display: block; margin-top: 2px; font-size: 8px; font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
+  .mission-chip:hover, .mission-chip:focus-visible, .mission-chip.current { border-color: var(--cyan); color: var(--cyan); outline: none; }
+  .rule-line { margin-top: 22px; color: var(--muted); font-size: 10px; letter-spacing: .1em; line-height: 1.8; text-transform: uppercase; }
+  .result-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 520px; margin: 24px auto; }
+  .result { padding: 12px 7px; border-top: 1px solid var(--line); }
+  .result span { display: block; color: var(--muted); font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
+  .result strong { display: block; margin-top: 7px; font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .stars { min-height: 25px; margin-top: 16px; color: var(--amber); font-size: 22px; letter-spacing: .16em; }
+  .status-copy { min-height: 21px; margin-top: 9px; color: var(--muted); font-size: 12px; }
+  .hint-copy { margin-top: 18px; color: var(--muted); font-size: 10px; line-height: 1.8; letter-spacing: .09em; text-transform: uppercase; }
+  #missionMap { margin-top: 8px; }
+
+  @media (max-width: 980px), (max-height: 600px) {
+    .rail { top: 13px; transform: none; width: auto; }
+    #leftRail { left: 17px; }
+    #rightRail { right: 17px; }
+    .brand, .mission-copy, #objectiveNote, #chainNote, .controls { display: none; }
+    .mission-name { margin-top: 0; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .readout { display: inline-block; border: 0; margin: 0 0 0 13px; padding: 0; vertical-align: top; }
+    .readout-label { font-size: 8px; }
+    .readout-value { margin-top: 2px; font-size: 17px; }
+    .readout-value.small { font-size: 14px; }
+    .meter { display: inline-block; width: 88px; height: 5px; margin: 0 0 2px 6px; vertical-align: middle; }
+    .pulse-button { width: auto; margin: 2px 0 0 8px; padding: 6px 8px; font-size: 8px; }
+    #toast { bottom: 13%; }
+  }
+  @media (max-width: 560px) {
+    #leftRail, #rightRail { top: 11px; transform: none; width: calc(50% - 18px); }
+    #leftRail { left: 12px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "mission mission" "objective moves"; gap: 3px 10px; text-align: left; }
+    #rightRail { right: 12px; display: grid; grid-template-columns: 56px minmax(0, 1fr); grid-template-areas: "score pulse"; gap: 0 10px; text-align: right; }
+    #modeValue, #rightRail > .readout:nth-child(2) { display: none; }
+    #leftRail .mission-name { grid-area: mission; min-height: 15px; }
+    #leftRail > .readout:first-of-type { grid-area: objective; }
+    #leftRail > .readout:last-of-type { grid-area: moves; align-self: end; }
+    #rightRail > .readout:nth-child(1) { grid-area: score; }
+    #rightRail > .readout:nth-child(3) { grid-area: pulse; }
+    #leftRail .readout, #rightRail .readout { display: block; border: 0; margin: 0; padding: 0; }
+    #leftRail .readout-value { font-size: 15px; }
+    #leftRail .readout-value.small { font-size: 13px; }
+    #rightRail .readout-value { font-size: 17px; }
+    #rightRail .readout-value.small { font-size: 13px; }
+    #rightRail .meter { display: block; width: 100%; height: 4px; margin: 3px 0 0 auto; }
+    #rightRail .pulse-button { width: 100%; margin: 4px 0 0; padding: 5px 4px; font-size: 7px; letter-spacing: .08em; }
+    .screen { padding: 18px; }
+    h1 { font-size: 45px; }
+    .result-grid { grid-template-columns: repeat(2, 1fr); }
+    .mode-row { margin-top: 21px; }
+    .primary, .ghost { min-width: 145px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+<main id="app">
+  <canvas id="board" tabindex="0" aria-label="Lunar Array tile matching board"></canvas>
+
+  <div id="hud" class="hidden" aria-live="polite">
+    <aside id="leftRail" class="rail">
+      <div class="brand">Lunar Array</div>
+      <div class="micro" id="modeValue">Campaign // Mission 01</div>
+      <div class="mission-name" id="missionName">Perilune</div>
+      <p class="mission-copy" id="missionCopy">Build a clean orbit. The array answers every deliberate chain.</p>
+      <div class="readout">
+        <div class="readout-label" id="objectiveLabel">Objective</div>
+        <div class="readout-value small" id="objectiveValue">0 / 3,000</div>
+        <div class="meter"><i id="objectiveFill"></i></div>
+        <div class="readout-note" id="objectiveNote"></div>
+      </div>
+      <div class="readout">
+        <div class="readout-label" id="movesLabel">Moves</div>
+        <div class="readout-value" id="movesValue">22</div>
+      </div>
+    </aside>
+
+    <aside id="rightRail" class="rail">
+      <div class="readout" style="border-top:0;margin-top:0;padding-top:0">
+        <div class="readout-label">Score</div>
+        <div class="readout-value" id="scoreValue">0</div>
+      </div>
+      <div class="readout">
+        <div class="readout-label">Chain</div>
+        <div class="readout-value small" id="chainValue">×1</div>
+        <div class="readout-note" id="chainNote">The array is quiet.</div>
+      </div>
+      <div class="readout">
+        <div class="readout-label">Lunar Pulse</div>
+        <div class="readout-value small" id="pulseValue">0%</div>
+        <div class="meter"><i id="pulseFill"></i></div>
+        <button id="pulseButton" class="pulse-button" type="button" disabled>Pulse // Space</button>
+      </div>
+      <div class="controls">
+        <button id="hintButton" class="icon-button" type="button" title="Hint (H)" aria-label="Hint">?</button>
+        <button id="shuffleButton" class="icon-button" type="button" title="Shuffle (S)" aria-label="Shuffle">↭</button>
+        <button id="audioButton" class="icon-button" type="button" title="Mute (M)" aria-label="Mute">◉</button>
+        <button id="pauseButton" class="icon-button" type="button" title="Pause (P)" aria-label="Pause">Ⅱ</button>
+      </div>
+    </aside>
+  </div>
+
+  <div id="toast" role="status"></div>
+
+  <section id="titleScreen" class="screen active" data-screen="title">
+    <div class="screen-card">
+      <div class="eyebrow">OpenAI // GPT 5.6 Luna // Observatory Deck</div>
+      <h1>LUNAR ARRAY<span>Match the light. Bend the gravity.</span></h1>
+      <p class="lede">A tactile match-three instrument for building constellations, breaking moon-dust, and spending one perfectly timed Lunar Pulse.</p>
+      <div class="mode-row">
+        <button id="campaignButton" class="primary" type="button">Launch campaign</button>
+        <button id="endlessButton" class="ghost" type="button">Orbit run // 120s</button>
+      </div>
+      <div id="missionMap" class="mission-strip"></div>
+      <div class="rule-line">Drag or click two neighbors · Arrows + Enter move · H hint · S shuffle · P pause · M mute</div>
+    </div>
+  </section>
+
+  <section id="pauseScreen" class="screen" data-screen="paused">
+    <div class="screen-card">
+      <div class="eyebrow">The array is holding</div>
+      <h2>Pause / telemetry frozen</h2>
+      <p id="pauseCopy" class="lede">Your board is waiting exactly where you left it.</p>
+      <div class="mode-row"><button id="resumeButton" class="primary" type="button">Resume</button><button id="quitButton" class="ghost" type="button">Return to deck</button></div>
+    </div>
+  </section>
+
+  <section id="completeScreen" class="screen" data-screen="complete">
+    <div class="screen-card">
+      <div class="eyebrow">Orbit solution confirmed</div>
+      <h2 id="completeTitle">Perilune complete</h2>
+      <div id="completeStars" class="stars">★☆☆</div>
+      <div class="result-grid"><div class="result"><span>Score</span><strong id="completeScore">0</strong></div><div class="result"><span>Best chain</span><strong id="completeChain">0</strong></div><div class="result"><span>Pulse uses</span><strong id="completePulse">0</strong></div><div class="result"><span>Stars</span><strong id="completeStarCount">1</strong></div></div>
+      <div class="mode-row"><button id="nextMissionButton" class="primary" type="button">Next mission</button><button id="replayMissionButton" class="ghost" type="button">Replay</button></div>
+    </div>
+  </section>
+
+  <section id="failedScreen" class="screen" data-screen="failed">
+    <div class="screen-card">
+      <div class="eyebrow">Telemetry lost</div>
+      <h2 id="failedTitle">The orbit slipped</h2>
+      <p id="failedCopy" class="status-copy">The array still has a route. Try a different line.</p>
+      <div class="mode-row"><button id="retryButton" class="primary" type="button">Retry mission</button><button id="failedQuitButton" class="ghost" type="button">Return to deck</button></div>
+    </div>
+  </section>
+
+  <section id="endlessScreen" class="screen" data-screen="endless">
+    <div class="screen-card">
+      <div class="eyebrow">Orbit run complete</div>
+      <h2>The array goes dark</h2>
+      <div class="result-grid"><div class="result"><span>Score</span><strong id="endlessScore">0</strong></div><div class="result"><span>Best chain</span><strong id="endlessChain">0</strong></div><div class="result"><span>Pulse uses</span><strong id="endlessPulse">0</strong></div><div class="result"><span>Session best</span><strong id="endlessBest">0</strong></div></div>
+      <div class="mode-row"><button id="againEndlessButton" class="primary" type="button">Run again</button><button id="endlessQuitButton" class="ghost" type="button">Return to deck</button></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const GRID = 8;
+  const TYPES = 6;
+  const NONE = 0;
+  const BEAM_ROW = 1;
+  const BEAM_COL = 2;
+  const BURST = 3;
+  const CORE = 4;
+  const TEST_MODE = new URLSearchParams(location.search).get("test") === "1";
+  const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const MAX_CHAIN = 8;
+  const PULSE_MAX = 100;
+  const SHUFFLE_COST = 1;
+  // POWER-UP: Lunar Pulse turns a charged match streak into a deliberate gravity choice.
+  const FUSION = { BEAM_BEAM: 900, BEAM_BURST: 1900, BURST_BURST: 3200, CORE_BEAM: 4300, CORE_BURST: 5600, CORE_CORE: 9000 };
+
+  const GEMS = [
+    { name: "Tide", color: "#58e7ff", light: "#d7fbff", dark: "#147b9d", shape: "diamond", pitch: 0 },
+    { name: "Mint", color: "#70f0c0", light: "#e4fff3", dark: "#188a69", shape: "hex", pitch: 3 },
+    { name: "Amber", color: "#ffd36a", light: "#fff4cc", dark: "#9d6419", shape: "circle", pitch: 5 },
+    { name: "Violet", color: "#b18cff", light: "#eee6ff", dark: "#5e42b6", shape: "crescent", pitch: 8 },
+    { name: "Coral", color: "#ff7caa", light: "#ffe0ec", dark: "#a33c64", shape: "triangle", pitch: 11 },
+    { name: "Pearl", color: "#d7e2ff", light: "#ffffff", dark: "#6f86b5", shape: "star", pitch: 14 },
+  ];
+
+  const MISSIONS = [
+    { name: "Perilune", copy: "Build a clean orbit. The array answers every deliberate chain.", moves: 22, objective: { kind: "score", target: 3000 }, mask: ["........","........","........","........","........","........","........","........"], stars: [3000, 4700] },
+    { name: "Dust Halo", copy: "Moon-dust clings to the outer ring. Clear the route layer by layer.", moves: 24, objective: { kind: "blockers", target: 20 }, mask: ["..dd.dd.",".d....d.","d......d","d......d","d......d","d......d",".d....d.","..dd.dd."], stars: [0, 0] },
+    { name: "Lagrange", copy: "Two wavelengths are in resonance. Collect both without wasting the orbit.", moves: 26, objective: { kind: "collect", colors: [0, 2], perColor: 16 }, mask: ["........","........","........","........","........","........","........","........"], stars: [0, 0] },
+    { name: "Umbra Cut", copy: "The dark side has interrupted the array. Score through the missing sectors.", moves: 28, objective: { kind: "score", target: 6500 }, mask: ["...##...","...##...","........","........","........","........","...##...","...##..."], stars: [6500, 9000] },
+    { name: "Tidal Lock", copy: "Pulse the outer edge and make gravity do the refill work for you.", moves: 30, objective: { kind: "blockers", target: 24, pulseTarget: 1 }, mask: ["iiiiiiii","........","..dd.dd..","........","........","..dd.dd..","........","iiiiiiii"], stars: [0, 0] },
+    { name: "Crescent Relay", copy: "The array is narrowing. Feed violet and coral into the crescent relay.", moves: 30, objective: { kind: "collect", colors: [3, 4], perColor: 20 }, mask: ["...##...","........","........","........","........","........","........","...##..."], stars: [0, 0] },
+    { name: "Eclipse Gate", copy: "Break the gate and keep the score climbing while the board loses room.", moves: 34, objective: { kind: "dual", target: 22, scoreTarget: 9000 }, mask: [".d....d.","........","..####..","........","........","..####..","........",".d....d."], stars: [9000, 12500] },
+    { name: "Full Moon", copy: "The final array wants a complete crossing: score, chain, and two Pulses.", moves: 38, objective: { kind: "mastery", target: 16000, pulseTarget: 2 }, mask: ["........",".d....d.","........","...ii...","...ii...","........",".d....d.","........"], stars: [16000, 22000] },
+  ];
+
+  const state = {
+    screen: "title", mode: "campaign", mission: 0, info: null, active: false, paused: false, locked: false, rushing: false,
+    board: [], mask: [], blockers: [], score: 0, moves: 0, timeLeft: 120, elapsed: 0, chain: 0, bestChain: 0, matchCount: 0,
+    blockerCleared: 0, collected: new Array(TYPES).fill(0), pulse: 0, pulseUses: 0, pulseArmed: false, pulseDirection: "down", pendingGravity: null,
+    gravity: "down", objective: null, selection: null, cursor: { r: 3, c: 3 }, hover: null, dragging: false, dragOrigin: null, hint: null, idle: 0,
+    speed: 1, muted: false, seed: 1, nextId: 1, lastFrame: 0, musicClock: 0, toastTimer: 0, sessionBest: 0,
+    particles: [], rings: [], beams: [], floaters: [], shake: 0, audioLog: [], layout: { width: 0, height: 0, dpr: 1, boardX: 0, boardY: 0, boardSize: 0, cell: 0, mode: "rails" },
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const canvas = $("board");
+  const ctx = canvas.getContext("2d");
+  const hud = $("hud");
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const keyOf = (r, c) => `${r}:${c}`;
+  const parseKey = (key) => key.split(":").map(Number);
+  const inside = (r, c) => r >= 0 && c >= 0 && r < GRID && c < GRID;
+  const isOpen = (r, c) => inside(r, c) && state.mask[r] && state.mask[r][c] === 1;
+  const isFree = (r, c) => isOpen(r, c) && state.blockers[r][c] === 0;
+  const adjacent = (a, b) => Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1;
+  const fmt = (n) => Math.round(n).toLocaleString("en-US");
+
+  function random() {
+    state.seed = (Math.imul(state.seed, 1664525) + 1013904223) >>> 0;
+    return state.seed / 4294967296;
+  }
+  function setSeed(value) { state.seed = (Number(value) >>> 0) || 1; return true; }
+  function randomType() { return Math.floor(random() * TYPES) % TYPES; }
+  function wait(ms) { return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms / Math.max(.1, state.speed)))); }
+
+  function parseTerrain(lines) {
+    const mask = [], blockers = [];
+    for (let r = 0; r < GRID; r += 1) {
+      mask[r] = []; blockers[r] = [];
+      for (let c = 0; c < GRID; c += 1) {
+        const ch = (lines[r] || "........")[c] || ".";
+        mask[r][c] = ch === "#" ? 0 : 1;
+        blockers[r][c] = ch === "d" ? 1 : ch === "i" ? 2 : 0;
+      }
+    }
+    return { mask, blockers };
+  }
+
+  function createTile(type, r, c, special = NONE) {
+    const tile = { type: clamp(type | 0, 0, TYPES - 1), special, r, c, id: state.nextId++, x: 0, y: 0, tx: 0, ty: 0, anim: 1, phase: random() * Math.PI * 2 };
+    const p = cellCenter(r, c); tile.x = p.x; tile.y = p.y; tile.tx = p.x; tile.ty = p.y;
+    return tile;
+  }
+  function cellCenter(r, c) { return { x: state.layout.boardX + (c + .5) * state.layout.cell, y: state.layout.boardY + (r + .5) * state.layout.cell }; }
+  function placeTile(tile, r, c, animate = true) {
+    if (!tile) return;
+    tile.r = r; tile.c = c;
+    const p = cellCenter(r, c); tile.tx = p.x; tile.ty = p.y; tile.anim = animate && !REDUCED_MOTION ? 0 : 1;
+    if (!animate || REDUCED_MOTION) { tile.x = p.x; tile.y = p.y; }
+  }
+  function settleTiles() { if (state.board.length !== GRID) return; for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) placeTile(state.board[r][c], r, c, false); }
+
+  function wouldMakeMatch(r, c, type) {
+    if (c >= 2 && state.board[r][c - 1] && state.board[r][c - 2] && state.board[r][c - 1].type === type && state.board[r][c - 2].type === type) return true;
+    if (r >= 2 && state.board[r - 1] && state.board[r - 2] && state.board[r - 1][c] && state.board[r - 2][c] && state.board[r - 1][c].type === type && state.board[r - 2][c].type === type) return true;
+    return false;
+  }
+
+  function generateBoard() {
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      state.board = Array.from({ length: GRID }, () => new Array(GRID).fill(null));
+      for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) {
+        if (!isOpen(r, c) || state.blockers[r][c] > 0) continue;
+        let type = randomType();
+        for (let guard = 0; guard < 18 && wouldMakeMatch(r, c, type); guard += 1) type = randomType();
+        state.board[r][c] = createTile(type, r, c, NONE);
+      }
+      settleTiles();
+      if (findMatches().length === 0 && findAnyMove()) return true;
+    }
+    // A deterministic fallback still obeys the no-instant-match contract on a full board.
+    for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (isFree(r, c)) state.board[r][c] = createTile((r + c * 2) % TYPES, r, c);
+    settleTiles();
+    return findMatches().length === 0;
+  }
+
+  function matchable(r, c) { return isOpen(r, c) && Boolean(state.board[r][c]); }
+  function findGroups() {
+    const runs = [];
+    for (let r = 0; r < GRID; r += 1) {
+      let c = 0;
+      while (c < GRID) {
+        if (!matchable(r, c)) { c += 1; continue; }
+        const type = state.board[r][c].type; const cells = [keyOf(r, c)]; let end = c + 1;
+        while (end < GRID && matchable(r, end) && state.board[r][end].type === type) { cells.push(keyOf(r, end)); end += 1; }
+        if (cells.length >= 3) runs.push({ type, cells, horizontal: true });
+        c = end;
+      }
+    }
+    for (let c = 0; c < GRID; c += 1) {
+      let r = 0;
+      while (r < GRID) {
+        if (!matchable(r, c)) { r += 1; continue; }
+        const type = state.board[r][c].type; const cells = [keyOf(r, c)]; let end = r + 1;
+        while (end < GRID && matchable(end, c) && state.board[end][c].type === type) { cells.push(keyOf(end, c)); end += 1; }
+        if (cells.length >= 3) runs.push({ type, cells, horizontal: false });
+        r = end;
+      }
+    }
+    const groups = [];
+    for (const run of runs) {
+      let group = groups.find((candidate) => candidate.type === run.type && run.cells.some((key) => candidate.cells.has(key)));
+      if (!group) { group = { type: run.type, cells: new Set(), runs: [] }; groups.push(group); }
+      group.runs.push(run); run.cells.forEach((key) => group.cells.add(key));
+      for (const other of groups) if (other !== group && other.type === group.type && [...other.cells].some((key) => group.cells.has(key))) {
+        other.cells.forEach((key) => group.cells.add(key)); other.runs.forEach((item) => group.runs.push(item)); groups.splice(groups.indexOf(other), 1); break;
+      }
+    }
+    return groups.filter((group) => group.cells.size >= 3).map((group) => {
+      let longest = 0, longestRun = null, hasH = false, hasV = false;
+      for (const run of group.runs) { if (run.cells.length > longest) { longest = run.cells.length; longestRun = run; } if (run.horizontal) hasH = true; else hasV = true; }
+      return { ...group, cells: [...group.cells], longest, longestRun, hasH, hasV };
+    });
+  }
+  function findMatches() { return findGroups(); }
+  function classifyGroup(group) { if (group.longest >= 5) return CORE; if (group.hasH && group.hasV) return BURST; if (group.longest === 4) return group.longestRun.horizontal ? BEAM_ROW : BEAM_COL; return NONE; }
+  function placementCell(group, preferred) {
+    if (preferred) for (const key of preferred) if (group.cells.includes(key)) return key;
+    if (group.hasH && group.hasV) {
+      const h = new Set(), v = new Set();
+      for (const run of group.runs) for (const key of run.cells) (run.horizontal ? h : v).add(key);
+      for (const key of h) if (v.has(key)) return key;
+    }
+    return group.longestRun ? group.longestRun.cells[Math.floor(group.longestRun.cells.length / 2)] : group.cells[Math.floor(group.cells.length / 2)];
+  }
+
+  function swapCells(a, b) {
+    const ta = state.board[a.r][a.c], tb = state.board[b.r][b.c];
+    state.board[a.r][a.c] = tb; state.board[b.r][b.c] = ta;
+    placeTile(ta, b.r, b.c, true); placeTile(tb, a.r, a.c, true);
+  }
+  function swappable(r, c) { return isOpen(r, c) && state.blockers[r][c] === 0 && Boolean(state.board[r][c]); }
+  function fusionKind(a, b) {
+    if (!a || !b || a.special === NONE || b.special === NONE) return null;
+    const x = a.special, y = b.special;
+    if ((x === BEAM_ROW || x === BEAM_COL) && (y === BEAM_ROW || y === BEAM_COL)) return "BEAM_BEAM";
+    if ((x === BEAM_ROW || x === BEAM_COL) && y === BURST || (y === BEAM_ROW || y === BEAM_COL) && x === BURST) return "BEAM_BURST";
+    if (x === BURST && y === BURST) return "BURST_BURST";
+    if (x === CORE && y === CORE) return "CORE_CORE";
+    if (x === CORE && (y === BEAM_ROW || y === BEAM_COL) || y === CORE && (x === BEAM_ROW || x === BEAM_COL)) return "CORE_BEAM";
+    if (x === CORE && y === BURST || y === CORE && x === BURST) return "CORE_BURST";
+    return null;
+  }
+  function evaluateSwap(a, b) {
+    if (!swappable(a.r, a.c) || !swappable(b.r, b.c)) return null;
+    const ta = state.board[a.r][a.c], tb = state.board[b.r][b.c];
+    const fusion = fusionKind(ta, tb);
+    if (fusion) return { a, b, score: FUSION[fusion], reason: fusion };
+    swapCells(a, b); const groups = findMatches(); swapCells(a, b);
+    return groups.length ? { a, b, score: groups.reduce((sum, g) => sum + g.cells.length * 60 + (classifyGroup(g) ? 300 : 0), 0), reason: "match" } : null;
+  }
+  function eachSwap(visitor) {
+    for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) {
+      if (c + 1 < GRID) { const result = visitor({ r, c }, { r, c: c + 1 }); if (result) return result; }
+      if (r + 1 < GRID) { const result = visitor({ r, c }, { r: r + 1, c }); if (result) return result; }
+    }
+    return null;
+  }
+  function findAnyMove() { return eachSwap((a, b) => evaluateSwap(a, b)); }
+  function findBestMove() { let best = null; eachSwap((a, b) => { const candidate = evaluateSwap(a, b); if (candidate && (!best || candidate.score > best.score)) best = candidate; return null; }); return best; }
+
+  function objectiveProgress() {
+    const o = state.objective; if (!o) return 0;
+    if (o.kind === "score") return Math.min(state.score, o.target);
+    if (o.kind === "blockers") return Math.min(state.blockerCleared, o.target);
+    if (o.kind === "collect") return o.colors.reduce((sum, type) => sum + Math.min(state.collected[type], o.perColor), 0);
+    if (o.kind === "dual") return Math.min(state.blockerCleared, o.target);
+    return Math.min(state.score, o.target);
+  }
+  function objectiveComplete() {
+    const o = state.objective; if (!o) return false;
+    if (o.kind === "dual") return state.blockerCleared >= o.target && state.score >= o.scoreTarget;
+    if (o.kind === "mastery") return state.score >= o.target && state.pulseUses >= o.pulseTarget;
+    if (o.kind === "collect") return o.colors.every((type) => state.collected[type] >= o.perColor);
+    return objectiveProgress() >= o.target && (!o.pulseTarget || state.pulseUses >= o.pulseTarget);
+  }
+  function objectiveLabel() { const k = state.objective?.kind; return k === "score" || k === "mastery" ? "Score" : k === "blockers" ? "Moon dust" : k === "collect" ? "Collect" : k === "dual" ? "Dust + score" : "Objective"; }
+  function objectiveText() {
+    const o = state.objective; if (!o) return "";
+    if (o.kind === "score") return `Reach ${fmt(o.target)} points`;
+    if (o.kind === "blockers") return `Clear ${o.target} blocker layers${o.pulseTarget ? ` · Pulse ${o.pulseTarget}×` : ""}`;
+    if (o.kind === "collect") return o.colors.map((t) => `${Math.min(state.collected[t], o.perColor)}/${o.perColor} ${GEMS[t].name}`).join(" · ");
+    if (o.kind === "dual") return `${Math.min(state.blockerCleared, o.target)}/${o.target} layers · ${fmt(Math.min(state.score, o.scoreTarget))}/${fmt(o.scoreTarget)}`;
+    return `${fmt(Math.min(state.score, o.target))}/${fmt(o.target)} · Pulse ${state.pulseUses}/${o.pulseTarget}`;
+  }
+
+  function blastCells(tile, forcedType = null) {
+    const cells = new Set(); const { r, c } = tile;
+    if (tile.special === BEAM_ROW) for (let cc = 0; cc < GRID; cc += 1) if (isOpen(r, cc)) cells.add(keyOf(r, cc));
+    if (tile.special === BEAM_COL) for (let rr = 0; rr < GRID; rr += 1) if (isOpen(rr, c)) cells.add(keyOf(rr, c));
+    if (tile.special === BURST) for (let rr = r - 2; rr <= r + 2; rr += 1) for (let cc = c - 2; cc <= c + 2; cc += 1) if (Math.abs(rr - r) + Math.abs(cc - c) <= 2 && isOpen(rr, cc)) cells.add(keyOf(rr, cc));
+    if (tile.special === CORE) {
+      const type = forcedType === null ? dominantType() : forcedType;
+      for (let rr = 0; rr < GRID; rr += 1) for (let cc = 0; cc < GRID; cc += 1) if (state.board[rr][cc] && state.board[rr][cc].type === type) cells.add(keyOf(rr, cc));
+      cells.add(keyOf(r, c));
+    }
+    return cells;
+  }
+  function dominantType() {
+    const counts = new Array(TYPES).fill(0);
+    for (const row of state.board) for (const tile of row) if (tile) counts[tile.type] += 1;
+    let best = 0; for (let i = 1; i < TYPES; i += 1) if (counts[i] > counts[best]) best = i; return best;
+  }
+  function expandSpecials(initial, forcedType = null) {
+    const cells = new Set(initial); const queue = [...initial]; const fired = new Set();
+    while (queue.length) {
+      const key = queue.shift(); if (fired.has(key)) continue; fired.add(key);
+      const [r, c] = parseKey(key); const tile = state.board[r]?.[c];
+      if (!tile || tile.special === NONE) continue;
+      for (const blast of blastCells(tile, forcedType)) if (!cells.has(blast)) { cells.add(blast); queue.push(blast); }
+      const [br, bc] = parseKey(key); addRing(cellCenter(br, bc), state.layout.cell * (tile.special === CORE ? 3.3 : 1.8), GEMS[tile.type].color);
+      sfx(tile.special === CORE ? "special:core" : tile.special === BURST ? "special:burst" : "special:beam", tile.type);
+    }
+    return cells;
+  }
+  function chipBlocker(r, c, touched) {
+    if (!inside(r, c) || state.blockers[r][c] <= 0 || touched.has(keyOf(r, c))) return;
+    touched.add(keyOf(r, c)); state.blockers[r][c] = Math.max(0, state.blockers[r][c] - 1); state.blockerCleared += 1;
+    addRing(cellCenter(r, c), state.layout.cell * .75, "#e7f3ff"); sfx("blocker", state.blockers[r][c]);
+  }
+  function clearCells(cells, chain, bonus = 0) {
+    const touched = new Set(); let cleared = 0; let gained = bonus;
+    for (const key of cells) {
+      const [r, c] = parseKey(key); if (!isOpen(r, c)) continue;
+      const tile = state.board[r][c];
+      if (tile) { cleared += 1; state.collected[tile.type] += 1; gained += Math.round(52 * (1 + Math.max(0, chain - 1) * .42)); burstParticles(tile.x, tile.y, GEMS[tile.type].color, tile.special === NONE ? 7 : 16); state.board[r][c] = null; }
+      chipBlocker(r, c, touched);
+      for (const [rr, cc] of [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]) chipBlocker(rr, cc, touched);
+    }
+    state.score += gained; state.matchCount = cleared ? 1 : 0; state.pulse = clamp(state.pulse + cleared * 5 + chain * 8, 0, PULSE_MAX);
+    if (cleared) { sfx(chain > 1 ? "cascade" : "match", chain); addFloater(`+${fmt(gained)}`, state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY + state.layout.boardSize / 2, chain > 1 ? "#ffd36a" : "#d7fbff"); }
+    return gained;
+  }
+
+  function segmentFor(direction, line) {
+    const cells = [];
+    if (direction === "down" || direction === "up") for (let r = 0; r < GRID; r += 1) cells.push({ r, c: line });
+    else for (let c = 0; c < GRID; c += 1) cells.push({ r: line, c });
+    return direction === "down" || direction === "right" ? cells.reverse() : cells;
+  }
+  function collapse() {
+    const direction = state.pendingGravity || "down"; state.gravity = direction;
+    const lines = direction === "down" || direction === "up" ? GRID : GRID;
+    for (let line = 0; line < lines; line += 1) {
+      const cells = segmentFor(direction, line); let segment = [];
+      const flush = () => {
+        if (!segment.length) return;
+        const tiles = segment.map(({ r, c }) => state.board[r][c]).filter(Boolean);
+        for (const { r, c } of segment) state.board[r][c] = null;
+        for (let i = 0; i < segment.length; i += 1) {
+          const { r, c } = segment[i]; const tile = tiles[i] || createTile(randomType(), r, c, NONE); state.board[r][c] = tile; placeTile(tile, r, c, true);
+        }
+        segment = [];
+      };
+      for (const cell of cells) {
+        if (!isFree(cell.r, cell.c)) { flush(); continue; }
+        segment.push(cell);
+      }
+      flush();
+    }
+    state.pendingGravity = null; state.gravity = "down"; return snapshot();
+  }
+
+  async function resolveCascade(preferred = null) {
+    let chain = 0;
+    while (chain < 20) {
+      const groups = findMatches(); state.matchCount = groups.length; if (!groups.length) break;
+      chain += 1; state.chain = chain; state.bestChain = Math.max(state.bestChain, chain); if (chain > 1) sfx("chain", chain);
+      const clear = new Set(); const forge = [];
+      for (const group of groups) {
+        const special = classifyGroup(group); const placement = placementCell(group, preferred);
+        if (special !== NONE) forge.push({ key: placement, type: group.type, special });
+        group.cells.forEach((key) => clear.add(key));
+      }
+      const expanded = expandSpecials(clear);
+      for (const item of forge) expanded.delete(item.key);
+      clearCells(expanded, chain, forge.reduce((sum, item) => sum + (item.special === CORE ? 360 : item.special === BURST ? 190 : 120), 0));
+      for (const item of forge) {
+        const [r, c] = parseKey(item.key);
+        if (isFree(r, c) && state.board[r][c]) { state.board[r][c].special = item.special; addRing(cellCenter(r, c), state.layout.cell * 1.1, GEMS[item.type].light); sfx("forge", item.special); }
+        else if (isFree(r, c) && !state.board[r][c]) { state.board[r][c] = createTile(item.type, r, c, item.special); addRing(cellCenter(r, c), state.layout.cell * 1.1, GEMS[item.type].light); sfx("forge", item.special); }
+      }
+      await wait(REDUCED_MOTION ? 20 : 130); collapse(); await wait(REDUCED_MOTION ? 8 : 120);
+      preferred = null;
+    }
+    if (chain === 0) state.chain = 0; settleTiles(); updateHud(); return snapshot();
+  }
+
+  function fusionCells(kind, a, b) {
+    const cells = new Set();
+    const addRow = (r) => { for (let c = 0; c < GRID; c += 1) if (isOpen(r, c)) cells.add(keyOf(r, c)); };
+    const addCol = (c) => { for (let r = 0; r < GRID; r += 1) if (isOpen(r, c)) cells.add(keyOf(r, c)); };
+    if (kind === "BEAM_BEAM") { addRow(a.r); addCol(b.c); addRow(b.r); addCol(a.c); }
+    if (kind === "BEAM_BURST") { addRow(a.r); addCol(a.c); for (let r = b.r - 2; r <= b.r + 2; r += 1) for (let c = b.c - 2; c <= b.c + 2; c += 1) if (isOpen(r, c)) cells.add(keyOf(r, c)); }
+    if (kind === "BURST_BURST") for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (isOpen(r, c) && Math.abs(r - a.r) + Math.abs(c - a.c) <= 3) cells.add(keyOf(r, c));
+    if (kind === "CORE_CORE") for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (isOpen(r, c)) cells.add(keyOf(r, c));
+    if (kind === "CORE_BEAM" || kind === "CORE_BURST") {
+      const special = a.special === CORE ? b : a; const type = special.type;
+      for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (state.board[r][c] && state.board[r][c].type === type) {
+        if (kind === "CORE_BEAM") { addRow(r); addCol(c); } else for (let rr = r - 2; rr <= r + 2; rr += 1) for (let cc = c - 2; cc <= c + 2; cc += 1) if (isOpen(rr, cc)) cells.add(keyOf(rr, cc));
+      }
+      cells.add(keyOf(a.r, a.c)); cells.add(keyOf(b.r, b.c));
+    }
+    return cells;
+  }
+  async function resolveFusion(a, b) {
+    const kind = fusionKind(a, b); if (!kind) return false; sfx(`fusion:${kind.toLowerCase()}`); state.shake = .7;
+    const cells = fusionCells(kind, a, b); const expanded = expandSpecials(cells); const gained = clearCells(expanded, 1, FUSION[kind]); addFloater(kind.replaceAll("_", " "), (a.x + b.x) / 2, (a.y + b.y) / 2, "#ffd36a");
+    await wait(REDUCED_MOTION ? 25 : 180); collapse(); await wait(REDUCED_MOTION ? 8 : 140); await resolveCascade(); updateHud(); return gained > 0;
+  }
+
+  function canInteract() { return state.active && !state.locked && !state.paused && !state.rushing && state.screen === "play"; }
+  async function attemptSwap(a, b) {
+    if (!canInteract() || !adjacent(a, b) || !swappable(a.r, a.c) || !swappable(b.r, b.c)) return false;
+    state.locked = true; state.selection = null; state.hint = null; state.idle = 0;
+    const ta = state.board[a.r][a.c], tb = state.board[b.r][b.c]; swapCells(a, b); sfx("swap"); await wait(150);
+    const fusion = fusionKind(ta, tb);
+    if (fusion) { if (state.mode === "campaign") state.moves -= 1; await resolveFusion(ta, tb); await finishTurn(); return true; }
+    if (!findMatches().length) { swapCells(a, b); sfx("reject"); await wait(120); state.locked = false; updateHud(); return false; }
+    if (state.mode === "campaign") state.moves -= 1;
+    await resolveCascade([keyOf(a.r, a.c), keyOf(b.r, b.c)]); await finishTurn(); return true;
+  }
+  async function detonate(r, c) {
+    if (!canInteract() || !inside(r, c) || !state.board[r][c] || state.board[r][c].special === NONE) return false;
+    state.locked = true; state.selection = null; state.hint = null; state.idle = 0; if (state.mode === "campaign") state.moves -= 1;
+    const tile = state.board[r][c]; sfx("detonate", tile.special); const cells = expandSpecials(new Set([keyOf(r, c)])); clearCells(cells, 1, tile.special === CORE ? 400 : 180); await wait(REDUCED_MOTION ? 20 : 150); collapse(); await wait(REDUCED_MOTION ? 8 : 110); await resolveCascade(); await finishTurn(); return true;
+  }
+
+  function edgeCells(direction) {
+    const cells = [];
+    if (direction === "up") for (let c = 0; c < GRID; c += 1) cells.push([0, c]);
+    if (direction === "down") for (let c = 0; c < GRID; c += 1) cells.push([GRID - 1, c]);
+    if (direction === "left") for (let r = 0; r < GRID; r += 1) cells.push([r, 0]);
+    if (direction === "right") for (let r = 0; r < GRID; r += 1) cells.push([r, GRID - 1]);
+    return cells;
+  }
+  function usePulse(direction = state.pulseDirection) {
+    if (!canInteract() || state.pulse < PULSE_MAX || !["up", "down", "left", "right"].includes(direction)) return false;
+    state.pulse = 0; state.pulseUses += 1; state.pulseDirection = direction; state.pendingGravity = direction; state.gravity = direction; state.pulseArmed = false; sfx("pulse", ["up","right","down","left"].indexOf(direction)); state.shake = .45;
+    let chipped = 0; for (const [r, c] of edgeCells(direction)) if (state.blockers[r][c] > 0) { state.blockers[r][c] -= 1; state.blockerCleared += 1; chipped += 1; addRing(cellCenter(r, c), state.layout.cell * .9, "#e7f3ff"); }
+    addFloater(`PULSE // ${direction.toUpperCase()}`, state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY - 10, "#58e7ff"); toast(chipped ? `Pulse cracked ${chipped} edge layer${chipped === 1 ? "" : "s"}` : `Pulse // ${direction}`); updateHud(); return true;
+  }
+  function armPulse() { if (canInteract() && state.pulse >= PULSE_MAX) { state.pulseArmed = !state.pulseArmed; sfx(state.pulseArmed ? "pulse:arm" : "select"); toast(state.pulseArmed ? "Choose a gravity edge" : "Pulse cancelled"); return true; } return false; }
+
+  function reshuffle(manual = false) {
+    if (!canInteract() || (manual && state.mode === "campaign" && state.moves < SHUFFLE_COST)) return false;
+    if (manual && state.mode === "campaign") state.moves -= SHUFFLE_COST;
+    const loose = []; for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (isFree(r, c) && state.board[r][c]) loose.push(state.board[r][c]);
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      const types = loose.map((tile) => tile.type); for (let i = types.length - 1; i > 0; i -= 1) { const j = Math.floor(random() * (i + 1)); [types[i], types[j]] = [types[j], types[i]]; }
+      loose.forEach((tile, i) => { tile.type = types[i]; tile.special = NONE; });
+      if (!findMatches().length && findAnyMove()) { sfx("shuffle"); toast(manual ? "Array shuffled // -1 move" : "Array found a new orbit"); updateHud(); return true; }
+    }
+    return false;
+  }
+  function requestHint(force = false) { if (!state.active || state.locked || state.paused) return state.hint; if (!force && state.hint) return state.hint; const move = findBestMove(); if (!move) return null; state.hint = { a: move.a, b: move.b, score: move.score, reason: move.reason, t: 0 }; if (force) { sfx("hint"); toast("A clean line is highlighted"); } return state.hint; }
+  function updateIdle(dt) { if (state.active && !state.locked && !state.paused) { state.idle += dt; if (state.idle > 4 && !state.hint) requestHint(false); } }
+
+  async function finishTurn() {
+    updateHud();
+    if (state.active && objectiveComplete()) { await completeMission(); return; }
+    if (state.mode === "campaign" && state.active && state.moves <= 0) { failMission("The move budget is empty. The orbit still has another route."); return; }
+    if (state.active && !findAnyMove()) reshuffle(false);
+    state.locked = false; updateHud();
+  }
+
+  function resetRun() {
+    state.score = 0; state.moves = state.mode === "campaign" ? state.info.moves : 0; state.timeLeft = 120; state.elapsed = 0; state.chain = 0; state.bestChain = 0; state.matchCount = 0; state.blockerCleared = 0; state.collected = new Array(TYPES).fill(0); state.pulse = 0; state.pulseUses = 0; state.pulseArmed = false; state.pendingGravity = null; state.gravity = "down"; state.selection = null; state.hint = null; state.idle = 0; state.locked = false; state.rushing = false; state.particles = []; state.rings = []; state.beams = []; state.floaters = [];
+  }
+  function startMission(index = 0) {
+    state.mode = "campaign"; state.mission = clamp(index | 0, 0, MISSIONS.length - 1); state.info = MISSIONS[state.mission]; state.objective = JSON.parse(JSON.stringify(state.info.objective)); const terrain = parseTerrain(state.info.mask); state.mask = terrain.mask; state.blockers = terrain.blockers; resetRun(); state.active = true; state.paused = false; state.screen = "play"; generateBoard(); ensureAudio(); playMusic(); showScreen("play"); updateHud(); toast(`${String(state.mission + 1).padStart(2, "0")} // ${state.info.name}`); return true;
+  }
+  function startCampaign() { return startMission(0); }
+  function startEndless() {
+    state.mode = "endless"; state.mission = -1; state.info = { name: "Orbit Run", copy: "Keep the array alive for 120 seconds.", moves: 0, objective: { kind: "score", target: 1 }, mask: ["........","........","........","........","........","........","........","........"], stars: [0, 0] }; state.objective = { kind: "score", target: 999999999 }; state.mask = Array.from({ length: GRID }, () => new Array(GRID).fill(1)); state.blockers = Array.from({ length: GRID }, () => new Array(GRID).fill(0)); resetRun(); state.active = true; state.paused = false; state.screen = "play"; generateBoard(); ensureAudio(); playMusic(); showScreen("play"); updateHud(); toast("Orbit run // 120 seconds"); return true;
+  }
+  async function completeMission() {
+    if (!state.active) return; state.active = false; state.locked = false; state.rushing = true; sfx("complete"); addFloater("ORBIT SOLVED", state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY + state.layout.boardSize / 2, "#ffd36a"); burstParticles(state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY + state.layout.boardSize / 2, "#58e7ff", 60); await wait(REDUCED_MOTION ? 20 : 520); state.rushing = false; state.screen = "complete"; stopMusic(); const stars = state.info.stars?.[1] && state.score >= state.info.stars[1] ? 3 : state.info.stars?.[0] && state.score >= state.info.stars[0] ? 2 : 1; $("completeTitle").textContent = `${state.info.name} complete`; $("completeStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars); $("completeScore").textContent = fmt(state.score); $("completeChain").textContent = String(state.bestChain); $("completePulse").textContent = String(state.pulseUses); $("completeStarCount").textContent = String(stars); showScreen("complete"); return true;
+  }
+  function failMission(message = "The move budget is empty. Try a different line.") { if (!state.active) return false; state.active = false; state.locked = false; stopMusic(); sfx("fail"); $("failedTitle").textContent = state.mode === "endless" ? "The array goes dark" : "The orbit slipped"; $("failedCopy").textContent = message; showScreen(state.mode === "endless" ? "endless" : "failed"); if (state.mode === "endless") { state.sessionBest = Math.max(state.sessionBest, state.score); $("endlessScore").textContent = fmt(state.score); $("endlessChain").textContent = String(state.bestChain); $("endlessPulse").textContent = String(state.pulseUses); $("endlessBest").textContent = fmt(state.sessionBest); } return true; }
+  function restart() { return state.mode === "endless" ? startEndless() : startMission(state.mission); }
+
+  function ensureAudio() {
+    if (audio.ctx) { if (audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {}); return; }
+    try { audio.ctx = new (window.AudioContext || window.webkitAudioContext)(); audio.master = audio.ctx.createGain(); audio.master.gain.value = .16; audio.master.connect(audio.ctx.destination); if (audio.ctx.state === "suspended") audio.ctx.resume().catch(() => {}); } catch (_) { audio.ctx = null; }
+  }
+  const audio = { ctx: null, master: null, nextMusic: 0, step: 0 };
+  function tone(freq, duration, type = "sine", volume = .08, when = 0, endFreq = null) {
+    if (!audio.ctx || state.muted) return;
+    try { const now = audio.ctx.currentTime + when; const osc = audio.ctx.createOscillator(); const gain = audio.ctx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, now); if (endFreq) osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFreq), now + duration); gain.gain.setValueAtTime(.0001, now); gain.gain.exponentialRampToValueAtTime(volume, now + .012); gain.gain.exponentialRampToValueAtTime(.0001, now + duration); osc.connect(gain); gain.connect(audio.master); osc.start(now); osc.stop(now + duration + .03); } catch (_) { /* Audio is enhancement only. */ }
+  }
+  function sfx(name, value = 0) {
+    state.audioLog.push(name); if (state.audioLog.length > 100) state.audioLog.shift(); ensureAudio(); const p = typeof value === "number" ? value : 0;
+    const base = 180 + ((p * 31) % 7) * 35;
+    if (name === "select") tone(330, .06, "sine", .055);
+    else if (name === "swap") tone(240, .09, "triangle", .055, 0, 440);
+    else if (name === "reject") tone(125, .15, "square", .05, 0, 90);
+    else if (name === "match") { tone(base, .11, "triangle", .065); tone(base * 1.5, .15, "sine", .045, .045); }
+    else if (name === "cascade") { tone(270 + p * 35, .13, "triangle", .07); tone(540 + p * 55, .2, "sine", .05, .06); }
+    else if (name === "chain") tone(380 + p * 45, .24, "sine", .07, 0, 760 + p * 80);
+    else if (name === "forge") tone(260 + p * 90, .28, "triangle", .09, 0, 720 + p * 120);
+    else if (name.startsWith("special")) { tone(160 + p * 30, .24, "sawtooth", .07, 0, 72); tone(620 + p * 80, .22, "sine", .06, .04, 900); }
+    else if (name.startsWith("fusion")) { tone(130, .34, "sawtooth", .075, 0, 55); tone(390 + p * 30, .4, "sine", .08, .1, 1100); }
+    else if (name === "detonate") tone(110, .31, "square", .075, 0, 38);
+    else if (name === "blocker") tone(190, .12, "square", .055, 0, 75);
+    else if (name === "pulse" || name === "pulse:arm") { tone(220, .35, "sine", .08, 0, 820); tone(440, .38, "triangle", .07, .12, 1040); }
+    else if (name === "hint") tone(690, .2, "sine", .055, 0, 880);
+    else if (name === "shuffle") { tone(230, .16, "triangle", .06); tone(350, .18, "triangle", .05, .08); }
+    else if (name === "complete") { [0, 4, 7, 12].forEach((n, i) => tone(330 * Math.pow(2, n / 12), .45, "sine", .07, i * .1)); }
+    else if (name === "fail") tone(220, .5, "sawtooth", .065, 0, 70);
+  }
+  function playMusic() { ensureAudio(); audio.nextMusic = 0; }
+  function stopMusic() { audio.nextMusic = 0; }
+  function musicTick(now) {
+    if (!audio.ctx || state.muted || !state.active || state.paused) return;
+    if (!audio.nextMusic) audio.nextMusic = now;
+    const tempo = state.mode === "endless" ? 340 - Math.min(110, state.elapsed * .72) : 430 - Math.min(90, state.chain * 20);
+    while (now >= audio.nextMusic) { const scale = [0, 3, 7, 10, 12, 15, 19, 22]; const step = audio.step++ % scale.length; tone(92 * Math.pow(2, scale[step] / 12), .25, step % 4 ? "sine" : "triangle", .018, 0, 94 * Math.pow(2, scale[step] / 12)); audio.nextMusic += tempo; }
+  }
+
+  function addRing(x, y, radius, color) { if (REDUCED_MOTION) return; state.rings.push({ x, y, radius, color, life: 0, span: 480 }); if (state.rings.length > 50) state.rings.shift(); }
+  function burstParticles(x, y, color, count = 12) { const budget = REDUCED_MOTION ? 35 : state.layout.width < 700 ? 90 : 180; for (let i = 0; i < count && state.particles.length < budget; i += 1) { const a = random() * Math.PI * 2, speed = 35 + random() * 125; state.particles.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, color, life: 0, span: 420 + random() * 340, size: 1.5 + random() * 3.5 }); } }
+  function addFloater(text, x, y, color) { state.floaters.push({ text, x, y, color, life: 0, span: 900 }); if (state.floaters.length > 20) state.floaters.shift(); }
+  function updateFx(dt) {
+    for (let i = state.particles.length - 1; i >= 0; i -= 1) { const p = state.particles[i]; p.life += dt; p.x += p.vx * dt / 1000; p.y += p.vy * dt / 1000; p.vy += 90 * dt / 1000; if (p.life >= p.span) state.particles.splice(i, 1); }
+    for (let i = state.rings.length - 1; i >= 0; i -= 1) { state.rings[i].life += dt; if (state.rings[i].life >= state.rings[i].span) state.rings.splice(i, 1); }
+    for (let i = state.floaters.length - 1; i >= 0; i -= 1) { state.floaters[i].life += dt; state.floaters[i].y -= dt * .035; if (state.floaters[i].life >= state.floaters[i].span) state.floaters.splice(i, 1); }
+    state.shake = Math.max(0, state.shake - dt / 520);
+    for (const row of state.board) for (const tile of row) if (tile) { tile.anim = Math.min(1, tile.anim + dt / 180); const ease = 1 - Math.pow(1 - tile.anim, 3); tile.x = lerp(tile.x, tile.tx, ease); tile.y = lerp(tile.y, tile.ty, ease); }
+  }
+
+  function resize() {
+    const width = innerWidth, height = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2); canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr); canvas.style.width = `${width}px`; canvas.style.height = `${height}px`; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const rails = width >= 980 && height >= 600; const boardSize = clamp(rails ? Math.min(620, height - 110, width - 480) : Math.min(width - 28, height - 145), 220, rails ? 620 : 560); state.layout = { width, height, dpr, boardX: (width - boardSize) / 2, boardY: rails ? (height - boardSize) / 2 + 4 : 82, boardSize, cell: boardSize / GRID, mode: rails ? "rails" : "stack" }; settleTiles(); }
+  function roundedRect(g, x, y, w, h, radius) { const r = Math.min(radius, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  function drawBackground(g, width, height) {
+    const bg = g.createRadialGradient(width * .5, height * .38, 20, width * .5, height * .5, Math.max(width, height) * .75); bg.addColorStop(0, "#172a4e"); bg.addColorStop(.48, "#0a1228"); bg.addColorStop(1, "#050813"); g.fillStyle = bg; g.fillRect(0, 0, width, height);
+    g.save(); g.globalAlpha = .3; g.strokeStyle = "#6d96ca"; g.lineWidth = 1;
+    for (let i = 0; i < 4; i += 1) { const radius = Math.min(width, height) * (.18 + i * .11); g.beginPath(); g.ellipse(width * (.52 + i * .012), height * .48, radius * 1.42, radius * .28, -.18, 0, Math.PI * 2); g.stroke(); }
+    g.globalAlpha = .6; for (let i = 0; i < 75; i += 1) { const x = (i * 97) % width, y = (i * 47 + 19) % height; g.fillStyle = i % 5 === 0 ? "#9beaff" : "#7d91b8"; g.fillRect(x, y, i % 6 === 0 ? 2 : 1, i % 6 === 0 ? 2 : 1); }
+    g.restore();
+  }
+  function drawTile(g, tile) {
+    const gem = GEMS[tile.type], r = state.layout.cell * .33, x = tile.x, y = tile.y; g.save(); g.translate(x, y); const pulse = 1 + Math.sin(performance.now() / 480 + tile.phase) * .025; g.scale(pulse, pulse);
+    g.shadowBlur = 14; g.shadowColor = gem.color; g.globalAlpha = .38; g.fillStyle = gem.color; g.beginPath(); g.arc(0, 0, r * 1.03, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0; g.globalAlpha = 1;
+    const gradient = g.createLinearGradient(-r, -r, r, r); gradient.addColorStop(0, gem.light); gradient.addColorStop(.28, gem.color); gradient.addColorStop(1, gem.dark); g.fillStyle = gradient; g.strokeStyle = "rgba(255,255,255,.72)"; g.lineWidth = Math.max(1, r * .06); g.beginPath();
+    if (gem.shape === "diamond") { g.moveTo(0, -r); g.lineTo(r * .72, 0); g.lineTo(0, r); g.lineTo(-r * .72, 0); }
+    else if (gem.shape === "hex") for (let i = 0; i < 6; i += 1) { const a = -Math.PI / 2 + i * Math.PI / 3; if (i === 0) g.moveTo(Math.cos(a) * r, Math.sin(a) * r); else g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    else if (gem.shape === "circle") g.arc(0, 0, r * .82, 0, Math.PI * 2);
+    else if (gem.shape === "crescent") { g.arc(-r * .08, 0, r * .82, 0, Math.PI * 2); g.moveTo(r * .12, -r * .68); g.arc(r * .35, -r * .05, r * .68, -Math.PI * .93, Math.PI * .93, true); }
+    else if (gem.shape === "triangle") { g.moveTo(0, -r); g.lineTo(r * .86, r * .72); g.lineTo(-r * .86, r * .72); }
+    else for (let i = 0; i < 10; i += 1) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .4 : r; if (i === 0) g.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); else g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    g.closePath(); g.fill(); g.stroke(); g.globalAlpha = .63; g.strokeStyle = "rgba(255,255,255,.78)"; g.lineWidth = Math.max(1, r * .045); g.beginPath(); g.moveTo(-r * .4, -r * .42); g.lineTo(r * .28, -r * .58); g.stroke();
+    if (tile.special !== NONE) { g.globalAlpha = .95; g.strokeStyle = "#f4fbff"; g.lineWidth = Math.max(2, r * .11); if (tile.special === BEAM_ROW) { g.beginPath(); g.moveTo(-r * .78, 0); g.lineTo(r * .78, 0); g.stroke(); } else if (tile.special === BEAM_COL) { g.beginPath(); g.moveTo(0, -r * .78); g.lineTo(0, r * .78); g.stroke(); } else if (tile.special === BURST) { g.beginPath(); g.arc(0, 0, r * .45, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(0, 0, r * .7, 0, Math.PI * 2); g.stroke(); } else { g.beginPath(); g.arc(0, 0, r * .68, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(0, 0, r * .36, 0, Math.PI * 2); g.stroke(); } }
+    g.restore();
+  }
+  function drawBoard(g) {
+    const { boardX: x, boardY: y, boardSize: size, cell } = state.layout; if (!size) return;
+    g.save(); const shakeX = state.shake ? (random() - .5) * state.shake * 8 : 0, shakeY = state.shake ? (random() - .5) * state.shake * 8 : 0; g.translate(shakeX, shakeY);
+    g.shadowBlur = 35; g.shadowColor = "rgba(54,156,255,.28)"; roundedRect(g, x - 8, y - 8, size + 16, size + 16, 8); g.fillStyle = "rgba(4,9,20,.94)"; g.fill(); g.shadowBlur = 0; g.strokeStyle = "rgba(159,205,255,.42)"; g.lineWidth = 1; g.stroke();
+    for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) {
+      const px = x + c * cell, py = y + r * cell; if (!isOpen(r, c)) { g.fillStyle = "rgba(1,4,11,.84)"; g.fillRect(px + 2, py + 2, cell - 4, cell - 4); g.strokeStyle = "rgba(105,132,175,.09)"; g.strokeRect(px + 2, py + 2, cell - 4, cell - 4); continue; }
+      const fill = g.createLinearGradient(px, py, px, py + cell); fill.addColorStop(0, "rgba(28,49,83,.5)"); fill.addColorStop(1, "rgba(8,17,35,.68)"); g.fillStyle = fill; g.fillRect(px + 2, py + 2, cell - 4, cell - 4); g.strokeStyle = "rgba(148,190,242,.11)"; g.strokeRect(px + 2, py + 2, cell - 4, cell - 4);
+      const tile = state.board[r][c]; if (tile) drawTile(g, tile);
+      if (state.blockers[r][c] > 0) { g.save(); g.globalAlpha = .78; roundedRect(g, px + 6, py + 6, cell - 12, cell - 12, 8); g.fillStyle = state.blockers[r][c] > 1 ? "rgba(199,218,255,.38)" : "rgba(148,206,255,.2)"; g.fill(); g.strokeStyle = "rgba(228,246,255,.72)"; g.lineWidth = 1.4; g.stroke(); g.strokeStyle = "rgba(255,255,255,.35)"; g.beginPath(); g.moveTo(px + cell * .26, py + cell * .68); g.lineTo(px + cell * .6, py + cell * .26); g.moveTo(px + cell * .53, py + cell * .77); g.lineTo(px + cell * .77, py + cell * .44); g.stroke(); if (state.blockers[r][c] > 1) { g.fillStyle = "#e7f3ff"; g.font = `600 ${Math.max(9, cell * .13)}px ${getComputedStyle(document.body).fontFamily}`; g.textAlign = "right"; g.fillText("Ⅱ", px + cell - 10, py + 20); } g.restore(); }
+    }
+    if (state.selection && isOpen(state.selection.r, state.selection.c)) { const s = state.selection; g.strokeStyle = "#eef6ff"; g.lineWidth = 2; g.shadowBlur = 12; g.shadowColor = "#58e7ff"; g.strokeRect(x + s.c * cell + 4, y + s.r * cell + 4, cell - 8, cell - 8); g.shadowBlur = 0; }
+    if (state.hint && !state.locked) { const t = (Math.sin(performance.now() / 170) + 1) / 2; for (const p of [state.hint.a, state.hint.b]) { g.strokeStyle = `rgba(255,211,106,${.35 + t * .6})`; g.lineWidth = 2; g.strokeRect(x + p.c * cell + 7, y + p.r * cell + 7, cell - 14, cell - 14); } }
+    if (state.hover && isOpen(state.hover.r, state.hover.c)) { g.strokeStyle = "rgba(88,231,255,.55)"; g.lineWidth = 1; g.strokeRect(x + state.hover.c * cell + 5, y + state.hover.r * cell + 5, cell - 10, cell - 10); }
+    if (state.pulseArmed) { const directions = [["up", x + size / 2, y - 17, "↑"], ["down", x + size / 2, y + size + 25, "↓"], ["left", x - 19, y + size / 2 + 5, "←"], ["right", x + size + 19, y + size / 2 + 5, "→"]]; for (const [dir, px, py, glyph] of directions) { const active = state.pulseDirection === dir; g.fillStyle = active ? "#58e7ff" : "#8fa7c8"; g.font = `700 19px ${getComputedStyle(document.body).fontFamily}`; g.textAlign = "center"; g.fillText(glyph, px, py); } }
+    g.restore();
+  }
+  function drawFx(g) {
+    for (const ring of state.rings) { const t = ring.life / ring.span; g.globalAlpha = 1 - t; g.strokeStyle = ring.color; g.lineWidth = 2; g.beginPath(); g.arc(ring.x, ring.y, ring.radius * (0.45 + t * .9), 0, Math.PI * 2); g.stroke(); }
+    for (const p of state.particles) { g.globalAlpha = 1 - p.life / p.span; g.fillStyle = p.color; g.beginPath(); g.arc(p.x, p.y, p.size, 0, Math.PI * 2); g.fill(); }
+    for (const f of state.floaters) { g.globalAlpha = 1 - f.life / f.span; g.fillStyle = f.color; g.font = `700 12px ${getComputedStyle(document.body).fontFamily}`; g.textAlign = "center"; g.fillText(f.text, f.x, f.y); }
+    g.globalAlpha = 1;
+  }
+  function render() { const { width, height } = state.layout; if (!width) return; ctx.clearRect(0, 0, width, height); drawBackground(ctx, width, height); drawBoard(ctx); drawFx(ctx); }
+
+  function updateHud() {
+    const o = state.objective; $("modeValue").textContent = state.mode === "endless" ? `Orbit run // ${Math.ceil(state.timeLeft)}s` : `Campaign // Mission ${String(state.mission + 1).padStart(2, "0")}`; $("missionName").textContent = state.info?.name || "Perilune"; $("missionCopy").textContent = state.info?.copy || ""; $("objectiveLabel").textContent = objectiveLabel(); $("objectiveValue").textContent = state.mode === "endless" ? `${Math.ceil(state.timeLeft)}s remaining` : objectiveText(); $("objectiveNote").textContent = state.mode === "endless" ? `Tier ${1 + Math.floor(state.elapsed / 20)} · speed ${(1 + state.elapsed / 185).toFixed(1)}×` : o?.kind === "collect" ? o.colors.map((t) => `${GEMS[t].name} ${Math.min(state.collected[t], o.perColor)}/${o.perColor}`).join(" · ") : o?.kind === "mastery" ? `Pulse ${state.pulseUses}/${o.pulseTarget}` : ""; const progress = state.mode === "endless" ? state.timeLeft / 120 : o?.kind === "dual" ? Math.min(state.blockerCleared / o.target, state.score / o.scoreTarget) : o?.kind === "collect" ? objectiveProgress() / (o.colors.length * o.perColor) : objectiveProgress() / (o?.target || 1); $("objectiveFill").style.width = `${clamp(progress * 100, 0, 100)}%`; $("movesValue").textContent = state.mode === "endless" ? `${Math.ceil(state.timeLeft)}s` : String(Math.max(0, state.moves)); $("scoreValue").textContent = fmt(state.score); $("chainValue").textContent = `×${Math.max(1, Math.min(MAX_CHAIN, state.chain))}`; $("chainNote").textContent = state.chain > 1 ? `${state.chain}-step cascade // keep the line` : "The array is quiet."; $("pulseValue").textContent = state.pulse >= PULSE_MAX ? "READY" : `${Math.round(state.pulse)}%`; $("pulseFill").style.width = `${state.pulse}%`; $("pulseFill").parentElement.classList.toggle("ready", state.pulse >= PULSE_MAX); $("pulseButton").disabled = state.pulse < PULSE_MAX || !canInteract(); $("pulseButton").classList.toggle("ready", state.pulse >= PULSE_MAX); $("shuffleButton").disabled = !canInteract(); $("hintButton").disabled = !canInteract(); $("pauseButton").disabled = !state.active; hud.classList.toggle("hidden", !state.active && state.screen !== "paused"); }
+  function buildMissionMap() { const root = $("missionMap"); root.innerHTML = ""; MISSIONS.forEach((mission, index) => { const button = document.createElement("button"); button.className = "mission-chip"; button.type = "button"; button.innerHTML = `<span>${String(index + 1).padStart(2, "0")}</span><em>${mission.name.split(" ")[0]}</em>`; button.title = mission.name; button.addEventListener("click", () => startMission(index)); root.appendChild(button); }); }
+  function showScreen(screen) { state.screen = screen; for (const element of document.querySelectorAll(".screen")) element.classList.toggle("active", element.dataset.screen === screen); hud.classList.toggle("hidden", !state.active && screen !== "paused"); }
+  function toast(message) { const element = $("toast"); element.textContent = message; element.classList.add("show"); clearTimeout(state.toastTimer); state.toastTimer = setTimeout(() => element.classList.remove("show"), 1600); }
+  function togglePause(force = null) { if (!state.active && state.screen !== "paused") return; const next = force === null ? !state.paused : force; state.paused = next; if (next) { stopMusic(); showScreen("paused"); } else { showScreen("play"); playMusic(); } updateHud(); sfx(next ? "select" : "swap"); }
+  function cellFromEvent(event) { const rect = canvas.getBoundingClientRect(); const c = Math.floor((event.clientX - rect.left - state.layout.boardX) / state.layout.cell); const r = Math.floor((event.clientY - rect.top - state.layout.boardY) / state.layout.cell); return inside(r, c) ? { r, c } : null; }
+  function selectOrSwap(cell) { if (!canInteract() || !cell) return; state.cursor = { ...cell }; if (!state.selection) { state.selection = { ...cell }; sfx("select"); return; } if (state.selection.r === cell.r && state.selection.c === cell.c) { if (state.board[cell.r][cell.c]?.special !== NONE) void detonate(cell.r, cell.c); else state.selection = null; return; } if (adjacent(state.selection, cell)) void attemptSwap(state.selection, cell); else { state.selection = { ...cell }; sfx("select"); } }
+  function moveCursor(dr, dc) { state.cursor.r = clamp(state.cursor.r + dr, 0, GRID - 1); state.cursor.c = clamp(state.cursor.c + dc, 0, GRID - 1); state.hover = { ...state.cursor }; }
+  function onKey(event) {
+    const key = event.key.toLowerCase();
+    if (state.screen === "title" && (key === "enter" || key === " ")) { event.preventDefault(); startCampaign(); return; }
+    if (state.screen === "complete" && key === "enter") { event.preventDefault(); if (state.mission < MISSIONS.length - 1) startMission(state.mission + 1); return; }
+    if (state.screen === "failed" && key === "r") { event.preventDefault(); restart(); return; }
+    if (key === "m") { state.muted = !state.muted; $("audioButton").textContent = state.muted ? "⊘" : "◉"; if (!state.muted) ensureAudio(); return; }
+    if (key === "p" && state.active) { event.preventDefault(); togglePause(); return; }
+    if (key === "r" && state.active) { event.preventDefault(); restart(); return; }
+    if (!canInteract()) return;
+    if (state.pulseArmed) {
+      if (["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) { state.pulseDirection = ({ arrowup: "up", arrowdown: "down", arrowleft: "left", arrowright: "right" })[key]; event.preventDefault(); return; }
+      if (key === "enter" || key === " ") { event.preventDefault(); usePulse(); return; }
+      if (key === "escape") { state.pulseArmed = false; return; }
+    }
+    if (key === "arrowup") { moveCursor(-1, 0); event.preventDefault(); }
+    else if (key === "arrowdown") { moveCursor(1, 0); event.preventDefault(); }
+    else if (key === "arrowleft") { moveCursor(0, -1); event.preventDefault(); }
+    else if (key === "arrowright") { moveCursor(0, 1); event.preventDefault(); }
+    else if (key === "enter") { selectOrSwap({ ...state.cursor }); event.preventDefault(); }
+    else if (key === "h") { requestHint(true); event.preventDefault(); }
+    else if (key === "s") { reshuffle(true); event.preventDefault(); }
+    else if (key === " ") { armPulse(); event.preventDefault(); }
+  }
+
+  function snapshot() {
+    const o = state.objective || { kind: "score", target: 0 }; return { grid: GRID, board: state.board.map((row) => row.map((tile) => tile ? { type: tile.type, special: tile.special, id: tile.id } : null)), mask: state.mask.map((row) => row.slice()), blockers: state.blockers.map((row) => row.slice()), score: state.score, moves: state.moves, timeLeft: state.timeLeft, level: state.mission, levelName: state.info?.name || "", mode: state.mode, objective: { kind: o.kind, target: o.target, progress: objectiveProgress(), complete: objectiveComplete(), colors: o.colors?.slice(), perColor: o.perColor, scoreTarget: o.scoreTarget, pulseTarget: o.pulseTarget, collected: state.collected.slice() }, chain: state.chain, bestChain: state.bestChain, blockerCleared: state.blockerCleared, pulse: state.pulse, pulseUses: state.pulseUses, pulseArmed: state.pulseArmed, pulseDirection: state.pulseDirection, pendingGravity: state.pendingGravity, gravity: state.gravity, cursor: { ...state.cursor }, selection: state.selection ? { ...state.selection } : null, hasMove: Boolean(findAnyMove()), matchCount: state.matchCount, hint: state.hint ? { ...state.hint } : null, active: state.active, locked: state.locked, paused: state.paused, rushing: state.rushing, screen: state.screen, reducedMotion: REDUCED_MOTION, particleCount: state.particles.length, effectBudget: REDUCED_MOTION ? 35 : state.layout.width < 700 ? 90 : 180, layout: { ...state.layout } };
+  }
+
+  function tick(now) {
+    const dt = state.lastFrame ? Math.min(80, now - state.lastFrame) : 16; state.lastFrame = now; if (state.mode === "endless" && state.active && !state.paused && !state.locked) { state.elapsed += dt / 1000; state.timeLeft = Math.max(0, 120 - state.elapsed); state.speed = 1 + state.elapsed / 185; if (Math.floor(state.elapsed) % 25 === 0 && Math.floor(state.elapsed) !== Math.floor(state.elapsed - dt / 1000)) { const edge = ["up", "right", "down", "left"][Math.floor(state.elapsed / 25) % 4]; for (const [r, c] of edgeCells(edge)) if (isOpen(r, c) && state.blockers[r][c] === 0 && random() < .32) state.blockers[r][c] = 1; toast("Orbit drift // new moon-dust"); } if (state.timeLeft <= 0) failMission("120 seconds crossed. The session record is yours to beat."); }
+    updateIdle(dt / 1000); updateFx(dt); musicTick(now); render(); updateHud(); requestAnimationFrame(tick);
+  }
+
+  function installTestApi() {
+    if (!TEST_MODE) return;
+    window.__lunarArrayTest = { constants: { GRID, TYPES, NONE, BEAM_ROW, BEAM_COL, BURST, CORE, MAX_CHAIN, PULSE_MAX, SHUFFLE_COST, FUSION }, snapshot, setSeed, startMission, startCampaign, startEndless, setSpeed: (value) => { state.speed = Math.max(.1, Number(value) || 1); }, setBoard(matrix, specials = []) { state.board = Array.from({ length: GRID }, (_, r) => Array.from({ length: GRID }, (_, c) => isOpen(r, c) ? createTile(Number(matrix?.[r]?.[c] ?? 0), r, c) : null)); for (const item of specials) if (inside(item.r, item.c) && state.board[item.r][item.c]) state.board[item.r][item.c].special = item.special; settleTiles(); state.locked = false; state.matchCount = findMatches().length; updateHud(); return true; }, setMask(mask) { state.mask = mask.map((row) => row.map((value) => value ? 1 : 0)); for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (!state.mask[r][c]) state.board[r][c] = null; else if (!state.board[r][c]) state.board[r][c] = createTile(randomType(), r, c); settleTiles(); return true; }, setBlockers(entries) { state.blockers = Array.from({ length: GRID }, () => new Array(GRID).fill(0)); for (const item of entries || []) if (inside(item.r, item.c)) state.blockers[item.r][item.c] = clamp(item.layers ?? 1, 0, 2); settleTiles(); return true; }, setMoves(value) { state.moves = Number(value); updateHud(); }, setTime(value) { state.timeLeft = Number(value); state.elapsed = 120 - state.timeLeft; updateHud(); }, setScore(value) { state.score = Number(value); updateHud(); }, setPulse(value) { state.pulse = clamp(Number(value) || 0, 0, PULSE_MAX); updateHud(); }, setObjective(spec) { state.objective = { kind: spec.kind || "score", target: spec.target ?? 0, colors: spec.colors?.slice(), perColor: spec.perColor, scoreTarget: spec.scoreTarget, pulseTarget: spec.pulseTarget }; updateHud(); }, swap: (r1, c1, r2, c2) => attemptSwap({ r: r1, c: c1 }, { r: r2, c: c2 }), detonate, resolve: () => resolveCascade(), collapse, shuffle: reshuffle, hint: requestHint, bestMove: () => findBestMove(), pulse: usePulse, armPulse, finishTurn, completeMission, failMission, restart, advance(ms) { const delta = Math.max(0, Number(ms) || 0); if (state.mode === "endless" && state.active && !state.paused && !state.locked) { state.elapsed += delta / 1000; state.timeLeft = Math.max(0, 120 - state.elapsed); if (state.timeLeft <= 0) failMission("120 seconds crossed. The session record is yours to beat."); } updateFx(delta); updateHud(); render(); return snapshot(); }, audioEvents: () => state.audioLog.slice(), clearAudioEvents: () => { state.audioLog.length = 0; }, cellRect: (r, c) => ({ x: state.layout.boardX + c * state.layout.cell, y: state.layout.boardY + r * state.layout.cell, w: state.layout.cell, h: state.layout.cell }) };
+  }
+
+  canvas.addEventListener("pointerdown", (event) => { ensureAudio(); canvas.focus({ preventScroll: true }); const cell = cellFromEvent(event); if (!cell || !canInteract()) return; state.dragging = true; state.dragOrigin = cell; selectOrSwap(cell); });
+  canvas.addEventListener("pointermove", (event) => { const cell = cellFromEvent(event); state.hover = cell; if (!state.dragging || !state.dragOrigin || !cell || !canInteract()) return; if (adjacent(state.dragOrigin, cell)) { const origin = state.dragOrigin; state.dragging = false; state.dragOrigin = null; void attemptSwap(origin, cell); } });
+  canvas.addEventListener("pointerup", () => { state.dragging = false; state.dragOrigin = null; });
+  canvas.addEventListener("pointerleave", () => { state.hover = null; state.dragging = false; state.dragOrigin = null; });
+  canvas.addEventListener("dblclick", (event) => { const cell = cellFromEvent(event); if (cell) void detonate(cell.r, cell.c); });
+  canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+  addEventListener("keydown", onKey);
+  addEventListener("resize", resize);
+  $("campaignButton").addEventListener("click", () => startCampaign());
+  $("endlessButton").addEventListener("click", () => startEndless());
+  $("hintButton").addEventListener("click", () => requestHint(true));
+  $("shuffleButton").addEventListener("click", () => reshuffle(true));
+  $("audioButton").addEventListener("click", () => { state.muted = !state.muted; $("audioButton").textContent = state.muted ? "⊘" : "◉"; if (!state.muted) ensureAudio(); });
+  $("pauseButton").addEventListener("click", () => togglePause());
+  $("pulseButton").addEventListener("click", () => armPulse());
+  $("resumeButton").addEventListener("click", () => togglePause(false));
+  $("quitButton").addEventListener("click", () => { state.active = false; state.paused = false; stopMusic(); showScreen("title"); updateHud(); });
+  $("failedQuitButton").addEventListener("click", () => { state.active = false; showScreen("title"); updateHud(); });
+  $("retryButton").addEventListener("click", () => restart());
+  $("replayMissionButton").addEventListener("click", () => restart());
+  $("nextMissionButton").addEventListener("click", () => startMission(Math.min(MISSIONS.length - 1, state.mission + 1)));
+  $("againEndlessButton").addEventListener("click", () => startEndless());
+  $("endlessQuitButton").addEventListener("click", () => { state.active = false; showScreen("title"); updateHud(); });
+
+  buildMissionMap(); resize(); parseTerrain(MISSIONS[0].mask); state.info = MISSIONS[0]; state.mask = parseTerrain(MISSIONS[0].mask).mask; state.blockers = parseTerrain(MISSIONS[0].mask).blockers; generateBoard(); installTestApi(); showScreen("title"); updateHud(); requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
