@@ -2154,6 +2154,19 @@
               ]
             }
           ]
+        },
+        {
+          "model": "GPT 5.6 Luna",
+          "modelId": "gpt-5-6-luna",
+          "date": "2026-07-31",
+          "linesOfCode": 491,
+          "path": "/games/breakout/gpt-5-6-luna/index.html",
+          "features": [
+            "sound",
+            "music",
+            "particles",
+            "powerups"
+          ]
         }
       ]
     },
