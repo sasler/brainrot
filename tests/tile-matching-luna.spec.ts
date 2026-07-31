@@ -146,7 +146,7 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     expect(state.matchCount).toBe(0);
     expect(state.hasMove).toBe(true);
     expect(state.board.flat().filter(Boolean)).toHaveLength(64);
-    await expect.poll(() => page.evaluate(() => window.__lunaAudioStarts ?? 0)).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => window.__lunaAudioStarts ?? 0)).toBeGreaterThan(2);
     await expect(page.locator("#missionName")).toHaveText("Perilune");
   });
 
