@@ -12,10 +12,11 @@ type LunaSnapshot = {
   combo: number;
   bricksRemaining: number;
   paddle: { x: number; targetX: number; y: number; w: number };
-  balls: Array<{ x: number; y: number; vx: number; vy: number; stuck: boolean; nova: boolean }>;
+  balls: Array<{ x: number; y: number; vx: number; vy: number; stuck: boolean; captured: boolean; nova: boolean }>;
   activePowerups: Record<string, number>;
   layout: { width: number; height: number; boardX: number; boardY: number; boardW: number; boardH: number; brickTop: number; paddleY: number };
   medals: string[];
+  muted: boolean;
 };
 
 async function snapshot(page: Page): Promise<LunaSnapshot> {
@@ -69,7 +70,7 @@ test.describe("GPT 5.6 Luna Breakout", {
 
     const before = await snapshot(page);
     await page.mouse.move(120, 400);
-    await page.waitForTimeout(100);
+    await advance(page, 120);
     const after = await snapshot(page);
 
     expect(after.screen).toBe("playing");
@@ -78,9 +79,18 @@ test.describe("GPT 5.6 Luna Breakout", {
     await page.keyboard.press("Space");
     await expect.poll(() => page.evaluate(() => (window as typeof window & { __lunaAudioStarts?: number }).__lunaAudioStarts ?? 0)).toBeGreaterThan(0);
 
+    await page.evaluate(() => {
+      const api = (window as typeof window & { __lunaBreakoutTest: { forcePowerUp: (type: string) => LunaSnapshot } }).__lunaBreakoutTest;
+      api.forcePowerUp("lens");
+    });
     await page.locator('[data-testid="pause-button"]').click();
     await expect(page.locator("#statusText")).toHaveText("HOLDING POSITION");
+    const lensTimer = (await snapshot(page)).activePowerups.lens;
+    await advance(page, 1000);
+    expect((await snapshot(page)).activePowerups.lens).toBe(lensTimer);
     await page.locator("#resumeButton").click();
+    await advance(page, 1000);
+    expect((await snapshot(page)).activePowerups.lens).toBeLessThan(lensTimer);
     await page.keyboard.press("m");
     expect((await snapshot(page)).muted).toBe(true);
     await page.locator('[data-testid="audio-button"]').click();
@@ -123,6 +133,22 @@ test.describe("GPT 5.6 Luna Breakout", {
     expect(effects.lens.paddle.w).toBeGreaterThan(initial.paddle.w);
     expect(effects.nova.activePowerups.nova).toBeGreaterThan(0);
     expect(effects.nova.balls[0].nova).toBe(true);
+
+    await page.evaluate(() => {
+      const api = (window as typeof window & { __lunaBreakoutTest: { setLevel: (value: number) => LunaSnapshot; forcePowerUp: (type: string) => LunaSnapshot; setBall: (value: unknown) => LunaSnapshot } }).__lunaBreakoutTest;
+      const level = api.setLevel(1);
+      api.forcePowerUp("magnet");
+      return api.setBall({ x: level.paddle.x, y: level.paddle.y - 60, vx: 0, vy: 340, stuck: false, captured: false });
+    });
+    const magnetCatch = await advance(page, 220);
+    expect(magnetCatch.balls[0].captured).toBe(true);
+    expect(magnetCatch.balls[0].vx).toBe(0);
+    const relaunched = await page.evaluate(() => {
+      const api = (window as typeof window & { __lunaBreakoutTest: { launch: () => boolean } }).__lunaBreakoutTest;
+      return api.launch();
+    });
+    expect(relaunched).toBe(true);
+    expect((await snapshot(page)).balls[0].captured).toBe(false);
 
     await page.evaluate(() => {
       const api = (window as typeof window & { __lunaBreakoutTest: { setLives: (value: number) => void; forcePowerUp: (type: string) => void; setBall: (value: unknown) => void; clearAudioEvents: () => void } }).__lunaBreakoutTest;

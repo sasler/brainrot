@@ -293,7 +293,7 @@
       return bricks;
     }
     function createBall(x, y, angle = -Math.PI / 2, speed = 330) {
-      return { x, y, r: state.layout.width < 650 ? 6 : 8, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, speed, stuck: true, dead: false, nova: false, trail: [], hue: rand() * 40 + 178 };
+      return { x, y, r: state.layout.width < 650 ? 6 : 8, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, speed, stuck: true, captured: false, dead: false, nova: false, trail: [], hue: rand() * 40 + 178 };
     }
     function loadLevel(index) {
       state.level = clamp(index, 0, LEVELS.length - 1); state.bricks = makeLevel(state.level); state.powerups = []; state.activeEffects = {}; state.aegis = false; state.paddle.w = state.paddle.baseW = state.layout.width < 650 ? 90 : 150; state.paddle.x = state.layout.width / 2; state.paddle.targetX = state.paddle.x; state.paddle.y = state.layout.paddleY; state.balls = [createBall(state.paddle.x, state.paddle.y - 22)]; state.stageScores[state.level] = 0; state.screen = "level"; state.phaseTimer = 1.45; state.pendingLevel = null; state.dirtyHud = true; showOverlays(); audioEvent("level", 247 + state.level * 32, .28, "triangle", .12); }
@@ -306,7 +306,7 @@
     function launch() {
       if (state.screen !== "playing" || !state.balls.length) return false;
       let launched = false;
-      state.balls.forEach((ball, index) => { if (ball.stuck) { const angle = (index % 2 ? -.28 : .28) - Math.PI / 2; const speed = ball.speed; ball.vx = Math.cos(angle) * speed; ball.vy = Math.sin(angle) * speed; ball.stuck = false; launched = true; } });
+      state.balls.forEach((ball, index) => { if (ball.stuck || ball.captured) { const angle = (index % 2 ? -.28 : .28) - Math.PI / 2; const speed = ball.speed; ball.vx = Math.cos(angle) * speed; ball.vy = Math.sin(angle) * speed; ball.stuck = false; ball.captured = false; launched = true; } });
       if (launched) audioEvent("launch", 392, .18, "square", .1);
       return launched;
     }
@@ -346,14 +346,14 @@
       if (!POWERUPS[type]) return;
       const spec = POWERUPS[type]; state.activeEffects[type] = type === "aegis" ? 1 : type === "prism" ? 0 : type === "nova" ? 10 : type === "tide" ? 8 : 10;
       if (type === "prism") {
-        const source = state.balls.find((ball) => !ball.dead); if (source) { const speed = Math.hypot(source.vx, source.vy); state.balls.push({ ...source, vx: Math.cos(-Math.PI / 2 - .48) * speed, vy: Math.sin(-Math.PI / 2 - .48) * speed, stuck: false, trail: [] }, { ...source, vx: Math.cos(-Math.PI / 2 + .48) * speed, vy: Math.sin(-Math.PI / 2 + .48) * speed, stuck: false, trail: [] }); }
+        const source = state.balls.find((ball) => !ball.dead); if (source) { const speed = Math.max(source.speed, Math.hypot(source.vx, source.vy)); state.balls.push({ ...source, vx: Math.cos(-Math.PI / 2 - .48) * speed, vy: Math.sin(-Math.PI / 2 - .48) * speed, stuck: false, captured: false, trail: [] }, { ...source, vx: Math.cos(-Math.PI / 2 + .48) * speed, vy: Math.sin(-Math.PI / 2 + .48) * speed, stuck: false, captured: false, trail: [] }); }
       } else if (type === "lens") state.paddle.w = state.paddle.baseW * 1.55;
       else if (type === "nova") state.balls.forEach((ball) => { ball.nova = true; });
       else if (type === "aegis") state.aegis = true;
       spawnBurst(state.paddle.x, state.paddle.y, spec.color, 32, 210); state.shockwaves.push({ x: state.paddle.x, y: state.paddle.y, r: 12, life: 1, color: spec.color }); state.flash = .55; audioEvent("powerupCollect", 390 + Object.keys(POWERUPS).indexOf(type) * 62, .32, "sine", .16); spawnFloater(`${spec.glyph} ${spec.label}`, state.paddle.x, state.paddle.y - 24, spec.color); state.dirtyHud = true;
     }
     function decayEffects(dt) {
-      Object.keys(state.activeEffects).forEach((type) => { if (type === "aegis" || type === "prism") return; state.activeEffects[type] -= dt; if (state.activeEffects[type] <= 0) { delete state.activeEffects[type]; if (type === "lens") state.paddle.w = state.paddle.baseW; if (type === "nova") state.balls.forEach((ball) => { ball.nova = false; }); } });
+      Object.keys(state.activeEffects).forEach((type) => { if (type === "aegis" || type === "prism") return; state.activeEffects[type] -= dt; if (state.activeEffects[type] <= 0) { delete state.activeEffects[type]; if (type === "lens") state.paddle.w = state.paddle.baseW; if (type === "nova") state.balls.forEach((ball) => { ball.nova = false; }); if (type === "magnet") state.balls.forEach((ball) => { if (ball.captured) { const angle = -.2 - Math.PI / 2; ball.vx = Math.cos(angle) * ball.speed; ball.vy = Math.sin(angle) * ball.speed; ball.captured = false; } }); } });
       if (!state.activeEffects.nova && !state.activeEffects.prism) state.balls.forEach((ball) => { if (ball.nova) ball.nova = false; });
     }
     function collectPowerups(dt) {
@@ -371,14 +371,14 @@
     }
     function updateBall(ball, dt) {
       if (ball.dead) return;
-      if (ball.stuck) { ball.x = state.paddle.x; ball.y = state.paddle.y - ball.r - 5; return; }
+      if (ball.stuck || ball.captured) { ball.x = state.paddle.x; ball.y = state.paddle.y - ball.r - 5; return; }
       const timeScale = state.activeEffects.tide ? .66 : 1; const vx = ball.vx * timeScale; const vy = ball.vy * timeScale; const oldX = ball.x; const oldY = ball.y; ball.x += vx * dt; ball.y += vy * dt; ball.trail.push({ x: oldX, y: oldY, life: 1 }); if (ball.trail.length > MAX_TRAIL) ball.trail.shift(); ball.trail.forEach((point) => { point.life -= dt * 2.6; });
       const left = state.layout.boardX; const right = state.layout.boardX + state.layout.boardW; const top = state.layout.boardY + 5;
       if (ball.x - ball.r < left) { ball.x = left + ball.r; ball.vx = Math.abs(ball.vx); audioEvent("wall", 180, .045, "triangle", .04); spawnBurst(ball.x, ball.y, "#60f4ff", 3, 55); }
       else if (ball.x + ball.r > right) { ball.x = right - ball.r; ball.vx = -Math.abs(ball.vx); audioEvent("wall", 205, .045, "triangle", .04); spawnBurst(ball.x, ball.y, "#60f4ff", 3, 55); }
       if (ball.y - ball.r < top) { ball.y = top + ball.r; ball.vy = Math.abs(ball.vy); audioEvent("wall", 240, .045, "triangle", .04); spawnBurst(ball.x, ball.y, "#a88bff", 3, 55); }
       const paddleRect = { x: state.paddle.x - state.paddle.w / 2, y: state.paddle.y, w: state.paddle.w, h: state.paddle.h };
-      if (ball.vy > 0 && circleRect(ball, paddleRect) && oldY <= paddleRect.y + 5) { ball.y = paddleRect.y - ball.r - 1; const relative = clamp((ball.x - state.paddle.x) / (state.paddle.w / 2), -1, 1); const angle = relative * 1.03 - Math.PI / 2; const speed = clamp(Math.max(ball.speed, Math.hypot(ball.vx, ball.vy)) * 1.012, 300, 590); ball.speed = speed; ball.vx = Math.cos(angle) * speed; ball.vy = Math.sin(angle) * speed; audioEvent("paddle", 260 + Math.abs(relative) * 160, .075, "sine", .08); spawnBurst(ball.x, paddleRect.y, "#f5d477", 7, 80); }
+      if (ball.vy > 0 && circleRect(ball, paddleRect) && oldY <= paddleRect.y + 5) { ball.y = paddleRect.y - ball.r - 1; const relative = clamp((ball.x - state.paddle.x) / (state.paddle.w / 2), -1, 1); const angle = relative * 1.03 - Math.PI / 2; const speed = clamp(Math.max(ball.speed, Math.hypot(ball.vx, ball.vy)) * 1.012, 300, 590); ball.speed = speed; if (state.activeEffects.magnet) { ball.vx = 0; ball.vy = 0; ball.captured = true; audioEvent("magnetCatch", 620, .16, "sine", .1); spawnFloater("MAGNET LOCK", ball.x, paddleRect.y - 30, "#c7a5ff"); } else { ball.vx = Math.cos(angle) * speed; ball.vy = Math.sin(angle) * speed; audioEvent("paddle", 260 + Math.abs(relative) * 160, .075, "sine", .08); } spawnBurst(ball.x, paddleRect.y, "#f5d477", 7, 80); }
       for (const brick of state.bricks) { if (brick.destroyed || !circleRect(ball, brick)) continue; const fromLeft = oldX + ball.r <= brick.x; const fromRight = oldX - ball.r >= brick.x + brick.w; const fromTop = oldY + ball.r <= brick.y; const fromBottom = oldY - ball.r >= brick.y + brick.h; if (!ball.nova) { if (fromLeft || fromRight) ball.vx *= -1; else if (fromTop || fromBottom) ball.vy *= -1; else ball.vy *= -1; } damageBrick(brick, ball); if (!ball.nova) break; }
       if (ball.y - ball.r > state.layout.height + 10) {
         if (state.aegis) {
@@ -387,9 +387,10 @@
       }
     }
     function updateGame(dt) {
-      state.time += dt; state.shake = Math.max(0, state.shake - dt * 22); state.flash = Math.max(0, state.flash - dt * 2.7); decayEffects(dt); collectPowerups(dt);
+      state.time += dt; state.shake = Math.max(0, state.shake - dt * 22); state.flash = Math.max(0, state.flash - dt * 2.7);
       if (state.screen === "level") { beginNextPhase(); return; }
       if (state.screen !== "playing") return;
+      decayEffects(dt); collectPowerups(dt);
       if (state.comboTimer > 0) { state.comboTimer -= dt; if (state.comboTimer <= 0) state.combo = 0; }
       const direction = (keyState.has("ArrowLeft") || keyState.has("a") ? -1 : 0) + (keyState.has("ArrowRight") || keyState.has("d") ? 1 : 0); if (direction) state.paddle.targetX += direction * 470 * dt;
       state.paddle.targetX = clamp(state.paddle.targetX, state.layout.boardX + state.paddle.w / 2, state.layout.boardX + state.layout.boardW - state.paddle.w / 2); state.paddle.x = lerp(state.paddle.x, state.paddle.targetX, 1 - Math.pow(.0001, dt));
@@ -452,12 +453,12 @@
     function togglePause() { if (state.screen === "playing") { state.screen = "paused"; audioEvent("pause", 190, .08, "sine", .05); } else if (state.screen === "paused") { state.screen = "playing"; ensureAudio(); audioEvent("resume", 310, .08, "sine", .05); } state.dirtyHud = true; updateHud(); }
 
     function snapshot() {
-      return { screen: state.screen, score: state.score, highScore: state.best, level: state.level + 1, lives: state.lives, combo: state.combo, bricksRemaining: state.bricks.filter((brick) => !brick.destroyed).length, balls: state.balls.map((ball) => ({ x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy, stuck: ball.stuck, dead: ball.dead, nova: ball.nova })), paddle: { x: state.paddle.x, targetX: state.paddle.targetX, y: state.paddle.y, w: state.paddle.w }, activePowerups: Object.fromEntries(Object.entries(state.activeEffects)), layout: { ...state.layout }, medals: state.medals.slice(), particleCount: state.particles.length, powerupCount: state.powerups.length, muted: state.muted };
+      return { screen: state.screen, score: state.score, highScore: state.best, level: state.level + 1, lives: state.lives, combo: state.combo, bricksRemaining: state.bricks.filter((brick) => !brick.destroyed).length, balls: state.balls.map((ball) => ({ x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy, stuck: ball.stuck, captured: ball.captured, dead: ball.dead, nova: ball.nova })), paddle: { x: state.paddle.x, targetX: state.paddle.targetX, y: state.paddle.y, w: state.paddle.w }, activePowerups: Object.fromEntries(Object.entries(state.activeEffects)), layout: { ...state.layout }, medals: state.medals.slice(), particleCount: state.particles.length, powerupCount: state.powerups.length, muted: state.muted };
     }
     function setBricks(specs) {
       state.bricks = (specs || []).map((spec, index) => { const row = spec.row ?? index; const col = spec.col ?? index % 10; const kind = spec.type || spec.kind || "standard"; const hp = spec.hp ?? (kind === "armored" ? 2 : 1); const brick = brickFor(row, col, kind, hp, 1); if (spec.x !== undefined) brick.x = Number(spec.x); if (spec.y !== undefined) brick.y = Number(spec.y); if (spec.w !== undefined) brick.w = Number(spec.w); if (spec.h !== undefined) brick.h = Number(spec.h); return brick; }); state.dirtyHud = true; return snapshot();
     }
-    function setBall(spec = {}) { const ball = state.balls[0] || createBall(state.paddle.x, state.paddle.y - 22); Object.assign(ball, { x: spec.x ?? ball.x, y: spec.y ?? ball.y, vx: spec.vx ?? ball.vx, vy: spec.vy ?? ball.vy, stuck: spec.stuck ?? false, dead: spec.dead ?? false, nova: spec.nova ?? false }); state.balls = [ball]; state.screen = "playing"; state.dirtyHud = true; return snapshot(); }
+    function setBall(spec = {}) { const ball = state.balls[0] || createBall(state.paddle.x, state.paddle.y - 22); Object.assign(ball, { x: spec.x ?? ball.x, y: spec.y ?? ball.y, vx: spec.vx ?? ball.vx, vy: spec.vy ?? ball.vy, stuck: spec.stuck ?? false, captured: spec.captured ?? false, dead: spec.dead ?? false, nova: spec.nova ?? false }); state.balls = [ball]; state.screen = "playing"; state.dirtyHud = true; return snapshot(); }
     function forcePowerUp(type) { applyPowerup(type); return snapshot(); }
     function advance(ms) { let remaining = Math.max(0, Number(ms) || 0); while (remaining > 0) { const delta = Math.min(remaining, STEP * 1000); updateGame(delta / 1000); remaining -= delta; } render(); updateHud(); return snapshot(); }
 
