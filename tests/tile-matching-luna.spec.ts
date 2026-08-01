@@ -290,6 +290,22 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     expect(state.moves).toBe(11);
     expect(state.matchCount).toBe(0);
     expect(state.hasMove).toBe(true);
+    expect(state.hint).toBeNull();
+  });
+
+  test("does not churn the campaign live summary when its value is stable", async ({ page }) => {
+    await openGame(page);
+    await startMission(page);
+    const mutations = await page.evaluate(() => {
+      const summary = document.querySelector("#campaignSummary")!;
+      const observer = new MutationObserver(() => {});
+      observer.observe(summary, { childList: true, characterData: true, subtree: true });
+      for (let index = 0; index < 5; index += 1) window.__lunarArrayTest.advance(0);
+      const count = observer.takeRecords().length;
+      observer.disconnect();
+      return count;
+    });
+    expect(mutations).toBe(0);
   });
 
   test("keeps pure move search deterministic and recovers a locked dead board for free", async ({ page }) => {
@@ -368,8 +384,10 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     await startMission(page);
     await page.evaluate(() => window.__lunarArrayTest.setMuted(true));
     expect((await snapshot(page)).muted).toBe(true);
+    expect(await page.locator("#audioButton").getAttribute("title")).toBe("Unmute (M)");
     await page.keyboard.press("m");
     expect((await snapshot(page)).muted).toBe(false);
+    expect(await page.locator("#audioButton").getAttribute("title")).toBe("Mute (M)");
     const constants = await page.evaluate(() => window.__lunarArrayTest.constants);
     await page.evaluate(([board, first, second]) => {
       window.__lunarArrayTest.setBoard(board, [{ r: 3, c: 3, special: first }, { r: 3, c: 4, special: second }]);
@@ -405,11 +423,11 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     });
     expect((await snapshot(page)).mode).toBe("endless");
     await page.evaluate(() => window.__lunarArrayTest.advance(3000));
-    expect((await snapshot(page)).timeLeft).toBeCloseTo(117, 0);
+    expect((await snapshot(page)).timeLeft).toBe(117);
     await page.keyboard.press("p");
     expect((await snapshot(page)).paused).toBe(true);
     await page.evaluate(() => window.__lunarArrayTest.advance(5000));
-    expect((await snapshot(page)).timeLeft).toBeCloseTo(117, 0);
+    expect((await snapshot(page)).timeLeft).toBe(117);
     await page.keyboard.press("p");
     await page.evaluate(() => window.__lunarArrayTest.advance(117000));
     await expect.poll(async () => (await snapshot(page)).screen).toBe("endless");

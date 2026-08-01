@@ -293,7 +293,7 @@
     board: [], mask: [], blockers: [], score: 0, moves: 0, timeLeft: 120, elapsed: 0, chain: 0, bestChain: 0, matchCount: 0,
     blockerCleared: 0, collected: new Array(TYPES).fill(0), pulse: 0, pulseUses: 0, pulseArmed: false, pulseDirection: "down", pendingGravity: null,
     gravity: "down", objective: null, selection: null, cursor: { r: 3, c: 3 }, hover: null, dragging: false, dragOrigin: null, hint: null, idle: 0,
-    speed: 1, muted: false, seed: 1, nextId: 1, boardRevision: 0, lastFrame: 0, musicClock: 0, toastTimer: 0, sessionBest: 0,
+    speed: 1, muted: false, seed: 1, nextId: 1, boardRevision: 0, testClock: false, lastFrame: 0, musicClock: 0, toastTimer: 0, sessionBest: 0,
     campaign: EMPTY_PROGRESS(),
     particles: [], rings: [], beams: [], floaters: [], shake: 0, visualTime: 0, audioLog: [], layout: { width: 0, height: 0, dpr: 1, boardX: 0, boardY: 0, boardSize: 0, cell: 0, mode: "rails" },
   };
@@ -346,7 +346,7 @@
     if (!animate || REDUCED_MOTION) { tile.x = p.x; tile.y = p.y; }
   }
   function settleTiles() { if (state.board.length !== GRID) return; for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) placeTile(state.board[r][c], r, c, false); }
-  function markBoardChanged() { state.boardRevision += 1; }
+  function markBoardChanged() { state.boardRevision += 1; state.hint = null; }
 
   function wouldMakeMatch(r, c, type) {
     if (c >= 2 && state.board[r][c - 1] && state.board[r][c - 2] && state.board[r][c - 1].type === type && state.board[r][c - 2].type === type) return true;
@@ -652,6 +652,7 @@
 
   function reshuffle(manual = false, automatic = false) {
     if ((!automatic && !canInteract()) || (manual && state.mode === "campaign" && state.moves < SHUFFLE_COST)) return false;
+    state.hint = null;
     const loose = []; for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (isFree(r, c) && state.board[r][c]) loose.push(state.board[r][c]);
     const originalTypes = loose.map((tile) => tile.type);
     for (let attempt = 0; attempt < 80; attempt += 1) {
@@ -675,7 +676,7 @@
   }
 
   function resetRun() {
-    state.score = 0; state.moves = state.mode === "campaign" ? state.info.moves : 0; state.timeLeft = 120; state.elapsed = 0; state.chain = 0; state.bestChain = 0; state.matchCount = 0; state.blockerCleared = 0; state.collected = new Array(TYPES).fill(0); state.pulse = 0; state.pulseUses = 0; state.pulseArmed = false; state.pendingGravity = null; state.gravity = "down"; state.selection = null; state.hint = null; state.idle = 0; state.locked = false; state.rushing = false; state.particles = []; state.rings = []; state.beams = []; state.floaters = []; state.boardRevision = 0;
+    state.score = 0; state.moves = state.mode === "campaign" ? state.info.moves : 0; state.timeLeft = 120; state.elapsed = 0; state.chain = 0; state.bestChain = 0; state.matchCount = 0; state.blockerCleared = 0; state.collected = new Array(TYPES).fill(0); state.pulse = 0; state.pulseUses = 0; state.pulseArmed = false; state.pendingGravity = null; state.gravity = "down"; state.selection = null; state.hint = null; state.idle = 0; state.locked = false; state.rushing = false; state.testClock = TEST_MODE; state.particles = []; state.rings = []; state.beams = []; state.floaters = []; state.boardRevision = 0;
   }
   function startMission(index = 0) {
     const requested = clamp(index | 0, 0, MISSIONS.length - 1); if (!TEST_MODE && requested >= state.campaign.unlocked) { toast("Mission locked // complete the prior orbit"); return false; }
@@ -732,7 +733,7 @@
     setTimeout(() => { if (ambient.keep || audio.ambience !== ambient) return; for (const node of ambient.nodes) { try { node.stop(); } catch (_) {} } audio.ambience = null; }, 480);
   }
   function setMuted(value) {
-    state.muted = Boolean(value); $("audioButton").textContent = state.muted ? "⊘" : "◉"; $("audioButton").setAttribute("aria-label", state.muted ? "Unmute" : "Mute");
+    state.muted = Boolean(value); $("audioButton").textContent = state.muted ? "⊘" : "◉"; $("audioButton").setAttribute("aria-label", state.muted ? "Unmute" : "Mute"); $("audioButton").setAttribute("title", state.muted ? "Unmute (M)" : "Mute (M)");
     if (!audio.ctx) { if (!state.muted) ensureAudio(); return; }
     const now = audio.ctx.currentTime; audio.master.gain.cancelScheduledValues(now); audio.master.gain.setTargetAtTime(state.muted ? .0001 : .16, now, .025);
     if (state.muted) silenceAmbience(); else if (state.active && !state.paused) { ensureAudio(); ensureAmbience(); }
@@ -852,7 +853,33 @@
   function render() { const { width, height } = state.layout; if (!width) return; ctx.clearRect(0, 0, width, height); drawBackground(ctx, width, height); drawBoard(ctx); drawFx(ctx); }
 
   function updateHud() {
-    const o = state.objective; $("modeValue").textContent = state.mode === "endless" ? `Orbit run // ${Math.ceil(state.timeLeft)}s` : `Campaign // Mission ${String(state.mission + 1).padStart(2, "0")}`; $("missionName").textContent = state.info?.name || "Perilune"; $("missionCopy").textContent = state.info?.copy || ""; $("objectiveLabel").textContent = objectiveLabel(); $("objectiveValue").textContent = state.mode === "endless" ? `${Math.ceil(state.timeLeft)}s remaining` : objectiveText(); $("objectiveNote").textContent = state.mode === "endless" ? `Tier ${1 + Math.floor(state.elapsed / 20)} · speed ${(1 + state.elapsed / 185).toFixed(1)}×` : o?.kind === "collect" ? o.colors.map((t) => `${GEMS[t].name} ${Math.min(state.collected[t], o.perColor)}/${o.perColor}`).join(" · ") : o?.kind === "mastery" ? `Pulse ${state.pulseUses}/${o.pulseTarget}` : ""; const progress = state.mode === "endless" ? state.timeLeft / 120 : o?.kind === "dual" ? Math.min(state.blockerCleared / o.target, state.score / o.scoreTarget) : o?.kind === "collect" ? objectiveProgress() / (o.colors.length * o.perColor) : objectiveProgress() / (o?.target || 1); $("objectiveFill").style.width = `${clamp(progress * 100, 0, 100)}%`; $("movesValue").textContent = state.mode === "endless" ? `${Math.ceil(state.timeLeft)}s` : String(Math.max(0, state.moves)); $("scoreValue").textContent = fmt(state.score); $("chainValue").textContent = `×${Math.max(1, Math.min(MAX_CHAIN, state.chain))}`; $("chainNote").textContent = state.chain > 1 ? `${state.chain}-step cascade // keep the line` : "The array is quiet."; $("pulseValue").textContent = state.pulse >= PULSE_MAX ? "READY" : `${Math.round(state.pulse)}%`; $("pulseFill").style.width = `${state.pulse}%`; $("pulseFill").parentElement.classList.toggle("ready", state.pulse >= PULSE_MAX); $("pulseButton").disabled = state.pulse < PULSE_MAX || !canInteract(); $("pulseButton").classList.toggle("ready", state.pulse >= PULSE_MAX); $("shuffleButton").disabled = !canInteract(); $("hintButton").disabled = !canInteract(); $("pauseButton").disabled = !state.active; $("campaignSummary").textContent = `${state.campaign.stars.reduce((sum, value) => sum + value, 0)} / ${MISSIONS.length * 3} stars · ${Math.max(1, state.campaign.unlocked)} / ${MISSIONS.length} missions unlocked`; $("nextMissionButton").disabled = state.mission >= MISSIONS.length - 1; hud.classList.toggle("hidden", !state.active && state.screen !== "paused"); }
+    const o = state.objective;
+    $("modeValue").textContent = state.mode === "endless" ? `Orbit run // ${Math.ceil(state.timeLeft)}s` : `Campaign // Mission ${String(state.mission + 1).padStart(2, "0")}`;
+    $("missionName").textContent = state.info?.name || "Perilune";
+    $("missionCopy").textContent = state.info?.copy || "";
+    $("objectiveLabel").textContent = objectiveLabel();
+    $("objectiveValue").textContent = state.mode === "endless" ? `${Math.ceil(state.timeLeft)}s remaining` : objectiveText();
+    $("objectiveNote").textContent = state.mode === "endless" ? `Tier ${1 + Math.floor(state.elapsed / 20)} · speed ${(1 + state.elapsed / 185).toFixed(1)}×` : o?.kind === "collect" ? o.colors.map((t) => `${GEMS[t].name} ${Math.min(state.collected[t], o.perColor)}/${o.perColor}`).join(" · ") : o?.kind === "mastery" ? `Pulse ${state.pulseUses}/${o.pulseTarget}` : "";
+    const progress = state.mode === "endless" ? state.timeLeft / 120 : o?.kind === "dual" ? Math.min(state.blockerCleared / o.target, state.score / o.scoreTarget) : o?.kind === "collect" ? objectiveProgress() / (o.colors.length * o.perColor) : objectiveProgress() / (o?.target || 1);
+    $("objectiveFill").style.width = `${clamp(progress * 100, 0, 100)}%`;
+    $("movesValue").textContent = state.mode === "endless" ? `${Math.ceil(state.timeLeft)}s` : String(Math.max(0, state.moves));
+    $("scoreValue").textContent = fmt(state.score);
+    $("chainValue").textContent = `×${Math.max(1, Math.min(MAX_CHAIN, state.chain))}`;
+    $("chainNote").textContent = state.chain > 1 ? `${state.chain}-step cascade // keep the line` : "The array is quiet.";
+    $("pulseValue").textContent = state.pulse >= PULSE_MAX ? "READY" : `${Math.round(state.pulse)}%`;
+    $("pulseFill").style.width = `${state.pulse}%`;
+    $("pulseFill").parentElement.classList.toggle("ready", state.pulse >= PULSE_MAX);
+    $("pulseButton").disabled = state.pulse < PULSE_MAX || !canInteract();
+    $("pulseButton").classList.toggle("ready", state.pulse >= PULSE_MAX);
+    $("shuffleButton").disabled = !canInteract();
+    $("hintButton").disabled = !canInteract();
+    $("pauseButton").disabled = !state.active;
+    const summary = `${state.campaign.stars.reduce((sum, value) => sum + value, 0)} / ${MISSIONS.length * 3} stars · ${Math.max(1, state.campaign.unlocked)} / ${MISSIONS.length} missions unlocked`;
+    const summaryNode = $("campaignSummary");
+    if (summaryNode.textContent !== summary) summaryNode.textContent = summary;
+    $("nextMissionButton").disabled = state.mission >= MISSIONS.length - 1;
+    hud.classList.toggle("hidden", !state.active && state.screen !== "paused");
+  }
   function buildMissionMap() { const root = $("missionMap"); root.innerHTML = ""; MISSIONS.forEach((mission, index) => { const button = document.createElement("button"); const unlocked = TEST_MODE || index < state.campaign.unlocked; button.className = `mission-chip${state.mission === index ? " current" : ""}`; button.type = "button"; button.disabled = !unlocked; button.innerHTML = `<span>${unlocked ? String(index + 1).padStart(2, "0") : "· ·"}</span><em>${mission.name.split(" ")[0]}</em><small>${unlocked ? "★".repeat(state.campaign.stars[index]) + "☆".repeat(3 - state.campaign.stars[index]) : "LOCK"}</small>`; button.title = unlocked ? mission.name : `Complete mission ${index} to unlock`; button.addEventListener("click", () => startMission(index)); root.appendChild(button); }); }
   function showScreen(screen) { state.screen = screen; for (const element of document.querySelectorAll(".screen")) element.classList.toggle("active", element.dataset.screen === screen); hud.classList.toggle("hidden", !state.active && screen !== "paused"); }
   function toast(message) { const element = $("toast"); element.textContent = message; element.classList.add("show"); clearTimeout(state.toastTimer); state.toastTimer = setTimeout(() => element.classList.remove("show"), 1600); }
@@ -889,7 +916,7 @@
   }
 
   function tick(now) {
-    const dt = state.lastFrame ? Math.min(80, now - state.lastFrame) : 16; state.lastFrame = now; if (state.mode === "endless" && state.active && !state.paused && !state.locked) { state.elapsed += dt / 1000; state.timeLeft = Math.max(0, 120 - state.elapsed); state.speed = 1 + state.elapsed / 185; if (Math.floor(state.elapsed) % 25 === 0 && Math.floor(state.elapsed) !== Math.floor(state.elapsed - dt / 1000)) { const edge = ["up", "right", "down", "left"][Math.floor(state.elapsed / 25) % 4]; for (const [r, c] of edgeCells(edge)) if (isOpen(r, c) && state.blockers[r][c] === 0 && random() < .32) state.blockers[r][c] = 1; toast("Orbit drift // new moon-dust"); } if (state.timeLeft <= 0) failMission("120 seconds crossed. The session record is yours to beat."); }
+    const dt = state.lastFrame ? Math.min(80, now - state.lastFrame) : 16; state.lastFrame = now; if (state.mode === "endless" && state.active && !state.paused && !state.locked && !state.testClock) { state.elapsed += dt / 1000; state.timeLeft = Math.max(0, 120 - state.elapsed); state.speed = 1 + state.elapsed / 185; if (Math.floor(state.elapsed) % 25 === 0 && Math.floor(state.elapsed) !== Math.floor(state.elapsed - dt / 1000)) { const edge = ["up", "right", "down", "left"][Math.floor(state.elapsed / 25) % 4]; for (const [r, c] of edgeCells(edge)) if (isOpen(r, c) && state.blockers[r][c] === 0 && random() < .32) state.blockers[r][c] = 1; toast("Orbit drift // new moon-dust"); } if (state.timeLeft <= 0) failMission("120 seconds crossed. The session record is yours to beat."); }
     updateIdle(dt / 1000); updateFx(dt); musicTick(now); render(); updateHud(); requestAnimationFrame(tick);
   }
 
