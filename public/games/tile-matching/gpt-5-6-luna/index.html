@@ -52,6 +52,7 @@
   .readout-value { margin-top: 5px; font-variant-numeric: tabular-nums; font-size: 28px; letter-spacing: .04em; }
   .readout-value.small { font-size: 18px; }
   .readout-note { margin-top: 5px; min-height: 16px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+  .pulse-help { max-width: 205px; margin-left: auto; }
   .meter { position: relative; height: 7px; margin-top: 9px; overflow: hidden; border: 1px solid var(--line); border-radius: 99px; background: rgba(0,0,0,.26); }
   .meter > i { display: block; width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #3aa4ff, var(--cyan), var(--violet)); transition: width .2s ease; }
   .meter.ready > i { background: linear-gradient(90deg, var(--cyan), var(--pearl), var(--amber)); box-shadow: 0 0 16px rgba(88,231,255,.75); }
@@ -61,7 +62,9 @@
   .icon-button:disabled { opacity: .35; cursor: default; }
   .pulse-button { width: 100%; margin-top: 13px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 3px; background: rgba(88,231,255,.06); color: var(--muted); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; }
   .pulse-button.ready { border-color: var(--cyan); color: var(--text); background: rgba(88,231,255,.17); box-shadow: 0 0 20px rgba(88,231,255,.14); }
+  .pulse-button.armed { border-color: var(--amber); color: #fff5d6; background: rgba(255,211,106,.16); box-shadow: 0 0 24px rgba(255,211,106,.2); animation: pulse-arm 1.4s ease-in-out infinite; }
   .pulse-button:hover, .pulse-button:focus-visible { border-color: var(--cyan); outline: none; }
+  @keyframes pulse-arm { 0%, 100% { box-shadow: 0 0 10px rgba(255,211,106,.16); } 50% { box-shadow: 0 0 28px rgba(255,211,106,.42); } }
   #toast { position: absolute; left: 50%; bottom: 8.5%; transform: translate(-50%, 12px); min-width: 190px; padding: 9px 14px; border: 1px solid var(--line-hi); border-radius: 3px; background: rgba(6, 12, 26, .9); color: var(--text); text-align: center; font-size: 11px; letter-spacing: .08em; opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
@@ -134,6 +137,7 @@
     #rightRail .readout-value.small { font-size: 13px; }
     #rightRail .meter { display: block; width: 100%; height: 4px; margin: 3px 0 0 auto; }
     #rightRail .pulse-button { width: 100%; margin: 4px 0 0; padding: 5px 4px; font-size: 7px; letter-spacing: .08em; }
+    #rightRail .pulse-help { max-width: 180px; margin-left: auto; font-size: 8px; }
     .screen { padding: 18px; }
     h1 { font-size: 45px; }
     .result-grid { grid-template-columns: repeat(2, 1fr); }
@@ -181,7 +185,8 @@
         <div class="readout-label">Lunar Pulse</div>
         <div class="readout-value small" id="pulseValue">0%</div>
         <div class="meter"><i id="pulseFill"></i></div>
-        <button id="pulseButton" class="pulse-button" type="button" disabled>Pulse // Space</button>
+        <button id="pulseButton" class="pulse-button" type="button" aria-describedby="pulseHelp" disabled>Pulse // Space</button>
+        <div id="pulseHelp" class="readout-note pulse-help">Charges to 100% · Space arms · arrows choose an edge · activation chips 1 blocker layer and redirects the next refill.</div>
       </div>
       <div class="controls">
         <button id="hintButton" class="icon-button" type="button" title="Hint (H)" aria-label="Hint">?</button>
@@ -291,7 +296,7 @@
   const state = {
     screen: "title", mode: "campaign", mission: 0, info: null, active: false, paused: false, locked: false, rushing: false,
     board: [], mask: [], blockers: [], score: 0, moves: 0, timeLeft: 120, elapsed: 0, chain: 0, bestChain: 0, matchCount: 0,
-    blockerCleared: 0, collected: new Array(TYPES).fill(0), pulse: 0, pulseUses: 0, pulseArmed: false, pulseDirection: "down", pendingGravity: null,
+    blockerCleared: 0, collected: new Array(TYPES).fill(0), pulse: 0, pulseUses: 0, pulseArmed: false, pulseDirection: "down", pendingGravity: null, pulseFx: null,
     gravity: "down", objective: null, selection: null, cursor: { r: 3, c: 3 }, hover: null, dragging: false, dragOrigin: null, hint: null, idle: 0,
     speed: 1, muted: false, seed: 1, nextId: 1, boardRevision: 0, testClock: false, lastFrame: 0, musicClock: 0, toastTimer: 0, sessionBest: 0,
     campaign: EMPTY_PROGRESS(),
@@ -439,6 +444,11 @@
     if (x === CORE && y === CORE) return "CORE_CORE";
     if (x === CORE && (y === BEAM_ROW || y === BEAM_COL) || y === CORE && (x === BEAM_ROW || x === BEAM_COL)) return "CORE_BEAM";
     if (x === CORE && y === BURST || y === CORE && x === BURST) return "CORE_BURST";
+    return null;
+  }
+  function coreOrdinaryType(a, b) {
+    if (a?.special === CORE && b?.special === NONE) return b.type;
+    if (b?.special === CORE && a?.special === NONE) return a.type;
     return null;
   }
   function analysisBoard() { return state.board.map((row) => row.map((tile) => tile ? { type: tile.type, special: tile.special } : null)); }
@@ -624,6 +634,19 @@
     const ta = state.board[a.r][a.c], tb = state.board[b.r][b.c]; swapCells(a, b); sfx("swap"); await wait(150);
     const fusion = fusionKind(ta, tb);
     if (fusion) { if (state.mode === "campaign") state.moves -= 1; await resolveFusion(ta, tb); await finishTurn(); return true; }
+    const coreType = coreOrdinaryType(ta, tb);
+    if (coreType !== null) {
+      if (state.mode === "campaign") state.moves -= 1;
+      const coreTile = ta.special === CORE ? ta : tb;
+      const center = { x: (ta.x + tb.x) / 2, y: (ta.y + tb.y) / 2 };
+      sfx("core:color", coreType); state.shake = .82;
+      addRing(center.x, center.y, state.layout.cell * 2.4, "#ffffff");
+      burstParticles(center.x, center.y, GEMS[coreType].light, REDUCED_MOTION ? 4 : 24);
+      addFloater(`CORE // ${GEMS[coreType].name}`, center.x, center.y - state.layout.cell * .48, "#ffffff");
+      const cells = expandSpecials(new Set([keyOf(coreTile.r, coreTile.c)]), coreType);
+      clearCells(cells, 1, 720);
+      await wait(REDUCED_MOTION ? 20 : 180); collapse(); await wait(REDUCED_MOTION ? 8 : 140); await resolveCascade(); await finishTurn(); return true;
+    }
     if (!findMatches().length) { swapCells(a, b); sfx("reject"); await wait(120); state.locked = false; updateHud(); return false; }
     if (state.mode === "campaign") state.moves -= 1;
     await resolveCascade([keyOf(a.r, a.c), keyOf(b.r, b.c)]); await finishTurn(); return true;
@@ -645,10 +668,10 @@
   async function usePulse(direction = state.pulseDirection) {
     if (!canInteract() || state.pulse < PULSE_MAX || !["up", "down", "left", "right"].includes(direction)) return false;
     state.pulse = 0; state.pulseUses += 1; state.pulseDirection = direction; state.pendingGravity = direction; state.gravity = direction; state.pulseArmed = false; sfx("pulse", ["up","right","down","left"].indexOf(direction)); state.shake = .45;
-    let chipped = 0; for (const [r, c] of edgeCells(direction)) if (state.blockers[r][c] > 0) { state.blockers[r][c] -= 1; state.blockerCleared += 1; chipped += 1; const center = cellCenter(r, c); addRing(center.x, center.y, state.layout.cell * .9, "#e7f3ff"); }
-    const edge = direction === "up" ? 0 : direction === "down" ? GRID - 1 : direction === "left" ? 0 : GRID - 1; addBeam(direction === "up" || direction === "down" ? "row" : "col", edge, "#58e7ff"); addRing(state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY + state.layout.boardSize / 2, state.layout.boardSize * .38, "#58e7ff"); addFloater(`PULSE // ${direction.toUpperCase()}`, state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY - 10, "#58e7ff"); toast(chipped ? `Pulse cracked ${chipped} edge layer${chipped === 1 ? "" : "s"}` : `Pulse // ${direction}`); updateHud(); if (state.active && objectiveComplete()) await completeMission(); return true;
+    let chipped = 0; for (const [r, c] of edgeCells(direction)) if (state.blockers[r][c] > 0) { state.blockers[r][c] -= 1; state.blockerCleared += 1; chipped += 1; const center = cellCenter(r, c); addRing(center.x, center.y, state.layout.cell * .9, "#e7f3ff"); burstParticles(center.x, center.y, "#baf7ff", REDUCED_MOTION ? 2 : 7); }
+    const edge = direction === "up" ? 0 : direction === "down" ? GRID - 1 : direction === "left" ? 0 : GRID - 1; addBeam(direction === "up" || direction === "down" ? "row" : "col", edge, "#58e7ff"); addRing(state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY + state.layout.boardSize / 2, state.layout.boardSize * .38, "#58e7ff"); addFloater(`PULSE // ${direction.toUpperCase()}`, state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY - 10, "#58e7ff"); state.pulseFx = { direction, life: 0, span: REDUCED_MOTION ? 260 : 820, chipped }; toast(chipped ? `Pulse cracked ${chipped} edge layer${chipped === 1 ? "" : "s"}` : `Pulse // ${direction}`); updateHud(); if (state.active && objectiveComplete()) await completeMission(); return true;
   }
-  function armPulse() { if (canInteract() && state.pulse >= PULSE_MAX) { state.pulseArmed = !state.pulseArmed; sfx(state.pulseArmed ? "pulse:arm" : "select"); toast(state.pulseArmed ? "Choose a gravity edge" : "Pulse cancelled"); return true; } return false; }
+  function armPulse() { if (canInteract() && state.pulse >= PULSE_MAX) { state.pulseArmed = !state.pulseArmed; sfx(state.pulseArmed ? "pulse:arm" : "select"); toast(state.pulseArmed ? `Pulse armed // ${state.pulseDirection} edge // Enter to activate` : "Pulse cancelled"); updateHud(); return true; } return false; }
 
   function reshuffle(manual = false, automatic = false) {
     if ((!automatic && !canInteract()) || (manual && state.mode === "campaign" && state.moves < SHUFFLE_COST)) return false;
@@ -676,7 +699,7 @@
   }
 
   function resetRun() {
-    state.score = 0; state.moves = state.mode === "campaign" ? state.info.moves : 0; state.timeLeft = 120; state.elapsed = 0; state.chain = 0; state.bestChain = 0; state.matchCount = 0; state.blockerCleared = 0; state.collected = new Array(TYPES).fill(0); state.pulse = 0; state.pulseUses = 0; state.pulseArmed = false; state.pendingGravity = null; state.gravity = "down"; state.selection = null; state.hint = null; state.idle = 0; state.locked = false; state.rushing = false; state.testClock = TEST_MODE; state.particles = []; state.rings = []; state.beams = []; state.floaters = []; state.boardRevision = 0;
+    state.score = 0; state.moves = state.mode === "campaign" ? state.info.moves : 0; state.timeLeft = 120; state.elapsed = 0; state.chain = 0; state.bestChain = 0; state.matchCount = 0; state.blockerCleared = 0; state.collected = new Array(TYPES).fill(0); state.pulse = 0; state.pulseUses = 0; state.pulseArmed = false; state.pendingGravity = null; state.gravity = "down"; state.selection = null; state.hint = null; state.pulseFx = null; state.idle = 0; state.locked = false; state.rushing = false; state.testClock = TEST_MODE; state.particles = []; state.rings = []; state.beams = []; state.floaters = []; state.boardRevision = 0;
   }
   function startMission(index = 0) {
     const requested = clamp(index | 0, 0, MISSIONS.length - 1); if (!TEST_MODE && requested >= state.campaign.unlocked) { toast("Mission locked // complete the prior orbit"); return false; }
@@ -750,6 +773,7 @@
     else if (name === "forge") { [0, 4, 7].forEach((n, i) => tone((260 + p * 90) * Math.pow(2, n / 12), .26, "triangle", .06, i * .06, 720 + p * 120)); noiseBurst(1800, .2, .025); }
     else if (name.startsWith("special")) { tone(160 + p * 30, .3, "sawtooth", .07, 0, 72); tone(620 + p * 80, .28, "sine", .065, .04, 900); noiseBurst(900 + p * 100, .22, .035); }
     else if (name.startsWith("fusion")) { tone(130, .42, "sawtooth", .08, 0, 55); tone(260, .4, "triangle", .055, .04, 78); tone(390 + p * 30, .48, "sine", .09, .1, 1100); noiseBurst(680, .34, .045); }
+    else if (name === "core:color") { tone(110, .32, "sine", .08, 0, 330); tone(330 + p * 35, .46, "triangle", .08, .06, 1080 + p * 50); tone(660 + p * 55, .55, "sine", .07, .14, 1480 + p * 70); noiseBurst(980, .28, .035); }
     else if (name === "detonate") { tone(110, .36, "square", .08, 0, 38); tone(220, .3, "sawtooth", .045, .04, 60); noiseBurst(430, .28, .05); }
     else if (name === "blocker") { tone(190, .14, "square", .06, 0, 75); tone(380, .18, "triangle", .03, .04, 140); noiseBurst(740, .12, .025); }
     else if (name === "pulse" || name === "pulse:arm") { tone(55, .55, "sine", .09, 0, 330); tone(220, .42, "sine", .08, .08, 820); tone(440, .5, "triangle", .065, .16, 1040); noiseBurst(520, .45, .035); }
@@ -779,13 +803,14 @@
     for (let i = state.rings.length - 1; i >= 0; i -= 1) { state.rings[i].life += dt; if (state.rings[i].life >= state.rings[i].span) state.rings.splice(i, 1); }
     for (let i = state.beams.length - 1; i >= 0; i -= 1) { state.beams[i].life += dt; if (state.beams[i].life >= state.beams[i].span) state.beams.splice(i, 1); }
     for (let i = state.floaters.length - 1; i >= 0; i -= 1) { state.floaters[i].life += dt; state.floaters[i].y -= dt * .035; if (state.floaters[i].life >= state.floaters[i].span) state.floaters.splice(i, 1); }
+    if (state.pulseFx) { state.pulseFx.life += dt; if (state.pulseFx.life >= state.pulseFx.span) state.pulseFx = null; }
     state.shake = Math.max(0, state.shake - dt / 520);
     for (const row of state.board) for (const tile of row) if (tile) { tile.anim = Math.min(1, tile.anim + dt / 180); const ease = 1 - Math.pow(1 - tile.anim, 3); tile.x = lerp(tile.x, tile.tx, ease); tile.y = lerp(tile.y, tile.ty, ease); }
   }
 
   function resize() {
     const width = innerWidth, height = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2); canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr); canvas.style.width = `${width}px`; canvas.style.height = `${height}px`; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const rails = width >= 980 && height >= 600; const boardSize = clamp(rails ? Math.min(620, height - 110, width - 480) : Math.min(width - 28, height - 145), 220, rails ? 620 : 560); state.layout = { width, height, dpr, boardX: (width - boardSize) / 2, boardY: rails ? (height - boardSize) / 2 + 4 : 82, boardSize, cell: boardSize / GRID, mode: rails ? "rails" : "stack" }; settleTiles(); }
+    const rails = width >= 980 && height >= 600; const boardSize = clamp(rails ? Math.min(620, height - 110, width - 480) : Math.min(width - 28, height - 145), 220, rails ? 620 : 560); state.layout = { width, height, dpr, boardX: (width - boardSize) / 2, boardY: rails ? (height - boardSize) / 2 + 4 : width <= 560 ? 138 : 82, boardSize, cell: boardSize / GRID, mode: rails ? "rails" : "stack" }; settleTiles(); }
   function roundedRect(g, x, y, w, h, radius) { const r = Math.min(radius, w / 2, h / 2); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
   function drawBackground(g, width, height) {
     const t = state.visualTime * .001; const bg = g.createRadialGradient(width * .5, height * .38, 20, width * .5, height * .5, Math.max(width, height) * .8); bg.addColorStop(0, "#1b3560"); bg.addColorStop(.38, "#0b1832"); bg.addColorStop(1, "#03050e"); g.fillStyle = bg; g.fillRect(0, 0, width, height);
@@ -822,6 +847,22 @@
     if (tile.special !== NONE) { const spin = state.visualTime * .0018 + tile.phase; g.save(); g.rotate(spin * .25); g.globalAlpha = .98; g.shadowColor = "#ffffff"; g.shadowBlur = 12; g.strokeStyle = "#f4fbff"; g.lineWidth = Math.max(2, r * .1); if (tile.special === BEAM_ROW) { g.beginPath(); g.moveTo(-r * .84, 0); g.lineTo(r * .84, 0); g.stroke(); g.beginPath(); g.arc(-r * .68, 0, r * .12, 0, Math.PI * 2); g.arc(r * .68, 0, r * .12, 0, Math.PI * 2); g.stroke(); } else if (tile.special === BEAM_COL) { g.beginPath(); g.moveTo(0, -r * .84); g.lineTo(0, r * .84); g.stroke(); g.beginPath(); g.arc(0, -r * .68, r * .12, 0, Math.PI * 2); g.arc(0, r * .68, r * .12, 0, Math.PI * 2); g.stroke(); } else if (tile.special === BURST) { for (let i = 0; i < 8; i += 1) { const a = i * Math.PI / 4; g.beginPath(); g.moveTo(Math.cos(a) * r * .28, Math.sin(a) * r * .28); g.lineTo(Math.cos(a) * r * .76, Math.sin(a) * r * .76); g.stroke(); } g.beginPath(); g.arc(0, 0, r * .32, 0, Math.PI * 2); g.stroke(); } else { g.beginPath(); g.arc(0, 0, r * .7, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.arc(0, 0, r * .36, 0, Math.PI * 2); g.stroke(); g.fillStyle = "#ffffff"; g.beginPath(); g.arc(0, 0, r * .1, 0, Math.PI * 2); g.fill(); } g.restore(); }
     g.restore();
   }
+  function drawMoonDustLock(g, px, py, cell, layers, row, col) {
+    const inset = 6, size = cell - inset * 2, color = layers > 1 ? "#ffd36a" : "#8cecff", shimmer = REDUCED_MOTION ? .5 : (Math.sin(state.visualTime * .002 + row * 1.7 + col * .9) + 1) * .5;
+    g.save();
+    g.shadowColor = layers > 1 ? "rgba(255,211,106,.28)" : "rgba(88,231,255,.22)"; g.shadowBlur = 14;
+    if (layers > 1) { roundedRect(g, px + 9, py + 9, size, size, 8); g.fillStyle = "rgba(10,20,42,.92)"; g.fill(); g.strokeStyle = "rgba(180,213,244,.62)"; g.lineWidth = 1.8; g.stroke(); }
+    roundedRect(g, px + inset, py + inset, size, size, 8);
+    const plate = g.createLinearGradient(px, py, px + cell, py + cell); plate.addColorStop(0, layers > 1 ? "rgba(105,119,151,.78)" : "rgba(72,116,157,.72)"); plate.addColorStop(.44, "rgba(25,48,82,.96)"); plate.addColorStop(1, "rgba(7,17,37,.98)"); g.fillStyle = plate; g.fill(); g.shadowBlur = 0; g.strokeStyle = `rgba(221,242,255,${.54 + shimmer * .18})`; g.lineWidth = 1.6; g.stroke();
+    g.save(); roundedRect(g, px + inset, py + inset, size, size, 8); g.clip();
+    const scanY = py + inset + size * ((state.visualTime * .00022 + row * .13 + col * .07) % 1); const scan = g.createLinearGradient(0, scanY - 10, 0, scanY + 10); scan.addColorStop(0, "rgba(255,255,255,0)"); scan.addColorStop(.5, `rgba(206,244,255,${.06 + shimmer * .12})`); scan.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = scan; g.fillRect(px + inset, scanY - 12, size, 24);
+    g.globalAlpha = .22 + shimmer * .12; g.strokeStyle = color; g.lineWidth = 1; g.setLineDash([cell * .08, cell * .12]); g.lineDashOffset = -state.visualTime * .01; g.beginPath(); g.moveTo(px + inset, py + cell * .3); g.lineTo(px + cell - inset, py + cell * .3); g.moveTo(px + inset, py + cell * .7); g.lineTo(px + cell - inset, py + cell * .7); g.stroke(); g.setLineDash([]);
+    g.restore();
+    const cx = px + cell * .5, cy = py + cell * .54, radius = cell * (layers > 1 ? .2 : .17); g.globalAlpha = .72 + shimmer * .18; g.strokeStyle = color; g.lineWidth = Math.max(1.4, cell * .022); g.beginPath(); g.moveTo(cx, cy - radius); g.lineTo(cx + radius * .86, cy); g.lineTo(cx, cy + radius); g.lineTo(cx - radius * .86, cy); g.closePath(); g.stroke(); g.beginPath(); g.arc(cx, cy, radius * .45, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = "rgba(225,244,255,.7)"; g.lineWidth = Math.max(1, cell * .018); g.beginPath(); g.moveTo(px + cell * .24, py + cell * .74); g.lineTo(px + cell * .43, py + cell * .48); g.lineTo(px + cell * .58, py + cell * .61); g.lineTo(px + cell * .76, py + cell * .3); g.moveTo(px + cell * .33, py + cell * .8); g.lineTo(px + cell * .48, py + cell * .66); g.stroke();
+    g.strokeStyle = `rgba(230,247,255,${.5 + shimmer * .25})`; g.lineWidth = Math.max(1.2, cell * .025); const hook = cell * .12; g.beginPath(); g.moveTo(px + inset + hook, py + inset); g.lineTo(px + inset, py + inset); g.lineTo(px + inset, py + inset + hook); g.moveTo(px + cell - inset - hook, py + inset); g.lineTo(px + cell - inset, py + inset); g.lineTo(px + cell - inset, py + inset + hook); g.stroke();
+    g.fillStyle = color; g.font = `700 ${Math.max(9, cell * .12)}px ${getComputedStyle(document.body).fontFamily}`; g.textAlign = "right"; g.fillText(layers > 1 ? "Ⅱ" : "Ⅰ", px + cell - 11, py + 20); g.restore();
+  }
   function drawBrackets(g, px, py, size, color, alpha = 1) { const len = size * .18; g.save(); g.globalAlpha = alpha; g.strokeStyle = color; g.lineWidth = Math.max(1.5, size * .025); g.lineCap = "square"; g.beginPath(); g.moveTo(px + 4, py + 4 + len); g.lineTo(px + 4, py + 4); g.lineTo(px + 4 + len, py + 4); g.moveTo(px + size - 4 - len, py + 4); g.lineTo(px + size - 4, py + 4); g.lineTo(px + size - 4, py + 4 + len); g.moveTo(px + 4, py + size - 4 - len); g.lineTo(px + 4, py + size - 4); g.lineTo(px + 4 + len, py + size - 4); g.moveTo(px + size - 4 - len, py + size - 4); g.lineTo(px + size - 4, py + size - 4); g.lineTo(px + size - 4, py + size - 4 - len); g.stroke(); g.restore(); }
   function drawBoard(g) {
     const { boardX: x, boardY: y, boardSize: size, cell } = state.layout; if (!size) return;
@@ -831,7 +872,7 @@
       const px = x + c * cell, py = y + r * cell; if (!isOpen(r, c)) { g.fillStyle = "rgba(1,4,11,.9)"; g.fillRect(px + 2, py + 2, cell - 4, cell - 4); g.strokeStyle = "rgba(105,132,175,.1)"; g.strokeRect(px + 2, py + 2, cell - 4, cell - 4); continue; }
       const fill = g.createLinearGradient(px, py, px + cell, py + cell); fill.addColorStop(0, "rgba(38,72,116,.58)"); fill.addColorStop(.45, "rgba(13,31,59,.78)"); fill.addColorStop(1, "rgba(4,12,27,.88)"); g.fillStyle = fill; g.fillRect(px + 2, py + 2, cell - 4, cell - 4); g.strokeStyle = "rgba(158,213,255,.16)"; g.strokeRect(px + 2, py + 2, cell - 4, cell - 4); g.globalAlpha = .18; g.strokeStyle = "#bfeaff"; g.beginPath(); g.moveTo(px + 7, py + 8); g.lineTo(px + cell - 10, py + 8); g.stroke(); g.globalAlpha = 1;
       const tile = state.board[r][c]; if (tile) drawTile(g, tile);
-      if (state.blockers[r][c] > 0) { const crack = Math.sin(state.visualTime * .002 + r * 1.7 + c) * 2; g.save(); roundedRect(g, px + 6, py + 6, cell - 12, cell - 12, 8); const ice = g.createLinearGradient(px, py, px + cell, py + cell); ice.addColorStop(0, state.blockers[r][c] > 1 ? "rgba(225,244,255,.48)" : "rgba(148,206,255,.28)"); ice.addColorStop(1, "rgba(80,139,208,.1)"); g.fillStyle = ice; g.fill(); g.strokeStyle = "rgba(228,246,255,.82)"; g.lineWidth = 1.4; g.stroke(); g.strokeStyle = "rgba(255,255,255,.5)"; g.beginPath(); g.moveTo(px + cell * .24, py + cell * .72); g.lineTo(px + cell * .58 + crack, py + cell * .25); g.lineTo(px + cell * .73, py + cell * .48); g.moveTo(px + cell * .48, py + cell * .78); g.lineTo(px + cell * .73, py + cell * .36); g.stroke(); if (state.blockers[r][c] > 1) { g.fillStyle = "#e7f3ff"; g.font = `600 ${Math.max(9, cell * .13)}px ${getComputedStyle(document.body).fontFamily}`; g.textAlign = "right"; g.fillText("Ⅱ", px + cell - 10, py + 20); } g.restore(); }
+      if (state.blockers[r][c] > 0) drawMoonDustLock(g, px, py, cell, state.blockers[r][c], r, c);
     }
     if (state.selection && isSelectable(state.selection.r, state.selection.c)) { const s = state.selection; const sx = x + s.c * cell, sy = y + s.r * cell, breathe = (Math.sin(state.visualTime * .006) + 1) * .5; g.save(); g.shadowColor = "#58e7ff"; g.shadowBlur = 12 + breathe * 12; g.strokeStyle = "#eafcff"; drawBrackets(g, sx, sy, cell, "#eafcff", .86); g.strokeStyle = "#58e7ff"; g.lineWidth = 1; g.strokeRect(sx + 9, sy + 9, cell - 18, cell - 18); g.restore(); }
     if (state.hint && !state.locked) { const t = (Math.sin(state.visualTime * .009) + 1) / 2; const a = state.hint.a, b = state.hint.b, ax = x + (a.c + .5) * cell, ay = y + (a.r + .5) * cell, bx = x + (b.c + .5) * cell, by = y + (b.r + .5) * cell; g.save(); g.setLineDash([3, 7]); g.lineDashOffset = -state.visualTime * .02; g.strokeStyle = `rgba(255,211,106,${.35 + t * .6})`; g.lineWidth = 2; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); g.setLineDash([]); drawBrackets(g, x + a.c * cell, y + a.r * cell, cell, "#ffd36a", .45 + t * .5); drawBrackets(g, x + b.c * cell, y + b.r * cell, cell, "#ffd36a", .45 + t * .5); g.restore(); }
@@ -844,6 +885,15 @@
     g.restore();
   }
   function drawFx(g) {
+    if (state.pulseFx) {
+      const fx = state.pulseFx, progress = REDUCED_MOTION ? 1 : clamp(fx.life / fx.span, 0, 1), eased = 1 - Math.pow(1 - progress, 3), fade = REDUCED_MOTION ? .42 : Math.sin(Math.min(1, progress) * Math.PI), { boardX: x, boardY: y, boardSize: size, cell } = state.layout;
+      const horizontal = fx.direction === "up" || fx.direction === "down", edgeProgress = fx.direction === "up" || fx.direction === "left" ? eased : 1 - eased, front = horizontal ? y + edgeProgress * size : x + edgeProgress * size;
+      g.save(); g.globalCompositeOperation = "lighter"; g.globalAlpha = .72 * fade; g.shadowColor = "#58e7ff"; g.shadowBlur = 24; g.fillStyle = "rgba(88,231,255,.72)";
+      if (horizontal) { const band = cell * (REDUCED_MOTION ? .18 : .32); g.fillRect(x - 10, front - band * .5, size + 20, band); } else { const band = cell * (REDUCED_MOTION ? .18 : .32); g.fillRect(front - band * .5, y - 10, band, size + 20); }
+      const impact = REDUCED_MOTION ? .5 : clamp(1 - fx.life / 260, 0, 1); g.globalAlpha = impact * .8;
+      for (const [r, c] of edgeCells(fx.direction)) { const center = cellCenter(r, c), glow = g.createRadialGradient(center.x, center.y, 0, center.x, center.y, cell * .72); glow.addColorStop(0, "rgba(255,255,255,.95)"); glow.addColorStop(.22, "rgba(88,231,255,.58)"); glow.addColorStop(1, "rgba(88,231,255,0)"); g.fillStyle = glow; g.fillRect(center.x - cell, center.y - cell, cell * 2, cell * 2); }
+      g.globalAlpha = fade * .8; g.strokeStyle = "#d7fbff"; g.lineWidth = Math.max(2, cell * .035); g.beginPath(); if (horizontal) { g.moveTo(x, front); g.lineTo(x + size, front); } else { g.moveTo(front, y); g.lineTo(front, y + size); } g.stroke(); g.restore();
+    }
     for (const beam of state.beams) { const t = beam.life / beam.span, alpha = Math.sin(Math.min(1, t) * Math.PI) * .8; const horizontal = beam.direction === "row"; const start = horizontal ? state.layout.boardX : state.layout.boardY; const end = horizontal ? state.layout.boardX + state.layout.boardSize : state.layout.boardY + state.layout.boardSize; const pos = horizontal ? state.layout.boardY + (beam.line + .5) * state.layout.cell : state.layout.boardX + (beam.line + .5) * state.layout.cell; g.save(); g.globalAlpha = alpha; g.strokeStyle = beam.color; g.shadowColor = beam.color; g.shadowBlur = 18; g.lineWidth = 3 + (1 - t) * 5; g.beginPath(); if (horizontal) { g.moveTo(start - 18 + t * 24, pos); g.lineTo(end + 18 - t * 24, pos); } else { g.moveTo(pos, start - 18 + t * 24); g.lineTo(pos, end + 18 - t * 24); } g.stroke(); g.restore(); }
     for (const ring of state.rings) { const t = ring.life / ring.span, radius = ring.radius * (.45 + t * 1.05); g.save(); g.globalAlpha = (1 - t) * .9; g.strokeStyle = ring.color; g.lineWidth = 2 + (1 - t) * 2; g.shadowColor = ring.color; g.shadowBlur = 12; g.beginPath(); g.arc(ring.x, ring.y, radius, 0, Math.PI * 2); g.stroke(); g.setLineDash([3, 8]); g.lineDashOffset = -state.visualTime * .02 + ring.phase; g.globalAlpha *= .7; g.lineWidth = 1; g.beginPath(); g.arc(ring.x, ring.y, radius * .72, 0, Math.PI * 2); g.stroke(); g.restore(); }
     for (const p of state.particles) { const alpha = 1 - p.life / p.span; g.save(); g.globalAlpha = alpha; g.translate(p.x, p.y); g.rotate(p.rot); g.strokeStyle = p.color; g.fillStyle = p.color; g.shadowColor = p.color; g.shadowBlur = 8; if (p.kind === "spark") { g.lineWidth = Math.max(1, p.size * .7); g.beginPath(); g.moveTo(-p.size * 2.4, 0); g.lineTo(p.size * 2.4, 0); g.stroke(); } else { g.beginPath(); g.moveTo(0, -p.size); g.lineTo(p.size, 0); g.lineTo(0, p.size); g.lineTo(-p.size, 0); g.closePath(); g.fill(); } g.restore(); }
@@ -871,6 +921,12 @@
     $("pulseFill").parentElement.classList.toggle("ready", state.pulse >= PULSE_MAX);
     $("pulseButton").disabled = state.pulse < PULSE_MAX || !canInteract();
     $("pulseButton").classList.toggle("ready", state.pulse >= PULSE_MAX);
+    $("pulseButton").classList.toggle("armed", state.pulseArmed);
+    const pulseDirection = state.pulseDirection.toUpperCase();
+    $("pulseButton").textContent = state.pulseArmed ? `ARMED // ${pulseDirection} // ENTER` : state.pulse >= PULSE_MAX ? "SPACE // ARM PULSE" : "CHARGE // 100%";
+    $("pulseButton").setAttribute("aria-label", state.pulseArmed ? `Pulse armed toward the ${state.pulseDirection} edge. Press Enter to activate.` : state.pulse >= PULSE_MAX ? "Lunar Pulse ready. Press Space to arm it." : "Lunar Pulse charging to 100 percent.");
+    $("pulseButton").setAttribute("title", state.pulseArmed ? `Armed toward ${state.pulseDirection} edge // Enter activates` : "Pulse charges to 100% // Space arms");
+    $("pulseHelp").textContent = state.pulseArmed ? `Arrow keys choose an edge · ${pulseDirection} selected · Enter chips 1 blocker layer · redirects the next refill.` : "Charges to 100% · Space arms · arrows choose an edge · activation chips 1 blocker layer and redirects the next refill.";
     $("shuffleButton").disabled = !canInteract();
     $("hintButton").disabled = !canInteract();
     $("pauseButton").disabled = !state.active;
@@ -912,7 +968,7 @@
   }
 
   function snapshot() {
-    const o = state.objective || { kind: "score", target: 0 }; return { grid: GRID, board: state.board.map((row) => row.map((tile) => tile ? { type: tile.type, special: tile.special, id: tile.id } : null)), mask: state.mask.map((row) => row.slice()), blockers: state.blockers.map((row) => row.slice()), score: state.score, moves: state.moves, timeLeft: state.timeLeft, level: state.mission, levelName: state.info?.name || "", mode: state.mode, objective: { kind: o.kind, target: o.target, progress: objectiveProgress(), complete: objectiveComplete(), colors: o.colors?.slice(), perColor: o.perColor, scoreTarget: o.scoreTarget, pulseTarget: o.pulseTarget, collected: state.collected.slice() }, chain: state.chain, bestChain: state.bestChain, blockerCleared: state.blockerCleared, pulse: state.pulse, pulseUses: state.pulseUses, pulseArmed: state.pulseArmed, pulseDirection: state.pulseDirection, pendingGravity: state.pendingGravity, gravity: state.gravity, cursor: { ...state.cursor }, selection: state.selection ? { ...state.selection } : null, hasMove: Boolean(findAnyMove()), matchCount: state.matchCount, hint: state.hint ? { ...state.hint } : null, active: state.active, locked: state.locked, paused: state.paused, rushing: state.rushing, screen: state.screen, seed: state.seed, boardRevision: state.boardRevision, muted: state.muted, campaign: { unlocked: state.campaign.unlocked, stars: state.campaign.stars.slice(), bestScore: state.campaign.bestScore.slice(), bestChain: state.campaign.bestChain.slice() }, feedback: { particles: state.particles.length, rings: state.rings.length, beams: state.beams.length, floaters: state.floaters.length }, reducedMotion: REDUCED_MOTION, particleCount: state.particles.length, effectBudget: REDUCED_MOTION ? 35 : state.layout.width < 700 ? 90 : 180, layout: { ...state.layout } };
+    const o = state.objective || { kind: "score", target: 0 }; return { grid: GRID, board: state.board.map((row) => row.map((tile) => tile ? { type: tile.type, special: tile.special, id: tile.id } : null)), mask: state.mask.map((row) => row.slice()), blockers: state.blockers.map((row) => row.slice()), score: state.score, moves: state.moves, timeLeft: state.timeLeft, level: state.mission, levelName: state.info?.name || "", mode: state.mode, objective: { kind: o.kind, target: o.target, progress: objectiveProgress(), complete: objectiveComplete(), colors: o.colors?.slice(), perColor: o.perColor, scoreTarget: o.scoreTarget, pulseTarget: o.pulseTarget, collected: state.collected.slice() }, chain: state.chain, bestChain: state.bestChain, blockerCleared: state.blockerCleared, pulse: state.pulse, pulseUses: state.pulseUses, pulseArmed: state.pulseArmed, pulseDirection: state.pulseDirection, pendingGravity: state.pendingGravity, gravity: state.gravity, cursor: { ...state.cursor }, selection: state.selection ? { ...state.selection } : null, hasMove: Boolean(findAnyMove()), matchCount: state.matchCount, hint: state.hint ? { ...state.hint } : null, active: state.active, locked: state.locked, paused: state.paused, rushing: state.rushing, screen: state.screen, seed: state.seed, boardRevision: state.boardRevision, muted: state.muted, campaign: { unlocked: state.campaign.unlocked, stars: state.campaign.stars.slice(), bestScore: state.campaign.bestScore.slice(), bestChain: state.campaign.bestChain.slice() }, feedback: { particles: state.particles.length, rings: state.rings.length, beams: state.beams.length, floaters: state.floaters.length, pulse: state.pulseFx ? { direction: state.pulseFx.direction, life: state.pulseFx.life, chipped: state.pulseFx.chipped } : null }, reducedMotion: REDUCED_MOTION, particleCount: state.particles.length, effectBudget: REDUCED_MOTION ? 35 : state.layout.width < 700 ? 90 : 180, layout: { ...state.layout } };
   }
 
   function tick(now) {

@@ -31,7 +31,7 @@ type Snapshot = {
   boardRevision: number;
   muted: boolean;
   campaign: { unlocked: number; stars: number[]; bestScore: number[]; bestChain: number[] };
-  feedback: { particles: number; rings: number; beams: number; floaters: number };
+  feedback: { particles: number; rings: number; beams: number; floaters: number; pulse: { direction: string; life: number; chipped: number } | null };
   active: boolean;
   locked: boolean;
   paused: boolean;
@@ -228,6 +228,56 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
       expect(await page.evaluate(() => window.__lunarArrayTest.audioEvents())).toContain(event);
       expect((await snapshot(page)).score).toBeGreaterThan(0);
     }
+  });
+
+  test("activates a CORE when swapped with an ordinary gem of any color", async ({ page }) => {
+    await openGame(page);
+    await startMission(page);
+    const constants = await page.evaluate(() => window.__lunarArrayTest.constants);
+    await page.evaluate(([board, core]) => {
+      window.__lunarArrayTest.setBoard(board, [{ r: 3, c: 3, special: core }]);
+      window.__lunarArrayTest.setMoves(20);
+      window.__lunarArrayTest.setObjective({ kind: "score", target: 999999 });
+      window.__lunarArrayTest.clearAudioEvents();
+    }, [stableBoard, constants.CORE]);
+    const ordinaryType = stableBoard[3][4];
+    expect(await page.evaluate(() => window.__lunarArrayTest.swap(3, 3, 3, 4))).toBe(true);
+    await settle(page);
+    const state = await snapshot(page);
+    expect(state.score).toBeGreaterThan(700);
+    expect(state.objective.collected[ordinaryType]).toBeGreaterThan(0);
+    expect(await page.evaluate(() => window.__lunarArrayTest.audioEvents())).toContain("core:color");
+  });
+
+  test("explains and animates the armed Lunar Pulse", async ({ page }) => {
+    await openGame(page);
+    await startMission(page, 4);
+    await page.evaluate(() => window.__lunarArrayTest.setPulse(100));
+    const help = page.locator("#pulseHelp");
+    await expect(help).toContainText("Space");
+    await expect(help).toContainText("arrows");
+    await expect(help).toContainText("1 blocker layer");
+    await expect(help).toContainText("refill");
+    await page.evaluate(() => window.__lunarArrayTest.armPulse());
+    await expect(help).toContainText("Enter");
+    await expect(page.locator("#pulseButton")).toContainText("ARMED");
+    await page.evaluate(() => window.__lunarArrayTest.pulse("up"));
+    const state = await snapshot(page);
+    expect(state.feedback.pulse).toMatchObject({ direction: "up" });
+    expect(state.gravity).toBe("up");
+  });
+
+  test("preserves authored one-layer and two-layer moon-dust lock state", async ({ page }) => {
+    await openGame(page);
+    await startMission(page);
+    await page.evaluate(() => window.__lunarArrayTest.setBlockers([{ r: 2, c: 2, layers: 1 }, { r: 2, c: 3, layers: 2 }]));
+    const before = await snapshot(page);
+    expect(before.blockers[2][2]).toBe(1);
+    expect(before.blockers[2][3]).toBe(2);
+    await page.evaluate(() => window.__lunarArrayTest.advance(180));
+    const after = await snapshot(page);
+    expect(after.blockers[2][2]).toBe(1);
+    expect(after.blockers[2][3]).toBe(2);
   });
 
   test("keeps Eclipse Gate's blocker target attainable", async ({ page }) => {
