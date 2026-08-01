@@ -267,6 +267,26 @@ test.describe("GPT 5.6 Luna Tile Matching — Lunar Array", {
     expect(state.gravity).toBe("up");
   });
 
+  test("supports pointer-only Pulse aiming and firing", async ({ page }) => {
+    await openGame(page);
+    await startMission(page, 4);
+    await page.evaluate(() => window.__lunarArrayTest.setPulse(100));
+    await page.locator("#pulseButton").click();
+    expect((await snapshot(page)).pulseArmed).toBe(true);
+
+    const armed = await snapshot(page);
+    await page.mouse.click(armed.layout.boardX + armed.layout.boardSize / 2, armed.layout.boardY - 18);
+    const aimed = await snapshot(page);
+    expect(aimed.pulseArmed).toBe(true);
+    expect(aimed.pulseDirection).toBe("up");
+    expect(aimed.pulseUses).toBe(0);
+
+    await page.locator("#pulseButton").click();
+    await expect.poll(async () => (await snapshot(page)).pulseUses).toBe(1);
+    const fired = await snapshot(page);
+    expect(fired.feedback.pulse).toMatchObject({ direction: "up" });
+  });
+
   test("preserves authored one-layer and two-layer moon-dust lock state", async ({ page }) => {
     await openGame(page);
     await startMission(page);

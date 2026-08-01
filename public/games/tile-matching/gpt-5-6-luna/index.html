@@ -671,7 +671,20 @@
     let chipped = 0; for (const [r, c] of edgeCells(direction)) if (state.blockers[r][c] > 0) { state.blockers[r][c] -= 1; state.blockerCleared += 1; chipped += 1; const center = cellCenter(r, c); addRing(center.x, center.y, state.layout.cell * .9, "#e7f3ff"); burstParticles(center.x, center.y, "#baf7ff", REDUCED_MOTION ? 2 : 7); }
     const edge = direction === "up" ? 0 : direction === "down" ? GRID - 1 : direction === "left" ? 0 : GRID - 1; addBeam(direction === "up" || direction === "down" ? "row" : "col", edge, "#58e7ff"); addRing(state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY + state.layout.boardSize / 2, state.layout.boardSize * .38, "#58e7ff"); addFloater(`PULSE // ${direction.toUpperCase()}`, state.layout.boardX + state.layout.boardSize / 2, state.layout.boardY - 10, "#58e7ff"); state.pulseFx = { direction, life: 0, span: REDUCED_MOTION ? 260 : 820, chipped }; toast(chipped ? `Pulse cracked ${chipped} edge layer${chipped === 1 ? "" : "s"}` : `Pulse // ${direction}`); updateHud(); if (state.active && objectiveComplete()) await completeMission(); return true;
   }
-  function armPulse() { if (canInteract() && state.pulse >= PULSE_MAX) { state.pulseArmed = !state.pulseArmed; sfx(state.pulseArmed ? "pulse:arm" : "select"); toast(state.pulseArmed ? `Pulse armed // ${state.pulseDirection} edge // Enter to activate` : "Pulse cancelled"); updateHud(); return true; } return false; }
+  function armPulse() { if (canInteract() && state.pulse >= PULSE_MAX) { state.pulseArmed = !state.pulseArmed; sfx(state.pulseArmed ? "pulse:arm" : "select"); toast(state.pulseArmed ? `Pulse armed // click an edge arrow // click FIRE or press Enter` : "Pulse cancelled"); updateHud(); return true; } return false; }
+  function pulseEdgeFromEvent(event) {
+    if (!state.pulseArmed || !canInteract()) return null;
+    const rect = canvas.getBoundingClientRect(), px = event.clientX - rect.left, py = event.clientY - rect.top;
+    const { boardX: x, boardY: y, boardSize: size, cell } = state.layout;
+    const radius = Math.max(18, Math.min(24, cell * .44));
+    const arrows = { up: [x + size / 2, y - 18], down: [x + size / 2, y + size + 26], left: [x - 20, y + size / 2 + 6], right: [x + size + 20, y + size / 2 + 6] };
+    for (const [direction, [ax, ay]] of Object.entries(arrows)) if (Math.hypot(px - ax, py - ay) <= radius) return direction;
+    return null;
+  }
+  function choosePulseDirection(direction) {
+    if (!state.pulseArmed || !["up", "down", "left", "right"].includes(direction)) return false;
+    state.pulseDirection = direction; sfx("select"); toast(`Pulse edge selected // ${direction.toUpperCase()} // click FIRE`); updateHud(); return true;
+  }
 
   function reshuffle(manual = false, automatic = false) {
     if ((!automatic && !canInteract()) || (manual && state.mode === "campaign" && state.moves < SHUFFLE_COST)) return false;
@@ -923,10 +936,10 @@
     $("pulseButton").classList.toggle("ready", state.pulse >= PULSE_MAX);
     $("pulseButton").classList.toggle("armed", state.pulseArmed);
     const pulseDirection = state.pulseDirection.toUpperCase();
-    $("pulseButton").textContent = state.pulseArmed ? `ARMED // ${pulseDirection} // ENTER` : state.pulse >= PULSE_MAX ? "SPACE // ARM PULSE" : "CHARGE // 100%";
-    $("pulseButton").setAttribute("aria-label", state.pulseArmed ? `Pulse armed toward the ${state.pulseDirection} edge. Press Enter to activate.` : state.pulse >= PULSE_MAX ? "Lunar Pulse ready. Press Space to arm it." : "Lunar Pulse charging to 100 percent.");
-    $("pulseButton").setAttribute("title", state.pulseArmed ? `Armed toward ${state.pulseDirection} edge // Enter activates` : "Pulse charges to 100% // Space arms");
-    $("pulseHelp").textContent = state.pulseArmed ? `Arrow keys choose an edge · ${pulseDirection} selected · Enter chips 1 blocker layer · redirects the next refill.` : "Charges to 100% · Space arms · arrows choose an edge · activation chips 1 blocker layer and redirects the next refill.";
+    $("pulseButton").textContent = state.pulseArmed ? `ARMED // ${pulseDirection} // FIRE` : state.pulse >= PULSE_MAX ? "CLICK PULSE // SPACE" : "CHARGE // 100%";
+    $("pulseButton").setAttribute("aria-label", state.pulseArmed ? `Pulse armed toward the ${state.pulseDirection} edge. Click FIRE to activate, or press Enter or Space.` : state.pulse >= PULSE_MAX ? "Lunar Pulse ready. Click Pulse to arm it, or press Space." : "Lunar Pulse charging to 100 percent.");
+    $("pulseButton").setAttribute("title", state.pulseArmed ? `Click FIRE to pulse toward the ${state.pulseDirection} edge // Enter or Space fires` : "Click Pulse to arm // Space arms");
+    $("pulseHelp").textContent = state.pulseArmed ? `Click a glowing edge arrow or use arrows to choose · ${pulseDirection} selected · click FIRE / Pulse or press Enter · chips 1 blocker layer and redirects the next refill.` : "Click Pulse to arm · Space arms · arrows choose an edge · click a glowing edge arrow · click Pulse to fire · Enter fires · activation chips 1 blocker layer and redirects the next refill.";
     $("shuffleButton").disabled = !canInteract();
     $("hintButton").disabled = !canInteract();
     $("pauseButton").disabled = !state.active;
@@ -981,10 +994,10 @@
     window.__lunarArrayTest = { constants: { GRID, TYPES, NONE, BEAM_ROW, BEAM_COL, BURST, CORE, MAX_CHAIN, PULSE_MAX, SHUFFLE_COST, FUSION }, snapshot, setSeed, startMission, startCampaign, startEndless, setSpeed: (value) => { state.speed = Math.max(.1, Number(value) || 1); }, setBoard(matrix, specials = []) { state.board = Array.from({ length: GRID }, (_, r) => Array.from({ length: GRID }, (_, c) => isOpen(r, c) ? createTile(Number(matrix?.[r]?.[c] ?? 0), r, c) : null)); for (const item of specials) if (inside(item.r, item.c) && state.board[item.r][item.c]) state.board[item.r][item.c].special = item.special; settleTiles(); normalizeCursor(); markBoardChanged(); state.locked = false; state.matchCount = findMatches().length; updateHud(); return true; }, setMask(mask) { state.mask = mask.map((row) => row.map((value) => value ? 1 : 0)); for (let r = 0; r < GRID; r += 1) for (let c = 0; c < GRID; c += 1) if (!state.mask[r][c]) state.board[r][c] = null; else if (!state.board[r][c]) state.board[r][c] = createTile(randomType(), r, c); settleTiles(); normalizeCursor(); markBoardChanged(); return true; }, setBlockers(entries) { state.blockers = Array.from({ length: GRID }, () => new Array(GRID).fill(0)); for (const item of entries || []) if (inside(item.r, item.c)) state.blockers[item.r][item.c] = clamp(item.layers ?? 1, 0, 2); normalizeCursor(); markBoardChanged(); settleTiles(); return true; }, setMoves(value) { state.moves = Number(value); updateHud(); }, setTime(value) { state.timeLeft = Number(value); state.elapsed = 120 - state.timeLeft; updateHud(); }, setScore(value) { state.score = Number(value); updateHud(); }, setPulse(value) { state.pulse = clamp(Number(value) || 0, 0, PULSE_MAX); updateHud(); }, setObjective(spec) { state.objective = { kind: spec.kind || "score", target: spec.target ?? 0, colors: spec.colors?.slice(), perColor: spec.perColor, scoreTarget: spec.scoreTarget, pulseTarget: spec.pulseTarget }; updateHud(); }, swap: (r1, c1, r2, c2) => attemptSwap({ r: r1, c: c1 }, { r: r2, c: c2 }), detonate, resolve: () => resolveCascade(), collapse, shuffle: reshuffle, hint: requestHint, bestMove: () => findBestMove(), pulse: usePulse, armPulse, finishTurn, completeMission, failMission, restart, setMuted, advance(ms) { const delta = Math.max(0, Number(ms) || 0); if (state.mode === "endless" && state.active && !state.paused && !state.locked) { state.elapsed += delta / 1000; state.timeLeft = Math.max(0, 120 - state.elapsed); if (state.timeLeft <= 0) failMission("120 seconds crossed. The session record is yours to beat."); } updateFx(delta); updateHud(); render(); return snapshot(); }, audioEvents: () => state.audioLog.slice(), clearAudioEvents: () => { state.audioLog.length = 0; }, cellRect: (r, c) => ({ x: state.layout.boardX + c * state.layout.cell, y: state.layout.boardY + r * state.layout.cell, w: state.layout.cell, h: state.layout.cell }) };
   }
 
-  canvas.addEventListener("pointerdown", (event) => { ensureAudio(); canvas.focus({ preventScroll: true }); const cell = cellFromEvent(event); if (!cell || !isSelectable(cell.r, cell.c) || !canInteract()) return; state.dragging = true; state.dragOrigin = cell; selectOrSwap(cell); });
-  canvas.addEventListener("pointermove", (event) => { const cell = cellFromEvent(event); state.hover = cell && isSelectable(cell.r, cell.c) ? cell : null; if (!state.dragging || !state.dragOrigin || !cell || !isSelectable(cell.r, cell.c) || !canInteract()) return; if (adjacent(state.dragOrigin, cell)) { const origin = state.dragOrigin; state.dragging = false; state.dragOrigin = null; void attemptSwap(origin, cell); } });
+  canvas.addEventListener("pointerdown", (event) => { ensureAudio(); canvas.focus({ preventScroll: true }); const pulseDirection = pulseEdgeFromEvent(event); if (pulseDirection) { choosePulseDirection(pulseDirection); return; } const cell = cellFromEvent(event); if (!cell || !isSelectable(cell.r, cell.c) || !canInteract()) return; state.dragging = true; state.dragOrigin = cell; selectOrSwap(cell); });
+  canvas.addEventListener("pointermove", (event) => { const pulseDirection = pulseEdgeFromEvent(event), cell = cellFromEvent(event); canvas.style.cursor = pulseDirection || (cell && isSelectable(cell.r, cell.c)) ? "pointer" : "default"; state.hover = cell && isSelectable(cell.r, cell.c) ? cell : null; if (!state.dragging || !state.dragOrigin || !cell || !isSelectable(cell.r, cell.c) || !canInteract()) return; if (adjacent(state.dragOrigin, cell)) { const origin = state.dragOrigin; state.dragging = false; state.dragOrigin = null; void attemptSwap(origin, cell); } });
   canvas.addEventListener("pointerup", () => { state.dragging = false; state.dragOrigin = null; });
-  canvas.addEventListener("pointerleave", () => { state.hover = null; state.dragging = false; state.dragOrigin = null; });
+  canvas.addEventListener("pointerleave", () => { state.hover = null; state.dragging = false; state.dragOrigin = null; canvas.style.cursor = "default"; });
   canvas.addEventListener("dblclick", (event) => { const cell = cellFromEvent(event); if (cell && isSelectable(cell.r, cell.c)) void detonate(cell.r, cell.c); });
   canvas.addEventListener("contextmenu", (event) => event.preventDefault());
   addEventListener("keydown", onKey);
@@ -995,7 +1008,7 @@
   $("shuffleButton").addEventListener("click", () => reshuffle(true));
   $("audioButton").addEventListener("click", () => setMuted(!state.muted));
   $("pauseButton").addEventListener("click", () => togglePause());
-  $("pulseButton").addEventListener("click", () => armPulse());
+  $("pulseButton").addEventListener("click", () => { if (state.pulseArmed) void usePulse(); else armPulse(); });
   $("resumeButton").addEventListener("click", () => togglePause(false));
   $("quitButton").addEventListener("click", () => { state.active = false; state.paused = false; stopMusic(); showScreen("title"); updateHud(); });
   $("failedQuitButton").addEventListener("click", () => { state.active = false; showScreen("title"); updateHud(); });
