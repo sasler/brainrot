@@ -21,7 +21,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 🧭 3D Maze | Navigate a procedurally generated labyrinth in first-person 3D. Find the glowing exit before time runs out. | 8 |
 | ⛳ Mini Golf 3D | Aim, pull back, and sink impossible banks across neon-drenched 3D mini golf courses, including a nine-hole solar eclipse odyssey. | 5 |
 | 💎 Tile Matching | Swap, match, and chain your way to the top. Line up three or more gems to trigger cascading combos and dazzling special tiles. | 8 |
-| 👾 Space Invaders | Defend Earth from waves of descending alien invaders. Blast through formations, grab power-ups, and survive the onslaught. | 5 |
+| 👾 Space Invaders | Defend Earth from waves of descending alien invaders. Blast through formations, grab power-ups, and survive the onslaught. | 6 |
 | 🔢 Sudoku | Solve a glowing logic grid under pressure with notes, streaks, and satisfying neon feedback for every sharp deduction. | 2 |
 | 🏎️ Neon Horizon Racer | Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon. | 6 |
 | 🏎️ Coastal Rush '86 | Race a red convertible through a branching, sun-soaked 1980s arcade road trip before the clock runs out. | 7 |
@@ -46,6 +46,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | OpenAI GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 1,035 lines | N/A | N/A | 2,734 lines | 3,965 lines | N/A | N/A | N/A |
 | Google Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Google Gemma 4 12B | 514 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 337 lines | N/A | N/A | N/A | N/A |
+| GitHub Copilot Fusion Standard | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 376 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Microsoft MAI-Code-1-Flash | 330 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 170 lines | N/A | N/A | N/A |
 | MiniMax M2.7 | N/A | N/A | N/A | N/A | 1,032 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Qwen3.6-27B | N/A | N/A | N/A | N/A | N/A | 1,122 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |

@@ -5123,6 +5123,18 @@
               ]
             }
           ]
+        },
+        {
+          "model": "Copilot Fusion Standard",
+          "modelId": "copilot-fusion-standard",
+          "date": "2026-10-30",
+          "linesOfCode": 376,
+          "path": "/games/space-invaders/copilot-fusion-standard/index.html",
+          "features": [
+            "sound",
+            "particles",
+            "powerups"
+          ]
         }
       ]
     },
