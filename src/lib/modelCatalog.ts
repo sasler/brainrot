@@ -22,6 +22,7 @@ export const MODEL_CATALOG = {
   "qwen-3-6-27b": { displayName: "Qwen3.6-27B", family: "Qwen", company: "Alibaba", color: "#B86CFF" },
   "qwen3.6-35b-a3b": { displayName: "Qwen3.6-35B-A3B", family: "Qwen", company: "Alibaba", color: "#D946EF" },
   "mai-code-1-flash": { displayName: "Microsoft MAI-Code-1-Flash", family: "Microsoft MAI", company: "Microsoft", color: "#00A4EF" },
+  "copilot-fusion-standard": { displayName: "Copilot Fusion Standard", family: "Copilot Fusion", company: "GitHub", color: "#8B7CFF" },
   "minimax-m2-7": { displayName: "MiniMax M2.7", family: "MiniMax", company: "MiniMax", color: "#FF4D6D" },
   hy3: { displayName: "Tencent Hy3", family: "Tencent Hy", company: "Tencent", color: "#00B8A9" },
 } as const satisfies Record<string, ModelInfo>;
@@ -58,6 +59,7 @@ for (const [alias, modelId] of Object.entries({
   "minimax m2.7": "minimax-m2-7",
   "qwen3.6-27b": "qwen-3-6-27b",
   "qwen3.6 35b a3b": "qwen3.6-35b-a3b",
+  "copilot fusion standard": "copilot-fusion-standard",
 })) {
   MODEL_NAME_ALIASES.set(alias, MODEL_CATALOG[modelId as KnownModelId].displayName);
 }

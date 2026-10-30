@@ -56,6 +56,17 @@ test.describe("Model identity system", {
     await expect(page.getByText("MODEL ENTRY", { exact: true })).toHaveCount(0);
   });
 
+  test("Copilot Fusion Standard has a model profile and Space Invaders card", async ({ page }) => {
+    await page.goto("/models/copilot-fusion-standard");
+    await expect(page.getByRole("heading", { name: "Copilot Fusion Standard" })).toBeVisible();
+    await expect(page.locator('[data-game-id="space-invaders"]')).toBeVisible();
+
+    await page.goto("/games/space-invaders");
+    const versionCard = page.locator('[data-model-id="copilot-fusion-standard"]');
+    await expect(versionCard).toContainText("Copilot Fusion Standard");
+    await expect(versionCard).toHaveAttribute("data-model-color", "#8B7CFF");
+  });
+
   for (const viewport of [
     { name: "mobile", width: 320, height: 480 },
     { name: "desktop", width: 1280, height: 800 },
