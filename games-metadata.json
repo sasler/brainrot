@@ -4772,6 +4772,17 @@
             "particles",
             "powerups"
           ]
+        },
+        {
+          "model": "MAI Code 2",
+          "modelId": "mai-code-2",
+          "date": "2026-11-18",
+          "linesOfCode": 1104,
+          "path": "/games/tile-matching/mai-code-2/index.html",
+          "features": [
+            "sound",
+            "particles"
+          ]
         }
       ]
     },

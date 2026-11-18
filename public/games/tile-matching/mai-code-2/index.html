@@ -1,0 +1,1103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#11100f">
+<title>RELAY//CTRL — MAI Code 2 Tile Matching</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #11100f;
+    --panel: #181715;
+    --paper: #eee8d8;
+    --muted: #9d9688;
+    --red: #ff4d35;
+    --blue: #4c88ff;
+    --yellow: #ffd84c;
+    --mint: #63e6b2;
+    --line: rgba(238, 232, 216, .16);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: "Bahnschrift", "DIN Condensed", "Arial Narrow", sans-serif;
+    user-select: none;
+  }
+  button { font: inherit; color: inherit; }
+  #app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 520px;
+    overflow: hidden;
+    background:
+      linear-gradient(90deg, transparent 49.8%, rgba(238,232,216,.025) 50%, transparent 50.2%),
+      repeating-linear-gradient(0deg, transparent 0 47px, rgba(238,232,216,.025) 48px 49px),
+      var(--ink);
+  }
+  #app::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 43%, rgba(76,136,255,.07), transparent 43%);
+    pointer-events: none;
+  }
+  #board {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    outline: 0;
+    touch-action: none;
+  }
+  #hud { position: absolute; inset: 0; pointer-events: none; transition: opacity .2s; }
+  #hud.dim { opacity: 0; }
+  .rail {
+    position: absolute;
+    top: 56px;
+    bottom: 54px;
+    width: 216px;
+    display: flex;
+    flex-direction: column;
+  }
+  #leftRail { left: 34px; }
+  #rightRail { right: 34px; text-align: right; align-items: flex-end; }
+  .wordmark { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 800; letter-spacing: .14em; }
+  .wordmark i { width: 11px; height: 11px; background: var(--red); box-shadow: 9px 0 var(--blue), 18px 0 var(--yellow); transform: skew(-14deg); }
+  .edition { margin: 8px 0 28px 20px; color: var(--muted); font: 9px/1.3 ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; }
+  .section-label { color: var(--muted); font: 9px ui-monospace, monospace; letter-spacing: .19em; text-transform: uppercase; }
+  .mission { margin-top: 5px; font-size: 24px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; }
+  .mission-copy { max-width: 190px; margin: 7px 0 23px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+  .readout { width: 100%; padding: 13px 0; border-top: 1px solid var(--line); }
+  .readout strong { display: block; margin-top: 3px; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .readout small { display: block; min-height: 16px; margin-top: 6px; color: var(--muted); font: 10px/1.35 ui-monospace, monospace; }
+  .track { position: relative; width: 100%; height: 6px; margin-top: 11px; overflow: hidden; background: rgba(238,232,216,.09); }
+  .track i { display: block; width: 0; height: 100%; background: var(--paper); transition: width .22s ease; }
+  .stat-score { margin-top: 0; }
+  .stat-score strong { font-size: 43px; letter-spacing: -.045em; }
+  #movesValue.danger { color: var(--red); animation: danger .75s steps(2) infinite; }
+  @keyframes danger { 50% { opacity: .5; } }
+  .forecast { width: 190px; min-height: 80px; padding: 11px 0; border-top: 1px solid var(--line); }
+  .forecast b { display: block; margin-top: 5px; color: var(--yellow); font-size: 19px; font-weight: 700; }
+  .forecast span { display: block; margin-top: 4px; color: var(--muted); font: 9px/1.5 ui-monospace, monospace; }
+  .overclock {
+    width: 190px;
+    margin-top: auto;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.02);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, transform .2s;
+  }
+  .overclock:hover, .overclock:focus-visible { border-color: var(--paper); outline: 0; transform: translateY(-2px); }
+  .overclock:disabled { opacity: .38; cursor: default; transform: none; }
+  .overclock.ready { border-color: var(--yellow); background: rgba(255,216,76,.08); box-shadow: 0 0 25px rgba(255,216,76,.1); }
+  .overclock b { display: block; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+  .overclock span { display: block; margin-top: 5px; color: var(--muted); font: 9px/1.4 ui-monospace, monospace; }
+  .actions { display: flex; gap: 6px; margin-top: 10px; pointer-events: auto; }
+  .icon {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .icon:hover, .icon:focus-visible { border-color: var(--paper); color: var(--paper); outline: 0; }
+  #toast {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    top: 23px;
+    max-width: 420px;
+    padding: 8px 13px;
+    border-left: 3px solid var(--red);
+    background: rgba(17,16,15,.92);
+    font: 10px ui-monospace, monospace;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translate(-50%,-8px);
+    transition: opacity .18s, transform .18s;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%,0); }
+  .screen {
+    position: absolute;
+    z-index: 7;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: rgba(17,16,15,.96);
+  }
+  .screen.active { display: flex; }
+  .screen-card { width: min(900px,100%); text-align: center; animation: rise .65s cubic-bezier(.2,.85,.2,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+  .kicker { color: var(--red); font: 10px ui-monospace, monospace; letter-spacing: .24em; text-transform: uppercase; }
+  h1 { margin: 9px 0 0; font-size: clamp(66px,11vw,118px); line-height: .82; letter-spacing: -.075em; text-transform: uppercase; }
+  h1 .slash { color: var(--red); }
+  h2 { margin: 9px 0 0; font-size: clamp(38px,6vw,64px); line-height: .95; letter-spacing: -.055em; text-transform: uppercase; }
+  .lede { max-width: 530px; margin: 20px auto 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+  .button-row { display: flex; justify-content: center; gap: 8px; margin-top: 28px; }
+  .primary, .secondary {
+    min-width: 175px;
+    padding: 13px 17px;
+    border: 1px solid var(--line);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .primary { border-color: var(--paper); background: var(--paper); color: var(--ink); }
+  .secondary { background: transparent; color: var(--paper); }
+  .primary:hover, .secondary:hover, .primary:focus-visible, .secondary:focus-visible { border-color: var(--red); background: var(--red); color: var(--ink); outline: 0; }
+  .rules { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; max-width: 680px; margin: 28px auto 0; background: var(--line); }
+  .rule { min-height: 76px; padding: 13px 11px; background: var(--ink); }
+  .rule b { display: block; color: var(--paper); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .rule span { display: block; margin-top: 6px; color: var(--muted); font: 9px/1.45 ui-monospace, monospace; }
+  .model-stamp { margin-top: 24px; color: var(--muted); font: 9px ui-monospace, monospace; letter-spacing: .16em; text-transform: uppercase; }
+  .results { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; max-width: 620px; margin: 27px auto 0; background: var(--line); }
+  .result { padding: 13px 7px; background: var(--ink); }
+  .result span { display: block; color: var(--muted); font: 9px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+  .result b { display: block; margin-top: 7px; font-size: 25px; font-variant-numeric: tabular-nums; }
+  .keyline { margin-top: 19px; color: var(--muted); font: 9px/1.8 ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+  @media (max-width: 1080px) {
+    .rail { top: 45px; bottom: 36px; width: 160px; }
+    #leftRail { left: 22px; } #rightRail { right: 22px; }
+    .mission-copy, .edition { display: none; }
+    .mission { font-size: 19px; margin-bottom: 18px; }
+    .readout strong { font-size: 27px; }
+    .forecast, .overclock { width: 155px; }
+  }
+  @media (max-height: 620px) {
+    .rail { top: 29px; bottom: 25px; }
+    .mission-copy, .edition { display: none; }
+    .readout { padding: 9px 0; }
+    .readout small { display: none; }
+    .forecast { min-height: 58px; }
+    .model-stamp { margin-top: 13px; }
+  }
+  @media (max-width: 760px) {
+    .rail { top: 16px; bottom: auto; width: calc(50% - 20px); }
+    #leftRail { left: 14px; } #rightRail { right: 14px; }
+    .wordmark, .edition, .mission-copy, .forecast, .mission, .readout small, .track { display: none; }
+    .readout { width: auto; padding: 0; border: 0; display: inline-block; margin-left: 10px; }
+    .readout strong { font-size: 22px; }
+    .section-label { font-size: 7px; }
+    .overclock { width: 124px; margin: 0; padding: 7px 8px; }
+    .overclock span { display: none; }
+    .actions { position: absolute; top: 50px; right: 0; }
+    .results, .rules { grid-template-columns: repeat(2,1fr); }
+    h1 { font-size: 64px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+<main id="app">
+  <canvas id="board" tabindex="0" aria-label="Relay Control tile board. Use arrows and Enter, or click neighboring tiles."></canvas>
+  <div id="hud" class="dim">
+    <aside id="leftRail" class="rail">
+      <div class="wordmark"><i></i>RELAY//CTRL</div>
+      <div class="edition">MAI Code 2 / Signal laboratory</div>
+      <span class="section-label" id="stageLabel">Relay 01</span>
+      <div class="mission" id="missionName">First Contact</div>
+      <p class="mission-copy" id="missionCopy">Restore the exchange before the relay budget expires.</p>
+      <div class="readout">
+        <span class="section-label">Target</span>
+        <strong id="targetValue">0 / 5,000</strong>
+        <div class="track"><i id="targetFill"></i></div>
+        <small id="targetNote">Signal integrity 0%</small>
+      </div>
+      <div class="readout">
+        <span class="section-label">Moves</span>
+        <strong id="movesValue">24</strong>
+      </div>
+      <div class="readout">
+        <span class="section-label">Momentum</span>
+        <strong id="chainValue">×1</strong>
+        <small id="chainNote">Waiting for first relay</small>
+      </div>
+    </aside>
+    <aside id="rightRail" class="rail">
+      <div class="readout stat-score">
+        <span class="section-label">Score</span>
+        <strong id="scoreValue">0</strong>
+        <small id="bestValue">Best 0</small>
+      </div>
+      <div class="forecast">
+        <span class="section-label">Relay forecast</span>
+        <b id="forecastValue">Select a tile</b>
+        <span id="forecastNote">Hover or select a neighbor to inspect the route.</span>
+      </div>
+      <div class="readout">
+        <span class="section-label">Overclock</span>
+        <strong id="chargeValue">0%</strong>
+        <div class="track"><i id="chargeFill"></i></div>
+        <small>Build with cascades and special clears.</small>
+      </div>
+      <button id="overclockButton" class="overclock" type="button" disabled>
+        <b>Overclock // Space</b><span>At 100%: the next valid move costs no move and scores double.</span>
+      </button>
+      <div class="actions">
+        <button id="hintButton" class="icon" type="button" title="Hint (H)" aria-label="Hint">?</button>
+        <button id="shuffleButton" class="icon" type="button" title="Shuffle: costs one move (S)" aria-label="Shuffle">↭</button>
+        <button id="audioButton" class="icon" type="button" title="Mute (M)" aria-label="Mute">◉</button>
+        <button id="pauseButton" class="icon" type="button" title="Pause (P)" aria-label="Pause">Ⅱ</button>
+      </div>
+    </aside>
+  </div>
+  <div id="toast" role="status"></div>
+  <section id="titleScreen" class="screen active">
+    <div class="screen-card">
+      <div class="kicker">Microsoft MAI Code 2 presents</div>
+      <h1>Relay<span class="slash">//</span>Ctrl</h1>
+      <p class="lede">Route color through a volatile switchboard. Match fast enough to preserve momentum, forge high-value hardware, then spend an Overclock before the exchange goes dark.</p>
+      <div class="button-row">
+        <button id="startButton" class="primary" type="button">Open the relay</button>
+      </div>
+      <div class="rules">
+        <div class="rule"><b>4 = Line relay</b><span>Clears its full row or column when triggered.</span></div>
+        <div class="rule"><b>5 = Prism</b><span>Swap it with any tile to clear that color.</span></div>
+        <div class="rule"><b>T / L = Pulse</b><span>Six intersecting tiles forge an area charge.</span></div>
+      </div>
+      <div class="model-stamp">Mouse / drag · Arrow keys + Enter · H hint · S shuffle · Space overclock · P pause</div>
+    </div>
+  </section>
+  <section id="pauseScreen" class="screen">
+    <div class="screen-card">
+      <div class="kicker">Channel held</div>
+      <h2>Signal paused</h2>
+      <p class="lede">The board state is frozen. Resume the exchange or return to the control deck.</p>
+      <div class="button-row"><button id="resumeButton" class="primary" type="button">Resume relay</button><button id="quitButton" class="secondary" type="button">Control deck</button></div>
+    </div>
+  </section>
+  <section id="completeScreen" class="screen">
+    <div class="screen-card">
+      <div class="kicker" id="resultKicker">Channel secured</div>
+      <h2 id="resultTitle">Relay complete</h2>
+      <p class="lede" id="resultCopy">The exchange is stable.</p>
+      <div class="results">
+        <div class="result"><span>Score</span><b id="resultScore">0</b></div>
+        <div class="result"><span>Best chain</span><b id="resultChain">×1</b></div>
+        <div class="result"><span>Specials</span><b id="resultSpecials">0</b></div>
+        <div class="result"><span>Best score</span><b id="resultBest">0</b></div>
+      </div>
+      <div class="button-row"><button id="nextButton" class="primary" type="button">Next relay</button><button id="retryButton" class="secondary" type="button">Replay</button></div>
+      <div class="keyline">Valid exchanges only · Momentum compounds every cascade · No move, no match, no cost</div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  "use strict";
+
+  const GRID = 8;
+  const TYPES = 6;
+  const NONE = 0, ROW = 1, COL = 2, PULSE = 3, PRISM = 4;
+  const COLORS = [
+    ["#ff4d35", "#ffb06a"],
+    ["#4c88ff", "#8ac3ff"],
+    ["#ffd84c", "#fff0a1"],
+    ["#63e6b2", "#b2ffe0"],
+    ["#ee6bb8", "#ffc0e4"],
+    ["#b7b0ff", "#e5e1ff"]
+  ];
+  const LEVELS = [
+    { name: "First Contact", target: 5200, moves: 24, note: "Restore the exchange before the relay budget expires.", colors: 6 },
+    { name: "Packet Storm", target: 9000, moves: 23, note: "A faster network rewards deliberate cascade routes.", colors: 6 },
+    { name: "Deep Switch", target: 13800, moves: 22, note: "Special combinations now determine whether the line holds.", colors: 6 },
+    { name: "Redline", target: 19000, moves: 21, note: "The final exchange tolerates precision, not noise.", colors: 6 },
+    { name: "Open Frequency", target: 24500, moves: 20, note: "Push the control system as far as it will go.", colors: 6 }
+  ];
+  const TEST_MODE = new URLSearchParams(location.search).has("test");
+  const canvas = document.getElementById("board");
+  const ctx = canvas.getContext("2d");
+  const $ = id => document.getElementById(id);
+  const ui = {
+    hud: $("hud"), title: $("titleScreen"), pause: $("pauseScreen"), complete: $("completeScreen"),
+    stage: $("stageLabel"), mission: $("missionName"), missionCopy: $("missionCopy"),
+    target: $("targetValue"), targetFill: $("targetFill"), targetNote: $("targetNote"),
+    moves: $("movesValue"), chain: $("chainValue"), chainNote: $("chainNote"),
+    score: $("scoreValue"), best: $("bestValue"), forecast: $("forecastValue"), forecastNote: $("forecastNote"),
+    charge: $("chargeValue"), chargeFill: $("chargeFill"), overclock: $("overclockButton"),
+    toast: $("toast"), resultKicker: $("resultKicker"), resultTitle: $("resultTitle"),
+    resultCopy: $("resultCopy"), resultScore: $("resultScore"), resultChain: $("resultChain"),
+    resultSpecials: $("resultSpecials"), resultBest: $("resultBest"), next: $("nextButton")
+  };
+  function readBest() {
+    try {
+      return Number(window.localStorage.getItem("relayCtrlBest") || 0);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "SecurityError") return 0;
+      throw error;
+    }
+  }
+  function saveBest(value) {
+    try {
+      window.localStorage.setItem("relayCtrlBest", String(value));
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "SecurityError")) throw error;
+    }
+  }
+  const state = {
+    board: [], width: 0, height: 0, dpr: 1, boardX: 0, boardY: 0, size: 0, cell: 0,
+    level: 0, screen: "title", active: false, locked: false, paused: false, moves: 24,
+    score: 0, best: readBest(), target: 5200,
+    chain: 0, bestChain: 1, charge: 0, overclock: false, overclockUsed: 0,
+    selected: null, cursor: { r: 0, c: 0 }, hover: null, hint: null, lastAction: 0,
+    particles: [], rings: [], floaters: [], beams: [], flash: 0, shake: 0, tileId: 0,
+    totalSpecials: 0, muted: false, audio: null, master: null, rngSeed: 0x2f6e2b1,
+    pointer: null, run: 0, startedAt: 0, elapsed: 0
+  };
+
+  function random() {
+    if (!TEST_MODE) return Math.random();
+    state.rngSeed = (1664525 * state.rngSeed + 1013904223) >>> 0;
+    return state.rngSeed / 4294967296;
+  }
+  const rand = n => Math.floor(random() * n);
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  const key = tile => `${tile.r},${tile.c}`;
+  const delay = ms => new Promise(resolve => setTimeout(resolve, TEST_MODE ? Math.min(ms, 5) : ms));
+
+  function tone(freq, duration = .08, type = "sine", volume = .06, when = 0, endFreq = freq) {
+    if (state.muted) return;
+    try {
+      if (!state.audio) {
+        state.audio = new (window.AudioContext || window.webkitAudioContext)();
+        state.master = state.audio.createGain();
+        state.master.gain.value = .55;
+        state.master.connect(state.audio.destination);
+      }
+      if (state.audio.state === "suspended") state.audio.resume();
+      const start = state.audio.currentTime + when;
+      const osc = state.audio.createOscillator();
+      const gain = state.audio.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), start + duration);
+      gain.gain.setValueAtTime(.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + .008);
+      gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+      osc.connect(gain);
+      gain.connect(state.master);
+      osc.start(start);
+      osc.stop(start + duration + .02);
+    } catch (_) {
+      state.audio = null;
+    }
+  }
+  const sound = {
+    select() { tone(290, .04, "triangle", .025, 0, 360); },
+    swap() { tone(170, .07, "triangle", .04, 0, 280); tone(380, .06, "sine", .022, .035); },
+    bad() { tone(110, .14, "square", .045, 0, 72); },
+    clear(combo, count) { const base = 260 + Math.min(combo, 6) * 42; tone(base, .09, "sine", .04, 0, base * 1.5); if (count > 5) tone(base * 1.5, .12, "triangle", .035, .04); },
+    forge() { [330, 495, 660].forEach((f, i) => tone(f, .13, "triangle", .04, i * .05, f * 1.08)); },
+    fire() { tone(130, .24, "sawtooth", .045, 0, 680); tone(920, .18, "sine", .03, .03, 310); },
+    overclock() { [220, 330, 440, 660, 990].forEach((f, i) => tone(f, .2, "triangle", .045, i * .055)); },
+    success() { [261, 329, 392, 523].forEach((f, i) => tone(f, .28, "sine", .04, i * .1)); },
+    fail() { [220, 185, 147, 98].forEach((f, i) => tone(f, .35, "triangle", .035, i * .13)); }
+  };
+
+  function toast(message, duration = 1400) {
+    ui.toast.textContent = message;
+    ui.toast.classList.add("show");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => ui.toast.classList.remove("show"), TEST_MODE ? Math.min(duration, 120) : duration);
+  }
+
+  function position(r, c) {
+    return { x: state.boardX + (c + .5) * state.cell, y: state.boardY + (r + .5) * state.cell };
+  }
+  function makeTile(type, r, c, special = NONE) {
+    const p = position(r, c);
+    return { id: ++state.tileId, type, r, c, x: p.x, y: p.y, tx: p.x, ty: p.y, scale: 1, special, dead: false, age: random() * 2 };
+  }
+  function inBounds(r, c) { return r >= 0 && c >= 0 && r < GRID && c < GRID; }
+  function tile(r, c) { return inBounds(r, c) ? state.board[r][c] : null; }
+  function adjacent(a, b) { return a && b && Math.abs(a.r - b.r) + Math.abs(a.c - b.c) === 1; }
+  function setPosition(t, r, c) {
+    t.r = r; t.c = c;
+    const p = position(r, c);
+    t.tx = p.x; t.ty = p.y;
+  }
+  function swap(a, b) {
+    const ar = a.r, ac = a.c, br = b.r, bc = b.c;
+    state.board[ar][ac] = b;
+    state.board[br][bc] = a;
+    setPosition(a, br, bc);
+    setPosition(b, ar, ac);
+  }
+  function layout() {
+    const rect = canvas.getBoundingClientRect();
+    state.width = Math.max(1, rect.width);
+    state.height = Math.max(1, rect.height);
+    state.dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.round(state.width * state.dpr);
+    canvas.height = Math.round(state.height * state.dpr);
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    const compact = state.width <= 760;
+    const side = compact ? 28 : state.width < 1080 ? 175 : 250;
+    const available = Math.min(state.height - (compact ? 115 : 76), state.width - side * 2);
+    state.size = Math.max(260, Math.min(620, available));
+    state.cell = state.size / GRID;
+    state.boardX = (state.width - state.size) / 2;
+    state.boardY = (state.height - state.size) / 2 + (compact ? 20 : 8);
+    for (const row of state.board) for (const t of row) if (t) {
+      const p = position(t.r, t.c);
+      t.x = t.tx = p.x; t.y = t.ty = p.y;
+    }
+  }
+
+  function findGroups(board = state.board) {
+    const groups = [];
+    for (let r = 0; r < GRID; r++) {
+      let start = 0;
+      while (start < GRID) {
+        const type = board[r][start]?.type;
+        let end = start + 1;
+        while (end < GRID && board[r][end]?.type === type) end++;
+        if (type !== undefined && end - start >= 3) groups.push({ axis: "h", type, tiles: Array.from({ length: end - start }, (_, i) => board[r][start + i]) });
+        start = end;
+      }
+    }
+    for (let c = 0; c < GRID; c++) {
+      let start = 0;
+      while (start < GRID) {
+        const type = board[start][c]?.type;
+        let end = start + 1;
+        while (end < GRID && board[end][c]?.type === type) end++;
+        if (type !== undefined && end - start >= 3) groups.push({ axis: "v", type, tiles: Array.from({ length: end - start }, (_, i) => board[start + i][c]) });
+        start = end;
+      }
+    }
+    return groups;
+  }
+  function isIntersection(a, b) {
+    const first = new Set(a.tiles.map(t => t.id));
+    return a.axis !== b.axis && a.type === b.type && b.tiles.some(t => first.has(t.id));
+  }
+  function classify(matches, anchor) {
+    for (let i = 0; i < matches.length; i++) for (let j = i + 1; j < matches.length; j++) {
+      if (!isIntersection(matches[i], matches[j])) continue;
+      const common = matches[i].tiles.find(t => matches[j].tiles.some(u => u.id === t.id));
+      return { tile: common, special: PULSE, type: common.type };
+    }
+    const largest = [...matches].sort((a, b) => b.tiles.length - a.tiles.length)[0];
+    if (!largest) return null;
+    const candidate = anchor && largest.tiles.some(t => t.id === anchor.id) ? anchor : largest.tiles[Math.floor(largest.tiles.length / 2)];
+    if (largest.tiles.length >= 5) return { tile: candidate, special: PRISM, type: candidate.type };
+    if (largest.tiles.length === 4) return { tile: candidate, special: largest.axis === "h" ? ROW : COL, type: candidate.type };
+    return null;
+  }
+  function matchKeys(groups) {
+    const map = new Map();
+    for (const group of groups) for (const t of group.tiles) map.set(t.id, t);
+    return [...map.values()];
+  }
+  function evaluateSwap(a, b) {
+    if (!a || !b || !adjacent(a, b)) return { valid: false, tiles: [], special: false, reason: "Not adjacent" };
+    const special = a.special || b.special;
+    swap(a, b);
+    const matches = findGroups();
+    const valid = special === PRISM || special > 0 && (a.special === b.special || a.special && b.special);
+    const tiles = matchKeys(matches);
+    swap(a, b);
+    if (!matches.length && !valid) return { valid: false, tiles, special: false, reason: "No route" };
+    const creation = classify(matches, b);
+    const raw = special ? 800 : tiles.length * 145 + Math.max(0, tiles.length - 3) * 75;
+    return { valid: true, tiles, special: !!special, creation, raw, reason: creation?.special === PRISM ? "Forge prism" : creation ? "Forge line relay" : special ? "Special fusion" : `${tiles.length} tile route` };
+  }
+  function findMove() {
+    let best = null;
+    for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+      const a = state.board[r][c];
+      for (const [dr, dc] of [[0, 1], [1, 0]]) {
+        const b = tile(r + dr, c + dc);
+        if (!b) continue;
+        const move = evaluateSwap(a, b);
+        if (move.valid && (!best || (move.creation?.special || 0) + move.raw > (best.creation?.special || 0) + best.raw)) best = { ...move, a, b };
+      }
+    }
+    return best;
+  }
+
+  function fillBoard() {
+    state.board = Array.from({ length: GRID }, () => Array(GRID).fill(null));
+    do {
+      for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) {
+        let type;
+        do { type = rand(TYPES); } while (
+          c >= 2 && state.board[r][c - 1]?.type === type && state.board[r][c - 2]?.type === type ||
+          r >= 2 && state.board[r - 1][c]?.type === type && state.board[r - 2][c]?.type === type
+        );
+        state.board[r][c] = makeTile(type, r, c);
+      }
+    } while (!findMove());
+  }
+  async function settleMotion() {
+    await delay(185);
+  }
+  function emit(x, y, color, amount = 12, force = 170) {
+    for (let i = 0; i < amount && state.particles.length < 500; i++) {
+      const angle = random() * Math.PI * 2;
+      const speed = force * (.25 + random() * .75);
+      state.particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: .45 + random() * .45, max: 1, color, size: 2 + random() * 4, spin: random() * 7 });
+    }
+  }
+  function ring(x, y, color, radius = state.cell * 1.4) {
+    state.rings.push({ x, y, color, radius, life: .6, max: .6 });
+  }
+  function floater(x, y, text, color = "#eee8d8") {
+    state.floaters.push({ x, y, text, color, life: 1, max: 1 });
+  }
+  function beam(x1, y1, x2, y2, color) {
+    state.beams.push({ x1, y1, x2, y2, color, life: .32, max: .32 });
+  }
+
+  function updateHUD() {
+    const progress = clamp(state.score / state.target, 0, 1);
+    ui.stage.textContent = `Relay ${String(state.level + 1).padStart(2, "0")} / ${String(LEVELS.length).padStart(2, "0")}`;
+    ui.mission.textContent = LEVELS[state.level].name;
+    ui.missionCopy.textContent = LEVELS[state.level].note;
+    ui.target.textContent = `${state.score.toLocaleString()} / ${state.target.toLocaleString()}`;
+    ui.targetFill.style.width = `${progress * 100}%`;
+    ui.targetNote.textContent = `Signal integrity ${Math.round(progress * 100)}%`;
+    ui.moves.textContent = state.moves;
+    ui.moves.classList.toggle("danger", state.moves <= 4);
+    ui.chain.textContent = `×${Math.max(1, state.chain)}`;
+    ui.chainNote.textContent = state.chain > 1 ? `Cascade routing +${(state.chain - 1) * 25}%` : "Waiting for first relay";
+    ui.score.textContent = state.score.toLocaleString();
+    ui.best.textContent = `Best ${Math.max(state.best, state.score).toLocaleString()}`;
+    ui.charge.textContent = `${Math.round(state.charge)}%`;
+    ui.chargeFill.style.width = `${state.charge}%`;
+    ui.overclock.disabled = !canPlay() || state.charge < 100;
+    ui.overclock.classList.toggle("ready", state.charge >= 100 && !state.overclock);
+    ui.overclock.querySelector("b").textContent = state.overclock ? "Overclock armed" : "Overclock // Space";
+    document.querySelectorAll("#hintButton,#shuffleButton").forEach(button => button.disabled = !canPlay());
+  }
+  function setScreen(name) {
+    state.screen = name;
+    state.active = name === "play";
+    ui.title.classList.toggle("active", name === "title");
+    ui.pause.classList.toggle("active", name === "pause");
+    ui.complete.classList.toggle("active", name === "complete");
+    ui.hud.classList.toggle("dim", name !== "play" && name !== "pause");
+  }
+  function begin(level = 0, keepScore = false) {
+    state.run++;
+    state.level = clamp(level, 0, LEVELS.length - 1);
+    state.moves = LEVELS[state.level].moves;
+    state.target = LEVELS[state.level].target;
+    if (!keepScore) state.score = 0;
+    state.chain = 0; state.bestChain = 1; state.charge = 0; state.overclock = false;
+    state.selected = null; state.hint = null; state.hover = null; state.locked = false; state.paused = false;
+    state.particles.length = 0; state.rings.length = 0; state.floaters.length = 0; state.beams.length = 0;
+    state.totalSpecials = 0; state.overclockUsed = 0;
+    state.rngSeed = 0x2f6e2b1 + state.level;
+    fillBoard();
+    state.startedAt = performance.now();
+    setScreen("play");
+    layout();
+    updateHUD();
+    canvas.focus();
+    sound.swap();
+    toast(`Relay ${state.level + 1}: ${LEVELS[state.level].name}`);
+  }
+  function canPlay() {
+    return state.active && !state.locked && !state.paused && state.moves > 0;
+  }
+
+  function forecast(a, b) {
+    if (!a || !b) return;
+    const result = evaluateSwap(a, b);
+    ui.forecast.textContent = result.valid ? `${result.raw?.toLocaleString() || "—"} base` : "Route unavailable";
+    ui.forecastNote.textContent = result.valid ? `${result.reason}. ${result.creation ? "A hardware forge is available." : "Successful swap pays."}` : "That exchange will not clear a match. Invalid swaps never cost a move.";
+  }
+  function resetForecast() {
+    ui.forecast.textContent = state.selected ? "Choose a neighbor" : "Select a tile";
+    ui.forecastNote.textContent = "Hover or select a neighbor to inspect the route.";
+  }
+  function activateSpecials(seedTiles) {
+    const queue = [...seedTiles];
+    const queued = new Set();
+    const result = new Map();
+    const add = t => {
+      if (!t || result.has(t.id)) return;
+      result.set(t.id, t);
+      if (t.special && !queued.has(t.id)) { queue.push(t); queued.add(t.id); }
+    };
+    seedTiles.forEach(add);
+    while (queue.length) {
+      const t = queue.shift();
+      if (!t.special) continue;
+      const r = t.r, c = t.c;
+      if (t.special === ROW) {
+        for (let cc = 0; cc < GRID; cc++) add(tile(r, cc));
+        beam(state.boardX, t.y, state.boardX + state.size, t.y, COLORS[t.type][0]);
+      } else if (t.special === COL) {
+        for (let rr = 0; rr < GRID; rr++) add(tile(rr, c));
+        beam(t.x, state.boardY, t.x, state.boardY + state.size, COLORS[t.type][0]);
+      } else if (t.special === PULSE) {
+        for (let rr = r - 1; rr <= r + 1; rr++) for (let cc = c - 1; cc <= c + 1; cc++) if (inBounds(rr, cc)) add(tile(rr, cc));
+        ring(t.x, t.y, COLORS[t.type][0], state.cell * 1.9);
+      } else if (t.special === PRISM) {
+        for (const row of state.board) for (const other of row) if (other.type === t.type) add(other);
+        ring(t.x, t.y, "#ffffff", state.size * .52);
+      }
+    }
+    if ([...result.values()].some(t => t.special)) sound.fire();
+    return [...result.values()];
+  }
+  function specialSwap(a, b) {
+    const tiles = new Set();
+    const addAll = () => { for (const row of state.board) for (const t of row) if (t) tiles.add(t); };
+    if (a.special === PRISM && b.special === PRISM) addAll();
+    else if (a.special === PRISM || b.special === PRISM) {
+      const prism = a.special === PRISM ? a : b;
+      const other = prism === a ? b : a;
+      if (other.special) {
+        for (const row of state.board) for (const t of row) if (t.type === other.type) { t.special = other.special; tiles.add(t); }
+      } else {
+        for (const row of state.board) for (const t of row) if (t.type === other.type) tiles.add(t);
+      }
+      tiles.add(prism);
+    } else if (a.special && b.special) {
+      if ((a.special === PULSE || b.special === PULSE) && (a.special === ROW || a.special === COL || b.special === ROW || b.special === COL)) {
+        for (let c = b.c - 1; c <= b.c + 1; c++) for (let r = 0; r < GRID; r++) if (tile(r, c)) tiles.add(tile(r, c));
+        for (let r = a.r - 1; r <= a.r + 1; r++) for (let c = 0; c < GRID; c++) if (tile(r, c)) tiles.add(tile(r, c));
+      } else {
+        for (let r = 0; r < GRID; r++) if (tile(r, a.c)) tiles.add(tile(r, a.c));
+        for (let c = 0; c < GRID; c++) if (tile(a.r, c)) tiles.add(tile(a.r, c));
+      }
+    } else return null;
+    return activateSpecials([...tiles]);
+  }
+  async function removeTiles(tiles, creation = null) {
+    const keep = creation?.tile;
+    const remove = tiles.filter(t => !keep || t.id !== keep.id);
+    for (const t of remove) {
+      t.dead = true;
+      emit(t.x, t.y, COLORS[t.type][0], t.special ? 24 : 9, t.special ? 260 : 155);
+      ring(t.x, t.y, COLORS[t.type][0], state.cell * (t.special ? 1.25 : .72));
+    }
+    if (keep && state.board[keep.r][keep.c]?.id === keep.id) {
+      keep.special = creation.special;
+      state.totalSpecials++;
+      state.flash = .18;
+      emit(keep.x, keep.y, "#ffffff", 28, 230);
+      ring(keep.x, keep.y, "#ffffff", state.cell * 1.5);
+      sound.forge();
+      state.charge = clamp(state.charge + 16, 0, 100);
+    }
+    for (const t of remove) t.scale = .15;
+    await settleMotion();
+    for (const t of remove) state.board[t.r][t.c] = null;
+  }
+  async function fall() {
+    for (let c = 0; c < GRID; c++) {
+      let write = GRID - 1;
+      for (let r = GRID - 1; r >= 0; r--) {
+        const t = state.board[r][c];
+        if (!t) continue;
+        if (write !== r) {
+          state.board[write][c] = t;
+          state.board[r][c] = null;
+          setPosition(t, write, c);
+        }
+        write--;
+      }
+      while (write >= 0) {
+        const t = makeTile(rand(TYPES), write, c);
+        t.y = state.boardY - state.cell * (GRID - write) * .7;
+        state.board[write][c] = t;
+        write--;
+      }
+    }
+    await settleMotion();
+  }
+  async function resolve(initialTiles, creation = null) {
+    let tiles = initialTiles;
+    let step = 0;
+    while (tiles.length && step < 40) {
+      step++;
+      state.chain = step;
+      state.bestChain = Math.max(state.bestChain, step);
+      const expanded = activateSpecials(tiles);
+      const forge = step === 1 ? creation : classify(findGroups(), tiles[0]);
+      const multiplier = 1 + (step - 1) * .25 + (state.overclock ? 1 : 0);
+      const points = Math.round((expanded.length * 145 + Math.max(0, expanded.length - 3) * 80 + expanded.filter(t => t.special).length * 320) * multiplier);
+      state.score += points;
+      state.charge = clamp(state.charge + expanded.length * 1.8 + (step - 1) * 4, 0, 100);
+      state.best = Math.max(state.best, state.score);
+      sound.clear(step, expanded.length);
+      floater(state.boardX + state.size / 2, state.boardY + state.size / 2, `+${points.toLocaleString()}${step > 1 ? ` // CHAIN ${step}` : ""}`, step > 2 ? COLORS[2][0] : "#eee8d8");
+      state.shake = Math.min(.65, .1 + step * .06);
+      await removeTiles(expanded, forge);
+      await fall();
+      updateHUD();
+      tiles = matchKeys(findGroups());
+    }
+    state.chain = 0;
+    state.overclock = false;
+    if (state.score >= state.target) return finish(true);
+    if (state.moves <= 0) return finish(false);
+    if (!findMove()) await shuffleBoard(false);
+    state.locked = false;
+    updateHUD();
+  }
+  async function attemptSwap(a, b) {
+    if (!canPlay() || !adjacent(a, b)) return false;
+    state.locked = true;
+    state.selected = null; state.hint = null; state.hover = null;
+    resetForecast();
+    const outcome = evaluateSwap(a, b);
+    swap(a, b);
+    sound.swap();
+    await settleMotion();
+    if (!outcome.valid) {
+      swap(a, b);
+      sound.bad();
+      state.shake = .24;
+      await settleMotion();
+      state.locked = false;
+      toast("Route unavailable // no move spent");
+      return false;
+    }
+    if (!state.overclock) state.moves--;
+    else state.overclockUsed++;
+    const directSpecial = specialSwap(a, b);
+    const matches = matchKeys(findGroups());
+    updateHUD();
+    await resolve(directSpecial || matches, outcome.creation);
+    state.lastAction = performance.now();
+    return true;
+  }
+  async function shuffleBoard(manual) {
+    if (!manual && state.locked) {
+      state.locked = true;
+    }
+    if (manual && !canPlay()) return;
+    state.locked = true;
+    if (manual && state.moves > 0) state.moves--;
+    const tiles = state.board.flat();
+    let attempts = 0;
+    do {
+      const types = tiles.map(t => t.type);
+      for (let i = types.length - 1; i > 0; i--) {
+        const j = rand(i + 1);
+        [types[i], types[j]] = [types[j], types[i]];
+      }
+      tiles.forEach((t, i) => { t.type = types[i]; t.y -= state.cell * (.3 + random() * .8); });
+      attempts++;
+    } while ((findGroups().length || !findMove()) && attempts < 80);
+    if (!findMove() || findGroups().length) fillBoard();
+    sound.fire();
+    state.flash = .35;
+    toast(manual ? "Exchange shuffled // 1 move" : "No routes // automatic shuffle");
+    await settleMotion();
+    state.locked = false;
+    updateHUD();
+  }
+  function hint() {
+    if (!canPlay()) return;
+    const move = findMove();
+    if (!move) { shuffleBoard(true); return; }
+    state.hint = { a: move.a, b: move.b, started: performance.now() };
+    state.selected = null;
+    forecast(move.a, move.b);
+    sound.select();
+  }
+  function finish(won) {
+    state.locked = true; state.active = false;
+    state.best = Math.max(state.best, state.score);
+    saveBest(state.best);
+    (won ? sound.success : sound.fail)();
+    ui.resultKicker.textContent = won ? "Signal secured" : "Channel exhausted";
+    ui.resultTitle.textContent = won ? (state.level === LEVELS.length - 1 ? "All relays online" : "Relay complete") : "Signal lost";
+    ui.resultCopy.textContent = won ? "The exchange held. The next control layer is available." : "The relay budget expired before the target. Tune the route and try again.";
+    ui.resultScore.textContent = state.score.toLocaleString();
+    ui.resultChain.textContent = `×${state.bestChain}`;
+    ui.resultSpecials.textContent = state.totalSpecials;
+    ui.resultBest.textContent = state.best.toLocaleString();
+    ui.next.textContent = won && state.level < LEVELS.length - 1 ? "Next relay" : won ? "Open frequency again" : "Retry relay";
+    state.lastWon = won;
+    setTimeout(() => setScreen("complete"), TEST_MODE ? 10 : 700);
+  }
+  function togglePause(force) {
+    if (state.screen !== "play" && state.screen !== "pause") return;
+    if (state.locked && state.screen === "play") return;
+    const paused = typeof force === "boolean" ? force : state.screen !== "pause";
+    state.paused = paused;
+    setScreen(paused ? "pause" : "play");
+  }
+  function armOverclock() {
+    if (!canPlay() || state.charge < 100) return;
+    state.overclock = !state.overclock;
+    if (state.overclock) { state.charge = 0; sound.overclock(); toast("Overclock armed // next exchange free + double score"); }
+    updateHUD();
+  }
+
+  function tileAtPoint(x, y) {
+    const c = Math.floor((x - state.boardX) / state.cell);
+    const r = Math.floor((y - state.boardY) / state.cell);
+    return inBounds(r, c) ? state.board[r][c] : null;
+  }
+  function coords(event) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * state.width / rect.width, y: (event.clientY - rect.top) * state.height / rect.height };
+  }
+  function clickTile(t) {
+    if (!canPlay() || !t) return;
+    state.hint = null;
+    state.lastAction = performance.now();
+    if (!state.selected) { state.selected = t; state.cursor = { r: t.r, c: t.c }; sound.select(); resetForecast(); return; }
+    if (state.selected.id === t.id) { state.selected = null; resetForecast(); return; }
+    if (adjacent(state.selected, t)) attemptSwap(state.selected, t);
+    else { state.selected = t; state.cursor = { r: t.r, c: t.c }; sound.select(); resetForecast(); }
+  }
+  canvas.addEventListener("pointerdown", event => {
+    if (!canPlay()) return;
+    const p = coords(event); const t = tileAtPoint(p.x, p.y);
+    state.pointer = t ? { t, x: p.x, y: p.y } : null;
+    canvas.setPointerCapture?.(event.pointerId);
+  });
+  canvas.addEventListener("pointerup", event => {
+    if (!state.pointer || !canPlay()) return;
+    const p = coords(event);
+    const dx = p.x - state.pointer.x, dy = p.y - state.pointer.y;
+    if (Math.hypot(dx, dy) > state.cell * .3) {
+      const dr = Math.abs(dy) > Math.abs(dx) ? Math.sign(dy) : 0;
+      const dc = Math.abs(dx) >= Math.abs(dy) ? Math.sign(dx) : 0;
+      const other = tile(state.pointer.t.r + dr, state.pointer.t.c + dc);
+      if (other) attemptSwap(state.pointer.t, other);
+      state.pointer = null;
+    } else {
+      clickTile(state.pointer.t); state.pointer = null;
+    }
+  });
+  canvas.addEventListener("pointermove", event => {
+    const p = coords(event); const t = tileAtPoint(p.x, p.y);
+    if (t?.id !== state.hover?.id) {
+      state.hover = t;
+      if (state.selected && t && adjacent(state.selected, t)) forecast(state.selected, t);
+      else if (!state.selected) resetForecast();
+    }
+  });
+  canvas.addEventListener("pointerleave", () => { state.hover = null; if (!state.selected) resetForecast(); });
+  addEventListener("keydown", event => {
+    if (event.key.toLowerCase() === "p") { event.preventDefault(); togglePause(); return; }
+    if (event.key.toLowerCase() === "m") { state.muted = !state.muted; $("audioButton").textContent = state.muted ? "○" : "◉"; return; }
+    if (state.screen === "pause" && event.key === "Escape") { togglePause(false); return; }
+    if (!canPlay()) return;
+    if (event.key === " "){ event.preventDefault(); armOverclock(); return; }
+    if (event.key.toLowerCase() === "h") { event.preventDefault(); hint(); return; }
+    if (event.key.toLowerCase() === "s") { event.preventDefault(); shuffleBoard(true); return; }
+    if (event.key === "Escape") { state.selected = null; state.hint = null; resetForecast(); return; }
+    if (event.key.startsWith("Arrow")) {
+      event.preventDefault();
+      const dr = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : 0;
+      const dc = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
+      if (state.selected) {
+        const b = tile(state.selected.r + dr, state.selected.c + dc);
+        if (b) attemptSwap(state.selected, b);
+      } else {
+        state.cursor.r = clamp(state.cursor.r + dr, 0, GRID - 1);
+        state.cursor.c = clamp(state.cursor.c + dc, 0, GRID - 1);
+      }
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      clickTile(state.board[state.cursor.r][state.cursor.c]);
+    }
+  });
+
+  $("startButton").onclick = () => begin(0);
+  $("resumeButton").onclick = () => togglePause(false);
+  $("quitButton").onclick = () => setScreen("title");
+  $("pauseButton").onclick = () => togglePause();
+  $("hintButton").onclick = hint;
+  $("shuffleButton").onclick = () => shuffleBoard(true);
+  $("audioButton").onclick = () => { state.muted = !state.muted; $("audioButton").textContent = state.muted ? "○" : "◉"; };
+  ui.overclock.onclick = armOverclock;
+  $("retryButton").onclick = () => begin(state.lastWon ? state.level : state.level);
+  ui.next.onclick = () => begin(state.lastWon ? (state.level + 1) % LEVELS.length : state.level);
+  addEventListener("resize", layout);
+
+  function drawRounded(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+  }
+  function drawTile(t, now) {
+    const pad = state.cell * .105;
+    const size = state.cell - pad * 2;
+    const [base, light] = COLORS[t.type];
+    const selected = state.selected?.id === t.id;
+    const hinted = state.hint && (state.hint.a.id === t.id || state.hint.b.id === t.id);
+    const hover = state.hover?.id === t.id;
+    const pulse = hinted ? .5 + Math.sin((now - state.hint.started) / 110) * .18 : 0;
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    ctx.scale(t.scale || 1, t.scale || 1);
+    if (selected || hover || hinted) {
+      ctx.shadowBlur = selected ? 22 : hinted ? 18 : 9;
+      ctx.shadowColor = hinted ? COLORS[2][0] : base;
+    }
+    const tileGrad = ctx.createLinearGradient(-size / 2, -size / 2, size / 2, size / 2);
+    tileGrad.addColorStop(0, light);
+    tileGrad.addColorStop(.42, base);
+    tileGrad.addColorStop(1, "#16130f");
+    drawRounded(-size / 2, -size / 2, size, size, state.cell * .13);
+    ctx.fillStyle = selected ? light : tileGrad;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = selected ? 3 : 1.25;
+    ctx.strokeStyle = selected ? "#fff" : hinted ? `rgba(255,216,76,${.7 + pulse})` : "rgba(238,232,216,.55)";
+    ctx.stroke();
+    ctx.globalAlpha = .22;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(-size * .37, -size * .34); ctx.lineTo(size * .24, -size * .34); ctx.lineTo(size * .34, -size * .22); ctx.lineTo(-size * .28, -size * .22); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
+    const shape = t.type % 3;
+    ctx.translate(0, -1);
+    ctx.strokeStyle = "rgba(17,16,15,.66)";
+    ctx.fillStyle = "rgba(17,16,15,.58)";
+    ctx.lineWidth = Math.max(2, state.cell * .045);
+    if (shape === 0) {
+      ctx.beginPath(); ctx.moveTo(0, -size * .25); ctx.lineTo(size * .24, 0); ctx.lineTo(0, size * .25); ctx.lineTo(-size * .24, 0); ctx.closePath(); ctx.fill();
+    } else if (shape === 1) {
+      ctx.beginPath(); ctx.arc(0, 0, size * .2, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, size * .09, 0, Math.PI * 2); ctx.strokeStyle = light; ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(-size * .21, -size * .18); ctx.lineTo(size * .21, -size * .18); ctx.lineTo(size * .21, size * .18); ctx.lineTo(-size * .21, size * .18); ctx.closePath(); ctx.stroke();
+    }
+    if (t.special) {
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = Math.max(2, state.cell * .038);
+      ctx.shadowBlur = 9; ctx.shadowColor = "#fff";
+      ctx.beginPath();
+      if (t.special === ROW) { ctx.moveTo(-size * .37, 0); ctx.lineTo(size * .37, 0); }
+      else if (t.special === COL) { ctx.moveTo(0, -size * .37); ctx.lineTo(0, size * .37); }
+      else if (t.special === PULSE) { ctx.arc(0, 0, size * .31, 0, Math.PI * 2); }
+      else { ctx.moveTo(0, -size * .36); ctx.lineTo(size * .31, 0); ctx.lineTo(0, size * .36); ctx.lineTo(-size * .31, 0); ctx.closePath(); }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function frame(now) {
+    const dt = Math.min(.034, (now - (frame.last || now)) / 1000);
+    frame.last = now;
+    ctx.clearRect(0, 0, state.width, state.height);
+    const sx = state.shake > 0 ? (random() - .5) * 13 * state.shake : 0;
+    const sy = state.shake > 0 ? (random() - .5) * 13 * state.shake : 0;
+    state.shake = Math.max(0, state.shake - dt * 2.3);
+    ctx.save();
+    ctx.translate(sx, sy);
+    if (state.board.length) {
+      ctx.fillStyle = "rgba(5,5,4,.68)";
+      ctx.fillRect(state.boardX - 10, state.boardY - 10, state.size + 20, state.size + 20);
+      ctx.strokeStyle = "rgba(238,232,216,.15)";
+      ctx.strokeRect(state.boardX - 10.5, state.boardY - 10.5, state.size + 21, state.size + 21);
+      for (let i = 1; i < GRID; i++) {
+        ctx.strokeStyle = i % 4 === 0 ? "rgba(238,232,216,.1)" : "rgba(238,232,216,.035)";
+        ctx.beginPath();
+        ctx.moveTo(state.boardX + state.cell * i, state.boardY);
+        ctx.lineTo(state.boardX + state.cell * i, state.boardY + state.size);
+        ctx.moveTo(state.boardX, state.boardY + state.cell * i);
+        ctx.lineTo(state.boardX + state.size, state.boardY + state.cell * i);
+        ctx.stroke();
+      }
+      for (const row of state.board) for (const t of row) if (t && !t.dead) {
+        t.x += (t.tx - t.x) * Math.min(1, dt * 12);
+        t.y += (t.ty - t.y) * Math.min(1, dt * 12);
+        if (t.scale < 1) t.scale += dt * 7;
+        drawTile(t, now);
+      }
+      if (state.overclock) {
+        ctx.strokeStyle = COLORS[2][0];
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = COLORS[2][0];
+        ctx.strokeRect(state.boardX - 15.5, state.boardY - 15.5, state.size + 31, state.size + 31);
+        ctx.shadowBlur = 0;
+      }
+      const cursor = state.board[state.cursor.r]?.[state.cursor.c];
+      if (document.activeElement === canvas && cursor && state.screen === "play") {
+        ctx.strokeStyle = "rgba(238,232,216,.7)";
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(cursor.tx - state.cell * .45, cursor.ty - state.cell * .45, state.cell * .9, state.cell * .9);
+        ctx.setLineDash([]);
+      }
+    }
+    for (const b of state.beams) {
+      b.life -= dt;
+      ctx.globalAlpha = clamp(b.life / b.max, 0, 1);
+      ctx.strokeStyle = b.color; ctx.lineWidth = state.cell * .08; ctx.shadowBlur = 16; ctx.shadowColor = b.color;
+      ctx.beginPath(); ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke(); ctx.shadowBlur = 0;
+    }
+    for (const r of state.rings) {
+      r.life -= dt;
+      const progress = 1 - r.life / r.max;
+      ctx.globalAlpha = clamp(r.life / r.max, 0, 1);
+      ctx.strokeStyle = r.color; ctx.lineWidth = 3 * (1 - progress);
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.radius * progress, 0, Math.PI * 2); ctx.stroke();
+    }
+    for (const p of state.particles) {
+      p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 210 * dt; p.vx *= .985; p.vy *= .985;
+      ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+      ctx.fillStyle = p.color;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(now * .001 * p.spin); ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size); ctx.restore();
+    }
+    for (const f of state.floaters) {
+      f.life -= dt; f.y -= 35 * dt;
+      ctx.globalAlpha = clamp(f.life / f.max, 0, 1);
+      ctx.fillStyle = f.color; ctx.textAlign = "center"; ctx.font = `800 ${Math.max(13, state.cell * .25)}px Bahnschrift, sans-serif`;
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+    state.beams = state.beams.filter(b => b.life > 0);
+    state.rings = state.rings.filter(r => r.life > 0);
+    state.particles = state.particles.filter(p => p.life > 0);
+    state.floaters = state.floaters.filter(f => f.life > 0);
+    ctx.restore();
+    if (state.flash > 0) {
+      ctx.fillStyle = `rgba(238,232,216,${state.flash})`;
+      ctx.fillRect(0, 0, state.width, state.height);
+      state.flash = Math.max(0, state.flash - dt * 2.4);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  window.__RELAY_TEST__ = {
+    getState() {
+      return {
+        screen: state.screen, locked: state.locked, score: state.score, moves: state.moves,
+        level: state.level, charge: state.charge, board: state.board.map(row => row.map(t => t && ({ type: t.type, special: t.special }))),
+        hasMove: !!findMove(), size: state.size, width: state.width, height: state.height
+      };
+    },
+    start: level => begin(level || 0),
+    move(a, b) { const first = tile(a[0], a[1]), second = tile(b[0], b[1]); return attemptSwap(first, second); },
+    findMove() { const m = findMove(); return m ? [[m.a.r, m.a.c], [m.b.r, m.b.c]] : null; },
+    forceBoard(spec) {
+      if (spec) for (let r = 0; r < GRID; r++) for (let c = 0; c < GRID; c++) state.board[r][c] = makeTile(spec[r][c].type ?? spec[r][c], r, c, spec[r][c].special || 0);
+      updateHUD();
+    },
+    resolve() { if (!state.locked) return resolve(matchKeys(findGroups())); }
+  };
+  layout();
+  requestAnimationFrame(frame);
+  updateHUD();
+})();
+</script>
+</body>
+</html>

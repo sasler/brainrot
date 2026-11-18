@@ -20,7 +20,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 🔮 Marble Madness | Roll a glowing marble across neon platforms suspended in space. Master physics, dodge hazards, and race the clock. | 6 |
 | 🧭 3D Maze | Navigate a procedurally generated labyrinth in first-person 3D. Find the glowing exit before time runs out. | 8 |
 | ⛳ Mini Golf 3D | Aim, pull back, and sink impossible banks across neon-drenched 3D mini golf courses, including a nine-hole solar eclipse odyssey. | 5 |
-| 💎 Tile Matching | Swap, match, and chain your way to the top. Line up three or more gems to trigger cascading combos and dazzling special tiles. | 8 |
+| 💎 Tile Matching | Swap, match, and chain your way to the top. Line up three or more gems to trigger cascading combos and dazzling special tiles. | 9 |
 | 👾 Space Invaders | Defend Earth from waves of descending alien invaders. Blast through formations, grab power-ups, and survive the onslaught. | 6 |
 | 🔢 Sudoku | Solve a glowing logic grid under pressure with notes, streaks, and satisfying neon feedback for every sharp deduction. | 2 |
 | 🏎️ Neon Horizon Racer | Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon. | 6 |
@@ -48,6 +48,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | Google Gemma 4 12B | 514 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 337 lines | N/A | N/A | N/A | N/A |
 | GitHub Copilot Fusion Standard | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 376 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Microsoft MAI-Code-1-Flash | 330 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 170 lines | N/A | N/A | N/A |
+| Microsoft MAI Code 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,104 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | MiniMax M2.7 | N/A | N/A | N/A | N/A | 1,032 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Qwen3.6-27B | N/A | N/A | N/A | N/A | N/A | 1,122 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Qwen3.6-35B-A3B | 841 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,887 lines | N/A | N/A | N/A | N/A | N/A | N/A |

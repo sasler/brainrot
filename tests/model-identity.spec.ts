@@ -34,11 +34,12 @@ test.describe("Model identity system", {
     await page.goto("/games/tile-matching");
 
     const cards = page.locator('[data-model-id][data-model-color]');
-    await expect(cards).toHaveCount(8);
+    await expect(cards).toHaveCount(9);
     await expect(cards.locator("h3")).toHaveText([
       "Claude Opus 4.6",
       "Claude Opus 5",
       "Claude Sonnet 4.6",
+      "Microsoft MAI Code 2",
       "OpenAI GPT 5.4",
       "OpenAI GPT 5.4 Mini",
       "OpenAI GPT 5.5",
@@ -52,6 +53,10 @@ test.describe("Model identity system", {
     );
     await expect(page.locator('[data-model-id="gpt-5-6-sol"]')).toContainText(
       "OpenAI GPT",
+    );
+    await expect(page.locator('[data-model-id="mai-code-2"]')).toHaveAttribute(
+      "data-model-color",
+      "#4C88FF",
     );
     await expect(page.getByText("MODEL ENTRY", { exact: true })).toHaveCount(0);
   });

@@ -107,8 +107,8 @@ jobs:
     name: Playwright ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
     needs: scope
     if: ${{ needs.scope.outputs.mode != 'none' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
