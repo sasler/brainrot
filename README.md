@@ -49,6 +49,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | GitHub Copilot Fusion Standard | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 376 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Microsoft MAI-Code-1-Flash | 330 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 170 lines | N/A | N/A | N/A |
 | Microsoft MAI Code 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,104 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| Microsoft MAI Code 2 Flash | N/A | N/A | N/A | N/A | N/A | N/A | 737 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | MiniMax M2.7 | N/A | N/A | N/A | N/A | 1,032 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Qwen3.6-27B | N/A | N/A | N/A | N/A | N/A | 1,122 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Qwen3.6-35B-A3B | 841 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,887 lines | N/A | N/A | N/A | N/A | N/A | N/A |
