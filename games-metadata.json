@@ -3029,6 +3029,20 @@
           ]
         },
         {
+          "model": "MAI Code 2",
+          "modelId": "mai-code-2",
+          "date": "2026-11-19",
+          "linesOfCode": 1200,
+          "path": "/games/endless-runner/mai-code-2/index.html",
+          "features": [
+            "sound",
+            "music",
+            "3d",
+            "particles",
+            "powerups"
+          ]
+        },
+        {
           "model": "MAI Code 2 Flash",
           "modelId": "mai-code-2-flash",
           "date": "2026-11-19",

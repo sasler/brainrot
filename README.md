@@ -16,7 +16,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | ⚫ Reversi | A war of strategic placement. Flip your opponent's pieces and dominate the 8×8 battlefield. | 6 |
 | 🏓 Breakout | Shatter neon bricks with a blazing ball. Catch power-ups, chain combos, and clear every level before your lives run out. | 7 |
 | 🔢 2048 | Slide, merge, and strategize on a 4×4 grid. Chase the elusive 2048 tile before the board fills up. | 7 |
-| 🏃 Endless Runner 3D | A neon-soaked 3D sprint through an endless cyberpunk corridor with obstacles, collectibles, and power-ups. | 6 |
+| 🏃 Endless Runner 3D | A neon-soaked 3D sprint through an endless cyberpunk corridor with obstacles, collectibles, and power-ups. | 8 |
 | 🔮 Marble Madness | Roll a glowing marble across neon platforms suspended in space. Master physics, dodge hazards, and race the clock. | 6 |
 | 🧭 3D Maze | Navigate a procedurally generated labyrinth in first-person 3D. Find the glowing exit before time runs out. | 8 |
 | ⛳ Mini Golf 3D | Aim, pull back, and sink impossible banks across neon-drenched 3D mini golf courses, including a nine-hole solar eclipse odyssey. | 5 |
@@ -48,7 +48,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | Google Gemma 4 12B | 514 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 337 lines | N/A | N/A | N/A | N/A |
 | GitHub Copilot Fusion Standard | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 376 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Microsoft MAI-Code-1-Flash | 330 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 170 lines | N/A | N/A | N/A |
-| Microsoft MAI Code 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1,104 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| Microsoft MAI Code 2 | N/A | N/A | N/A | N/A | N/A | N/A | 1,200 lines | N/A | N/A | N/A | 1,104 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Microsoft MAI Code 2 Flash | N/A | N/A | N/A | N/A | N/A | N/A | 737 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | MiniMax M2.7 | N/A | N/A | N/A | N/A | 1,032 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Qwen3.6-27B | N/A | N/A | N/A | N/A | N/A | 1,122 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
