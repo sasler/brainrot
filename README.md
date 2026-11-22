@@ -26,7 +26,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | 🏎️ Neon Horizon Racer | Drift through a neon synthwave highway, dodge traffic, chain near misses, and chase checkpoints into the glowing horizon. | 6 |
 | 🏎️ Coastal Rush '86 | Race a red convertible through a branching, sun-soaked 1980s arcade road trip before the clock runs out. | 7 |
 | 🕰️ Clockwork Caper | Stage perfect heists across a clockwork museum by recording echoes of your past actions, outsmarting guards, and escaping before the final chime. | 3 |
-| 🏁 Sunbeam Kart Rally | Charge through a three-lap golden-hour festival circuit, drift past orchards, a windmill, forest, and vineyards, and battle up to five rivals with sun-powered items. | 2 |
+| 🏁 Sunbeam Kart Rally | Charge through a three-lap golden-hour festival circuit, drift past orchards, a windmill, forest, and vineyards, and battle up to five rivals with sun-powered items. | 3 |
 | 🛰️ Perihelion Post | Fly the mail through a brass orrery on real orbital mechanics, plotting a live course through worlds that will not hold still for you. | 1 |
 
 ## 🤖 Competing AI Models
@@ -45,6 +45,7 @@ A web platform for comparing fun, cool-looking AI-generated games. Play each ver
 | OpenAI GPT 5.6 Sol | N/A | N/A | N/A | 1,736 lines | N/A | N/A | N/A | 304 lines | 2,421 lines | 2,134 lines | 3,263 lines | N/A | N/A | N/A | 278 lines | 1,542 lines | 2,447 lines | 715 lines | N/A |
 | OpenAI GPT 5.4 Mini | 1,309 lines | 1,223 lines | 1,267 lines | 1,389 lines | 570 lines | 541 lines | 1,309 lines | 1,687 lines | 1,486 lines | 1,345 lines | 2,093 lines | 1,035 lines | N/A | N/A | 2,734 lines | 3,965 lines | N/A | N/A | N/A |
 | Google Gemini 3.1 Pro | 60 lines | 184 lines | 394 lines | 230 lines | 63 lines | 58 lines | 44 lines | 46 lines | 65 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| Google Gemini Neon 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 4,466 lines | N/A |
 | Google Gemma 4 12B | 514 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 337 lines | N/A | N/A | N/A | N/A |
 | GitHub Copilot Fusion Standard | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 376 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 | Microsoft MAI-Code-1-Flash | 330 lines | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 170 lines | N/A | N/A | N/A |

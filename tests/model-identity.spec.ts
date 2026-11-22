@@ -72,6 +72,17 @@ test.describe("Model identity system", {
     await expect(versionCard).toHaveAttribute("data-model-color", "#8B7CFF");
   });
 
+  test("Google Gemini Neon 4 has a model profile and Sunbeam Kart Rally card", async ({ page }) => {
+    await page.goto("/models/gemini-neon-4");
+    await expect(page.getByRole("heading", { name: "Google Gemini Neon 4" })).toBeVisible();
+    await expect(page.locator('[data-game-id="kart-racing"]')).toBeVisible();
+
+    await page.goto("/games/kart-racing");
+    const versionCard = page.locator('[data-model-id="gemini-neon-4"]');
+    await expect(versionCard).toContainText("Google Gemini Neon 4");
+    await expect(versionCard).toHaveAttribute("data-model-color", "#00C2FF");
+  });
+
   for (const viewport of [
     { name: "mobile", width: 320, height: 480 },
     { name: "desktop", width: 1280, height: 800 },
