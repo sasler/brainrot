@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "ownerModelId": "gemini-neon-4",
+  "assets": [
+    {
+      "path": "kart.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.3.0 (bmesh Python procedural export)",
+      "prompt": "Lofted monocoque racing kart with beveled sidepods, front and rear wings, twin megaphone exhausts, bucket seat, steering wheel, articulated four racing slicks with 5-spoke gold rims, helmeted driver with visor and scarf, and boost exhaust flames",
+      "seed": 2026,
+      "purpose": "Player and rival articulated racing karts with recolorable livery",
+      "usageRights": "Procedurally authored and exported for BrainRot Games with full rights to use and redistribute",
+      "load": "initial"
+    },
+    {
+      "path": "windmill.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.3.0 (bmesh Python procedural export)",
+      "prompt": "Tapered octagonal Provençal hilltop windmill with deep stone plinth, whitewashed plaster tower, timber gallery balcony, glowing windows, conical terracotta roof cap, tailpole rudder, and separate rotating four-sail lattice blades",
+      "seed": 2026,
+      "purpose": "Windmill Ridge hero rotating landmark",
+      "usageRights": "Procedurally authored and exported for BrainRot Games with full rights to use and redistribute",
+      "load": "initial"
+    },
+    {
+      "path": "festival_arch.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.3.0 (bmesh Python procedural export)",
+      "prompt": "Twin stepped limestone festival gate piers with terracotta caps, overhead timber-and-checkered banner bridge, sunburst crown medallion, and five individually controllable countdown start lights",
+      "seed": 2026,
+      "purpose": "Festival Plaza start/finish arch and countdown gantry",
+      "usageRights": "Procedurally authored and exported for BrainRot Games with full rights to use and redistribute",
+      "load": "initial"
+    },
+    {
+      "path": "cottage.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.3.0 (bmesh Python procedural export)",
+      "prompt": "Two-story Provençal plaster village cottage with deep stone plinth, attached side wing, overhanging terracotta tiled roof, stone chimney, awning doorway, and blue-shuttered warm windows",
+      "seed": 2026,
+      "purpose": "Citrus Orchard and Terrace Village hillside architecture",
+      "usageRights": "Procedurally authored and exported for BrainRot Games with full rights to use and redistribute",
+      "load": "initial"
+    },
+    {
+      "path": "grandstand.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.3.0 (bmesh Python procedural export)",
+      "prompt": "Five-tier stepped festival spectator grandstand with deep masonry base, timber benches, striped red-and-cream sun canopy, front rally banner, and seated festival spectators facing forward",
+      "seed": 2026,
+      "purpose": "Festival Plaza spectator grandstands flanking the start straight",
+      "usageRights": "Procedurally authored and exported for BrainRot Games with full rights to use and redistribute",
+      "load": "initial"
+    },
+    {
+      "path": "props_pack.glb",
+      "kind": "model",
+      "source": "procedural-export",
+      "generator": "Blender 5.3.0 (bmesh Python procedural export)",
+      "prompt": "Modular trackside scenery and gameplay prop library: citrus orchard tree, tall Mediterranean cypress, layered forest pine, grapevine vineyard trellis, beveled golden item crate, faceted cyan spark dart projectile, corner chevron warning board, and striped festival market tent",
+      "seed": 2026,
+      "purpose": "Instanced foliage, vineyard trellises, festival tents, chevron signs, item crates, and spark dart projectiles",
+      "usageRights": "Procedurally authored and exported for BrainRot Games with full rights to use and redistribute",
+      "load": "initial"
+    }
+  ]
+}
